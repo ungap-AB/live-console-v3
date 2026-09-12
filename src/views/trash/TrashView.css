@@ -1,0 +1,191 @@
+.pane {
+  height: 100%;
+}
+
+.pane .top {
+  padding: 12px 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search {
+  width: 250px;
+  flex: none;
+}
+
+.chips {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.chips button {
+  border: 1px solid var(--line);
+  background: #fbfcfd;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.chips button:hover {
+  background: #f1f4f8;
+}
+
+.chips button[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.top .count {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+ul.rows {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  overflow: auto;
+  flex: 1;
+}
+
+ul.rows > li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 12px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+}
+
+ul.rows > li + li {
+  border-top: 1px solid var(--line-soft);
+  border-radius: 9px;
+}
+
+ul.rows > li:hover {
+  background: #fafbfc;
+}
+
+ul.rows > li.soon {
+  background: #fffaf0;
+}
+
+/* utan detta krymper inte knappen som en vanlig flex-syskon utan tar
+   greedily över utrymmet som är tänkt åt .main (observerad motorspecifik
+   kvirk för <button> som flex-item bredvid ett flex-basis:0%-syskon) */
+ul.rows > li > .btn {
+  flex: none;
+  width: fit-content;
+}
+
+.icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--ink-2);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+}
+
+.main .nm {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.main .meta {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  margin-top: 2px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.main .meta .dot {
+  color: var(--line);
+}
+
+.type {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: #eef1f5;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 2px 9px;
+  flex: none;
+}
+
+.purge {
+  text-align: right;
+  flex: none;
+  width: 140px;
+}
+
+.purge .left {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.purge .date {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  font-family: var(--mono);
+}
+
+.purge.soon .left {
+  color: var(--warn);
+}
+
+.purge.urgent .left {
+  color: var(--danger);
+}
+
+.empty {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--ink-3);
+  width: 100%;
+}
+
+.empty p {
+  margin: 0 0 4px;
+}
+
+.foot {
+  padding: 11px 14px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+@media (max-width: 760px) {
+  .purge {
+    width: auto;
+    text-align: left;
+  }
+
+  ul.rows > li {
+    flex-wrap: wrap;
+  }
+
+  .main {
+    flex: 1 1 100%;
+  }
+}

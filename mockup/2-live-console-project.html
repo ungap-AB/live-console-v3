@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live-UI – mockup</title>
+<style>
+  :root{
+    --ink:#1b2027; --ink-2:#5a6572; --ink-3:#8b95a1;
+    --line:#d7dde4; --line-soft:#e8ecf1; --bg:#f2f4f7; --panel:#fff;
+    --live:#0a8f3c; --live-bg:#e6f4ea;
+    --off:#a51c1c; --off-bg:#fbeaea;
+    --warn:#8a5a00; --warn-bg:#fdf3e0;
+    --odm:#1d4f96; --odm-bg:#e9f0fb;
+    --focus:#2f6fd0;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+  .app{max-width:1180px;margin:0 auto;padding:20px 20px 300px}
+  .viewbar{display:flex;gap:2px;background:#e2e6ec;padding:3px;border-radius:7px;width:max-content;margin-bottom:18px}
+  .viewbar button{border:0;background:none;padding:6px 16px;border-radius:5px;color:var(--ink-2);font-weight:500}
+  .viewbar button[aria-selected="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(27,32,39,.12)}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+  .panel-head{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--line-soft)}
+  .title{font-size:17px;font-weight:600;letter-spacing:-.01em;margin-right:auto}
+  .title span{display:block;font-size:12px;font-weight:400;color:var(--ink-3);letter-spacing:0}
+
+  .field{display:flex;align-items:center;gap:8px}
+  .field > label{color:var(--ink-2);white-space:nowrap}
+  .input{font-family:var(--mono);font-size:12.5px;background:#fbfcfd;border:1px solid var(--line);border-radius:6px;padding:7px 10px;min-width:0;flex:1;color:var(--ink)}
+  .input.placeholder{color:var(--ink-3)}
+  .btn{border:1px solid var(--line);background:#fbfcfd;border-radius:6px;padding:7px 13px;font-weight:500;white-space:nowrap}
+  .btn:hover:not(:disabled){background:#f1f4f8}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn-primary{background:var(--ink);border-color:var(--ink);color:#fff}
+  .btn-primary:hover:not(:disabled){background:#2b323b}
+  .btn-danger{color:var(--off);border-color:#e5c4c4;background:#fdf6f6}
+  .btn-sm{padding:5px 10px;font-size:13px}
+
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .seg button{border:0;background:#fbfcfd;padding:7px 15px;color:var(--ink-2);font-weight:500}
+  .seg button + button{border-left:1px solid var(--line)}
+  .seg button[aria-pressed="true"]{background:var(--live-bg);color:var(--live)}
+  .seg button.closed[aria-pressed="true"]{background:var(--off-bg);color:var(--off)}
+
+  .status{display:inline-flex;align-items:center;gap:7px;padding:5px 12px 5px 10px;border-radius:20px;font-weight:600;font-size:12.5px;letter-spacing:.02em;border:1px solid transparent}
+  .status .dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+  .status.is-live{background:var(--live-bg);color:var(--live);border-color:#bfe3cc}
+  .status.is-live .dot{animation:pulse 2s ease-in-out infinite}
+  .status.is-off{background:var(--off-bg);color:var(--off);border-color:#eecccc}
+  .status.is-none{background:#eef1f5;color:var(--ink-3);border-color:var(--line)}
+  .status.is-odm{background:var(--odm-bg);color:var(--odm);border-color:#c6d8f0}
+  .status.is-warn{background:var(--warn-bg);color:var(--warn);border-color:#f0dcb4}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @media (prefers-reduced-motion:reduce){.status .dot{animation:none}}
+
+  .tabs{display:flex;gap:24px;padding:0 18px;border-bottom:1px solid var(--line-soft)}
+  .tabs button{border:0;background:none;padding:11px 0;color:var(--ink-2);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+  .tabpanel{padding:18px}
+
+  .resource{display:grid;grid-template-columns:1fr 260px;gap:24px}
+  @media (max-width:820px){.resource{grid-template-columns:1fr}}
+  .rowset{display:flex;flex-direction:column;gap:9px}
+  .rowset .field > label{width:112px;font-size:13px}
+  .actions{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .actions .sep{width:1px;height:22px;background:var(--line)}
+
+  .health{border:1px solid var(--line-soft);border-radius:8px;padding:12px 14px;background:#fafbfc}
+  .health h4{margin:0 0 9px;font-size:12px;font-weight:600;color:var(--ink-2)}
+  .health dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:12.5px}
+  .health dt{color:var(--ink-3)}
+  .health dd{margin:0;font-family:var(--mono);text-align:right}
+  .health p{margin:0;font-size:12.5px;color:var(--ink-3)}
+
+  .note{margin-top:16px;padding:10px 13px;border-radius:7px;font-size:13px;background:var(--warn-bg);color:var(--warn);border:1px solid #f0dcb4}
+  .note.info{background:#eef2f7;color:var(--ink-2);border-color:var(--line)}
+  .note:empty{display:none}
+
+  .now{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line-soft);border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft)}
+  .now > div{background:var(--panel);padding:12px 18px}
+  .now .k{font-size:11.5px;color:var(--ink-3);margin-bottom:2px}
+  .now .v{font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .now .v.empty{font-weight:400;color:var(--ink-3)}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr 300px;gap:1px;background:var(--line-soft)}
+  @media (max-width:980px){.cols{grid-template-columns:1fr}}
+  .col{background:var(--panel);padding:14px 16px;min-height:320px}
+  .col h3{margin:0 0 12px;font-size:12.5px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;justify-content:space-between;gap:8px}
+
+  ul.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+  ul.list li{display:flex;align-items:center;gap:10px;border:1px solid var(--line-soft);border-radius:7px;padding:8px 10px;background:#fff}
+  ul.list li.active{border-color:#b9ceec;background:#f5f9ff;box-shadow:inset 3px 0 0 var(--focus)}
+  ul.list li .grip{color:var(--line);cursor:grab;font-size:15px;line-height:1;user-select:none}
+  ul.list li .label{flex:1;min-width:0}
+  ul.list li .time{font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+  .play{border:0;background:var(--ink);color:#fff;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none}
+  .play:hover:not(:disabled){background:#2b323b}
+  .play.done{background:var(--live-bg);color:var(--live);border:1px solid #bfe3cc}
+  .play:disabled{opacity:.35;cursor:not-allowed}
+  .play svg{width:11px;height:11px;fill:currentColor}
+
+  .tl{list-style:none;margin:0;padding:0;font-size:13px}
+  .tl li{display:flex;gap:10px;padding:6px 0;border-bottom:1px dotted var(--line-soft)}
+  .tl li:last-child{border-bottom:0}
+  .tl .t{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);padding-top:1px;flex:none;width:52px}
+  .tl .what{flex:1;min-width:0}
+  .tl .what em{font-style:normal;color:var(--ink-3);font-size:11.5px;display:block}
+  .tl-foot{margin-top:12px;font-size:12px;color:var(--ink-3)}
+  .muted-empty{color:var(--ink-3);font-size:13px}
+
+  /* ---------- state control panel ---------- */
+  .ctl{
+    position:fixed;right:18px;bottom:18px;width:330px;z-index:40;
+    background:#171c23;color:#e6eaf0;border-radius:11px;
+    box-shadow:0 10px 34px rgba(10,14,20,.38);font-size:13px;
+  }
+  .ctl header{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid #2a323d}
+  .ctl header h2{margin:0;font-size:13px;font-weight:600;flex:1}
+  .ctl header .hint{font-size:11px;color:#8e9aa8;font-weight:400}
+  .ctl header button{background:none;border:0;color:#8e9aa8;padding:2px 6px;border-radius:5px;font-size:16px;line-height:1}
+  .ctl header button:hover{background:#252d38;color:#e6eaf0}
+  .ctl .body{padding:12px 14px 14px;max-height:64vh;overflow:auto}
+  .ctl.collapsed .body{display:none}
+  .grp{margin-bottom:13px}
+  .grp:last-of-type{margin-bottom:6px}
+  .grp > span{display:block;font-size:11px;color:#8e9aa8;margin-bottom:5px}
+  .grp .row{display:flex;gap:5px;flex-wrap:wrap}
+  .grp button{
+    background:#232b35;border:1px solid #313b48;color:#c3ccd8;
+    border-radius:6px;padding:6px 10px;font-size:12.5px;flex:1;min-width:64px;
+  }
+  .grp button:hover:not(:disabled){background:#2c3542}
+  .grp button[aria-pressed="true"]{background:#e6eaf0;border-color:#e6eaf0;color:#171c23;font-weight:600}
+  .grp button:disabled{opacity:.3;cursor:not-allowed}
+  .ctl .derived{border-top:1px solid #2a323d;margin-top:12px;padding-top:11px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12px}
+  .ctl .derived dt{color:#8e9aa8}
+  .ctl .derived dd{margin:0;text-align:right;font-family:var(--mono);font-size:11.5px}
+  .ctl .reset{width:100%;margin-top:11px;background:none;border:1px solid #313b48;color:#8e9aa8;padding:6px;border-radius:6px}
+  .ctl .reset:hover{color:#e6eaf0;background:#232b35}
+  @media (max-width:760px){.ctl{left:12px;right:12px;width:auto}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="viewbar" role="tablist" aria-label="Vy">
+    <button role="tab" aria-selected="true" data-view="project">Projektvy</button>
+    <button role="tab" aria-selected="false" data-view="playout">Playout</button>
+  </div>
+
+  <!-- ============ PROJEKTVY ============ -->
+  <section class="panel" id="view-project">
+    <div class="panel-head">
+      <div class="title">Kommunfullmäktige 24 september<span id="proj-sub">Projekt</span></div>
+      <div class="field">
+        <label for="plink">Spelarlänk</label>
+        <input class="input" id="plink" readonly style="width:240px">
+        <button class="btn btn-sm">Kopiera</button>
+      </div>
+      <div class="field">
+        <label>Publik</label>
+        <div class="seg" id="vis-project">
+          <button data-vis="open">Öppen</button>
+          <button class="closed" data-vis="closed">Stängd</button>
+        </div>
+      </div>
+      <button class="btn" data-goto="playout">Öppna playout</button>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="live">Live</button>
+      <button role="tab" aria-selected="false" data-tab="odm">Ondemand</button>
+    </div>
+
+    <!-- LIVE -->
+    <div class="tabpanel" data-panel="live">
+      <div class="actions">
+        <span class="status" id="live-status"></span>
+        <span class="sep"></span>
+        <button class="btn" id="btn-create">Skapa ingest</button>
+        <button class="btn btn-danger" id="btn-teardown">Riv resurs</button>
+      </div>
+      <div class="resource">
+        <div class="rowset">
+          <div class="field"><label for="ing">Ingest-server</label><input class="input" id="ing" readonly><button class="btn btn-sm" data-copy="ing">Kopiera</button></div>
+          <div class="field"><label for="key">Stream key</label><input class="input" id="key" readonly><button class="btn btn-sm" data-copy="key">Kopiera</button></div>
+          <div class="field"><label for="hls">HLS-URL</label><input class="input" id="hls" readonly><button class="btn btn-sm" data-copy="hls">Kopiera</button></div>
+        </div>
+        <div class="health" id="health"></div>
+      </div>
+      <div class="note" id="live-note"></div>
+    </div>
+
+    <!-- ONDEMAND -->
+    <div class="tabpanel" data-panel="odm" hidden>
+      <div class="actions">
+        <span class="status" id="odm-status"></span>
+        <span class="sep"></span>
+        <button class="btn" id="btn-trim">Trimma inspelning</button>
+        <button class="btn" id="btn-review">Skapa granskningslänk</button>
+        <button class="btn btn-primary" id="btn-publish">Publicera</button>
+      </div>
+      <div class="rowset" style="max-width:660px">
+        <div class="field"><label for="rev">Granskningslänk</label><input class="input" id="rev" readonly><button class="btn btn-sm" data-copy="rev">Kopiera</button></div>
+        <div class="field"><label for="ohls">HLS-URL</label><input class="input" id="ohls" readonly><button class="btn btn-sm" data-copy="ohls">Kopiera</button></div>
+      </div>
+      <div class="note" id="odm-note"></div>
+    </div>
+  </section>
+
+  <!-- ============ PLAYOUT ============ -->
+  <section class="panel" id="view-playout" hidden>
+    <div class="panel-head">
+      <div class="title">Kommunfullmäktige 24 september<span id="play-sub">Playout</span></div>
+      <span class="status" id="play-status"></span>
+      <div class="field">
+        <label>Publik</label>
+        <div class="seg" id="vis-playout">
+          <button data-vis="open">Öppen</button>
+          <button class="closed" data-vis="closed">Stängd</button>
+        </div>
+      </div>
+      <button class="btn" data-goto="project">Stäng playout</button>
+    </div>
+
+    <div class="now">
+      <div><div class="k">Ärende i bild</div><div class="v empty" id="now-item">–</div></div>
+      <div><div class="k">Talare i bild</div><div class="v empty" id="now-speaker">–</div></div>
+    </div>
+
+    <div class="cols">
+      <div class="col">
+        <h3>Dagordning <button class="btn btn-sm">Redigera</button></h3>
+        <ul class="list" id="agenda"></ul>
+      </div>
+      <div class="col">
+        <h3>Namnlista <button class="btn btn-sm">Redigera</button></h3>
+        <ul class="list" id="names"></ul>
+      </div>
+      <div class="col">
+        <h3>Tidslinje <span id="tl-badge" class="status is-none" hidden></span></h3>
+        <ul class="tl" id="timeline"></ul>
+        <p class="tl-foot" id="tl-foot"></p>
+      </div>
+    </div>
+    <div style="padding:0 16px 16px"><div class="note" id="play-note"></div></div>
+  </section>
+</div>
+
+<!-- ============ STATE CONTROL ============ -->
+<aside class="ctl" id="ctl">
+  <header>
+    <h2>Tillstånd <span class="hint">mockup-styrning</span></h2>
+    <button id="ctl-toggle" title="Fäll ihop">–</button>
+  </header>
+  <div class="body">
+    <div class="grp">
+      <span>Live-resurs (IVS)</span>
+      <div class="row" id="g-ingest">
+        <button data-k="ingest" data-v="none">Ingen</button>
+        <button data-k="ingest" data-v="ready">Skapad</button>
+      </div>
+    </div>
+    <div class="grp">
+      <span>Enkoder</span>
+      <div class="row" id="g-encoder">
+        <button data-k="encoder" data-v="stopped">Stoppad</button>
+        <button data-k="encoder" data-v="sending">Sänder</button>
+      </div>
+    </div>
+    <div class="grp">
+      <span>Ondemand</span>
+      <div class="row" id="g-odm">
+        <button data-k="odm" data-v="none">Otrimmad</button>
+        <button data-k="odm" data-v="trimmed">Trimmad</button>
+        <button data-k="odm" data-v="published">Publicerad</button>
+      </div>
+    </div>
+    <div class="grp">
+      <span>Synlighet för publik</span>
+      <div class="row" id="g-vis">
+        <button data-k="visibility" data-v="open">Öppen</button>
+        <button data-k="visibility" data-v="closed">Stängd</button>
+      </div>
+    </div>
+    <dl class="derived">
+      <dt>Inspelning</dt><dd id="d-rec">–</dd>
+      <dt>Spelaren visar</dt><dd id="d-player">–</dd>
+      <dt>Sändningstid</dt><dd id="d-clock">00:00:00</dd>
+    </dl>
+    <button class="reset" id="btn-reset">Återställ allt</button>
+  </div>
+</aside>
+
+<script>
+"use strict";
+
+const ICON_PLAY  = '<svg viewBox="0 0 16 16"><path d="M4 2.8v10.4L13 8z"/></svg>';
+const ICON_CHECK = '<svg viewBox="0 0 16 16"><path d="M6.2 11.4 2.6 7.8l1.1-1.1 2.5 2.4 6-6 1.1 1.1z"/></svg>';
+
+const initial = () => ({
+  ingest: 'none',        // none | ready
+  encoder: 'stopped',    // stopped | sending
+  odm: 'none',           // none | trimmed | published
+  visibility: 'closed',  // open | closed
+  everSent: false,       // har tagit emot signal minst en gång
+  segments: 0,           // antal gånger enkodern startat = ev. glapp i inspelningen
+  elapsed: 0,            // sekunder inspelad tid
+  agenda: [
+    { id:'a1', label:'1. Mötet öppnas' },
+    { id:'a2', label:'2. Upprop' },
+    { id:'a3', label:'3. Årsredovisning 2025' },
+    { id:'a4', label:'4. Debatt' },
+    { id:'a5', label:'5. Omröstningar' },
+    { id:'a6', label:'6. Mötet avslutas' },
+  ],
+  names: ['Anders Mårtén','Camilla Kvartoft','Clara Mårtén','Majken Mårtén','Jana Banana'],
+  played: {},            // id -> senaste offset
+  timeline: [],          // { kind, label, offset }
+  nowItem: null,
+  nowSpeaker: null,
+});
+
+let s = initial();
+
+const $ = id => document.getElementById(id);
+const hhmmss = n => [n/3600|0, n/60%60|0, n%60|0].map(v => String(v|0).padStart(2,'0')).join(':');
+const chip = (el, cls, text) => { el.className = 'status ' + cls; el.innerHTML = '<span class="dot"></span>' + text; };
+const setInput = (el, val, ph) => {
+  el.value = val ?? ph;
+  el.classList.toggle('placeholder', val == null);
+};
+
+/* ----- härledda tillstånd ----- */
+function recordingState(){
+  if (s.encoder === 'sending') return 'recording';
+  if (!s.everSent) return 'none';
+  if (s.odm === 'published') return 'published';
+  if (s.odm === 'trimmed') return 'trimmed';
+  return 'recorded';
+}
+function playerShows(){
+  if (s.visibility === 'closed') return 'Stängd';
+  if (s.encoder === 'sending') return 'Livesändning';
+  if (s.odm === 'published') return 'Ondemand';
+  return 'Inget';
+}
+
+/* ----- rendering ----- */
+function render(){
+  const rec = recordingState();
+  const live = s.encoder === 'sending';
+  const hasIngest = s.ingest === 'ready';
+
+  /* --- projektvy: huvud --- */
+  const pub = s.visibility === 'open';
+  setInput($('plink'), pub ? 'https://play.ungap.se/p/kf-2409' : null, 'Stängd för publik');
+  document.querySelectorAll('[data-vis]').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.vis === s.visibility)));
+
+  $('proj-sub').textContent = live
+    ? 'Projekt · sänder sedan 13:02'
+    : (s.odm === 'published' ? 'Projekt · publicerad som ondemand' : 'Projekt · skapad 12 sep 2026');
+
+  /* --- live-fliken --- */
+  if (!hasIngest)      chip($('live-status'), 'is-none', 'Ingen resurs');
+  else if (live)       chip($('live-status'), 'is-live', 'Sänder');
+  else                 chip($('live-status'), 'is-off',  'Offline');
+
+  $('btn-create').disabled   = hasIngest;
+  $('btn-teardown').disabled = !hasIngest || live;
+  $('btn-teardown').title    = live ? 'Går inte att riva medan signal tas emot' : '';
+
+  setInput($('ing'), hasIngest ? 'rtmps://a1b2c3.global-contribute.live-video.net:443/app/' : null, 'Skapa ingest först');
+  setInput($('key'), hasIngest ? 'sk_eu-north-1_••••••••••••••••' : null, '–');
+  setInput($('hls'), hasIngest ? 'https://a1b2c3.eu-north-1.playback.live-video.net/…/master.m3u8' : null, '–');
+  document.querySelectorAll('[data-copy]').forEach(b => {
+    b.disabled = $(b.dataset.copy).classList.contains('placeholder');
+  });
+
+  $('health').innerHTML = live
+    ? `<h4>Inkommande signal</h4><dl>
+         <dt>Bitrate</dt><dd>5 980 kbps</dd>
+         <dt>Upplösning</dt><dd>1920×1080p50</dd>
+         <dt>Senaste bild</dt><dd>0,4 s sedan</dd>
+         <dt>Inspelat</dt><dd>${hhmmss(s.elapsed)}</dd>
+       </dl>`
+    : `<h4>Inkommande signal</h4><p>${hasIngest ? 'Ingen signal. Starta enkodern.' : 'Ingen live-resurs allokerad.'}</p>`;
+
+  let ln = '';
+  if (live)                      ln = 'Riv resurs är låst medan signal tas emot. Stoppa enkodern först.';
+  else if (hasIngest && s.everSent) ln = 'Enkodern har slutat sända. Det kan vara en tillfällig störning — resursen ligger kvar tills du river den.';
+  else if (hasIngest)            ln = 'Resursen är allokerad och väntar på signal.';
+  $('live-note').textContent = ln;
+  $('live-note').className = 'note' + (live ? '' : ' info');
+
+  /* --- ondemand-fliken --- */
+  const odmLabel = { none:['is-none','Ej publicerad'], trimmed:['is-warn','Granskas'], published:['is-odm','Publicerad'] };
+  if (rec === 'recording')      chip($('odm-status'), 'is-none', 'Spelas in');
+  else if (rec === 'none')      chip($('odm-status'), 'is-none', 'Ingen inspelning');
+  else                          chip($('odm-status'), ...odmLabel[s.odm]);
+
+  $('btn-trim').disabled    = !(rec === 'recorded' || rec === 'trimmed');
+  $('btn-trim').title       = live ? 'Tillgänglig först när enkodern slutat sända' : '';
+  $('btn-review').disabled  = s.odm === 'none';
+  $('btn-publish').disabled = s.odm !== 'trimmed';
+  $('btn-publish').title    = s.odm === 'none' ? 'Trimma inspelningen först' : '';
+
+  setInput($('rev'),  s.odm !== 'none' ? 'https://play.ungap.se/review/9f3a-kf2409' : null, 'Skapas när inspelningen är trimmad');
+  setInput($('ohls'), s.odm === 'published' ? 'https://cdn.ungap.se/vod/kf-2409/master.m3u8' : null, 'Tillgänglig efter publicering');
+
+  let on = '';
+  if (rec === 'recording')       on = 'Trimning blir tillgänglig när enkodern slutat sända.';
+  else if (rec === 'none')       on = 'Ingen inspelning finns ännu.';
+  else if (s.odm === 'none')     on = `Inspelningen är klar (${hhmmss(s.elapsed)}). Trimma den innan du publicerar.`;
+  else if (s.odm === 'trimmed')  on = 'Trimmad. Dela granskningslänken för godkännande — materialet är ännu inte publikt.';
+  else                           on = pub ? 'Publicerad och öppen för publik. Kapitellistan är fryst.' : 'Publicerad men stängd för publik.';
+  if (s.segments > 1 && rec !== 'recording' && rec !== 'none')
+    on += ` Inspelningen har ${s.segments - 1} glapp — kontrollera kapitlens offset efter trimning.`;
+  $('odm-note').textContent = on;
+  $('odm-note').className = 'note' + (s.segments > 1 || s.odm === 'trimmed' ? '' : ' info');
+
+  /* --- playout --- */
+  $('play-sub').textContent = live ? 'Playout · sänder sedan 13:02' : 'Playout';
+  if (live)                        chip($('play-status'), 'is-live', 'Sänder');
+  else if (s.odm === 'published')  chip($('play-status'), 'is-odm', 'Publicerad');
+  else if (hasIngest)              chip($('play-status'), 'is-off', 'Offline');
+  else                             chip($('play-status'), 'is-none', 'Ingen resurs');
+
+  const frozen = s.odm === 'published';
+  const canPlay = live && !frozen;
+
+  $('now-item').textContent = s.nowItem ?? '–';
+  $('now-item').classList.toggle('empty', !s.nowItem);
+  $('now-speaker').textContent = s.nowSpeaker ?? '–';
+  $('now-speaker').classList.toggle('empty', !s.nowSpeaker);
+
+  $('agenda').innerHTML = s.agenda.map(it => {
+    const done = s.played[it.id] != null;
+    return `<li class="${s.nowItem === it.label ? 'active' : ''}">
+      <span class="grip">⠿</span><span class="label">${it.label}</span>
+      ${done ? `<span class="time">${hhmmss(s.played[it.id])}</span>` : ''}
+      <button class="play ${done ? 'done' : ''}" data-kind="Ärende" data-id="${it.id}" data-label="${it.label}"
+              ${canPlay ? '' : 'disabled'} title="${done ? 'Spela ut igen' : 'Spela ut'}">${done ? ICON_CHECK : ICON_PLAY}</button>
+    </li>`;
+  }).join('');
+
+  $('names').innerHTML = s.names.map(n => `<li class="${s.nowSpeaker === n ? 'active' : ''}">
+      <span class="label">${n}</span>
+      <button class="play" data-kind="Talare" data-label="${n}" ${canPlay ? '' : 'disabled'} title="Spela ut">${ICON_PLAY}</button>
+    </li>`).join('');
+
+  $('timeline').innerHTML = s.timeline.length
+    ? s.timeline.map(e => `<li><span class="t">${hhmmss(e.offset)}</span><span class="what">${e.label}<em>${e.kind}</em></span></li>`).join('')
+    : '<li class="muted-empty">Inget utspelat ännu.</li>';
+
+  const badge = $('tl-badge');
+  badge.hidden = !frozen;
+  if (frozen) chip(badge, 'is-odm', 'Fryst');
+
+  $('tl-foot').textContent = frozen
+    ? 'Kapitellistan är fryst vid publicering och följer inte längre originaldagordningen.'
+    : 'Varje utspelning loggas här. Tidslinjen fryses som kapitellista när sändningen publiceras.';
+
+  let pn = '';
+  if (frozen)        pn = 'Sändningen är publicerad. Utspelning är avstängd.';
+  else if (!live)    pn = 'Utspelning kräver aktiv sändning — timed metadata kan bara skickas i en pågående ström.';
+  $('play-note').textContent = pn;
+  $('play-note').className = 'note info';
+
+  /* --- kontrollpanel --- */
+  document.querySelectorAll('.grp button').forEach(b =>
+    b.setAttribute('aria-pressed', String(s[b.dataset.k] === b.dataset.v)));
+  document.querySelectorAll('#g-encoder button').forEach(b => b.disabled = !hasIngest);
+  document.querySelectorAll('#g-odm button').forEach(b =>
+    b.disabled = !s.everSent || (live && b.dataset.v !== 'none'));
+
+  $('d-rec').textContent = { none:'ingen', recording:'pågår', recorded:'klar', trimmed:'trimmad', published:'publicerad' }[rec];
+  $('d-player').textContent = playerShows();
+  $('d-clock').textContent = hhmmss(s.elapsed);
+}
+
+/* ----- tillståndsövergångar ----- */
+function setState(k, v){
+  if (k === 'ingest'){
+    if (v === 'none'){ s.encoder = 'stopped'; }
+    if (v === 'none' && s.ingest === 'ready'){ /* riven resurs behåller inspelningen */ }
+  }
+  if (k === 'encoder'){
+    if (v === 'sending'){ s.everSent = true; s.segments++; startClock(); }
+    else stopClock();
+  }
+  if (k === 'odm' && v === 'none'){ /* tillbaka till otrimmad */ }
+  s[k] = v;
+  render();
+}
+
+let timer = null;
+const startClock = () => { if (!timer) timer = setInterval(() => { s.elapsed++; render(); }, 1000); };
+const stopClock  = () => { clearInterval(timer); timer = null; };
+
+/* ----- händelser ----- */
+document.querySelectorAll('.grp button').forEach(b =>
+  b.onclick = () => setState(b.dataset.k, b.dataset.v));
+
+document.querySelectorAll('[data-vis]').forEach(b =>
+  b.onclick = () => setState('visibility', b.dataset.vis));
+
+$('btn-create').onclick   = () => setState('ingest', 'ready');
+$('btn-teardown').onclick = () => { if (confirm('Riv live-resursen? Ingest-server och stream key slutar gälla. Inspelningen påverkas inte.')) setState('ingest','none'); };
+$('btn-trim').onclick     = () => setState('odm', 'trimmed');
+$('btn-review').onclick   = () => render();
+$('btn-publish').onclick  = () => setState('odm', 'published');
+
+$('btn-reset').onclick = () => { stopClock(); s = initial(); render(); };
+
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.play');
+  if (!btn || btn.disabled) return;
+  const { kind, id, label } = btn.dataset;
+  if (kind === 'Ärende'){ s.played[id] = s.elapsed; s.nowItem = label; }
+  else { s.nowSpeaker = label; }
+  s.timeline.push({ kind, label, offset: s.elapsed });
+  render();
+});
+
+const views = { project: $('view-project'), playout: $('view-playout') };
+function show(name){
+  for (const [k, el] of Object.entries(views)) el.hidden = (k !== name);
+  document.querySelectorAll('.viewbar button').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.view === name)));
+}
+document.querySelectorAll('.viewbar button').forEach(b => b.onclick = () => show(b.dataset.view));
+document.querySelectorAll('[data-goto]').forEach(b => b.onclick = () => show(b.dataset.goto));
+
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+  document.querySelectorAll('[data-panel]').forEach(p => p.hidden = (p.dataset.panel !== b.dataset.tab));
+});
+
+$('ctl-toggle').onclick = () => {
+  const c = $('ctl'); c.classList.toggle('collapsed');
+  $('ctl-toggle').textContent = c.classList.contains('collapsed') ? '+' : '–';
+};
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+:root {
+  --ink: #1b2027;
+  --ink-2: #5a6572;
+  --ink-3: #8b95a1;
+
+  --line: #d7dde4;
+  --line-soft: #e8ecf1;
+
+  --bg: #f2f4f7;
+  --panel: #fff;
+  --rail: #f7f9fb;
+
+  --accent: #1b2027;
+  --accent-soft: #eef1f5;
+  --focus: #2f6fd0;
+
+  /* status/semantic colors */
+  --live: #0a8f3c;
+  --live-bg: #e6f4ea;
+  --odm: #1d4f96;
+  --odm-bg: #e9f0fb;
+  --off: #a51c1c;
+  --off-bg: #fbeaea;
+  --warn: #8a5a00;
+  --warn-bg: #fdf3e0;
+
+  /* destructive actions — same value as --off today, kept separate: offline
+     status and "dangerous action" are different concepts that happen to
+     share a color, and may diverge later */
+  --danger: #a51c1c;
+  --danger-bg: #fbeaea;
+
+  --sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --mono: 'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, Consolas, monospace;
+}

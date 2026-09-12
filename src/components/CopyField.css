@@ -1,0 +1,37 @@
+.copy-field-label {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-bottom: 3px;
+}
+
+.copy-field-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 6px 6px 10px;
+  background: #fbfcfd;
+}
+
+.copy-field-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy-field-value.mono {
+  font-family: var(--mono);
+  font-size: 12.5px;
+}
+
+.copy-field-value.placeholder {
+  color: var(--ink-3);
+}
+
+.copy-field-row .ib:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

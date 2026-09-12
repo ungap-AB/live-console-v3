@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live-resurser</title>
+<style>
+  :root{
+    --ink:#1b2027; --ink-2:#5a6572; --ink-3:#8b95a1;
+    --line:#d7dde4; --line-soft:#e8ecf1;
+    --bg:#f2f4f7; --panel:#fff;
+    --accent-soft:#eef1f5;
+    --live:#0a8f3c; --live-bg:#e6f4ea;
+    --off:#a51c1c; --off-bg:#fbeaea;
+    --odm:#1d4f96; --odm-bg:#e9f0fb;
+    --warn:#8a5a00; --warn-bg:#fdf3e0;
+    --danger:#a51c1c;
+    --focus:#2f6fd0;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --sans:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  button,input{font:inherit;color:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+  .view{display:flex;flex-direction:column;height:100vh}
+  .view > header{display:flex;align-items:center;gap:14px;flex:none;padding:16px 26px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .view > header h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-.015em}
+  .view > header .sub{font-size:12.5px;color:var(--ink-3);margin-top:1px}
+  .build{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:3px 8px}
+  .view > .content{flex:1;padding:22px 26px;overflow:auto;min-height:0}
+
+  .btn{border:1px solid var(--line);background:#fbfcfd;border-radius:6px;padding:7px 13px;font-weight:500;white-space:nowrap;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover:not(:disabled){background:#f1f4f8}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn-primary{background:var(--ink);border-color:var(--ink);color:#fff}
+  .btn-primary:hover:not(:disabled){background:#2b323b}
+  .btn-danger{color:var(--danger);border-color:#e5c4c4;background:#fdf6f6}
+  .btn-sm{padding:5px 10px;font-size:13px}
+  .btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+  .status{display:inline-flex;align-items:center;gap:7px;padding:4px 11px 4px 9px;border-radius:20px;font-weight:600;font-size:12px;border:1px solid transparent;white-space:nowrap}
+  .status .dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+  .status.live{background:var(--live-bg);color:var(--live);border-color:#bfe3cc}
+  .status.live .dot{animation:pulse 2s ease-in-out infinite}
+  .status.idle{background:#eef1f5;color:var(--ink-2);border-color:var(--line)}
+  .status.stale{background:var(--warn-bg);color:var(--warn);border-color:#f0dcb4}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  @media (prefers-reduced-motion:reduce){.status .dot{animation:none}}
+
+  .tag{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:20px;border:1px solid var(--line);background:#eef1f5;color:var(--ink-2);white-space:nowrap}
+  .tag.proj{background:var(--odm-bg);color:var(--odm);border-color:#c6d8f0}
+
+  .split{display:grid;grid-template-columns:330px 1fr;gap:18px;height:100%;min-height:0}
+  @media (max-width:1020px){.split{grid-template-columns:1fr;height:auto}}
+
+  .pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0}
+  .pane .top{padding:12px;border-bottom:1px solid var(--line-soft);display:flex;gap:8px}
+  .search{flex:1;position:relative;display:flex;align-items:center}
+  .search svg{position:absolute;left:9px;width:15px;height:15px;stroke:var(--ink-3);fill:none;stroke-width:1.7}
+  .search input{width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 10px 7px 30px;background:#fbfcfd}
+
+  .quota{padding:12px 14px;border-bottom:1px solid var(--line-soft);background:#fafbfc}
+  .quota .line{display:flex;align-items:baseline;gap:8px;font-size:12.5px;color:var(--ink-3)}
+  .quota .line b{font-size:14px;color:var(--ink);font-weight:600}
+  .quota .bar{height:6px;border-radius:4px;background:#e3e8ee;margin-top:7px;overflow:hidden;display:flex}
+  .quota .bar i{display:block;height:100%}
+  .quota .bar .used{background:var(--ink)}
+  .quota .bar .idle{background:#b6c0cc}
+  .quota .legend{display:flex;gap:12px;margin-top:7px;font-size:11.5px;color:var(--ink-3)}
+  .quota .legend span{display:flex;align-items:center;gap:5px}
+  .quota .legend i{width:8px;height:8px;border-radius:2px;display:block}
+
+  .pane ul{list-style:none;margin:0;padding:6px;overflow:auto;flex:1}
+  .pane li button.row{width:100%;text-align:left;border:0;background:none;padding:9px 11px;border-radius:8px;display:block}
+  .pane li button.row:hover{background:var(--accent-soft)}
+  .pane li.sel button.row{background:#e6eaf0}
+  .rowtop{display:flex;align-items:center;gap:8px}
+  .rowtop .nm{font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta{font-size:12px;color:var(--ink-3);margin-top:2px;font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pane .none{padding:22px 14px;text-align:center;color:var(--ink-3);font-size:13px}
+
+  .doc{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0}
+  .doc .head{padding:16px 20px 14px;border-bottom:1px solid var(--line-soft)}
+  .doc h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .facts{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--ink-3)}
+  .tools{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+  .tools .spacer{flex:1}
+  .doc .body{padding:16px 20px 22px;overflow:auto;flex:1}
+
+  .cols2{display:grid;grid-template-columns:1fr 250px;gap:20px;max-width:900px}
+  @media (max-width:860px){.cols2{grid-template-columns:1fr}}
+
+  .block{margin-bottom:18px}
+  .block h3{margin:0 0 8px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+  .field{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .field > label{width:104px;font-size:13px;color:var(--ink-2);flex:none}
+  .input{font-family:var(--mono);font-size:12.5px;background:#fbfcfd;border:1px solid var(--line);border-radius:6px;padding:7px 10px;flex:1;min-width:0;color:var(--ink)}
+
+  .health{border:1px solid var(--line-soft);border-radius:8px;padding:12px 14px;background:#fafbfc}
+  .health h4{margin:0 0 9px;font-size:12px;font-weight:600;color:var(--ink-2)}
+  .health dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:12.5px}
+  .health dt{color:var(--ink-3)}
+  .health dd{margin:0;font-family:var(--mono);text-align:right}
+  .health p{margin:0;font-size:12.5px;color:var(--ink-3)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);border-radius:8px;overflow:hidden;margin-bottom:18px}
+  .grid > div{background:#fff;padding:10px 12px}
+  .grid .k{font-size:11.5px;color:var(--ink-3)}
+  .grid .v{font-family:var(--mono);font-size:13px;margin-top:2px}
+
+  .project{display:flex;align-items:center;gap:10px;border:1px solid var(--line-soft);border-radius:8px;padding:10px 12px;background:#fafbfc}
+  .project .pn{flex:1;min-width:0;font-weight:500}
+  .project .pn span{display:block;font-size:12px;color:var(--ink-3);font-weight:400}
+  .project.empty{color:var(--ink-3);font-size:13px}
+
+  .note{margin-top:4px;padding:10px 13px;border-radius:7px;font-size:13px;background:#eef2f7;color:var(--ink-2);border:1px solid var(--line);max-width:900px}
+  .note.warn{background:var(--warn-bg);color:var(--warn);border-color:#f0dcb4}
+  .docnone{height:100%;display:grid;place-items:center;color:var(--ink-3);padding:40px}
+</style>
+</head>
+<body>
+
+<div class="view">
+  <header>
+    <div>
+      <h1>Live-resurser</h1>
+      <div class="sub">Allokerade IVS-kanaler, med eller utan kopplat projekt</div>
+    </div>
+    <span class="build">fristående vy</span>
+  </header>
+
+  <div class="content">
+    <div class="split">
+      <section class="pane" aria-label="Live-resurser">
+        <div class="quota" id="quota"></div>
+        <div class="top">
+          <div class="search">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+            <input id="q" type="search" placeholder="Sök resurs" aria-label="Sök resurs">
+          </div>
+          <button class="btn btn-sm" id="newRes">Ny resurs</button>
+        </div>
+        <ul id="list"></ul>
+      </section>
+
+      <section class="doc" id="doc" aria-label="Vald resurs"></section>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const QUOTA = 20;          // kanaler per konto
+const STALE_DAYS = 30;     // oanvänd så här länge = kandidat för städning
+
+let resources = [
+  { id:'c1', name:'kf-2409', label:'Kommunfullmäktige 24 september',
+    state:'live', region:'eu-north-1', type:'STANDARD', latency:'LOW',
+    created:'12 sep 2026 08:41', lastUsed:'sänder nu', idleDays:0, recording:true,
+    project:{ id:'p1', name:'Kommunfullmäktige 24 september', state:'Öppen för publik' },
+    arn:'arn:aws:ivs:eu-north-1:4417:channel/a1B2c3D4e5F6',
+    ingest:'rtmps://a1b2c3.global-contribute.live-video.net:443/app/',
+    key:'sk_eu-north-1_••••••••••••••••',
+    playback:'https://a1b2c3.eu-north-1.playback.live-video.net/…/master.m3u8',
+    health:{ bitrate:'5 980 kbps', res:'1920×1080p50', lastFrame:'0,4 s sedan', uptime:'00:37:12' } },
+
+  { id:'c2', name:'ks-1709', label:'Kommunstyrelsen 17 september',
+    state:'idle', region:'eu-north-1', type:'STANDARD', latency:'LOW',
+    created:'10 sep 2026 14:02', lastUsed:'aldrig använd', idleDays:2, recording:true,
+    project:{ id:'p2', name:'Kommunstyrelsen 17 september', state:'Stängd' },
+    arn:'arn:aws:ivs:eu-north-1:4417:channel/g7H8i9J0k1L2',
+    ingest:'rtmps://g7h8i9.global-contribute.live-video.net:443/app/',
+    key:'sk_eu-north-1_••••••••••••••••',
+    playback:'https://g7h8i9.eu-north-1.playback.live-video.net/…/master.m3u8',
+    health:null },
+
+  { id:'c3', name:'test-encoder', label:'Teknikkontroll studio',
+    state:'idle', region:'eu-north-1', type:'BASIC', latency:'NORMAL',
+    created:'3 aug 2026 09:20', lastUsed:'28 aug 2026', idleDays:15, recording:false,
+    project:null,
+    arn:'arn:aws:ivs:eu-north-1:4417:channel/m3N4o5P6q7R8',
+    ingest:'rtmps://m3n4o5.global-contribute.live-video.net:443/app/',
+    key:'sk_eu-north-1_••••••••••••••••',
+    playback:'https://m3n4o5.eu-north-1.playback.live-video.net/…/master.m3u8',
+    health:null },
+
+  { id:'c4', name:'kf-1806', label:'Kommunfullmäktige 18 juni',
+    state:'idle', region:'eu-north-1', type:'STANDARD', latency:'LOW',
+    created:'16 jun 2026 11:05', lastUsed:'18 jun 2026', idleDays:86, recording:true,
+    project:null, orphaned:true,
+    arn:'arn:aws:ivs:eu-north-1:4417:channel/s9T0u1V2w3X4',
+    ingest:'rtmps://s9t0u1.global-contribute.live-video.net:443/app/',
+    key:'sk_eu-north-1_••••••••••••••••',
+    playback:'https://s9t0u1.eu-north-1.playback.live-video.net/…/master.m3u8',
+    health:null },
+
+  { id:'c5', name:'brf-eken-stamma', label:'Årsstämma Brf Eken',
+    state:'idle', region:'eu-north-1', type:'BASIC', latency:'NORMAL',
+    created:'2 maj 2026 17:40', lastUsed:'14 maj 2026', idleDays:121, recording:true,
+    project:null, orphaned:true,
+    arn:'arn:aws:ivs:eu-north-1:4417:channel/y5Z6a7B8c9D0',
+    ingest:'rtmps://y5z6a7.global-contribute.live-video.net:443/app/',
+    key:'sk_eu-north-1_••••••••••••••••',
+    playback:'https://y5z6a7.eu-north-1.playback.live-video.net/…/master.m3u8',
+    health:null },
+];
+
+let selId = 'c1', query = '';
+const byId = id => resources.find(r => r.id === id);
+const isStale = r => r.state !== 'live' && r.idleDays >= STALE_DAYS;
+
+/* ---------------- kvot ---------------- */
+function paintQuota(){
+  const total = resources.length;
+  const live = resources.filter(r => r.state === 'live').length;
+  const idle = total - live;
+  const pct = n => (n / QUOTA) * 100;
+  $('#quota').innerHTML = `
+    <div class="line"><b>${total} av ${QUOTA}</b> kanaler allokerade</div>
+    <div class="bar">
+      <i class="used" style="width:${pct(live)}%"></i>
+      <i class="idle" style="width:${pct(idle)}%"></i>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--ink)"></i>${live} sänder</span>
+      <span><i style="background:#b6c0cc"></i>${idle} vilande</span>
+      <span><i style="background:#e3e8ee"></i>${QUOTA - total} lediga</span>
+    </div>`;
+}
+
+/* ---------------- lista ---------------- */
+function paintList(){
+  const q = query.trim().toLowerCase();
+  const rows = resources
+    .filter(r => !q || (r.name + ' ' + r.label).toLowerCase().includes(q))
+    .sort((a, b) => (b.state === 'live') - (a.state === 'live') || b.idleDays - a.idleDays);
+
+  $('#list').innerHTML = rows.length ? rows.map(r => `
+    <li class="${r.id === selId ? 'sel' : ''}">
+      <button class="row" data-pick="${r.id}">
+        <span class="rowtop">
+          <span class="nm">${esc(r.label)}</span>
+          ${statusChip(r)}
+        </span>
+        <span class="meta">${esc(r.name)} · ${r.project ? 'kopplad' : 'fristående'} · ${idleText(r)}</span>
+      </button></li>`).join('')
+    : '<li class="none">Ingen resurs matchar sökningen.</li>';
+}
+
+const statusChip = r => r.state === 'live'
+  ? '<span class="status live"><span class="dot"></span>Sänder</span>'
+  : isStale(r)
+    ? '<span class="status stale"><span class="dot"></span>Vilande</span>'
+    : '<span class="status idle"><span class="dot"></span>Vilande</span>';
+
+const idleText = r => r.state === 'live' ? 'aktiv' : r.idleDays === 0 ? 'använd idag' : `oanvänd ${r.idleDays} d`;
+
+/* ---------------- detalj ---------------- */
+function paintDoc(){
+  const r = byId(selId);
+  const doc = $('#doc');
+  if (!r){ doc.innerHTML = '<div class="docnone">Välj en resurs i listan.</div>'; return; }
+  const live = r.state === 'live';
+
+  doc.innerHTML = `
+    <div class="head">
+      <h2>${esc(r.label)} ${statusChip(r)}
+        ${r.project ? '<span class="tag proj">Kopplad till projekt</span>' : '<span class="tag">Fristående</span>'}
+      </h2>
+      <div class="facts">
+        <span>${esc(r.name)}</span>
+        <span>${esc(r.region)}</span>
+        <span>${esc(r.type)} · ${esc(r.latency)} latency</span>
+        <span>Skapad ${esc(r.created)}</span>
+      </div>
+      <div class="tools">
+        <button class="btn btn-sm" data-act="key">
+          <svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="3.2"/><path d="M11 12h9M17 12v3M20 12v2"/></svg>
+          Rotera stream key
+        </button>
+        ${r.project
+          ? `<button class="btn btn-sm" data-act="project">
+               <svg viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M18 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h5"/></svg>
+               Öppna projektet</button>`
+          : `<button class="btn btn-sm" data-act="attach">Koppla till projekt</button>`}
+        <span class="spacer"></span>
+        <button class="btn btn-sm btn-danger" data-act="teardown" ${live ? 'disabled title="Går inte att riva medan signal tas emot"' : ''}>
+          Riv resurs
+        </button>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="grid">
+        <div><div class="k">Status</div><div class="v">${live ? 'LIVE' : 'OFFLINE'}</div></div>
+        <div><div class="k">Senast använd</div><div class="v">${esc(r.lastUsed)}</div></div>
+        <div><div class="k">Inspelning</div><div class="v">${r.recording ? 'på' : 'av'}</div></div>
+        <div><div class="k">Vilande</div><div class="v">${live ? '–' : r.idleDays + ' dygn'}</div></div>
+      </div>
+
+      <div class="cols2">
+        <div>
+          <div class="block">
+            <h3>Anslutning</h3>
+            <div class="field"><label for="f-ing">Ingest-server</label>
+              <input class="input" id="f-ing" value="${esc(r.ingest)}" readonly><button class="btn btn-sm" data-copy="f-ing">Kopiera</button></div>
+            <div class="field"><label for="f-key">Stream key</label>
+              <input class="input" id="f-key" value="${esc(r.key)}" readonly><button class="btn btn-sm" data-copy="f-key">Kopiera</button></div>
+            <div class="field"><label for="f-play">Playback-URL</label>
+              <input class="input" id="f-play" value="${esc(r.playback)}" readonly><button class="btn btn-sm" data-copy="f-play">Kopiera</button></div>
+            <div class="field"><label for="f-arn">ARN</label>
+              <input class="input" id="f-arn" value="${esc(r.arn)}" readonly><button class="btn btn-sm" data-copy="f-arn">Kopiera</button></div>
+          </div>
+
+          <div class="block">
+            <h3>Projekt</h3>
+            ${r.project
+              ? `<div class="project">
+                   <div class="pn">${esc(r.project.name)}<span>${esc(r.project.state)}</span></div>
+                   <button class="btn btn-sm" data-act="project">Öppna</button>
+                 </div>`
+              : `<div class="project empty">Resursen är inte kopplad till något projekt.</div>`}
+          </div>
+        </div>
+
+        <div class="health">
+          <h4>Inkommande signal</h4>
+          ${live
+            ? `<dl>
+                 <dt>Bitrate</dt><dd>${esc(r.health.bitrate)}</dd>
+                 <dt>Upplösning</dt><dd>${esc(r.health.res)}</dd>
+                 <dt>Senaste bild</dt><dd>${esc(r.health.lastFrame)}</dd>
+                 <dt>Sänder sedan</dt><dd>${esc(r.health.uptime)}</dd>
+               </dl>`
+            : `<p>Ingen signal. Resursen är allokerad och väntar på enkoder.</p>`}
+        </div>
+      </div>
+
+      ${live
+        ? `<p class="note">Resursen kan inte rivas medan signal tas emot. Stoppa enkodern först.</p>`
+        : isStale(r)
+          ? `<p class="note warn">Vilande i ${r.idleDays} dygn${r.project ? '' : ' utan kopplat projekt'}. Kandidat för städning — en allokerad kanal upptar en plats av ${QUOTA} även när den inte kostar något.</p>`
+          : `<p class="note">Vilande resurser kostar inget men räknas mot kontots kanaltak.</p>`}
+    </div>`;
+}
+
+/* ---------------- händelser ---------------- */
+document.addEventListener('click', e => {
+  const pick = e.target.closest('[data-pick]');
+  if (pick){ selId = pick.dataset.pick; paintDoc(); paintList(); return; }
+
+  if (e.target.closest('#newRes')){
+    if (resources.length >= QUOTA){ alert(`Kanaltaket är nått (${QUOTA}). Riv en vilande resurs först.`); return; }
+    const n = prompt('Namn på resursen (matchar projektets identifierare)', 'ny-resurs');
+    if (!n || !n.trim()) return;
+    const id = 'c' + Date.now();
+    const slug = n.trim().toLowerCase().replace(/\s+/g,'-');
+    resources.unshift({
+      id, name:slug, label:n.trim(), state:'idle', region:'eu-north-1', type:'STANDARD', latency:'LOW',
+      created:'idag', lastUsed:'aldrig använd', idleDays:0, recording:true, project:null,
+      arn:'arn:aws:ivs:eu-north-1:4417:channel/' + id.slice(-12),
+      ingest:`rtmps://${slug}.global-contribute.live-video.net:443/app/`,
+      key:'sk_eu-north-1_••••••••••••••••',
+      playback:`https://${slug}.eu-north-1.playback.live-video.net/…/master.m3u8`,
+      health:null,
+    });
+    selId = id; paintQuota(); paintList(); paintDoc(); return;
+  }
+
+  const cp = e.target.closest('[data-copy]');
+  if (cp){ const el = document.getElementById(cp.dataset.copy); el.select(); document.execCommand?.('copy'); return; }
+
+  const r = byId(selId);
+  const act = e.target.closest('[data-act]')?.dataset.act;
+  if (!act || !r) return;
+
+  if (act === 'project' && r.project) alert(`Öppnar projektet: ${r.project.name}`);
+  if (act === 'attach')  alert('Öppnar väljare för att koppla resursen till ett projekt.');
+  if (act === 'key'){
+    if (r.state === 'live' && !confirm('Sändning pågår. Att rotera stream key bryter enkoderns anslutning. Fortsätt?')) return;
+    alert('Ny stream key genererad. Den gamla slutar gälla omedelbart.');
+  }
+  if (act === 'teardown'){
+    if (!confirm(`Riv ${r.label}?\n\nIngest-server och stream key slutar gälla. Inspelningar i videoarkivet påverkas inte.`)) return;
+    resources = resources.filter(x => x !== r);
+    selId = resources[0]?.id ?? null;
+    paintQuota(); paintList(); paintDoc();
+  }
+});
+
+document.addEventListener('input', e => { if (e.target.id === 'q'){ query = e.target.value; paintList(); } });
+
+paintQuota(); paintList(); paintDoc();
+</script>
+</body>
+</html>

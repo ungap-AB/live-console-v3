@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dagordningar</title>
+<style>
+  :root{
+    --ink:#1b2027; --ink-2:#5a6572; --ink-3:#8b95a1;
+    --line:#d7dde4; --line-soft:#e8ecf1;
+    --bg:#f2f4f7; --panel:#fff;
+    --accent-soft:#eef1f5;
+    --odm:#1d4f96; --odm-bg:#e9f0fb;
+    --danger:#a51c1c;
+    --focus:#2f6fd0;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --sans:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  button,input{font:inherit;color:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+  /* ===== vyns egen ram — motsvarar det utrymme skalet ger komponenten ===== */
+  .view{display:flex;flex-direction:column;height:100vh}
+  .view > header{
+    display:flex;align-items:center;gap:14px;flex:none;
+    padding:16px 26px;border-bottom:1px solid var(--line);background:var(--panel);
+  }
+  .view > header h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-.015em}
+  .view > header .sub{font-size:12.5px;color:var(--ink-3);margin-top:1px}
+  .build{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:3px 8px}
+  .view > .content{flex:1;padding:22px 26px;overflow:auto;min-height:0}
+
+  .btn{border:1px solid var(--line);background:#fbfcfd;border-radius:6px;padding:7px 13px;font-weight:500;white-space:nowrap}
+  .btn:hover:not(:disabled){background:#f1f4f8}
+  .btn-sm{padding:5px 10px;font-size:13px}
+  .btn-danger{color:var(--danger);border-color:#e5c4c4;background:#fdf6f6}
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px;border:1px solid transparent}
+  .tag.used{background:var(--odm-bg);color:var(--odm);border-color:#c6d8f0}
+  .tag.free{background:#eef1f5;color:var(--ink-3);border-color:var(--line)}
+
+  .split{display:grid;grid-template-columns:296px 1fr;gap:18px;height:100%;min-height:0}
+  @media (max-width:980px){.split{grid-template-columns:1fr;height:auto}}
+
+  .pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0}
+  .pane .top{padding:12px;border-bottom:1px solid var(--line-soft);display:flex;gap:8px}
+  .search{flex:1;position:relative;display:flex;align-items:center}
+  .search svg{position:absolute;left:9px;width:15px;height:15px;stroke:var(--ink-3);fill:none;stroke-width:1.7}
+  .search input{width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 10px 7px 30px;background:#fbfcfd}
+  .pane ul{list-style:none;margin:0;padding:6px;overflow:auto;flex:1}
+  .pane li button{width:100%;text-align:left;border:0;background:none;padding:9px 11px;border-radius:8px;display:block}
+  .pane li button:hover{background:var(--accent-soft)}
+  .pane li.sel button{background:#e6eaf0}
+  .nm{font-weight:600;display:flex;align-items:center;gap:8px}
+  .nm .dot{width:6px;height:6px;border-radius:50%;background:var(--odm);flex:none}
+  .meta{font-size:12px;color:var(--ink-3);margin-top:1px}
+  .pane .none{padding:22px 14px;text-align:center;color:var(--ink-3);font-size:13px}
+
+  .doc{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0}
+  .doc .head{padding:16px 20px 14px;border-bottom:1px solid var(--line-soft)}
+  .doc h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+  .facts{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:7px;font-size:12.5px;color:var(--ink-3)}
+  .tools{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .tools .spacer{flex:1}
+  .doc .body{padding:14px 20px 20px;overflow:auto;flex:1}
+
+  ol.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;max-width:720px}
+  ol.items li{display:flex;align-items:flex-start;gap:11px;border:1px solid var(--line-soft);border-radius:8px;padding:9px 11px;background:#fff}
+  ol.items li.dragging{opacity:.4}
+  ol.items li.over{border-color:var(--focus);box-shadow:inset 0 2px 0 var(--focus)}
+  .grip{color:var(--line);cursor:grab;font-size:15px;line-height:1.3;user-select:none;flex:none}
+  .no{font-family:var(--mono);font-size:12px;color:var(--ink-3);width:20px;text-align:right;flex:none;padding-top:2px}
+  .txt{flex:1;min-width:0}
+  .txt b{font-weight:500;display:block}
+  .txt em{font-style:normal;display:block;font-size:12px;color:var(--ink-3);font-family:var(--mono)}
+  .txt input{width:100%;border:1px solid var(--line);border-radius:5px;padding:5px 7px;margin-bottom:4px}
+  .txt input.ref{font-family:var(--mono);font-size:12px;max-width:220px}
+  .rowbtns{display:flex;gap:2px;flex:none}
+  .ib{border:0;background:none;color:var(--ink-3);width:26px;height:26px;border-radius:5px;display:grid;place-items:center}
+  .ib:hover{background:var(--accent-soft);color:var(--ink)}
+  .ib.del:hover{background:#fdf0f0;color:var(--danger)}
+  .ib svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .addrow{margin-top:10px;max-width:720px}
+  .hint{margin-top:16px;max-width:720px;padding:10px 13px;border-radius:7px;font-size:13px;background:#eef2f7;color:var(--ink-2);border:1px solid var(--line)}
+  .docnone{height:100%;display:grid;place-items:center;color:var(--ink-3);padding:40px}
+</style>
+</head>
+<body>
+
+<div class="view">
+  <header>
+    <div>
+      <h1>Dagordningar</h1>
+      <div class="sub">Mallar som kan läggas in i projekt</div>
+    </div>
+    <span class="build">fristående vy</span>
+  </header>
+
+  <div class="content">
+    <div class="split">
+      <section class="pane" aria-label="Dagordningar">
+        <div class="top">
+          <div class="search">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+            <input id="q" type="search" placeholder="Sök dagordning" aria-label="Sök dagordning">
+          </div>
+          <button class="btn btn-sm" id="newAgenda">Ny</button>
+        </div>
+        <ul id="list"></ul>
+      </section>
+
+      <section class="doc" id="doc" aria-label="Vald dagordning"></section>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---- data ---- */
+let agendas = [
+  { id:'d1', name:'Kommunfullmäktige – standard', desc:'Ordinarie sammanträde', changed:'8 sep 2026', usedIn:4,
+    items:[{t:'Mötet öppnas'},{t:'Upprop och justering'},{t:'Fastställande av dagordning'},
+           {t:'Allmänhetens frågestund'},{t:'Årsredovisning 2025',ref:'KS 2026/184'},
+           {t:'Interpellationer och frågor'},{t:'Valärenden'},{t:'Mötet avslutas'}] },
+  { id:'d2', name:'Kommunstyrelsen', desc:'Månatligt sammanträde', changed:'2 sep 2026', usedIn:6,
+    items:[{t:'Sammanträdet öppnas'},{t:'Föregående protokoll'},{t:'Ekonomisk uppföljning',ref:'KS 2026/12'},
+           {t:'Beslutsärenden'},{t:'Anmälningsärenden'},{t:'Sammanträdet avslutas'}] },
+  { id:'d3', name:'Årsstämma bostadsrättsförening', desc:'Mall enligt stadgarna', changed:'21 aug 2026', usedIn:0,
+    items:[{t:'Stämmans öppnande'},{t:'Val av stämmoordförande'},{t:'Godkännande av röstlängd'},
+           {t:'Styrelsens årsredovisning'},{t:'Revisorernas berättelse'},{t:'Ansvarsfrihet för styrelsen'},
+           {t:'Val av styrelse'},{t:'Stämmans avslutande'}] },
+  { id:'d4', name:'Budgetfullmäktige', desc:'Utökad dagordning för budgetdebatt', changed:'14 jun 2026', usedIn:1,
+    items:[{t:'Mötet öppnas'},{t:'Budgetramar 2027',ref:'KS 2026/301'},{t:'Partiernas anföranden'},
+           {t:'Debatt'},{t:'Omröstning'},{t:'Mötet avslutas'}] },
+];
+let selId = 'd1', editIdx = null, query = '';
+
+const IB = {
+  edit:'<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/></svg>',
+  del:'<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6.5 7l.9 12h9.2l.9-12"/></svg>',
+  ok:'<svg viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></svg>',
+  no:'<svg viewBox="0 0 24 24"><path d="M9 5 4 10l5 5"/><path d="M4 10h9a6 6 0 0 1 0 12h-2"/></svg>',
+};
+
+/* ---- rendering ---- */
+function paintList(){
+  const q = query.trim().toLowerCase();
+  const hits = agendas.filter(a => !q || (a.name + ' ' + a.desc).toLowerCase().includes(q));
+  $('#list').innerHTML = hits.length ? hits.map(a => `
+    <li class="${a.id === selId ? 'sel' : ''}">
+      <button data-pick="${a.id}">
+        <span class="nm">${a.usedIn ? '<span class="dot" title="Används i projekt"></span>' : ''}${esc(a.name)}</span>
+        <span class="meta">${a.items.length} punkter · ändrad ${a.changed}</span>
+      </button></li>`).join('')
+    : '<li class="none">Ingen dagordning matchar sökningen.</li>';
+}
+
+function paintDoc(){
+  const a = agendas.find(x => x.id === selId);
+  const doc = $('#doc');
+  if (!a){ doc.innerHTML = '<div class="docnone">Välj en dagordning i listan.</div>'; return; }
+  doc.innerHTML = `
+    <div class="head">
+      <h2>${esc(a.name)}</h2>
+      <div class="facts">
+        <span>${esc(a.desc)}</span><span>${a.items.length} punkter</span><span>Ändrad ${a.changed}</span>
+        ${a.usedIn ? `<span class="tag used">Används i ${a.usedIn} projekt</span>` : `<span class="tag free">Används inte</span>`}
+      </div>
+      <div class="tools">
+        <button class="btn btn-sm" data-act="rename">Byt namn</button>
+        <button class="btn btn-sm" data-act="dup">Duplicera</button>
+        <span class="spacer"></span>
+        <button class="btn btn-sm btn-danger" data-act="trash">Flytta till papperskorgen</button>
+      </div>
+    </div>
+    <div class="body">
+      <ol class="items" id="items">${a.items.map((it,i) => i === editIdx ? rowEdit(it,i) : rowView(it,i)).join('')}</ol>
+      <div class="addrow"><button class="btn btn-sm" data-act="add">Lägg till punkt</button></div>
+      ${a.usedIn ? `<p class="hint">Ändringar slår igenom i projekt som ännu inte publicerats. Publicerade sändningar har en fryst kopia och påverkas inte.</p>` : ''}
+    </div>`;
+}
+
+const rowView = (it,i) => `
+  <li draggable="true" data-i="${i}">
+    <span class="grip" aria-hidden="true">⠿</span><span class="no">${i+1}</span>
+    <span class="txt"><b>${esc(it.t)}</b>${it.ref ? `<em>${esc(it.ref)}</em>` : ''}</span>
+    <span class="rowbtns">
+      <button class="ib" data-edit="${i}" title="Redigera" aria-label="Redigera">${IB.edit}</button>
+      <button class="ib del" data-del="${i}" title="Ta bort" aria-label="Ta bort">${IB.del}</button>
+    </span></li>`;
+
+const rowEdit = (it,i) => `
+  <li data-i="${i}">
+    <span class="grip" aria-hidden="true">⠿</span><span class="no">${i+1}</span>
+    <span class="txt">
+      <input id="et" value="${esc(it.t)}" placeholder="Rubrik" aria-label="Rubrik">
+      <input id="er" class="ref" value="${esc(it.ref||'')}" placeholder="Ärendenummer (valfritt)" aria-label="Ärendenummer">
+    </span>
+    <span class="rowbtns">
+      <button class="ib" data-save="${i}" title="Spara" aria-label="Spara">${IB.ok}</button>
+      <button class="ib" data-cancel="1" title="Avbryt" aria-label="Avbryt">${IB.no}</button>
+    </span></li>`;
+
+/* ---- händelser ---- */
+document.addEventListener('click', e => {
+  const pick = e.target.closest('[data-pick]');
+  if (pick){ selId = pick.dataset.pick; editIdx = null; paintList(); paintDoc(); return; }
+
+  if (e.target.closest('#newAgenda')){
+    const id = 'd' + Date.now();
+    agendas.unshift({ id, name:'Ny dagordning', desc:'Utkast', changed:'idag', usedIn:0, items:[] });
+    selId = id; editIdx = null; query = ''; $('#q').value = ''; paintList(); paintDoc(); return;
+  }
+
+  const a = agendas.find(x => x.id === selId);
+  const act = e.target.closest('[data-act]')?.dataset.act;
+  if (act && a){
+    if (act === 'add'){ a.items.push({t:'Ny punkt'}); editIdx = a.items.length-1; paintDoc(); $('#et')?.select(); return; }
+    if (act === 'dup'){
+      const c = JSON.parse(JSON.stringify(a));
+      c.id = 'd'+Date.now(); c.name = a.name+' (kopia)'; c.usedIn = 0; c.changed = 'idag';
+      agendas.splice(agendas.indexOf(a)+1, 0, c); selId = c.id; editIdx = null; paintList(); paintDoc(); return;
+    }
+    if (act === 'rename'){
+      const n = prompt('Namn på dagordningen', a.name);
+      if (n && n.trim()){ a.name = n.trim(); a.changed = 'idag'; paintList(); paintDoc(); }
+      return;
+    }
+    if (act === 'trash'){
+      if (a.usedIn && !confirm(`${a.name} används i ${a.usedIn} projekt. Flytta till papperskorgen ändå?`)) return;
+      agendas = agendas.filter(x => x !== a);
+      selId = agendas[0]?.id ?? null; editIdx = null; paintList(); paintDoc(); return;
+    }
+  }
+  if (!a) return;
+
+  const ed = e.target.closest('[data-edit]');
+  if (ed){ editIdx = +ed.dataset.edit; paintDoc(); $('#et')?.select(); return; }
+
+  const sv = e.target.closest('[data-save]');
+  if (sv){
+    const t = $('#et').value.trim();
+    if (!t){ $('#et').focus(); return; }
+    a.items[+sv.dataset.save] = { t, ref: $('#er').value.trim() || undefined };
+    a.changed = 'idag'; editIdx = null; paintList(); paintDoc(); return;
+  }
+  if (e.target.closest('[data-cancel]')){ editIdx = null; paintDoc(); return; }
+
+  const dl = e.target.closest('[data-del]');
+  if (dl){ a.items.splice(+dl.dataset.del, 1); a.changed = 'idag'; editIdx = null; paintList(); paintDoc(); }
+});
+
+document.addEventListener('input', e => { if (e.target.id === 'q'){ query = e.target.value; paintList(); } });
+
+document.addEventListener('keydown', e => {
+  if (editIdx === null) return;
+  if (e.key === 'Enter'){ e.preventDefault(); $('[data-save]')?.click(); }
+  if (e.key === 'Escape'){ editIdx = null; paintDoc(); }
+});
+
+let from = null;
+document.addEventListener('dragstart', e => {
+  const li = e.target.closest('#items li'); if (!li) return;
+  from = +li.dataset.i; li.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move';
+});
+document.addEventListener('dragover', e => {
+  const li = e.target.closest('#items li'); if (!li || from === null) return;
+  e.preventDefault();
+  document.querySelectorAll('#items li').forEach(x => x.classList.remove('over'));
+  li.classList.add('over');
+});
+document.addEventListener('drop', e => {
+  const li = e.target.closest('#items li'); if (!li || from === null) return;
+  e.preventDefault();
+  const a = agendas.find(x => x.id === selId);
+  const [moved] = a.items.splice(from, 1);
+  a.items.splice(+li.dataset.i, 0, moved);
+  a.changed = 'idag'; from = null; editIdx = null; paintDoc();
+});
+document.addEventListener('dragend', () => {
+  from = null;
+  document.querySelectorAll('#items li').forEach(x => x.classList.remove('dragging','over'));
+});
+
+paintList();
+paintDoc();
+</script>
+</body>
+</html>

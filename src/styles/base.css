@@ -1,0 +1,156 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.btn {
+  border: 1px solid var(--line);
+  background: #fbfcfd;
+  border-radius: 6px;
+  padding: 7px 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+  background: #f1f4f8;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #333a44;
+}
+
+.btn-danger {
+  color: var(--danger);
+  border-color: #e5c4c4;
+  background: #fdf6f6;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #fdf0f0;
+}
+
+.view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.view > header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: none;
+  padding: 16px 26px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.view > header h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.view > header .sub {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  margin-top: 1px;
+}
+
+.view > .content {
+  flex: 1;
+  padding: 22px 26px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.note {
+  margin-top: 16px;
+  max-width: 760px;
+  padding: 10px 13px;
+  border-radius: 7px;
+  font-size: 13px;
+  background: #eef2f7;
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+}
+
+.note.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-color: #f0dcb4;
+}
+
+.ib {
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+}
+
+.ib:hover {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.ib.del:hover {
+  background: #fdf0f0;
+  color: var(--danger);
+}

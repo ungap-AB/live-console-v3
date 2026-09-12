@@ -1,0 +1,8 @@
+.project-list-pane {
+  height: 100%;
+  max-height: 100%;
+}
+
+.project-row .rowtop {
+  gap: 8px;
+}

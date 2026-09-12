@@ -1,0 +1,195 @@
+.three {
+  display: grid;
+  grid-template-columns: 236px 300px 1fr;
+  gap: 18px;
+  height: 100%;
+  min-height: 0;
+}
+
+@media (max-width: 1120px) {
+  .three {
+    grid-template-columns: 210px 260px 1fr;
+  }
+}
+
+@media (max-width: 920px) {
+  .three {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}
+
+.pane .top h2 {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  flex: 1;
+}
+
+.pane li button.user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dom .nm {
+  font-weight: 600;
+  font-family: var(--mono);
+  font-size: 13px;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dom .org {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-weight: 400;
+  font-family: var(--sans);
+  display: block;
+  margin-top: 1px;
+}
+
+.pill {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 6px;
+  flex: none;
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  flex: none;
+  background: #dde3ea;
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.avatar.lg {
+  width: 44px;
+  height: 44px;
+  font-size: 15px;
+}
+
+.uinfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.uinfo .un {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uinfo .ue {
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.idrow {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.doc .mail {
+  font-size: 13px;
+  color: var(--ink-3);
+  font-family: var(--mono);
+  margin-top: 2px;
+}
+
+.badges {
+  display: flex;
+  gap: 8px;
+  margin-top: 11px;
+  flex-wrap: wrap;
+}
+
+.roles {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.role {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.role.on {
+  border-color: #b9ceec;
+  background: #f5f9ff;
+}
+
+.role input {
+  margin: 3px 0 0;
+}
+
+.role .rt {
+  flex: 1;
+}
+
+.role .rt b {
+  display: block;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.role .rt span {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  margin-top: 1px;
+}
+
+ul.log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+ul.log li {
+  display: flex;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+ul.log li:last-child {
+  border-bottom: 0;
+}
+
+ul.log .t {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+  width: 112px;
+  flex: none;
+}

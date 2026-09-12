@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Användare</title>
+<style>
+  :root{
+    --ink:#1b2027; --ink-2:#5a6572; --ink-3:#8b95a1;
+    --line:#d7dde4; --line-soft:#e8ecf1;
+    --bg:#f2f4f7; --panel:#fff;
+    --accent-soft:#eef1f5;
+    --live:#0a8f3c; --live-bg:#e6f4ea;
+    --odm:#1d4f96; --odm-bg:#e9f0fb;
+    --warn:#8a5a00; --warn-bg:#fdf3e0;
+    --danger:#a51c1c;
+    --focus:#2f6fd0;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --sans:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  button,input,select{font:inherit;color:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+  .view{display:flex;flex-direction:column;height:100vh}
+  .view > header{display:flex;align-items:center;gap:14px;flex:none;padding:16px 26px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .view > header h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-.015em}
+  .view > header .sub{font-size:12.5px;color:var(--ink-3);margin-top:1px}
+  .build{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:3px 8px}
+  .view > .content{flex:1;padding:22px 26px;overflow:auto;min-height:0}
+
+  .btn{border:1px solid var(--line);background:#fbfcfd;border-radius:6px;padding:7px 13px;font-weight:500;white-space:nowrap;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover:not(:disabled){background:#f1f4f8}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn-primary{background:var(--ink);border-color:var(--ink);color:#fff}
+  .btn-primary:hover:not(:disabled){background:#2b323b}
+  .btn-danger{color:var(--danger);border-color:#e5c4c4;background:#fdf6f6}
+  .btn-sm{padding:5px 10px;font-size:13px}
+  .btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:20px;border:1px solid var(--line);background:#eef1f5;color:var(--ink-2);white-space:nowrap}
+  .tag.admin{background:var(--odm-bg);color:var(--odm);border-color:#c6d8f0}
+  .tag.active{background:var(--live-bg);color:var(--live);border-color:#bfe3cc}
+  .tag.invited{background:var(--warn-bg);color:var(--warn);border-color:#f0dcb4}
+  .tag.off{background:#eef1f5;color:var(--ink-3)}
+
+  .three{display:grid;grid-template-columns:236px 300px 1fr;gap:18px;height:100%;min-height:0}
+  @media (max-width:1120px){.three{grid-template-columns:210px 260px 1fr}}
+  @media (max-width:920px){.three{grid-template-columns:1fr;height:auto}}
+
+  .pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0}
+  .pane .top{padding:12px;border-bottom:1px solid var(--line-soft);display:flex;gap:8px;align-items:center}
+  .pane .top h2{margin:0;font-size:12.5px;font-weight:600;color:var(--ink-2);flex:1}
+  .search{flex:1;position:relative;display:flex;align-items:center}
+  .search svg{position:absolute;left:9px;width:15px;height:15px;stroke:var(--ink-3);fill:none;stroke-width:1.7}
+  .search input{width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 10px 7px 30px;background:#fbfcfd}
+  .pane ul{list-style:none;margin:0;padding:6px;overflow:auto;flex:1}
+  .pane li button.row{width:100%;text-align:left;border:0;background:none;padding:9px 11px;border-radius:8px;display:flex;align-items:center;gap:10px}
+  .pane li button.row:hover{background:var(--accent-soft)}
+  .pane li.sel button.row{background:#e6eaf0}
+  .pane .none{padding:22px 14px;text-align:center;color:var(--ink-3);font-size:13px}
+
+  .dom .nm{font-weight:600;font-family:var(--mono);font-size:13px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dom .org{font-size:12px;color:var(--ink-3);font-weight:400;font-family:var(--sans);display:block;margin-top:1px}
+  .pill{font-size:11.5px;color:var(--ink-3);background:#fff;border:1px solid var(--line);border-radius:10px;padding:0 6px;flex:none}
+
+  .avatar{width:30px;height:30px;border-radius:50%;flex:none;background:#dde3ea;color:var(--ink-2);display:grid;place-items:center;font-size:11.5px;font-weight:600}
+  .avatar.lg{width:44px;height:44px;font-size:15px}
+  .uinfo{flex:1;min-width:0}
+  .uinfo .un{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .uinfo .ue{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .doc{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0}
+  .doc .head{padding:16px 20px 14px;border-bottom:1px solid var(--line-soft)}
+  .idrow{display:flex;align-items:center;gap:13px}
+  .doc h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em}
+  .doc .mail{font-size:13px;color:var(--ink-3);font-family:var(--mono);margin-top:2px}
+  .badges{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+  .tools{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+  .tools .spacer{flex:1}
+  .doc .body{padding:16px 20px 22px;overflow:auto;flex:1}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);border-radius:8px;overflow:hidden;max-width:760px;margin-bottom:18px}
+  .grid > div{background:#fff;padding:10px 12px}
+  .grid .k{font-size:11.5px;color:var(--ink-3)}
+  .grid .v{font-size:13px;margin-top:2px;font-family:var(--mono)}
+
+  .block{margin-bottom:18px;max-width:760px}
+  .block h3{margin:0 0 8px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+
+  .roles{display:flex;flex-direction:column;gap:6px}
+  .role{display:flex;align-items:flex-start;gap:11px;border:1px solid var(--line-soft);border-radius:8px;padding:10px 12px;background:#fff}
+  .role.on{border-color:#b9ceec;background:#f5f9ff}
+  .role input{margin:3px 0 0}
+  .role .rt{flex:1}
+  .role .rt b{display:block;font-weight:600;font-size:13.5px}
+  .role .rt span{display:block;font-size:12.5px;color:var(--ink-3);margin-top:1px}
+
+  ul.log{list-style:none;margin:0;padding:0;border:1px solid var(--line-soft);border-radius:8px;overflow:hidden;font-size:13px}
+  ul.log li{display:flex;gap:12px;padding:8px 12px;border-bottom:1px solid var(--line-soft)}
+  ul.log li:last-child{border-bottom:0}
+  ul.log .t{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);width:112px;flex:none}
+
+  .note{padding:10px 13px;border-radius:7px;font-size:13px;background:#eef2f7;color:var(--ink-2);border:1px solid var(--line);max-width:760px}
+  .note.warn{background:var(--warn-bg);color:var(--warn);border-color:#f0dcb4}
+  .docnone{height:100%;display:grid;place-items:center;color:var(--ink-3);padding:40px;text-align:center}
+</style>
+</head>
+<body>
+
+<div class="view">
+  <header>
+    <div>
+      <h1>Användare</h1>
+      <div class="sub">Domäner, konton och behörigheter</div>
+    </div>
+    <span class="build">fristående vy</span>
+  </header>
+
+  <div class="content">
+    <div class="three">
+      <section class="pane" aria-label="Domäner">
+        <div class="top"><h2>Domäner</h2><button class="btn btn-sm" id="newDomain">Ny</button></div>
+        <ul id="domains"></ul>
+      </section>
+
+      <section class="pane" aria-label="Användare">
+        <div class="top">
+          <div class="search">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+            <input id="q" type="search" placeholder="Sök användare" aria-label="Sök användare">
+          </div>
+          <button class="btn btn-sm" id="invite">Bjud in</button>
+        </div>
+        <ul id="users"></ul>
+      </section>
+
+      <section class="doc" id="doc" aria-label="Användarens detaljer"></section>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const initials = n => n.split(/\s+/).slice(0,2).map(w => w[0]).join('').toUpperCase();
+
+/* ---------------- roller ---------------- */
+const ROLES = {
+  admin:     { label:'Administratör', desc:'Hanterar användare, domäner och live-resurser.' },
+  operator:  { label:'Operatör',      desc:'Skapar projekt, sänder och publicerar ondemand.' },
+  editor:    { label:'Redaktör',      desc:'Hanterar dagordningar, namnlistor och videoarkiv utan att sända.' },
+  reviewer:  { label:'Granskare',     desc:'Kan bara öppna granskningslänkar och godkänna före publicering.' },
+};
+
+/* ---------------- data ---------------- */
+const domains = [
+  { id:'d1', host:'kalmar.se',     org:'Kalmar kommun' },
+  { id:'d2', host:'kalmarlan.se',  org:'Region Kalmar län' },
+  { id:'d3', host:'brfeken.se',    org:'Brf Eken' },
+];
+
+let users = [
+  { id:'u1', dom:'d1', name:'Anders Mårtén',    mail:'anders.marten@kalmar.se',   roles:['admin','operator'], state:'active',  last:'idag 09:12',      created:'2 feb 2024', sso:true,
+    log:[['12 sep 09:12','Loggade in'],['11 sep 14:40','Publicerade ondemand: KF 27 augusti'],['10 sep 08:02','Skapade live-resurs kf-2409']] },
+  { id:'u2', dom:'d1', name:'Ingrid Blomkvist', mail:'ingrid.blomkvist@kalmar.se', roles:['operator'],         state:'active',  last:'igår 16:30',      created:'8 mar 2024', sso:true,
+    log:[['11 sep 16:30','Loggade in'],['11 sep 16:44','Startade sändning: KS 3 september']] },
+  { id:'u3', dom:'d1', name:'Lars Öberg',       mail:'lars.oberg@kalmar.se',       roles:['editor'],           state:'active',  last:'3 sep 11:05',     created:'8 mar 2024', sso:true,
+    log:[['3 sep 11:05','Loggade in'],['3 sep 11:20','Redigerade dagordning: Kommunstyrelsen']] },
+  { id:'u4', dom:'d1', name:'Clara Mårtén',     mail:'clara.marten@kalmar.se',     roles:['reviewer'],         state:'invited', last:'aldrig',          created:'9 sep 2026', sso:false,
+    log:[['9 sep 10:14','Inbjudan skickad']] },
+  { id:'u5', dom:'d1', name:'Tomas Ek',         mail:'tomas.ek@kalmar.se',         roles:['operator'],         state:'disabled',last:'14 maj 2026',     created:'12 jan 2025', sso:true,
+    log:[['1 jun 08:00','Kontot inaktiverades av Anders Mårtén'],['14 maj 09:30','Loggade in']] },
+
+  { id:'u6', dom:'d2', name:'Sofia Lindqvist',  mail:'sofia.lindqvist@kalmarlan.se', roles:['admin'],          state:'active',  last:'igår 08:45',      created:'19 apr 2025', sso:true,
+    log:[['11 sep 08:45','Loggade in']] },
+  { id:'u7', dom:'d2', name:'Nils Persson',     mail:'nils.persson@kalmarlan.se',    roles:['operator'],       state:'active',  last:'8 sep 13:02',     created:'19 apr 2025', sso:true,
+    log:[['8 sep 13:02','Loggade in']] },
+
+  { id:'u8', dom:'d3', name:'Majken Mårtén',    mail:'majken@brfeken.se',           roles:['operator','admin'],state:'active',  last:'15 maj 2026',     created:'2 maj 2026', sso:false,
+    log:[['15 maj 10:02','Trimmade inspelning: Årsstämma 2026']] },
+];
+
+let selDom = 'd1', selUser = 'u1', query = '';
+
+const domUsers = d => users.filter(u => u.dom === d);
+const byId = id => users.find(u => u.id === id);
+
+/* ---------------- kolumn 1 ---------------- */
+function paintDomains(){
+  $('#domains').innerHTML = domains.map(d => `
+    <li class="${d.id === selDom ? 'sel' : ''}">
+      <button class="row dom" data-dom="${d.id}">
+        <span class="nm">${esc(d.host)}<span class="org">${esc(d.org)}</span></span>
+        <span class="pill">${domUsers(d.id).length}</span>
+      </button></li>`).join('');
+}
+
+/* ---------------- kolumn 2 ---------------- */
+function paintUsers(){
+  const q = query.trim().toLowerCase();
+  const rows = domUsers(selDom)
+    .filter(u => !q || (u.name + ' ' + u.mail).toLowerCase().includes(q))
+    .sort((a,b) => a.name.localeCompare(b.name,'sv'));
+
+  $('#users').innerHTML = rows.length ? rows.map(u => `
+    <li class="${u.id === selUser ? 'sel' : ''}">
+      <button class="row" data-user="${u.id}">
+        <span class="avatar">${initials(u.name)}</span>
+        <span class="uinfo">
+          <span class="un">${esc(u.name)}</span>
+          <span class="ue">${esc(u.roles.map(r => ROLES[r].label).join(', '))}</span>
+        </span>
+        ${u.state === 'invited' ? '<span class="tag invited">Inbjuden</span>'
+          : u.state === 'disabled' ? '<span class="tag off">Inaktiv</span>' : ''}
+      </button></li>`).join('')
+    : `<li class="none">${q ? 'Ingen användare matchar sökningen.' : 'Domänen har inga användare.'}</li>`;
+}
+
+/* ---------------- kolumn 3 ---------------- */
+function paintDoc(){
+  const u = byId(selUser);
+  const doc = $('#doc');
+  if (!u || u.dom !== selDom){
+    doc.innerHTML = '<div class="docnone">Välj en användare i listan.</div>';
+    return;
+  }
+  const dom = domains.find(d => d.id === u.dom);
+  const stateTag = u.state === 'active' ? '<span class="tag active">Aktiv</span>'
+    : u.state === 'invited' ? '<span class="tag invited">Inbjuden – har inte loggat in</span>'
+    : '<span class="tag off">Inaktiverad</span>';
+
+  const admins = domUsers(u.dom).filter(x => x.roles.includes('admin') && x.state === 'active');
+  const lastAdmin = u.roles.includes('admin') && admins.length === 1 && u.state === 'active';
+
+  doc.innerHTML = `
+    <div class="head">
+      <div class="idrow">
+        <span class="avatar lg">${initials(u.name)}</span>
+        <div>
+          <h2>${esc(u.name)}</h2>
+          <div class="mail">${esc(u.mail)}</div>
+        </div>
+      </div>
+      <div class="badges">
+        ${stateTag}
+        ${u.roles.map(r => `<span class="tag ${r === 'admin' ? 'admin' : ''}">${ROLES[r].label}</span>`).join('')}
+        <span class="tag">${esc(dom.org)}</span>
+      </div>
+      <div class="tools">
+        ${u.state === 'invited'
+          ? '<button class="btn btn-sm" data-act="resend">Skicka om inbjudan</button>'
+          : '<button class="btn btn-sm" data-act="reset">Skicka återställningslänk</button>'}
+        ${u.state === 'disabled'
+          ? '<button class="btn btn-sm btn-primary" data-act="enable">Aktivera konto</button>'
+          : `<button class="btn btn-sm" data-act="disable" ${lastAdmin ? 'disabled title="Domänen måste ha minst en aktiv administratör"' : ''}>Inaktivera konto</button>`}
+        <span class="spacer"></span>
+        <button class="btn btn-sm btn-danger" data-act="remove" ${lastAdmin ? 'disabled title="Domänen måste ha minst en aktiv administratör"' : ''}>Ta bort</button>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="grid">
+        <div><div class="k">Senaste inloggning</div><div class="v">${esc(u.last)}</div></div>
+        <div><div class="k">Konto skapat</div><div class="v">${esc(u.created)}</div></div>
+        <div><div class="k">Inloggning</div><div class="v">${u.sso ? 'SSO' : 'e-post'}</div></div>
+        <div><div class="k">Domän</div><div class="v">${esc(dom.host)}</div></div>
+      </div>
+
+      <div class="block">
+        <h3>Behörigheter</h3>
+        <div class="roles">
+          ${Object.entries(ROLES).map(([k, r]) => {
+            const on = u.roles.includes(k);
+            const lock = k === 'admin' && lastAdmin;
+            return `<label class="role ${on ? 'on' : ''}">
+              <input type="checkbox" data-role="${k}" ${on ? 'checked' : ''} ${lock ? 'disabled' : ''}>
+              <span class="rt"><b>${r.label}</b><span>${r.desc}</span></span>
+            </label>`;
+          }).join('')}
+        </div>
+        ${lastAdmin ? '<p class="note warn" style="margin-top:10px">Enda aktiva administratören på ' + esc(dom.host) + '. Utse en till innan rollen tas bort.</p>' : ''}
+      </div>
+
+      <div class="block">
+        <h3>Senaste aktivitet</h3>
+        <ul class="log">
+          ${u.log.map(([t, what]) => `<li><span class="t">${esc(t)}</span><span>${esc(what)}</span></li>`).join('')}
+        </ul>
+      </div>
+
+      ${u.state === 'disabled'
+        ? '<p class="note">Inaktiverade konton kan inte logga in men behålls i historiken — tidigare sändningar och ändringar står kvar på användaren.</p>'
+        : u.roles.length === 1 && u.roles[0] === 'reviewer'
+          ? '<p class="note">Granskare når bara granskningslänkar. De ser varken projektlistan eller videoarkivet.</p>'
+          : ''}
+    </div>`;
+}
+
+function paintAll(){ paintDomains(); paintUsers(); paintDoc(); }
+
+/* ---------------- händelser ---------------- */
+document.addEventListener('click', e => {
+  const d = e.target.closest('[data-dom]');
+  if (d){
+    selDom = d.dataset.dom; query = ''; $('#q').value = '';
+    selUser = domUsers(selDom)[0]?.id ?? null;
+    paintAll(); return;
+  }
+
+  const uu = e.target.closest('[data-user]');
+  if (uu){ selUser = uu.dataset.user; paintUsers(); paintDoc(); return; }
+
+  if (e.target.closest('#newDomain')){ alert('Öppnar formulär för att lägga till en domän.'); return; }
+  if (e.target.closest('#invite')){
+    const dom = domains.find(x => x.id === selDom);
+    alert(`Bjud in användare till ${dom.host}. Inbjudan skickas per e-post och kontot står som Inbjuden tills den accepteras.`);
+    return;
+  }
+
+  const u = byId(selUser);
+  const act = e.target.closest('[data-act]')?.dataset.act;
+  if (!act || !u) return;
+
+  if (act === 'resend') alert(`Inbjudan skickad på nytt till ${u.mail}.`);
+  if (act === 'reset')  alert(`Återställningslänk skickad till ${u.mail}. Länken hanteras utanför Ungap Live.`);
+  if (act === 'disable'){
+    if (!confirm(`Inaktivera ${u.name}? Kontot kan inte logga in men finns kvar i historiken.`)) return;
+    u.state = 'disabled'; paintUsers(); paintDoc();
+  }
+  if (act === 'enable'){ u.state = 'active'; paintUsers(); paintDoc(); }
+  if (act === 'remove'){
+    if (!confirm(`Ta bort ${u.name} helt? Historiken visar hädanefter bara namnet, utan konto.`)) return;
+    users = users.filter(x => x !== u);
+    selUser = domUsers(selDom)[0]?.id ?? null;
+    paintAll();
+  }
+});
+
+document.addEventListener('change', e => {
+  const r = e.target.closest('[data-role]');
+  if (!r) return;
+  const u = byId(selUser); if (!u) return;
+  const role = r.dataset.role;
+  if (r.checked) u.roles.push(role);
+  else u.roles = u.roles.filter(x => x !== role);
+  if (!u.roles.length){ u.roles = ['reviewer']; }
+  paintUsers(); paintDoc();
+});
+
+document.addEventListener('input', e => { if (e.target.id === 'q'){ query = e.target.value; paintUsers(); } });
+
+paintAll();
+</script>
+</body>
+</html>

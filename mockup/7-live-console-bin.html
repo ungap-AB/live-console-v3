@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Papperskorg</title>
+<style>
+  :root{
+    --ink:#1b2027; --ink-2:#5a6572; --ink-3:#8b95a1;
+    --line:#d7dde4; --line-soft:#e8ecf1;
+    --bg:#f2f4f7; --panel:#fff;
+    --accent-soft:#eef1f5;
+    --odm:#1d4f96; --odm-bg:#e9f0fb;
+    --warn:#8a5a00; --warn-bg:#fdf3e0;
+    --danger:#a51c1c; --danger-bg:#fbeaea;
+    --focus:#2f6fd0;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --sans:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  button,input,select{font:inherit;color:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+  .view{display:flex;flex-direction:column;height:100vh}
+  .view > header{display:flex;align-items:center;gap:14px;flex:none;padding:16px 26px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .view > header h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-.015em}
+  .view > header .sub{font-size:12.5px;color:var(--ink-3);margin-top:1px}
+  .build{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:3px 8px}
+  .view > .content{flex:1;padding:22px 26px;overflow:auto;min-height:0}
+
+  .btn{border:1px solid var(--line);background:#fbfcfd;border-radius:6px;padding:7px 13px;font-weight:500;white-space:nowrap;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover:not(:disabled){background:#f1f4f8}
+  .btn-sm{padding:5px 10px;font-size:13px}
+  .btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+  .pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0;max-height:100%}
+  .pane .top{padding:12px 14px;border-bottom:1px solid var(--line-soft);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .search{position:relative;display:flex;align-items:center;width:250px}
+  .search svg{position:absolute;left:9px;width:15px;height:15px;stroke:var(--ink-3);fill:none;stroke-width:1.7}
+  .search input{width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 10px 7px 30px;background:#fbfcfd}
+  .chips{display:flex;gap:5px;flex-wrap:wrap}
+  .chips button{border:1px solid var(--line);background:#fbfcfd;border-radius:20px;padding:5px 12px;font-size:13px;color:var(--ink-2)}
+  .chips button:hover{background:#f1f4f8}
+  .chips button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+  .top .count{margin-left:auto;font-size:12.5px;color:var(--ink-3)}
+
+  ul.rows{list-style:none;margin:0;padding:6px;overflow:auto;flex:1}
+  ul.rows > li{
+    display:flex;align-items:center;gap:14px;
+    padding:11px 12px;border-radius:9px;border:1px solid transparent;
+  }
+  ul.rows > li + li{border-top:1px solid var(--line-soft);border-radius:9px}
+  ul.rows > li:hover{background:#fafbfc}
+  ul.rows > li.soon{background:#fffaf0}
+
+  .icon{
+    width:34px;height:34px;border-radius:8px;flex:none;display:grid;place-items:center;
+    background:var(--accent-soft);color:var(--ink-2);
+  }
+  .icon svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+  .main{flex:1;min-width:0}
+  .main .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .main .meta{font-size:12.5px;color:var(--ink-3);margin-top:2px;display:flex;gap:10px;flex-wrap:wrap}
+  .main .meta .dot{color:var(--line)}
+
+  .type{
+    font-size:11.5px;font-weight:600;color:var(--ink-2);background:#eef1f5;
+    border:1px solid var(--line);border-radius:20px;padding:2px 9px;flex:none;
+  }
+
+  .purge{text-align:right;flex:none;width:140px}
+  .purge .left{font-size:13px;font-weight:600}
+  .purge .date{font-size:11.5px;color:var(--ink-3);font-family:var(--mono)}
+  .purge.soon .left{color:var(--warn)}
+  .purge.urgent .left{color:var(--danger)}
+
+  .empty{padding:60px 20px;text-align:center;color:var(--ink-3)}
+  .empty p{margin:0 0 4px}
+
+  .foot{padding:11px 14px;border-top:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-3);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+    background:#171c23;color:#e6eaf0;border-radius:9px;padding:11px 14px;
+    display:flex;align-items:center;gap:14px;font-size:13px;
+    box-shadow:0 10px 30px rgba(10,14,20,.35);z-index:20;
+  }
+  .toast[hidden]{display:none}
+  .toast button{background:none;border:1px solid #39434f;color:#e6eaf0;border-radius:6px;padding:4px 10px;font-size:12.5px}
+  .toast button:hover{background:#252d38}
+
+  @media (max-width:760px){
+    .purge{width:auto;text-align:left}
+    ul.rows > li{flex-wrap:wrap}
+    .main{flex:1 1 100%;order:2}
+  }
+</style>
+</head>
+<body>
+
+<div class="view">
+  <header>
+    <div>
+      <h1>Papperskorg</h1>
+      <div class="sub">Borttaget material som ännu går att återställa</div>
+    </div>
+    <span class="build">fristående vy</span>
+  </header>
+
+  <div class="content">
+    <section class="pane">
+      <div class="top">
+        <div class="search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+          <input id="q" type="search" placeholder="Sök i papperskorgen" aria-label="Sök i papperskorgen">
+        </div>
+        <div class="chips" id="chips"></div>
+        <span class="count" id="count"></span>
+      </div>
+
+      <ul class="rows" id="rows"></ul>
+
+      <div class="foot" id="foot"></div>
+    </section>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden>
+  <span id="toastText"></span>
+  <button id="undo">Ångra</button>
+</div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const RETENTION = 30; // dagar
+
+const TYPE = {
+  projekt:    { label:'Projekt',    icon:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>' },
+  dagordning: { label:'Dagordning', icon:'<path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M9 12h7M9 16h5M9 8h3"/>' },
+  namnlista:  { label:'Namnlista',  icon:'<circle cx="9" cy="9" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 8h5M16 12h5M16 16h3"/>' },
+  inspelning: { label:'Inspelning', icon:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4.5-2.5z"/>' },
+};
+
+/* daysLeft = dagar kvar innan posten rensas permanent */
+let items = [
+  { id:1, type:'projekt',    name:'Kommunfullmäktige 18 juni',        detail:'Publicerad · 1 tim 42 min inspelning', by:'Anders Mårtén',  deleted:'9 sep 2026',  daysLeft:27 },
+  { id:2, type:'dagordning', name:'Kommunfullmäktige – gammal mall',  detail:'11 punkter',                            by:'Ingrid Blomkvist', deleted:'8 sep 2026',  daysLeft:26 },
+  { id:3, type:'namnlista',  name:'Kommunfullmäktige 2022',           detail:'61 namn',                               by:'Anders Mårtén',  deleted:'2 sep 2026',  daysLeft:20 },
+  { id:4, type:'inspelning', name:'Testsändning 28 aug',              detail:'Original · 00:12:40 · 0,9 GB',          by:'Anders Mårtén',  deleted:'29 aug 2026', daysLeft:16 },
+  { id:5, type:'inspelning', name:'Kommunstyrelsen 6 aug (trimmad)',  detail:'Trimmad · 00:48:12 · 3,1 GB',           by:'Lars Öberg',     deleted:'21 aug 2026', daysLeft:8 },
+  { id:6, type:'dagordning', name:'Extrainsatt fullmäktige juli',     detail:'5 punkter',                             by:'Lars Öberg',     deleted:'18 aug 2026', daysLeft:5 },
+  { id:7, type:'projekt',    name:'Utkast – budgetdebatt',            detail:'Aldrig sänt',                           by:'Anders Mårtén',  deleted:'14 aug 2026', daysLeft:1 },
+];
+
+let query = '', filter = 'alla', lastRemoved = null, toastTimer = null;
+
+const purgeDate = d => {
+  const dt = new Date(Date.now() + d * 864e5);
+  return dt.toLocaleDateString('sv-SE', { day:'numeric', month:'short', year:'numeric' });
+};
+const leftText = d => d === 0 ? 'Rensas idag' : d === 1 ? 'Rensas imorgon' : `Rensas om ${d} dagar`;
+const urgency = d => d <= 2 ? 'urgent' : d <= 7 ? 'soon' : '';
+
+function paintChips(){
+  const counts = { alla: items.length };
+  Object.keys(TYPE).forEach(k => counts[k] = items.filter(i => i.type === k).length);
+  $('#chips').innerHTML = ['alla', ...Object.keys(TYPE)].map(k => `
+    <button data-filter="${k}" aria-pressed="${filter === k}">
+      ${k === 'alla' ? 'Alla' : TYPE[k].label}${counts[k] ? ` ${counts[k]}` : ''}
+    </button>`).join('');
+}
+
+function visible(){
+  const q = query.trim().toLowerCase();
+  return items
+    .filter(i => filter === 'alla' || i.type === filter)
+    .filter(i => !q || (i.name + ' ' + i.detail).toLowerCase().includes(q))
+    .sort((a, b) => a.daysLeft - b.daysLeft);
+}
+
+function paint(){
+  paintChips();
+  const rows = visible();
+  $('#count').textContent = rows.length === items.length
+    ? `${items.length} poster`
+    : `${rows.length} av ${items.length} poster`;
+
+  $('#rows').innerHTML = rows.length ? rows.map(i => {
+    const u = urgency(i.daysLeft);
+    return `<li class="${u === 'urgent' ? 'soon' : ''}">
+      <span class="icon"><svg viewBox="0 0 24 24">${TYPE[i.type].icon}</svg></span>
+      <span class="main">
+        <span class="nm">${esc(i.name)}</span>
+        <span class="meta">
+          <span class="type">${TYPE[i.type].label}</span>
+          <span>${esc(i.detail)}</span>
+          <span class="dot">·</span>
+          <span>Borttagen ${esc(i.deleted)} av ${esc(i.by)}</span>
+        </span>
+      </span>
+      <span class="purge ${u}">
+        <span class="left">${leftText(i.daysLeft)}</span>
+        <span class="date">${purgeDate(i.daysLeft)}</span>
+      </span>
+      <button class="btn btn-sm" data-restore="${i.id}">
+        <svg viewBox="0 0 24 24"><path d="M9 5 4 10l5 5"/><path d="M4 10h9a6 6 0 0 1 0 12h-2"/></svg>
+        Återställ
+      </button>
+    </li>`;
+  }).join('')
+  : `<li><div class="empty">
+       <p>${items.length ? 'Ingen post matchar filtret.' : 'Papperskorgen är tom.'}</p>
+       ${items.length ? '' : '<p>Borttagna projekt, dagordningar, namnlistor och inspelningar hamnar här.</p>'}
+     </div></li>`;
+
+  $('#foot').innerHTML = `Poster rensas automatiskt ${RETENTION} dagar efter att de tagits bort. Efter det går de inte att återställa.`;
+}
+
+/* ---- händelser ---- */
+document.addEventListener('click', e => {
+  const chip = e.target.closest('[data-filter]');
+  if (chip){ filter = chip.dataset.filter; paint(); return; }
+
+  const r = e.target.closest('[data-restore]');
+  if (r){
+    const id = +r.dataset.restore;
+    const idx = items.findIndex(i => i.id === id);
+    if (idx < 0) return;
+    lastRemoved = { item: items[idx], idx };
+    items.splice(idx, 1);
+    paint();
+    showToast(`${lastRemoved.item.name} återställd`);
+  }
+});
+
+document.addEventListener('input', e => { if (e.target.id === 'q'){ query = e.target.value; paint(); } });
+
+function showToast(text){
+  $('#toastText').textContent = text;
+  $('#toast').hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('#toast').hidden = true; lastRemoved = null; }, 6000);
+}
+
+$('#undo').onclick = () => {
+  if (lastRemoved){ items.splice(lastRemoved.idx, 0, lastRemoved.item); lastRemoved = null; paint(); }
+  $('#toast').hidden = true;
+};
+
+paint();
+</script>
+</body>
+</html>

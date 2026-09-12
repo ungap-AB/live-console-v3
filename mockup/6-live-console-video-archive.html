@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Videoarkiv</title>
+<style>
+  :root{
+    --ink:#1b2027; --ink-2:#5a6572; --ink-3:#8b95a1;
+    --line:#d7dde4; --line-soft:#e8ecf1;
+    --bg:#f2f4f7; --panel:#fff;
+    --accent-soft:#eef1f5;
+    --odm:#1d4f96; --odm-bg:#e9f0fb;
+    --live:#0a8f3c; --live-bg:#e6f4ea;
+    --warn:#8a5a00; --warn-bg:#fdf3e0;
+    --danger:#a51c1c;
+    --focus:#2f6fd0;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --sans:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  button,input{font:inherit;color:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+  .view{display:flex;flex-direction:column;height:100vh}
+  .view > header{display:flex;align-items:center;gap:14px;flex:none;padding:16px 26px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .view > header h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-.015em}
+  .view > header .sub{font-size:12.5px;color:var(--ink-3);margin-top:1px}
+  .build{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:3px 8px}
+  .view > .content{flex:1;padding:22px 26px;overflow:auto;min-height:0}
+
+  .btn{border:1px solid var(--line);background:#fbfcfd;border-radius:6px;padding:7px 13px;font-weight:500;white-space:nowrap;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover:not(:disabled){background:#f1f4f8}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn-primary{background:var(--ink);border-color:var(--ink);color:#fff}
+  .btn-primary:hover:not(:disabled){background:#2b323b}
+  .btn-danger{color:var(--danger);border-color:#e5c4c4;background:#fdf6f6}
+  .btn-sm{padding:5px 10px;font-size:13px}
+  .btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px;border:1px solid transparent;white-space:nowrap}
+  .tag.orig{background:#eef1f5;color:var(--ink-2);border-color:var(--line)}
+  .tag.trim{background:var(--odm-bg);color:var(--odm);border-color:#c6d8f0}
+  .tag.pub{background:var(--live-bg);color:var(--live);border-color:#bfe3cc}
+  .tag.gap{background:var(--warn-bg);color:var(--warn);border-color:#f0dcb4}
+
+  .split{display:grid;grid-template-columns:330px 1fr;gap:18px;height:100%;min-height:0}
+  @media (max-width:1020px){.split{grid-template-columns:1fr;height:auto}}
+
+  .pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0}
+  .pane .top{padding:12px;border-bottom:1px solid var(--line-soft);display:flex;gap:8px}
+  .search{flex:1;position:relative;display:flex;align-items:center}
+  .search svg{position:absolute;left:9px;width:15px;height:15px;stroke:var(--ink-3);fill:none;stroke-width:1.7}
+  .search input{width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 10px 7px 30px;background:#fbfcfd}
+  .pane ul{list-style:none;margin:0;padding:6px;overflow:auto;flex:1}
+  .pane li button.row{width:100%;text-align:left;border:0;background:none;padding:9px 11px;border-radius:8px;display:block}
+  .pane li button.row:hover{background:var(--accent-soft)}
+  .pane li.sel button.row{background:#e6eaf0}
+  .rowtop{display:flex;align-items:center;gap:8px}
+  .rowtop .nm{font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta{font-size:12px;color:var(--ink-3);margin-top:2px;font-family:var(--mono)}
+  .child{padding-left:18px;position:relative}
+  .child::before{
+    content:"";position:absolute;left:8px;top:0;bottom:50%;width:9px;
+    border-left:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0 0 0 4px;
+  }
+  .grouphead{padding:10px 11px 3px;font-size:11px;color:var(--ink-3)}
+  .pane .none{padding:22px 14px;text-align:center;color:var(--ink-3);font-size:13px}
+
+  .doc{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0}
+  .doc .head{padding:16px 20px 14px;border-bottom:1px solid var(--line-soft)}
+  .doc h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .facts{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--ink-3)}
+  .tools{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+  .tools .spacer{flex:1}
+  .doc .body{padding:16px 20px 22px;overflow:auto;flex:1}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);border-radius:8px;overflow:hidden;max-width:760px}
+  .grid > div{background:#fff;padding:10px 12px}
+  .grid .k{font-size:11.5px;color:var(--ink-3)}
+  .grid .v{font-family:var(--mono);font-size:13px;margin-top:2px}
+
+  .block{margin-top:18px;max-width:760px}
+  .block h3{margin:0 0 8px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+  .field{display:flex;align-items:center;gap:8px}
+  .input{font-family:var(--mono);font-size:12.5px;background:#fbfcfd;border:1px solid var(--line);border-radius:6px;padding:7px 10px;flex:1;min-width:0;color:var(--ink)}
+
+  .project{display:flex;align-items:center;gap:10px;border:1px solid var(--line-soft);border-radius:8px;padding:10px 12px;background:#fafbfc}
+  .project .pn{flex:1;min-width:0;font-weight:500}
+  .project .pn span{display:block;font-size:12px;color:var(--ink-3);font-weight:400}
+  .project.empty{color:var(--ink-3);font-size:13px}
+
+  ul.chapters{list-style:none;margin:0;padding:0;font-size:13px;border:1px solid var(--line-soft);border-radius:8px;overflow:hidden}
+  ul.chapters li{display:flex;gap:12px;padding:7px 12px;border-bottom:1px solid var(--line-soft)}
+  ul.chapters li:last-child{border-bottom:0}
+  ul.chapters li.out{background:#fbf7ef;color:var(--ink-3)}
+  ul.chapters .t{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);width:60px;flex:none}
+  ul.chapters .w{flex:1}
+  ul.chapters .w em{font-style:normal;color:var(--ink-3);font-size:11.5px;margin-left:6px}
+  ul.chapters .flag{font-size:11.5px;color:var(--warn)}
+
+  .note{margin-top:16px;max-width:760px;padding:10px 13px;border-radius:7px;font-size:13px;background:#eef2f7;color:var(--ink-2);border:1px solid var(--line)}
+  .note.warn{background:var(--warn-bg);color:var(--warn);border-color:#f0dcb4}
+  .docnone{height:100%;display:grid;place-items:center;color:var(--ink-3);padding:40px}
+
+  /* ---- trimdialog ---- */
+  .scrim{position:fixed;inset:0;background:rgba(20,25,32,.42);display:grid;place-items:center;padding:20px;z-index:30}
+  .scrim[hidden]{display:none}
+  .modal{background:var(--panel);border-radius:12px;width:min(720px,100%);max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(10,14,20,.35)}
+  .modal .mhead{padding:16px 20px;border-bottom:1px solid var(--line-soft)}
+  .modal h3{margin:0;font-size:16px;font-weight:600}
+  .modal .msub{font-size:12.5px;color:var(--ink-3);margin-top:2px}
+  .modal .mbody{padding:18px 20px}
+  .modal .mfoot{padding:14px 20px;border-top:1px solid var(--line-soft);display:flex;gap:8px;align-items:center}
+  .modal .mfoot .spacer{flex:1}
+
+  .bar{position:relative;height:52px;margin:10px 0 6px;background:#eef1f5;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .bar .keep{position:absolute;top:0;bottom:0;background:#dbe7f8;border-left:2px solid var(--odm);border-right:2px solid var(--odm)}
+  .bar .mark{position:absolute;top:0;bottom:0;width:2px;background:var(--ink-3)}
+  .bar .mark.inside{background:var(--ink)}
+  .bar .lbl{position:absolute;bottom:3px;font-size:10px;font-family:var(--mono);color:var(--ink-3);transform:translateX(3px)}
+  .ranges{position:relative;height:26px}
+  .ranges input{position:absolute;left:0;width:100%;margin:0;background:none;-webkit-appearance:none;appearance:none;pointer-events:none}
+  .ranges input::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--odm);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);pointer-events:auto;cursor:ew-resize}
+  .ranges input::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--odm);border:2px solid #fff;pointer-events:auto;cursor:ew-resize}
+  .ranges input::-webkit-slider-runnable-track{height:4px;background:transparent}
+  .times{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px}
+  .times label{font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:7px}
+  .times input{font-family:var(--mono);font-size:13px;width:96px;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:#fbfcfd}
+  .lenout{font-family:var(--mono);font-size:13px;color:var(--ink-2);margin-left:auto;align-self:center}
+</style>
+</head>
+<body>
+
+<div class="view">
+  <header>
+    <div>
+      <h1>Videoarkiv</h1>
+      <div class="sub">Originalinspelningar och trimmade versioner</div>
+    </div>
+    <span class="build">fristående vy</span>
+  </header>
+
+  <div class="content">
+    <div class="split">
+      <section class="pane" aria-label="Inspelningar">
+        <div class="top">
+          <div class="search">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+            <input id="q" type="search" placeholder="Sök inspelning" aria-label="Sök inspelning">
+          </div>
+          <button class="btn btn-sm" id="upload">
+            <svg viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
+            Ladda upp
+          </button>
+        </div>
+        <ul id="list"></ul>
+      </section>
+
+      <section class="doc" id="doc" aria-label="Vald inspelning"></section>
+    </div>
+  </div>
+</div>
+
+<!-- trimdialog -->
+<div class="scrim" id="scrim" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="trimTitle">
+    <div class="mhead">
+      <h3 id="trimTitle">Trimma inspelning</h3>
+      <div class="msub" id="trimSub"></div>
+    </div>
+    <div class="mbody" id="trimBody"></div>
+    <div class="mfoot">
+      <span class="lenout" id="trimLen"></span>
+      <span class="spacer"></span>
+      <button class="btn" id="trimCancel">Avbryt</button>
+      <button class="btn btn-primary" id="trimSave">Spara trimmad version</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hhmmss = n => [n/3600|0, n/60%60|0, n%60|0].map(v => String(v|0).padStart(2,'0')).join(':');
+const parseT = s => { const p = String(s).split(':').map(Number); if (p.some(isNaN)) return null;
+  return p.length === 3 ? p[0]*3600+p[1]*60+p[2] : p.length === 2 ? p[0]*60+p[1] : p[0]; };
+const gb = s => (s/1024).toFixed(1) + ' GB';
+
+/* ---------------- data ---------------- */
+let recs = [
+  { id:'r1', kind:'original', name:'Kommunfullmäktige 27 aug 2026', created:'27 aug 2026 13:02',
+    duration:6427, sizeMB:8840, res:'1920×1080p50', source:'IVS', segments:1,
+    project:{ id:'p1', name:'Kommunfullmäktige 27 augusti', state:'Publicerad' },
+    hls:'https://cdn.ungap.se/rec/kf-2708/original/master.m3u8',
+    chapters:[
+      { t:0,    label:'1. Mötet öppnas',           kind:'Ärende' },
+      { t:134,  label:'2. Upprop och justering',   kind:'Ärende' },
+      { t:872,  label:'Ingrid Blomkvist',          kind:'Talare' },
+      { t:908,  label:'5. Årsredovisning 2025',    kind:'Ärende' },
+      { t:1005, label:'Clara Mårtén',              kind:'Talare' },
+      { t:2450, label:'6. Interpellationer',       kind:'Ärende' },
+      { t:5980, label:'8. Mötet avslutas',         kind:'Ärende' },
+    ]},
+  { id:'r1t', kind:'trim', parent:'r1', name:'Kommunfullmäktige 27 aug 2026 (trimmad)', created:'28 aug 2026 09:14',
+    from:120, to:6100, duration:5980, sizeMB:8180, res:'1920×1080p50', source:'Trim av original', published:true,
+    project:{ id:'p1', name:'Kommunfullmäktige 27 augusti', state:'Publicerad' },
+    hls:'https://cdn.ungap.se/vod/kf-2708/master.m3u8' },
+
+  { id:'r2', kind:'original', name:'Kommunstyrelsen 3 sep 2026', created:'3 sep 2026 09:00',
+    duration:3310, sizeMB:4520, res:'1920×1080p25', source:'IVS', segments:2,
+    project:{ id:'p2', name:'Kommunstyrelsen 3 september', state:'Ej publicerad' },
+    hls:'https://cdn.ungap.se/rec/ks-0309/original/master.m3u8',
+    chapters:[
+      { t:0,    label:'1. Sammanträdet öppnas',  kind:'Ärende' },
+      { t:210,  label:'2. Föregående protokoll', kind:'Ärende' },
+      { t:940,  label:'Lars Öberg',              kind:'Talare' },
+      { t:1610, label:'3. Ekonomisk uppföljning',kind:'Ärende' },
+      { t:3120, label:'6. Sammanträdet avslutas',kind:'Ärende' },
+    ]},
+
+  { id:'r3', kind:'original', name:'Årsstämma Brf Eken 2026', created:'14 maj 2026 18:30',
+    duration:4185, sizeMB:2960, res:'1280×720p25', source:'Uppladdad', segments:1,
+    project:null,
+    hls:'https://cdn.ungap.se/rec/brf-eken-2026/original/master.m3u8',
+    chapters:[] },
+  { id:'r3t', kind:'trim', parent:'r3', name:'Årsstämma Brf Eken 2026 (trimmad)', created:'15 maj 2026 10:02',
+    from:300, to:4020, duration:3720, sizeMB:2630, res:'1280×720p25', source:'Trim av original', published:false,
+    project:null,
+    hls:'https://cdn.ungap.se/vod/brf-eken-2026/master.m3u8' },
+];
+
+let selId = 'r1', query = '';
+let trimFor = null, tFrom = 0, tTo = 0;
+
+const byId = id => recs.find(r => r.id === id);
+const childrenOf = id => recs.filter(r => r.kind === 'trim' && r.parent === id);
+
+/* ---------------- lista ---------------- */
+function paintList(){
+  const q = query.trim().toLowerCase();
+  const originals = recs.filter(r => r.kind === 'original');
+  const html = originals.map(o => {
+    const kids = childrenOf(o.id);
+    const hit = !q || o.name.toLowerCase().includes(q) || kids.some(k => k.name.toLowerCase().includes(q));
+    if (!hit) return '';
+    return row(o) + kids.map(k => row(k, true)).join('');
+  }).join('');
+  $('#list').innerHTML = html || '<li class="none">Ingen inspelning matchar sökningen.</li>';
+}
+
+function row(r, child){
+  const tag = r.kind === 'original'
+    ? '<span class="tag orig">Original</span>'
+    : `<span class="tag trim">Trimmad</span>${r.published ? '<span class="tag pub">Publicerad</span>' : ''}`;
+  return `<li class="${r.id === selId ? 'sel' : ''} ${child ? 'child' : ''}">
+    <button class="row" data-pick="${r.id}">
+      <span class="rowtop"><span class="nm">${esc(r.name)}</span>${tag}</span>
+      <span class="meta">${hhmmss(r.duration)} · ${gb(r.sizeMB)} · ${esc(r.created)}</span>
+    </button></li>`;
+}
+
+/* ---------------- detalj ---------------- */
+function paintDoc(){
+  const r = byId(selId);
+  const doc = $('#doc');
+  if (!r){ doc.innerHTML = '<div class="docnone">Välj en inspelning i listan.</div>'; return; }
+
+  const isOrig = r.kind === 'original';
+  const parent = isOrig ? null : byId(r.parent);
+  const chapters = isOrig ? (r.chapters || []) : (parent?.chapters || []);
+  const inRange = c => !isOrig ? (c.t >= r.from && c.t <= r.to) : true;
+
+  doc.innerHTML = `
+    <div class="head">
+      <h2>${esc(r.name)}
+        ${isOrig ? '<span class="tag orig">Original</span>'
+                 : `<span class="tag trim">Trimmad</span>${r.published ? '<span class="tag pub">Publicerad</span>' : ''}`}
+        ${isOrig && r.segments > 1 ? `<span class="tag gap">${r.segments - 1} glapp</span>` : ''}
+      </h2>
+      <div class="facts">
+        <span>${esc(r.created)}</span>
+        <span>${esc(r.source)}</span>
+        ${!isOrig ? `<span>Klippt ${hhmmss(r.from)}–${hhmmss(r.to)} ur originalet</span>` : ''}
+      </div>
+      <div class="tools">
+        <button class="btn btn-sm btn-primary" data-act="download">
+          <svg viewBox="0 0 24 24"><path d="M12 4v12M8 12l4 4 4-4M4 18v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
+          Ladda ner
+        </button>
+        ${isOrig ? `<button class="btn btn-sm" data-act="trim">
+          <svg viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.5"/><circle cx="6" cy="6" r="2.5"/><path d="M8 7.5 20 18M8 16.5 20 6"/></svg>
+          Trimma inspelning</button>` : ''}
+        ${r.project ? `<button class="btn btn-sm" data-act="project">
+          <svg viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M18 14v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h5"/></svg>
+          Öppna projektet</button>` : ''}
+        <span class="spacer"></span>
+        <button class="btn btn-sm btn-danger" data-act="trash">Flytta till papperskorgen</button>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="grid">
+        <div><div class="k">Längd</div><div class="v">${hhmmss(r.duration)}</div></div>
+        <div><div class="k">Upplösning</div><div class="v">${esc(r.res)}</div></div>
+        <div><div class="k">Storlek</div><div class="v">${gb(r.sizeMB)}</div></div>
+        <div><div class="k">Kapitel</div><div class="v">${chapters.filter(inRange).length || '–'}</div></div>
+      </div>
+
+      <div class="block">
+        <h3>HLS-länk</h3>
+        <div class="field">
+          <input class="input" id="hls" value="${esc(r.hls)}" readonly aria-label="HLS-länk">
+          <button class="btn btn-sm" data-act="copy">Kopiera</button>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>Projekt</h3>
+        ${r.project
+          ? `<div class="project">
+               <div class="pn">${esc(r.project.name)}<span>${esc(r.project.state)}</span></div>
+               <button class="btn btn-sm" data-act="project">Öppna</button>
+             </div>`
+          : `<div class="project empty">Inspelningen tillhör inget projekt.</div>`}
+      </div>
+
+      ${chapters.length ? `
+      <div class="block">
+        <h3>Kapitel${!isOrig ? ' (offset räknat från trimstart)' : ''}</h3>
+        <ul class="chapters">
+          ${chapters.map(c => {
+            const inside = inRange(c);
+            const t = isOrig ? c.t : c.t - r.from;
+            return `<li class="${inside ? '' : 'out'}">
+              <span class="t">${inside ? hhmmss(t) : hhmmss(c.t)}</span>
+              <span class="w">${esc(c.label)}<em>${c.kind}</em></span>
+              ${inside ? '' : '<span class="flag">utanför klippet</span>'}
+            </li>`;
+          }).join('')}
+        </ul>
+      </div>` : ''}
+
+      ${isOrig && r.segments > 1
+        ? `<p class="note warn">Inspelningen består av ${r.segments} segment — enkodern tappade anslutningen under sändningen. Kontrollera kapitlens offset efter trimning.</p>`
+        : ''}
+      ${isOrig
+        ? `<p class="note">Originalet publiceras aldrig direkt. Trimma det för att skapa en version som kan granskas och publiceras.</p>`
+        : (r.published
+            ? `<p class="note">Den här versionen är publicerad. Kapitellistan är fryst och följer inte längre projektets dagordning.</p>`
+            : `<p class="note">Trimmad men inte publicerad. Publicering sker i projektets ondemand-flik.</p>`)}
+    </div>`;
+}
+
+/* ---------------- trimdialog ---------------- */
+function openTrim(r){
+  trimFor = r; tFrom = 0; tTo = r.duration;
+  $('#trimSub').textContent = `${r.name} · original ${hhmmss(r.duration)}`;
+  $('#trimBody').innerHTML = `
+    <div class="bar" id="bar"></div>
+    <div class="ranges">
+      <input type="range" id="rFrom" min="0" max="${r.duration}" value="0" aria-label="Startpunkt">
+      <input type="range" id="rTo" min="0" max="${r.duration}" value="${r.duration}" aria-label="Slutpunkt">
+    </div>
+    <div class="times">
+      <label>Start <input id="tFrom" value="00:00:00" aria-label="Startpunkt som tid"></label>
+      <label>Slut <input id="tTo" value="${hhmmss(r.duration)}" aria-label="Slutpunkt som tid"></label>
+    </div>
+    <p class="note" id="trimNote" style="margin-top:14px"></p>`;
+  $('#scrim').hidden = false;
+  paintTrim();
+}
+
+function paintTrim(){
+  const r = trimFor; if (!r) return;
+  const pct = t => (t / r.duration) * 100;
+  const chs = r.chapters || [];
+  $('#bar').innerHTML =
+    `<div class="keep" style="left:${pct(tFrom)}%;width:${pct(tTo - tFrom)}%"></div>` +
+    chs.map(c => `<div class="mark ${c.t >= tFrom && c.t <= tTo ? 'inside' : ''}" style="left:${pct(c.t)}%"></div>`).join('') +
+    `<span class="lbl" style="left:${pct(tFrom)}%">${hhmmss(tFrom)}</span>`;
+  $('#rFrom').value = tFrom;
+  $('#rTo').value = tTo;
+  $('#tFrom').value = hhmmss(tFrom);
+  $('#tTo').value = hhmmss(tTo);
+  $('#trimLen').textContent = 'Längd efter trim: ' + hhmmss(tTo - tFrom);
+
+  const dropped = chs.filter(c => c.t < tFrom || c.t > tTo);
+  $('#trimNote').textContent = chs.length
+    ? (dropped.length
+        ? `${dropped.length} kapitel hamnar utanför klippet och följer inte med till den trimmade versionen.`
+        : `Alla ${chs.length} kapitel ligger inom klippet. Offset räknas om mot den nya startpunkten.`)
+    : 'Inspelningen har inga kapitelmärken.';
+  $('#trimNote').className = 'note' + (dropped.length ? ' warn' : '');
+}
+
+function closeTrim(){ $('#scrim').hidden = true; trimFor = null; }
+
+/* ---------------- händelser ---------------- */
+document.addEventListener('click', e => {
+  const pick = e.target.closest('[data-pick]');
+  if (pick){ selId = pick.dataset.pick; paintList(); paintDoc(); return; }
+
+  if (e.target.closest('#upload')){
+    alert('Öppnar filväljaren. Uppladdade filer hamnar som originalinspelningar utan kopplat projekt.');
+    return;
+  }
+
+  const r = byId(selId);
+  const act = e.target.closest('[data-act]')?.dataset.act;
+  if (!act || !r) return;
+
+  if (act === 'download') alert(`Laddar ner ${r.name}\n${hhmmss(r.duration)} · ${gb(r.sizeMB)}`);
+  if (act === 'copy'){ $('#hls').select(); document.execCommand?.('copy'); }
+  if (act === 'project' && r.project) alert(`Öppnar projektet: ${r.project.name}`);
+  if (act === 'trim') openTrim(r);
+  if (act === 'trash'){
+    const kids = childrenOf(r.id);
+    if (r.kind === 'original' && kids.length &&
+        !confirm(`${r.name} har ${kids.length} trimmad version. Flytta originalet och dess versioner till papperskorgen?`)) return;
+    recs = recs.filter(x => x !== r && x.parent !== r.id);
+    selId = recs[0]?.id ?? null;
+    paintList(); paintDoc();
+  }
+});
+
+document.addEventListener('input', e => {
+  if (e.target.id === 'q'){ query = e.target.value; paintList(); return; }
+  if (!trimFor) return;
+  if (e.target.id === 'rFrom'){ tFrom = Math.min(+e.target.value, tTo - 1); paintTrim(); }
+  if (e.target.id === 'rTo'){ tTo = Math.max(+e.target.value, tFrom + 1); paintTrim(); }
+});
+
+document.addEventListener('change', e => {
+  if (!trimFor) return;
+  if (e.target.id === 'tFrom' || e.target.id === 'tTo'){
+    const v = parseT(e.target.value);
+    if (v === null){ paintTrim(); return; }
+    if (e.target.id === 'tFrom') tFrom = Math.max(0, Math.min(v, tTo - 1));
+    else tTo = Math.min(trimFor.duration, Math.max(v, tFrom + 1));
+    paintTrim();
+  }
+});
+
+$('#trimCancel').onclick = closeTrim;
+$('#scrim').addEventListener('click', e => { if (e.target.id === 'scrim') closeTrim(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && trimFor) closeTrim(); });
+
+$('#trimSave').onclick = () => {
+  const r = trimFor; if (!r) return;
+  const existing = childrenOf(r.id)[0];
+  const dur = tTo - tFrom;
+  const rec = {
+    id: existing?.id ?? (r.id + 't'), kind:'trim', parent:r.id,
+    name: r.name + ' (trimmad)', created:'idag', from:tFrom, to:tTo,
+    duration:dur, sizeMB: Math.round(r.sizeMB * dur / r.duration), res:r.res,
+    source:'Trim av original', published:false, project:r.project, hls:r.hls.replace('/rec/','/vod/').replace('/original','')
+  };
+  if (existing) Object.assign(existing, rec);
+  else recs.splice(recs.indexOf(r) + 1, 0, rec);
+  selId = rec.id;
+  closeTrim(); paintList(); paintDoc();
+};
+
+paintList();
+paintDoc();
+</script>
+</body>
+</html>
