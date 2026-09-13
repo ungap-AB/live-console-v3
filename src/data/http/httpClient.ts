@@ -578,8 +578,9 @@ export const httpClient: Client = {
       const dto = await api<ServerTimelineEvent>(`/projects/${id}/playout/cue`, { method: 'POST', body: { kind, refId } })
       return toTimelineEvent(dto)
     },
-    async removeTimelineEvent(id, eventId) {
-      await api<void>(`/projects/${id}/timeline/${eventId}`, { method: 'DELETE' })
+    async clear(id, kind) {
+      const dto = await api<ServerTimelineEvent>(`/projects/${id}/playout/cue`, { method: 'POST', body: { kind, refId: null } })
+      return toTimelineEvent(dto)
     },
     async resetSimulation(id) {
       await api<void>(`/debug/projects/${id}/reset`, { method: 'POST' })

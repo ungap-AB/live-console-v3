@@ -587,14 +587,28 @@ export const mockClient: Client = {
       else p.playout.currentPersonId = refId
       return delay(clone(event))
     },
-    async removeTimelineEvent(id, eventId) {
+    async clear(id, kind) {
       const p = findProject(id)
-      p.playout.timeline = p.playout.timeline.filter((e) => e.id !== eventId)
-      const lastItem = [...p.playout.timeline].reverse().find((e) => e.kind === 'agendaItem')
-      const lastPerson = [...p.playout.timeline].reverse().find((e) => e.kind === 'person')
-      p.playout.currentAgendaItemId = lastItem?.refId ?? null
-      p.playout.currentPersonId = lastPerson?.refId ?? null
-      return delay(undefined)
+      if (p.publication.state === 'published') throw new Error('Sändningen är publicerad. Utspelning är avstängd.')
+      const live = p.channel?.state === 'live'
+      const offsetSeconds = live
+        ? Math.round(
+            p.sim.accumulatedSeconds +
+              (p.sim.recordingStartedAt ? (Date.now() - new Date(p.sim.recordingStartedAt).getTime()) / 1000 : 0),
+          )
+        : null
+      const event: TimelineEvent = {
+        id: `ev${nextId++}`,
+        kind,
+        refId: null,
+        label: 'Rensat',
+        occurredAt: new Date().toISOString(),
+        offsetSeconds,
+      }
+      p.playout.timeline = [...p.playout.timeline, event]
+      if (kind === 'agendaItem') p.playout.currentAgendaItemId = null
+      else p.playout.currentPersonId = null
+      return delay(clone(event))
     },
     async resetSimulation(id) {
       const p = findProject(id)

@@ -6,6 +6,7 @@ import { Modal } from '../components/Modal'
 import { GearIcon } from '../components/icons'
 import { formatDate } from './time'
 import { routeHref, type RouteKey } from './router'
+import logoUrl from '../images/ungap-icon-text-2026-black.png'
 import './Shell.css'
 
 // Matchar AuthController.FakeUser / TrashPolicy.FakeCurrentUserId på
@@ -52,12 +53,11 @@ const NAV_GROUPS: NavGroup[] = [
 interface ShellProps {
   active: RouteKey
   children: ComponentChildren
-  onPlayoutShortcut?: () => void
   showPlayoutShortcut: boolean
   onLogout: () => void
 }
 
-export function Shell({ active, children, onPlayoutShortcut, showPlayoutShortcut, onLogout }: ShellProps) {
+export function Shell({ active, children, showPlayoutShortcut, onLogout }: ShellProps) {
   const [navOpen, setNavOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null)
   const [currentDomain, setCurrentDomain] = useState<Domain | null>(null)
@@ -93,7 +93,9 @@ export function Shell({ active, children, onPlayoutShortcut, showPlayoutShortcut
       {navOpen && <div class="nav-scrim" onClick={() => setNavOpen(false)} />}
 
       <nav class={`rail ${navOpen ? 'open' : ''}`}>
-        <div class="brand">Ungap Live</div>
+        <div class="brand">
+          <img class="brand-logo" src={logoUrl} alt="Ungap" />
+        </div>
 
         <div class="nav-groups">
           {NAV_GROUPS.map((group) => (
@@ -112,10 +114,7 @@ export function Shell({ active, children, onPlayoutShortcut, showPlayoutShortcut
                     <a
                       href={routeHref(item.route)}
                       class="nav-quick"
-                      onClick={() => {
-                        setNavOpen(false)
-                        onPlayoutShortcut?.()
-                      }}
+                      onClick={() => setNavOpen(false)}
                     >
                       {item.quickAction.label}
                     </a>

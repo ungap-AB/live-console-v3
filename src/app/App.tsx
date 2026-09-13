@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
-import { client } from '../data'
+import { useState } from 'preact/hooks'
 import { routeHref, useRoute } from './router'
 import { Shell } from './Shell'
 import { LoginView } from './LoginView'
@@ -54,40 +53,10 @@ export function App() {
     window.location.hash = routeHref('projects')
   }
 
-  // Håller koll på om någon sändning pågår just nu, så Playout-genvägen i
-  // sidomenyn bara syns när den faktiskt leder någonstans (se HANDOVER §11
-  // om pollingintervall för kanalstatus).
-  const [liveProjectId, setLiveProjectId] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!loggedIn) return
-    let cancelled = false
-    async function poll() {
-      try {
-        const projects = await client.projects.list()
-        if (!cancelled) setLiveProjectId(projects.find((p) => p.channel?.state === 'live')?.id ?? null)
-      } catch {
-        // Nästa poll försöker igen.
-      }
-    }
-    poll()
-    const id = setInterval(poll, 5000)
-    return () => {
-      cancelled = true
-      clearInterval(id)
-    }
-  }, [loggedIn])
-
-  function goToLivePlayout() {
-    if (!liveProjectId) return
-    setActiveProjectId(liveProjectId)
-    setProjectScreen('playout')
-  }
-
   if (!loggedIn) return <LoginView onLogin={login} />
 
   return (
-    <Shell active={route} onPlayoutShortcut={goToLivePlayout} showPlayoutShortcut={liveProjectId !== null} onLogout={logout}>
+    <Shell active={route} showPlayoutShortcut={projectScreen === 'playout'} onLogout={logout}>
       {route === 'projects' && (
         <ProjectsView
           selectedId={activeProjectId}

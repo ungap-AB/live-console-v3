@@ -87,7 +87,7 @@ export interface ServerProject {
 export interface ServerTimelineEvent {
   eventId: string
   kind: string
-  refId: string
+  refId: string | null
   label: string
   occurredAt: string
   offsetSeconds: number | null

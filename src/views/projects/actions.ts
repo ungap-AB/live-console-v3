@@ -12,6 +12,7 @@ export interface ProjectActions {
   createReviewLink: () => void
   publish: () => void
   cue: (kind: CueKind, refId: string, label: string) => void
-  removeTimelineEvent: (eventId: string) => void
+  /** Rensar aktiv dagordningspunkt/namnskylt — loggas som en egen händelse, tar inte bort tidigare utspelningar. */
+  clear: (kind: CueKind) => void
   reset: () => void
 }

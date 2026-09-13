@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { CueKind, Project, TimelineEvent } from '../../data/types'
+import type { Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { StatusChip } from '../../components/StatusChip'
 import { PickerModal } from '../../components/PickerModal'
@@ -9,13 +9,6 @@ import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
 import { CheckIcon, PlayIcon } from '../../components/icons'
 import './Playout.css'
-
-function lastEventOfKind(timeline: TimelineEvent[], kind: CueKind): TimelineEvent | null {
-  for (let i = timeline.length - 1; i >= 0; i--) {
-    if (timeline[i].kind === kind) return timeline[i]
-  }
-  return null
-}
 
 interface PlayoutProps {
   project: Project
@@ -56,8 +49,6 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
 
   const nowItem = agenda?.items.find((it) => it.id === p.playout.currentAgendaItemId)?.title ?? null
   const nowSpeaker = nameList?.people.find((pe) => pe.id === p.playout.currentPersonId)?.name ?? null
-  const lastAgendaEvent = lastEventOfKind(p.playout.timeline, 'agendaItem')
-  const lastPersonEvent = lastEventOfKind(p.playout.timeline, 'person')
 
   function lastPlayedOffset(itemId: string): number | null {
     const events = p.playout.timeline.filter((e) => e.kind === 'agendaItem' && e.refId === itemId)
@@ -108,34 +99,34 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
       </div>
 
       <div class="now">
-        <div>
+        <div class={nowItem ? '' : 'now-empty'}>
           <div class="k">Ärende i bild</div>
-          <div class={`v now-value ${nowItem ? '' : 'empty'}`}>
+          <div class="v now-value">
             <span>{nowItem ?? '–'}</span>
-            {nowItem && lastAgendaEvent && (
+            {nowItem && (
               <button
                 class="ib now-clear"
                 type="button"
-                title="Ta bort senaste utspelning"
-                aria-label="Ta bort senaste utspelning"
-                onClick={() => actions.removeTimelineEvent(lastAgendaEvent.id)}
+                title="Rensa ärende i bild"
+                aria-label="Rensa ärende i bild"
+                onClick={() => actions.clear('agendaItem')}
               >
                 ✕
               </button>
             )}
           </div>
         </div>
-        <div>
+        <div class={nowSpeaker ? '' : 'now-empty'}>
           <div class="k">Talare i bild</div>
-          <div class={`v now-value ${nowSpeaker ? '' : 'empty'}`}>
+          <div class="v now-value">
             <span>{nowSpeaker ?? '–'}</span>
-            {nowSpeaker && lastPersonEvent && (
+            {nowSpeaker && (
               <button
                 class="ib now-clear"
                 type="button"
-                title="Ta bort senaste utspelning"
-                aria-label="Ta bort senaste utspelning"
-                onClick={() => actions.removeTimelineEvent(lastPersonEvent.id)}
+                title="Rensa talare i bild"
+                aria-label="Rensa talare i bild"
+                onClick={() => actions.clear('person')}
               >
                 ✕
               </button>

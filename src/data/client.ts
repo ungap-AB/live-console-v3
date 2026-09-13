@@ -115,7 +115,8 @@ export interface Client {
     createReviewLink(id: string): Promise<Project>
     publish(id: string): Promise<Project>
     cue(id: string, kind: CueKind, refId: string, label: string): Promise<TimelineEvent>
-    removeTimelineEvent(id: string, eventId: string): Promise<void>
+    /** Rensar aktiv dagordningspunkt/namnskylt — loggas som en egen tidslinjehändelse, tar inte bort tidigare utspelningar. */
+    clear(id: string, kind: CueKind): Promise<TimelineEvent>
     /** Mockup-bara: återställer sändningssimuleringen till ett obörjat läge. */
     resetSimulation(id: string): Promise<Project>
   }

@@ -55,6 +55,20 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
     setProjects((prev) => prev.map((p) => (p.id === next.id ? next : p)))
   }
 
+  // client.projects.list() ger bara en lätt sammanfattning (tom playout) —
+  // hämta hela projektet (med riktig tidslinje) när ett projekt väljs, annars
+  // ser Playout ut som om inget någonsin spelats ut på tidigare besökta projekt.
+  useEffect(() => {
+    if (!selectedId) return
+    let cancelled = false
+    client.projects.get(selectedId).then((full) => {
+      if (!cancelled && full) replace(full)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedId])
+
   async function withErrorToast(fn: () => Promise<void>) {
     try {
       await fn()
@@ -173,24 +187,53 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
         },
       )
     },
-    removeTimelineEvent: (eventId: string) => {
+    clear: (kind: CueKind) => {
       if (!selected) return
       const project = selected
-      const removedEvent = project.playout.timeline.find((e) => e.id === eventId)
-      if (!removedEvent) return
+      const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+      const live = project.channel?.state === 'live'
+      const offsetSeconds =
+        live && project.sim.recordingStartedAt
+          ? Math.round(
+              project.sim.accumulatedSeconds +
+                (Date.now() - new Date(project.sim.recordingStartedAt).getTime()) / 1000,
+            )
+          : null
+      const optimisticEvent: TimelineEvent = {
+        id: tempId,
+        kind,
+        refId: null,
+        label: 'Rensat',
+        occurredAt: new Date().toISOString(),
+        offsetSeconds,
+      }
 
-      replace({ ...project, playout: derivePlayoutState(project.playout.timeline.filter((e) => e.id !== eventId)) })
+      // Rensning loggas som en egen (tom) tidslinjehändelse, precis som cueing
+      // — en utspelad cue är oåterkallelig, så det här är inte en ångra-knapp
+      // som tar bort tidigare händelser.
+      replace({ ...project, playout: derivePlayoutState([...project.playout.timeline, optimisticEvent]) })
 
-      client.projects.removeTimelineEvent(project.id, eventId).catch((err) => {
-        setProjects((prev) =>
-          prev.map((p) => {
-            if (p.id !== project.id) return p
-            const timeline = [...p.playout.timeline, removedEvent].sort((a, b) => a.occurredAt.localeCompare(b.occurredAt))
-            return { ...p, playout: derivePlayoutState(timeline) }
-          }),
-        )
-        setToast(err instanceof Error ? err.message : 'Kunde inte ta bort händelsen.')
-      })
+      client.projects.clear(project.id, kind).then(
+        (realEvent) => {
+          setProjects((prev) =>
+            prev.map((p) =>
+              p.id === project.id
+                ? { ...p, playout: derivePlayoutState(p.playout.timeline.map((e) => (e.id === tempId ? realEvent : e))) }
+                : p,
+            ),
+          )
+        },
+        (err) => {
+          setProjects((prev) =>
+            prev.map((p) =>
+              p.id === project.id
+                ? { ...p, playout: derivePlayoutState(p.playout.timeline.filter((e) => e.id !== tempId)) }
+                : p,
+            ),
+          )
+          setToast(err instanceof Error ? err.message : 'Kunde inte rensa.')
+        },
+      )
     },
     reset: () =>
       withErrorToast(async () => {

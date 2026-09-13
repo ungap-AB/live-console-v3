@@ -106,7 +106,8 @@ export type CueKind = 'agendaItem' | 'person'
 export interface TimelineEvent {
   id: string
   kind: CueKind
-  refId: string
+  /** null representerar att bilden rensats för den här sorten (ingen aktiv punkt/namnskylt). */
+  refId: string | null
   label: string
   occurredAt: string
   offsetSeconds: number | null
