@@ -31,14 +31,32 @@ export function AgendasView() {
     if (!selectedId && agendas.length > 0) setSelectedId(agendas[0].id)
   }, [agendas, selectedId])
 
+  // Listan är medvetet lätt (itemCount, inga punkter) — full detalj hämtas
+  // separat när något väljs, se PLAN-live-server-v3.md Steg 2.
+  const detailResource = useResource(
+    () => (selectedId ? client.agendas.get(selectedId) : Promise.resolve(undefined)),
+    [selectedId],
+  )
+  const [selected, setSelected] = useState<Agenda | null>(null)
+
+  useEffect(() => {
+    setSelected(detailResource.data ?? null)
+  }, [detailResource.data])
+
   const q = query.trim().toLowerCase()
   const visible = q
     ? agendas.filter((a) => (a.name + ' ' + a.description).toLowerCase().includes(q))
     : agendas
-  const selected = agendas.find((a) => a.id === selectedId) ?? null
 
   function replaceSelected(next: Agenda) {
-    setAgendas((prev) => prev.map((a) => (a.id === next.id ? next : a)))
+    setSelected(next)
+    setAgendas((prev) =>
+      prev.map((a) =>
+        a.id === next.id
+          ? { ...a, name: next.name, description: next.description, itemCount: next.items.length, usedInProjects: next.usedInProjects, changedAt: next.changedAt }
+          : a,
+      ),
+    )
   }
 
   async function createAgenda() {
@@ -158,8 +176,10 @@ export function AgendasView() {
             </>
           }
           detail={
-            !selected ? (
+            !selectedId ? (
               <div class="docnone">Välj en dagordning i listan.</div>
+            ) : !selected ? (
+              <div class="docnone">Laddar…</div>
             ) : (
               <>
                 <div class="head">

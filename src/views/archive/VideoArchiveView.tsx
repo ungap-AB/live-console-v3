@@ -16,12 +16,6 @@ function kindLabel(kind: CueKind): string {
   return kind === 'agendaItem' ? 'Ärende' : 'Talare'
 }
 
-function chaptersFor(recording: Recording, all: Recording[]): Chapter[] {
-  if (recording.kind === 'original') return recording.chapters
-  const parent = all.find((r) => r.id === recording.parentId)
-  return parent?.chapters ?? []
-}
-
 function isInRange(recording: Recording, chapter: Chapter): boolean {
   if (recording.kind === 'original' || !recording.trimRange) return true
   return (
@@ -63,7 +57,25 @@ export function VideoArchiveView() {
     return hit ? [{ recording: o, child: false }, ...kids.map((k) => ({ recording: k, child: true }))] : []
   })
 
-  const selected = recordings.find((r) => r.id === selectedId) ?? null
+  // Listan är medvetet lätt (inga kapitel) — full detalj, och vid trimmad
+  // version även originalets kapitel, hämtas separat när något väljs. Se
+  // PLAN-live-server-v3.md Steg 2.
+  const detailResource = useResource(async () => {
+    if (!selectedId) return null
+    const recording = await client.recordings.get(selectedId)
+    if (!recording) return null
+    const original =
+      recording.kind === 'trimmed' && recording.parentId ? await client.recordings.get(recording.parentId) : undefined
+    return { recording, original: original ?? null }
+  }, [selectedId])
+  const [detail, setDetail] = useState<{ recording: Recording; original: Recording | null } | null>(null)
+
+  useEffect(() => {
+    setDetail(detailResource.data ?? null)
+  }, [detailResource.data])
+
+  const selected = detail?.recording ?? null
+  const chapters = !detail ? [] : detail.recording.kind === 'original' ? detail.recording.chapters : detail.original?.chapters ?? []
 
   async function trash(recording: Recording) {
     await client.recordings.trash(recording.id)
@@ -150,12 +162,14 @@ export function VideoArchiveView() {
             </>
           }
           detail={
-            !selected ? (
+            !selectedId ? (
               <div class="docnone">Välj en inspelning i listan.</div>
+            ) : !selected ? (
+              <div class="docnone">Laddar…</div>
             ) : (
               <ArchiveDetail
                 recording={selected}
-                all={recordings}
+                chapters={chapters}
                 onTrim={() => setTrimming(selected)}
                 onTrash={() =>
                   selected.kind === 'original' && childrenOf(selected.id).length > 0
@@ -203,16 +217,15 @@ export function VideoArchiveView() {
 
 interface ArchiveDetailProps {
   recording: Recording
-  all: Recording[]
+  chapters: Chapter[]
   onTrim: () => void
   onTrash: () => void
   onDownload: () => void
   onOpenProject: () => void
 }
 
-function ArchiveDetail({ recording: r, all, onTrim, onTrash, onDownload, onOpenProject }: ArchiveDetailProps) {
+function ArchiveDetail({ recording: r, chapters, onTrim, onTrash, onDownload, onOpenProject }: ArchiveDetailProps) {
   const isOriginal = r.kind === 'original'
-  const chapters = chaptersFor(r, all)
   const visibleChapterCount = chapters.filter((c) => isInRange(r, c)).length
 
   return (

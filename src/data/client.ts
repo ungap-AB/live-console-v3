@@ -85,6 +85,7 @@ export interface Client {
   }
   users: {
     listByDomain(domainId: string, query?: string): Promise<UserAccount[]>
+    get(id: string): Promise<UserAccount | undefined>
     resendInvite(id: string): Promise<void>
     sendPasswordReset(id: string): Promise<void>
     setRoles(id: string, roles: Role[]): Promise<UserAccount>

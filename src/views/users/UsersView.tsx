@@ -81,8 +81,27 @@ export function UsersView() {
     setSelectedUserId(id)
   }
 
+  // Listan är medvetet lätt (ingen aktivitetslogg) — full detalj hämtas
+  // separat när något väljs, se PLAN-live-server-v3.md Steg 2.
+  const userDetailResource = useResource(
+    () => (selectedUserId ? client.users.get(selectedUserId) : Promise.resolve(undefined)),
+    [selectedUserId],
+  )
+  const [selectedUserDetail, setSelectedUserDetail] = useState<UserAccount | null>(null)
+
+  useEffect(() => {
+    setSelectedUserDetail(userDetailResource.data ?? null)
+  }, [userDetailResource.data])
+
   function replace(next: UserAccount) {
-    setDomainUsers((prev) => prev.map((u) => (u.id === next.id ? next : u)))
+    setSelectedUserDetail(next)
+    setDomainUsers((prev) =>
+      prev.map((u) =>
+        u.id === next.id
+          ? { ...u, name: next.name, email: next.email, roles: next.roles, status: next.status, ssoEnabled: next.ssoEnabled }
+          : u,
+      ),
+    )
   }
 
   async function withErrorToast(fn: () => Promise<void>) {
@@ -139,7 +158,7 @@ export function UsersView() {
     .filter((u) => !q || (u.name + ' ' + u.email).toLowerCase().includes(q))
     .sort((a, b) => a.name.localeCompare(b.name, 'sv'))
 
-  const selectedUser = domainUsers.find((u) => u.id === selectedUserId) ?? null
+  const selectedUser = selectedUserDetail
   const selectedDomain = domains.find((d) => d.id === selectedDomainId) ?? null
 
   return (
@@ -226,8 +245,10 @@ export function UsersView() {
           </section>
 
           <section class="doc" aria-label="Användarens detaljer">
-            {!selectedUser ? (
+            {!selectedUserId ? (
               <div class="docnone">Välj en användare i listan.</div>
+            ) : !selectedUser ? (
+              <div class="docnone">Laddar…</div>
             ) : (
               <UserDetail
                 user={selectedUser}

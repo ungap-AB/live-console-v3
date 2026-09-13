@@ -1,0 +1,210 @@
+// Formen på live-server-v3s JSON-svar (camelCase, se API-ENDPOINTS.md).
+// Skiljer sig medvetet från src/data/types.ts på några ställen (lätta
+// listposter, platta referens-id:n istället för nästlade objekt) — httpClient.ts
+// gör mappningen mellan de två.
+
+export interface ServerPaged<T> {
+  items: T[]
+  page: number
+  pageSize: number
+  total: number
+}
+
+// ---- Dagordningar ----
+
+export interface ServerAgendaItem {
+  id: string
+  position: number
+  title: string
+  reference?: string
+}
+
+export interface ServerAgendaListItem {
+  id: string
+  name: string
+  description: string
+  itemCount: number
+  usedInProjects: number
+  changedAt: string
+}
+
+export interface ServerAgenda extends ServerAgendaListItem {
+  items: ServerAgendaItem[]
+}
+
+// ---- Namnlistor ----
+
+export interface ServerPerson {
+  id: string
+  position: number
+  name: string
+  party?: string
+  role?: string
+}
+
+export interface ServerNameListSummary {
+  id: string
+  name: string
+  description: string
+  personCount: number
+  usedInProjects: number
+  changedAt: string
+}
+
+export interface ServerNameList extends ServerNameListSummary {
+  people: ServerPerson[]
+}
+
+// ---- Projekt / playout ----
+
+export interface ServerChannelRef {
+  id: string
+  state: string
+}
+
+export interface ServerRecordingRef {
+  id: string
+  state: string
+}
+
+export interface ServerProject {
+  id: string
+  name: string
+  createdAt: string
+  visibility: string
+  playerUrl: string
+  channel: ServerChannelRef | null
+  recording: ServerRecordingRef | null
+  publication: { state: string }
+  agendaId: string | null
+  namelistId: string | null
+}
+
+export interface ServerTimelineEvent {
+  eventId: string
+  kind: string
+  refId: string
+  label: string
+  occurredAt: string
+  offsetSeconds: number | null
+}
+
+export interface ServerReviewLink {
+  url: string
+  token: string
+  expiresAt: string
+}
+
+export interface ServerChapter {
+  kind: string
+  label: string
+  offsetSeconds: number
+}
+
+// ---- Live-resurser ----
+
+export interface ServerChannel {
+  id: string
+  name: string
+  label: string
+  state: string
+  region: string
+  type: string
+  latencyMode: 'LOW' | 'NORMAL'
+  recording: boolean
+  arn: string
+  ingestEndpoint: string
+  streamKeyMasked: string
+  playbackUrl: string
+  projectId: string | null
+  createdAt: string
+  lastUsedAt: string | null
+  idleDays: number
+}
+
+export interface ServerChannelHealth {
+  state: string
+  bitrateKbps?: number
+  resolution?: string
+  framerate?: number
+  lastFrameSecondsAgo?: number
+  streamStartedAt?: string
+}
+
+export interface ServerChannelQuota {
+  used: number
+  limit: number
+}
+
+// ---- Inspelningar och videoarkiv ----
+
+export interface ServerRecordingSegment {
+  startedAt: string
+  durationSeconds: number
+}
+
+export interface ServerRecording {
+  id: string
+  kind: 'original' | 'trim'
+  name: string
+  projectId?: string
+  source: string
+  startedAt: string
+  durationSeconds: number
+  sizeBytes: number
+  resolution: string
+  framerate: number
+  hlsUrl: string
+  segments: ServerRecordingSegment[]
+  children: string[]
+  parentId?: string
+  startOffsetSeconds?: number
+  endOffsetSeconds?: number
+  published?: boolean
+}
+
+export interface ServerTrimJob {
+  jobId: string
+  state: 'processing' | 'done' | 'failed'
+  recordingId?: string
+  error?: { code: string; message: string }
+}
+
+// ---- Papperskorg ----
+
+export interface ServerTrashItem {
+  id: string
+  type: 'project' | 'agenda' | 'namelist' | 'recording'
+  refId: string
+  name: string
+  detail: string
+  deletedAt: string
+  deletedBy: { id: string; name: string }
+  purgeAt: string
+}
+
+// ---- Domäner och användare ----
+
+export interface ServerDomain {
+  id: string
+  host: string
+  org: string
+  userCount: number
+}
+
+export interface ServerActivityEntry {
+  occurredAt: string
+  description: string
+}
+
+export interface ServerUser {
+  id: string
+  domainId: string
+  name: string
+  email: string
+  roles: string[]
+  status: string
+  ssoEnabled: boolean
+  createdAt: string
+  lastLoginAt: string | null
+}

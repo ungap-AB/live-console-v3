@@ -33,11 +33,22 @@ export function NameListsView() {
     if (!selectedId && namelists.length > 0) setSelectedId(namelists[0].id)
   }, [namelists, selectedId])
 
+  // Listan är medvetet lätt (personCount, inga personer) — full detalj hämtas
+  // separat när något väljs, se PLAN-live-server-v3.md Steg 2.
+  const detailResource = useResource(
+    () => (selectedId ? client.namelists.get(selectedId) : Promise.resolve(undefined)),
+    [selectedId],
+  )
+  const [selected, setSelected] = useState<NameList | null>(null)
+
+  useEffect(() => {
+    setSelected(detailResource.data ?? null)
+  }, [detailResource.data])
+
   const q = query.trim().toLowerCase()
   const visible = q
     ? namelists.filter((n) => (n.name + ' ' + n.description).toLowerCase().includes(q))
     : namelists
-  const selected = namelists.find((n) => n.id === selectedId) ?? null
 
   const personQuery = personFilter.trim().toLowerCase()
   const visiblePeople = selected
@@ -48,7 +59,14 @@ export function NameListsView() {
   const filterActive = personQuery.length > 0
 
   function replaceSelected(next: NameList) {
-    setNamelists((prev) => prev.map((n) => (n.id === next.id ? next : n)))
+    setSelected(next)
+    setNamelists((prev) =>
+      prev.map((n) =>
+        n.id === next.id
+          ? { ...n, name: next.name, description: next.description, personCount: next.people.length, usedInProjects: next.usedInProjects, changedAt: next.changedAt }
+          : n,
+      ),
+    )
   }
 
   async function createNameList() {
@@ -179,8 +197,10 @@ export function NameListsView() {
             </>
           }
           detail={
-            !selected ? (
+            !selectedId ? (
               <div class="docnone">Välj en namnlista i listan.</div>
+            ) : !selected ? (
+              <div class="docnone">Laddar…</div>
             ) : (
               <>
                 <div class="head">

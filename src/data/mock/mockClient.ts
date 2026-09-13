@@ -362,6 +362,9 @@ export const mockClient: Client = {
         .filter((u) => !q || (u.name + ' ' + u.email).toLowerCase().includes(q))
       return delay(clone(hits))
     },
+    async get(id) {
+      return delay(clone(users.find((u) => u.id === id)))
+    },
     async resendInvite() {
       return delay(undefined)
     },
