@@ -9,11 +9,6 @@ import { routeHref, type RouteKey } from './router'
 import logoUrl from '../images/ungap-icon-text-2026-black.png'
 import './Shell.css'
 
-// Matchar AuthController.FakeUser / TrashPolicy.FakeCurrentUserId på
-// servern — steg 1 har ingen riktig inloggad användare, se
-// PLAN-live-server-v3.md.
-const CURRENT_USER_ID = 'u1'
-
 interface NavItem {
   route: RouteKey
   label: string
@@ -55,9 +50,10 @@ interface ShellProps {
   children: ComponentChildren
   showPlayoutShortcut: boolean
   onLogout: () => void
+  currentUserId: string
 }
 
-export function Shell({ active, children, showPlayoutShortcut, onLogout }: ShellProps) {
+export function Shell({ active, children, showPlayoutShortcut, onLogout, currentUserId }: ShellProps) {
   const [navOpen, setNavOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null)
   const [currentDomain, setCurrentDomain] = useState<Domain | null>(null)
@@ -65,9 +61,9 @@ export function Shell({ active, children, showPlayoutShortcut, onLogout }: Shell
   const [showAccount, setShowAccount] = useState(false)
 
   useEffect(() => {
-    client.users.get(CURRENT_USER_ID).then((u) => u && setCurrentUser(u))
+    client.users.get(currentUserId).then((u) => u && setCurrentUser(u))
     client.channels.quota().then(setQuota)
-  }, [])
+  }, [currentUserId])
 
   useEffect(() => {
     if (!currentUser) return

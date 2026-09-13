@@ -3,6 +3,30 @@
 
 const BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/+$/, '')
 
+const TOKEN_KEY = 'ungap-live-jwt'
+
+let authToken: string | null = (() => {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+})()
+
+export function setAuthToken(token: string | null) {
+  authToken = token
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token)
+    else localStorage.removeItem(TOKEN_KEY)
+  } catch {
+    // localStorage otillgängligt — token håller ändå för sessionen.
+  }
+}
+
+export function getAuthToken(): string | null {
+  return authToken
+}
+
 export class ApiError extends Error {
   code: string
   constructor(code: string, message: string) {
@@ -28,9 +52,13 @@ function buildUrl(path: string, query?: RequestOptions['query']): string {
 }
 
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const headers: Record<string, string> = {}
+  if (options.body !== undefined) headers['Content-Type'] = 'application/json'
+  if (authToken) headers['Authorization'] = `Bearer ${authToken}`
+
   const response = await fetch(buildUrl(path, options.query), {
     method: options.method ?? 'GET',
-    headers: options.body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+    headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   })
 

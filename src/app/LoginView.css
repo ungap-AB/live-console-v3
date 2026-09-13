@@ -17,10 +17,10 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
 }
 
-.login-brand {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+.login-logo {
+  height: 24px;
+  width: auto;
+  align-self: flex-start;
 }
 
 .login-sub {
@@ -42,7 +42,12 @@
   border-radius: 6px;
   padding: 8px 10px;
   background: #fbfcfd;
-  color: var(--ink-3);
+  color: var(--ink);
+}
+
+.login-error {
+  font-size: 13px;
+  color: var(--danger);
 }
 
 .login-submit {

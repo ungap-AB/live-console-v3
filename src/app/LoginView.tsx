@@ -1,29 +1,61 @@
+import { useState } from 'preact/hooks'
+import { client } from '../data'
+import type { CurrentUser } from '../data/types'
+import logoUrl from '../images/ungap-icon-text-2026-black.png'
 import './LoginView.css'
 
 interface LoginViewProps {
-  onLogin: () => void
+  onLogin: (user: CurrentUser) => void
 }
 
-// Fejkat inloggningsformulär för mock-fasen — se PLAN-live-server-v3.md.
-// Riktig auth (JWT) porteras i steg 3.
 export function LoginView({ onLogin }: LoginViewProps) {
+  const [email, setEmail] = useState('')
+  const [pin, setPin] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  async function submit(e: Event) {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+    try {
+      const user = await client.auth.login(email, pin)
+      onLogin(user)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Kunde inte logga in.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div class="login-screen">
-      <div class="login-card">
-        <div class="login-brand">Ungap Live</div>
+      <form class="login-card" onSubmit={submit}>
+        <img class="login-logo" src={logoUrl} alt="Ungap" />
         <p class="login-sub">Logga in för att fortsätta.</p>
         <label class="login-field">
           E-post
-          <input type="email" value="anders.marten@kalmar.se" readOnly />
+          <input
+            type="text"
+            value={email}
+            autoFocus
+            onInput={(e) => setEmail(e.currentTarget.value)}
+          />
         </label>
         <label class="login-field">
-          Lösenord
-          <input type="password" value="••••••••" readOnly />
+          PIN-kod
+          <input
+            type="password"
+            inputMode="numeric"
+            value={pin}
+            onInput={(e) => setPin(e.currentTarget.value)}
+          />
         </label>
-        <button class="btn btn-primary login-submit" type="button" onClick={onLogin}>
-          Logga in
+        {error && <div class="login-error">{error}</div>}
+        <button class="btn btn-primary login-submit" type="submit" disabled={loading || !email || !pin}>
+          {loading ? 'Loggar in…' : 'Logga in'}
         </button>
-      </div>
+      </form>
     </div>
   )
 }

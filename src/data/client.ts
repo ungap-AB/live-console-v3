@@ -5,6 +5,7 @@ import type {
   ChannelHealth,
   ChannelQuota,
   CueKind,
+  CurrentUser,
   Domain,
   NameList,
   NameListPerson,
@@ -32,6 +33,11 @@ export interface NameListInput {
 // behöver ändras. Domänerna läggs till här i samma takt som deras vyer byggs
 // (se PLAN-byggordningen) — inga oanvända metoder i väntan på en vy.
 export interface Client {
+  auth: {
+    login(email: string, pin: string): Promise<CurrentUser>
+    me(): Promise<CurrentUser>
+    logout(): Promise<void>
+  }
   agendas: {
     list(query?: string): Promise<Agenda[]>
     get(id: string): Promise<Agenda | undefined>

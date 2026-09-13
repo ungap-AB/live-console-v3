@@ -1,4 +1,6 @@
-import { useState } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
+import { client } from '../data'
+import type { CurrentUser } from '../data/types'
 import { routeHref, useRoute } from './router'
 import { Shell } from './Shell'
 import { LoginView } from './LoginView'
@@ -10,34 +12,27 @@ import { VideoArchiveView } from '../views/archive/VideoArchiveView'
 import { TrashView } from '../views/trash/TrashView'
 import { UsersView } from '../views/users/UsersView'
 
-const AUTH_KEY = 'ungap-live-fake-auth'
+type AuthState = { status: 'loading' } | { status: 'anon' } | { status: 'authed'; user: CurrentUser }
 
 export function App() {
   const route = useRoute()
-  const [loggedIn, setLoggedIn] = useState(() => {
-    try {
-      return localStorage.getItem(AUTH_KEY) === '1'
-    } catch {
-      return false
-    }
-  })
+  const [auth, setAuth] = useState<AuthState>({ status: 'loading' })
 
-  function login() {
-    setLoggedIn(true)
-    try {
-      localStorage.setItem(AUTH_KEY, '1')
-    } catch {
-      // localStorage otillgängligt — fejkad inloggning håller ändå för sessionen.
-    }
+  // Försök återuppta en tidigare session (token sparad i localStorage av
+  // httpClient) — misslyckas tyst till anon om ingen finns eller den gått ut.
+  useEffect(() => {
+    client.auth.me().then(
+      (user) => setAuth({ status: 'authed', user }),
+      () => setAuth({ status: 'anon' }),
+    )
+  }, [])
+
+  function login(user: CurrentUser) {
+    setAuth({ status: 'authed', user })
   }
 
   function logout() {
-    setLoggedIn(false)
-    try {
-      localStorage.removeItem(AUTH_KEY)
-    } catch {
-      // se ovan
-    }
+    client.auth.logout().finally(() => setAuth({ status: 'anon' }))
   }
 
   // Lyft upp ur ProjectsView så att vilket projekt/vy som senast visades
@@ -53,10 +48,16 @@ export function App() {
     window.location.hash = routeHref('projects')
   }
 
-  if (!loggedIn) return <LoginView onLogin={login} />
+  if (auth.status === 'loading') return <div class="login-screen">Laddar…</div>
+  if (auth.status === 'anon') return <LoginView onLogin={login} />
 
   return (
-    <Shell active={route} showPlayoutShortcut={projectScreen === 'playout'} onLogout={logout}>
+    <Shell
+      active={route}
+      showPlayoutShortcut={projectScreen === 'playout'}
+      onLogout={logout}
+      currentUserId={auth.user.id}
+    >
       {route === 'projects' && (
         <ProjectsView
           selectedId={activeProjectId}

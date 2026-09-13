@@ -6,6 +6,7 @@ import type {
   ChannelState,
   Chapter,
   CueKind,
+  CurrentUser,
   NameList,
   Project,
   ProjectRef,
@@ -16,7 +17,7 @@ import type {
   UserAccount,
   Visibility,
 } from '../types'
-import { ApiError, api } from './fetchJson'
+import { ApiError, api, setAuthToken } from './fetchJson'
 import type {
   ServerAgenda,
   ServerAgendaListItem,
@@ -24,7 +25,9 @@ import type {
   ServerChannelHealth,
   ServerChannelQuota,
   ServerChapter,
+  ServerCurrentUser,
   ServerDomain,
+  ServerLoginResponse,
   ServerNameList,
   ServerNameListSummary,
   ServerPaged,
@@ -294,7 +297,29 @@ async function fetchUserDetail(id: string): Promise<UserAccount> {
   return { ...toUserSummary(dto), activity }
 }
 
+function toCurrentUser(dto: ServerCurrentUser): CurrentUser {
+  return { id: dto.id, name: dto.name, email: dto.email, domain: dto.domain, roles: dto.roles as CurrentUser['roles'] }
+}
+
 export const httpClient: Client = {
+  auth: {
+    async login(email, pin) {
+      const dto = await api<ServerLoginResponse>('/auth/login', { method: 'POST', body: { email, pin } })
+      setAuthToken(dto.token)
+      return toCurrentUser(dto.user)
+    },
+    async me() {
+      const dto = await api<ServerCurrentUser>('/auth/me')
+      return toCurrentUser(dto)
+    },
+    async logout() {
+      try {
+        await api<void>('/auth/logout', { method: 'POST' })
+      } finally {
+        setAuthToken(null)
+      }
+    },
+  },
   agendas: {
     async list(query) {
       const page = await api<ServerPaged<ServerAgendaListItem>>('/agendas', { query: { q: query, pageSize: 200 } })

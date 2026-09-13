@@ -3,6 +3,7 @@ import type {
   Agenda,
   AgendaItem,
   Channel,
+  CurrentUser,
   Domain,
   NameList,
   NameListPerson,
@@ -60,7 +61,34 @@ function findNameList(id: string): NameList {
 
 let nextId = 100
 
+// Mock-inloggning: ingen riktig PIN-kontroll, bara att e-posten matchar en
+// fixturanvändare — håller bara i minnet, ingen persistens över omladdning.
+let mockLoggedInUserId: string | null = null
+
+function toCurrentUser(user: UserAccount): CurrentUser {
+  const domain = domains.find((d) => d.id === user.domainId)
+  if (!domain) throw new Error(`Domän ${user.domainId} finns inte`)
+  return { id: user.id, name: user.name, email: user.email, domain, roles: user.roles }
+}
+
 export const mockClient: Client = {
+  auth: {
+    async login(email, _pin) {
+      const user = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase() && u.status === 'active')
+      if (!user) throw new Error('Fel e-postadress eller PIN-kod.')
+      mockLoggedInUserId = user.id
+      return delay(toCurrentUser(user))
+    },
+    async me() {
+      const user = mockLoggedInUserId ? users.find((u) => u.id === mockLoggedInUserId) : undefined
+      if (!user) throw new Error('Inte inloggad.')
+      return delay(toCurrentUser(user))
+    },
+    async logout() {
+      mockLoggedInUserId = null
+      return delay(undefined)
+    },
+  },
   agendas: {
     async list(query) {
       const q = query?.trim().toLowerCase()

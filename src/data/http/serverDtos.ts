@@ -214,3 +214,22 @@ export interface ServerUser {
   createdAt: string
   lastLoginAt: string | null
 }
+
+export interface ServerDomainRef {
+  id: string
+  host: string
+  org: string
+}
+
+export interface ServerCurrentUser {
+  id: string
+  name: string
+  email: string
+  domain: ServerDomainRef
+  roles: string[]
+}
+
+export interface ServerLoginResponse {
+  token: string
+  user: ServerCurrentUser
+}
