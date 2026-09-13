@@ -9,7 +9,6 @@ import { Toast } from '../../components/Toast'
 import { SearchIcon } from '../../components/icons'
 import { ProjectDetail } from './ProjectDetail'
 import { Playout } from './Playout'
-import { StateControlPanel } from './StateControlPanel'
 import type { ProjectActions } from './actions'
 import './ProjectsView.css'
 
@@ -27,7 +26,6 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
   const [projects, setProjects] = useState<Project[]>([])
   const [query, setQuery] = useState('')
   const [toast, setToast] = useState<string | null>(null)
-  const [ctlCollapsed, setCtlCollapsed] = useState(false)
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {
@@ -205,15 +203,6 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
           }
         />
       </div>
-
-      {selected && (
-        <StateControlPanel
-          project={selected}
-          collapsed={ctlCollapsed}
-          onToggleCollapsed={() => setCtlCollapsed((v) => !v)}
-          actions={actions}
-        />
-      )}
 
       {creating && (
         <RenameModal

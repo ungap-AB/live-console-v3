@@ -41,6 +41,22 @@ function formatDeletedDate(iso: string): string {
   return new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+// retentionDays kan vara bråkdelar av en dag i utvecklingsmiljön (kort
+// gallringstid för att testa purge-flödet), så visa i lämplig enhet istället
+// för att alltid anta hela dagar.
+function formatRetentionPeriod(days: number): string {
+  if (days >= 1) {
+    const rounded = Math.round(days)
+    return rounded === 1 ? '1 dag' : `${rounded} dagar`
+  }
+  const totalMinutes = Math.round(days * 24 * 60)
+  if (totalMinutes >= 60) {
+    const hours = Math.round(totalMinutes / 60)
+    return hours === 1 ? '1 timme' : `${hours} timmar`
+  }
+  return totalMinutes === 1 ? '1 minut' : `${totalMinutes} minuter`
+}
+
 interface Pending {
   item: TrashItem
   settled: boolean
@@ -185,8 +201,8 @@ export function TrashView() {
           </ul>
 
           <div class="foot">
-            Poster rensas automatiskt {retentionDays ?? '…'} dagar efter att de tagits bort. Efter det
-            går de inte att återställa.
+            Poster rensas automatiskt {retentionDays !== null ? formatRetentionPeriod(retentionDays) : '…'} efter att
+            de tagits bort. Efter det går de inte att återställa.
           </div>
         </section>
       </div>

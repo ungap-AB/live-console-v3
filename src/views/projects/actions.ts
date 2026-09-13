@@ -1,7 +1,6 @@
 import type { CueKind, Visibility } from '../../data/types'
 
-// Delas mellan ProjectDetail, Playout och StateControlPanel — samma
-// handlingar går att trigga från både den vanliga UI:n och demopanelen.
+// Delas mellan ProjectDetail och Playout.
 export interface ProjectActions {
   setVisibility: (visibility: Visibility) => void
   setAgenda: (agendaId: string | null) => void

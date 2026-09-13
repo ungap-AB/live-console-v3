@@ -158,3 +158,22 @@
   flex: 1;
   min-width: 0;
 }
+
+.debugbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 10px 13px;
+  border: 1px dashed var(--line);
+  border-radius: 7px;
+  background: #fafafa;
+}
+
+.debugbar-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}

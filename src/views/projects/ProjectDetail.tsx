@@ -170,6 +170,30 @@ export function ProjectDetail({ project: p, onOpenPlayout, actions }: ProjectDet
             </div>
           </div>
           {liveNote && <div class={`note ${live ? 'warn' : ''}`}>{liveNote}</div>}
+
+          <div class="debugbar">
+            <span class="debugbar-label">Debug</span>
+            <button
+              class="btn btn-sm"
+              type="button"
+              disabled={!hasIngest || live}
+              onClick={() => actions.setEncoderSending(true)}
+            >
+              Simulera signal start
+            </button>
+            <button
+              class="btn btn-sm"
+              type="button"
+              disabled={!hasIngest || !live}
+              onClick={() => actions.setEncoderSending(false)}
+            >
+              Simulera signal stopp
+            </button>
+            <span class="spacer" />
+            <button class="btn btn-sm btn-danger" type="button" onClick={actions.reset}>
+              Återställ allt
+            </button>
+          </div>
         </div>
       )}
 
