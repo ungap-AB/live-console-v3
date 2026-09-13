@@ -125,16 +125,6 @@ export function LiveResourcesView() {
           detailLabel="Vald resurs"
           list={
             <>
-              {quota && (
-                <QuotaBar
-                  used={quota.used}
-                  limit={quota.limit}
-                  segments={[
-                    { label: 'sänder', value: liveCount, tone: 'live' },
-                    { label: 'vilande', value: idleCount, tone: 'neutral' },
-                  ]}
-                />
-              )}
               <div class="top">
                 <div class="search">
                   <SearchIcon />
@@ -173,6 +163,16 @@ export function LiveResourcesView() {
                   </li>
                 ))}
               </ul>
+              {quota && (
+                <QuotaBar
+                  used={quota.used}
+                  limit={quota.limit}
+                  segments={[
+                    { label: 'sänder', value: liveCount, tone: 'live' },
+                    { label: 'vilande', value: idleCount, tone: 'neutral' },
+                  ]}
+                />
+              )}
             </>
           }
           detail={
@@ -184,7 +184,6 @@ export function LiveResourcesView() {
                 health={healthResource.data ?? null}
                 onRotateKey={() => (selected.state === 'live' ? setConfirmRotate(selected) : rotateKey(selected))}
                 onOpenProject={() => selected.project && setToast(`Öppnar projektet: ${selected.project.name}`)}
-                onAttachProject={() => setToast('Öppnar väljare för att koppla resursen till ett projekt.')}
                 onTeardown={() => setConfirmTeardown(selected)}
               />
             )
@@ -238,18 +237,10 @@ interface ResourceDetailProps {
   health: ChannelHealth | null
   onRotateKey: () => void
   onOpenProject: () => void
-  onAttachProject: () => void
   onTeardown: () => void
 }
 
-function ResourceDetail({
-  channel: c,
-  health,
-  onRotateKey,
-  onOpenProject,
-  onAttachProject,
-  onTeardown,
-}: ResourceDetailProps) {
+function ResourceDetail({ channel: c, health, onRotateKey, onOpenProject, onTeardown }: ResourceDetailProps) {
   const live = c.state === 'live'
 
   return (
@@ -278,13 +269,9 @@ function ResourceDetail({
           <button class="btn btn-sm" type="button" onClick={onRotateKey}>
             Rotera stream key
           </button>
-          {c.project ? (
+          {c.project && (
             <button class="btn btn-sm" type="button" onClick={onOpenProject}>
               Öppna projektet
-            </button>
-          ) : (
-            <button class="btn btn-sm" type="button" onClick={onAttachProject}>
-              Koppla till projekt
             </button>
           )}
           <span class="spacer" />
@@ -332,22 +319,6 @@ function ResourceDetail({
               </div>
             </div>
 
-            <div class="block">
-              <h3>Projekt</h3>
-              {c.project ? (
-                <div class="project">
-                  <div class="pn">
-                    {c.project.name}
-                    <span>{c.project.state}</span>
-                  </div>
-                  <button class="btn btn-sm" type="button" onClick={onOpenProject}>
-                    Öppna
-                  </button>
-                </div>
-              ) : (
-                <div class="project empty">Resursen är inte kopplad till något projekt.</div>
-              )}
-            </div>
           </div>
 
           <div class="health">

@@ -43,9 +43,10 @@ interface ShellProps {
   active: RouteKey
   children: ComponentChildren
   onPlayoutShortcut?: () => void
+  onLogout: () => void
 }
 
-export function Shell({ active, children, onPlayoutShortcut }: ShellProps) {
+export function Shell({ active, children, onPlayoutShortcut, onLogout }: ShellProps) {
   const [navOpen, setNavOpen] = useState(false)
 
   return (
@@ -98,7 +99,7 @@ export function Shell({ active, children, onPlayoutShortcut }: ShellProps) {
         <div class="nav-user">
           <div class="nav-user-name">Anders Mårtén</div>
           <div class="nav-user-domain">kalmar.se</div>
-          <button class="btn btn-sm" type="button">
+          <button class="btn btn-sm" type="button" onClick={onLogout}>
             Logga ut
           </button>
         </div>

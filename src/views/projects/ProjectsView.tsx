@@ -5,7 +5,9 @@ import { useResource } from '../../app/useResource'
 import { SplitPane } from '../../components/SplitPane'
 import { StatusChip } from '../../components/StatusChip'
 import { RenameModal } from '../../components/RenameModal'
+import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
+import { Clock } from '../../components/Clock'
 import { SearchIcon } from '../../components/icons'
 import { ProjectDetail } from './ProjectDetail'
 import { Playout } from './Playout'
@@ -27,6 +29,7 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
   const [query, setQuery] = useState('')
   const [toast, setToast] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<Project | null>(null)
 
   useEffect(() => {
     if (resource.data) setProjects(resource.data)
@@ -56,6 +59,14 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
     onSelectedIdChange(created.id)
     onScreenChange('detail')
     setCreating(false)
+  }
+
+  async function deleteProject(project: Project) {
+    await client.projects.trash(project.id)
+    setProjects((prev) => prev.filter((p) => p.id !== project.id))
+    onSelectedIdChange(null)
+    onScreenChange('detail')
+    setConfirmDelete(null)
   }
 
   const actions: ProjectActions = {
@@ -128,9 +139,15 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
           <h1>Projekt</h1>
           <div class="sub">Möten, live-sändning och ondemand-publicering</div>
         </div>
+        <Clock />
       </header>
 
       <div class="content">
+        {selected && screen === 'playout' ? (
+          <div class="playout-frame">
+            <Playout project={selected} onClose={() => onScreenChange('detail')} actions={actions} />
+          </div>
+        ) : (
         <SplitPane
           listLabel="Projekt"
           detailLabel="Valt projekt"
@@ -191,18 +208,33 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
           detail={
             !selected ? (
               <div class="docnone">Välj ett projekt i listan.</div>
-            ) : screen === 'playout' ? (
-              <Playout project={selected} onClose={() => onScreenChange('detail')} actions={actions} />
             ) : (
               <ProjectDetail
                 project={selected}
                 onOpenPlayout={() => onScreenChange('playout')}
+                onDelete={() => setConfirmDelete(selected)}
                 actions={actions}
               />
             )
           }
         />
+        )}
       </div>
+
+      {confirmDelete && (
+        <ConfirmModal
+          title="Radera projekt?"
+          confirmLabel="Radera projekt"
+          danger
+          onCancel={() => setConfirmDelete(null)}
+          onConfirm={() => deleteProject(confirmDelete)}
+        >
+          <p>
+            {confirmDelete.name} flyttas till papperskorgen. Det går att återställa därifrån innan
+            gallringstiden löper ut.
+          </p>
+        </ConfirmModal>
+      )}
 
       {creating && (
         <RenameModal

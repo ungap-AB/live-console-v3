@@ -1,0 +1,68 @@
+.scroll-list {
+  flex: 1;
+  min-height: 0;
+}
+
+.templates-list {
+  flex: none !important;
+  overflow: visible !important;
+  border-top: 1px solid var(--line);
+  background: #fbfbfa;
+}
+
+.templates-list li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+}
+
+.templates-list li button[type='button']:not(.clone) {
+  flex: 1;
+  min-width: 0;
+}
+
+.templates-list .clone {
+  flex: none;
+}
+
+.used-by {
+  position: relative;
+}
+
+.used-by-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent, #2a5ad1);
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.used-by-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+  min-width: 220px;
+  padding: 4px;
+}
+
+.used-by-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.used-by-menu button:hover {
+  background: #f1f4f8;
+}

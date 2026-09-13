@@ -39,6 +39,7 @@ export interface Client {
     update(id: string, input: Partial<AgendaInput>): Promise<Agenda>
     duplicate(id: string): Promise<Agenda>
     trash(id: string): Promise<void>
+    setTemplate(id: string, isTemplate: boolean): Promise<Agenda>
     replaceItems(id: string, items: AgendaItem[]): Promise<Agenda>
     addItem(id: string, item: Omit<AgendaItem, 'id' | 'position'>): Promise<Agenda>
     updateItem(id: string, itemId: string, item: Omit<AgendaItem, 'id' | 'position'>): Promise<Agenda>
@@ -82,6 +83,7 @@ export interface Client {
   }
   domains: {
     list(): Promise<Domain[]>
+    create(input: { host: string; org: string }): Promise<Domain>
   }
   users: {
     listByDomain(domainId: string, query?: string): Promise<UserAccount[]>
@@ -97,6 +99,7 @@ export interface Client {
     list(query?: string): Promise<Project[]>
     get(id: string): Promise<Project | undefined>
     create(input: { name: string }): Promise<Project>
+    trash(id: string): Promise<void>
     setVisibility(id: string, visibility: Visibility): Promise<Project>
     setAgenda(id: string, agendaId: string | null): Promise<Project>
     setNameList(id: string, namelistId: string | null): Promise<Project>

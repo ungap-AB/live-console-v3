@@ -4,6 +4,7 @@ import type { Domain, Role, UserAccount } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { StatusChip } from '../../components/StatusChip'
 import { ConfirmModal } from '../../components/ConfirmModal'
+import { Modal } from '../../components/Modal'
 import { Toast } from '../../components/Toast'
 import { SearchIcon } from '../../components/icons'
 import { formatDateTime } from '../../app/time'
@@ -48,6 +49,7 @@ export function UsersView() {
   const [toast, setToast] = useState<string | null>(null)
   const [confirmDisable, setConfirmDisable] = useState<UserAccount | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<UserAccount | null>(null)
+  const [creatingDomain, setCreatingDomain] = useState(false)
 
   useEffect(() => {
     if (domainsResource.data) setDomains(domainsResource.data)
@@ -153,6 +155,19 @@ export function UsersView() {
     setToast(`Återställningslänk skickad till ${user.email}. Länken hanteras utanför Ungap Live.`)
   }
 
+  function inviteToDomain() {
+    if (!selectedDomain) return
+    setToast(
+      `Bjud in användare till ${selectedDomain.host}. Inbjudan skickas per e-post och kontot står som Inbjuden tills den accepteras.`,
+    )
+  }
+
+  async function createDomain(host: string, org: string) {
+    const created = await client.domains.create({ host, org })
+    setDomains((prev) => [...prev, created])
+    setCreatingDomain(false)
+  }
+
   const q = query.trim().toLowerCase()
   const visibleUsers = domainUsers
     .filter((u) => !q || (u.name + ' ' + u.email).toLowerCase().includes(q))
@@ -175,11 +190,7 @@ export function UsersView() {
           <section class="pane" aria-label="Domäner">
             <div class="top">
               <h2>Domäner</h2>
-              <button
-                class="btn btn-sm"
-                type="button"
-                onClick={() => setToast('Öppnar formulär för att lägga till en domän.')}
-              >
+              <button class="btn btn-sm" type="button" onClick={() => setCreatingDomain(true)}>
                 Ny
               </button>
             </div>
@@ -210,17 +221,8 @@ export function UsersView() {
                   onInput={(e) => setQuery(e.currentTarget.value)}
                 />
               </div>
-              <button
-                class="btn btn-sm"
-                type="button"
-                onClick={() =>
-                  selectedDomain &&
-                  setToast(
-                    `Bjud in användare till ${selectedDomain.host}. Inbjudan skickas per e-post och kontot står som Inbjuden tills den accepteras.`,
-                  )
-                }
-              >
-                Bjud in
+              <button class="btn btn-sm" type="button" onClick={() => setToast('Öppnar formulär för ny användare.')}>
+                Ny
               </button>
             </div>
             <ul>
@@ -258,6 +260,7 @@ export function UsersView() {
                 onDisable={() => setConfirmDisable(selectedUser)}
                 onEnable={() => enable(selectedUser)}
                 onRemove={() => setConfirmRemove(selectedUser)}
+                onInvite={inviteToDomain}
                 onResendInvite={() => resendInvite(selectedUser)}
                 onSendPasswordReset={() => sendPasswordReset(selectedUser)}
               />
@@ -292,8 +295,65 @@ export function UsersView() {
         </ConfirmModal>
       )}
 
+      {creatingDomain && (
+        <CreateDomainModal onCancel={() => setCreatingDomain(false)} onSave={createDomain} />
+      )}
+
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
+  )
+}
+
+interface CreateDomainModalProps {
+  onCancel: () => void
+  onSave: (host: string, org: string) => void
+}
+
+function CreateDomainModal({ onCancel, onSave }: CreateDomainModalProps) {
+  const [host, setHost] = useState('')
+  const [org, setOrg] = useState('')
+  const canSave = host.trim().length > 0 && org.trim().length > 0
+
+  return (
+    <Modal title="Ny domän" onClose={onCancel}>
+      <div class="domain-form">
+        <label>
+          Värdnamn
+          <input
+            class="rename-input"
+            value={host}
+            placeholder="t.ex. exempel.se"
+            autoFocus
+            onInput={(e) => setHost(e.currentTarget.value)}
+          />
+        </label>
+        <label>
+          Organisation
+          <input
+            class="rename-input"
+            value={org}
+            placeholder="t.ex. Exempel kommun"
+            onInput={(e) => setOrg(e.currentTarget.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && canSave) onSave(host.trim(), org.trim())
+            }}
+          />
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-sm" type="button" onClick={onCancel}>
+          Avbryt
+        </button>
+        <button
+          class="btn btn-sm btn-primary"
+          type="button"
+          disabled={!canSave}
+          onClick={() => onSave(host.trim(), org.trim())}
+        >
+          Skapa
+        </button>
+      </div>
+    </Modal>
   )
 }
 
@@ -305,6 +365,7 @@ interface UserDetailProps {
   onDisable: () => void
   onEnable: () => void
   onRemove: () => void
+  onInvite: () => void
   onResendInvite: () => void
   onSendPasswordReset: () => void
 }
@@ -317,6 +378,7 @@ function UserDetail({
   onDisable,
   onEnable,
   onRemove,
+  onInvite,
   onResendInvite,
   onSendPasswordReset,
 }: UserDetailProps) {
@@ -342,6 +404,9 @@ function UserDetail({
           {domain && <StatusChip tone="neutral">{domain.org}</StatusChip>}
         </div>
         <div class="tools">
+          <button class="btn btn-sm" type="button" onClick={onInvite}>
+            Bjud in
+          </button>
           {u.status === 'invited' ? (
             <button class="btn btn-sm" type="button" onClick={onResendInvite}>
               Skicka om inbjudan

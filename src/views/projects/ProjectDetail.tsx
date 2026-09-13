@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks'
 import type { Project, RecordingState } from '../../data/types'
 import { StatusChip, type ChipTone } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
+import { VideoLightbox } from '../../components/VideoLightbox'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
@@ -10,6 +11,7 @@ import './ProjectDetail.css'
 interface ProjectDetailProps {
   project: Project
   onOpenPlayout: () => void
+  onDelete: () => void
   actions: ProjectActions
 }
 
@@ -27,9 +29,10 @@ const ODM_META: Record<RecordingState, { label: string; tone: ChipTone }> = {
   published: { label: 'Publicerad', tone: 'accent' },
 }
 
-export function ProjectDetail({ project: p, onOpenPlayout, actions }: ProjectDetailProps) {
+export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: ProjectDetailProps) {
   useTick(p.channel?.state === 'live')
   const [tab, setTab] = useState<'live' | 'odm'>('live')
+  const [showVideo, setShowVideo] = useState(false)
 
   const hasIngest = !!p.channel
   const live = p.channel?.state === 'live'
@@ -72,7 +75,7 @@ export function ProjectDetail({ project: p, onOpenPlayout, actions }: ProjectDet
         <div class="panel-head-row">
           <div class="field field-grow">
             <label>Spelarlänk</label>
-            <CopyField value={pub ? p.playerUrl : null} placeholder="Stängd för publik" monospace />
+            <CopyField value={p.playerUrl} monospace />
           </div>
           <div class="field">
             <label>Publik</label>
@@ -96,6 +99,9 @@ export function ProjectDetail({ project: p, onOpenPlayout, actions }: ProjectDet
           </div>
           <button class="btn btn-primary" type="button" onClick={onOpenPlayout}>
             Öppna playout
+          </button>
+          <button class="btn btn-danger" type="button" onClick={onDelete}>
+            Radera projekt
           </button>
         </div>
       </div>
@@ -128,6 +134,11 @@ export function ProjectDetail({ project: p, onOpenPlayout, actions }: ProjectDet
             >
               Riv resurs
             </button>
+            {live && (
+              <button class="btn btn-sm" type="button" onClick={() => setShowVideo(true)}>
+                Visa bild
+              </button>
+            )}
           </div>
           <div class="resource">
             <div class="rowset">
@@ -230,6 +241,11 @@ export function ProjectDetail({ project: p, onOpenPlayout, actions }: ProjectDet
             >
               Publicera
             </button>
+            {p.publication.state === 'published' && (
+              <button class="btn btn-sm" type="button" onClick={() => setShowVideo(true)}>
+                Visa inspelning
+              </button>
+            )}
           </div>
           <div class="rowset" style={{ maxWidth: '660px' }}>
             <div class="field">
@@ -253,6 +269,15 @@ export function ProjectDetail({ project: p, onOpenPlayout, actions }: ProjectDet
             <div class={`note ${p.sim.segments > 1 || rec === 'trimmed' ? 'warn' : ''}`}>{odmNote}</div>
           )}
         </div>
+      )}
+
+      {showVideo && (
+        <VideoLightbox
+          title={p.name}
+          src={live ? p.playerUrl : `https://cdn.ungap.se/vod/${p.id}/master.m3u8`}
+          live={live}
+          onClose={() => setShowVideo(false)}
+        />
       )}
     </>
   )

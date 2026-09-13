@@ -154,3 +154,14 @@ button {
   background: #fdf0f0;
   color: var(--danger);
 }
+
+/* Tvåstegs-borttagning i listor: klick visar en röd bekräfta-ikon i samma
+   läge, som faller tillbaka till papperskorgs-ikonen efter en kort timeout. */
+.ib.del.confirm {
+  background: #fdf0f0;
+  color: var(--danger);
+}
+
+.ib.del.confirm:hover {
+  background: #fbe2e2;
+}

@@ -11,6 +11,7 @@ export const agendaFixtures: Agenda[] = [
     itemCount: 8,
     usedInProjects: 4,
     changedAt: '2026-09-08T00:00:00Z',
+    isTemplate: false,
     items: [
       { id: 'd1i1', position: 1, title: 'Mötet öppnas' },
       { id: 'd1i2', position: 2, title: 'Upprop och justering' },
@@ -29,6 +30,7 @@ export const agendaFixtures: Agenda[] = [
     itemCount: 6,
     usedInProjects: 6,
     changedAt: '2026-09-02T00:00:00Z',
+    isTemplate: false,
     items: [
       { id: 'd2i1', position: 1, title: 'Sammanträdet öppnas' },
       { id: 'd2i2', position: 2, title: 'Föregående protokoll' },
@@ -45,6 +47,7 @@ export const agendaFixtures: Agenda[] = [
     itemCount: 8,
     usedInProjects: 0,
     changedAt: '2026-08-21T00:00:00Z',
+    isTemplate: true,
     items: [
       { id: 'd3i1', position: 1, title: 'Stämmans öppnande' },
       { id: 'd3i2', position: 2, title: 'Val av stämmoordförande' },
@@ -63,6 +66,7 @@ export const agendaFixtures: Agenda[] = [
     itemCount: 6,
     usedInProjects: 1,
     changedAt: '2026-06-14T00:00:00Z',
+    isTemplate: false,
     items: [
       { id: 'd4i1', position: 1, title: 'Mötet öppnas' },
       { id: 'd4i2', position: 2, title: 'Budgetramar 2027', reference: 'KS 2026/301' },

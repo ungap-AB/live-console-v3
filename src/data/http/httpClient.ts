@@ -24,6 +24,7 @@ import type {
   ServerChannelHealth,
   ServerChannelQuota,
   ServerChapter,
+  ServerDomain,
   ServerNameList,
   ServerNameListSummary,
   ServerPaged,
@@ -83,6 +84,7 @@ function toAgendaSummary(dto: ServerAgendaListItem): Agenda {
     itemCount: dto.itemCount,
     usedInProjects: dto.usedInProjects,
     changedAt: dto.changedAt,
+    isTemplate: dto.isTemplate,
     items: [],
   }
 }
@@ -311,6 +313,9 @@ export const httpClient: Client = {
     async trash(id) {
       await api<void>(`/agendas/${id}`, { method: 'DELETE' })
     },
+    async setTemplate(id, isTemplate) {
+      return toAgenda(await api<ServerAgenda>(`/agendas/${id}/template`, { method: 'PUT', body: { isTemplate } }))
+    },
     async replaceItems(id, items) {
       return toAgenda(await api<ServerAgenda>(`/agendas/${id}/items`, { method: 'PUT', body: { items } }))
     },
@@ -443,6 +448,9 @@ export const httpClient: Client = {
     async list() {
       return api('/domains')
     },
+    async create(input) {
+      return api<ServerDomain>('/domains', { method: 'POST', body: input })
+    },
   },
   users: {
     async listByDomain(domainId, query) {
@@ -488,6 +496,9 @@ export const httpClient: Client = {
     async create(input) {
       const dto = await api<ServerProject>('/projects', { method: 'POST', body: input })
       return toProjectFull(dto)
+    },
+    async trash(id) {
+      await api<void>(`/projects/${id}`, { method: 'DELETE' })
     },
     async setVisibility(id, visibility) {
       const dto = await api<ServerProject>(`/projects/${id}/visibility`, { method: 'PUT', body: { visibility } })

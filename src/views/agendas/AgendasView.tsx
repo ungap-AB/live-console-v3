@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Agenda, AgendaItem } from '../../data/types'
+import type { Agenda, AgendaItem, Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { SplitPane } from '../../components/SplitPane'
 import { StatusChip } from '../../components/StatusChip'
@@ -8,12 +8,17 @@ import { SortableList } from '../../components/SortableList'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { CheckIcon, DeleteIcon, EditIcon, CancelIcon, SearchIcon } from '../../components/icons'
+import './AgendasView.css'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export function AgendasView() {
+interface AgendasViewProps {
+  onOpenProject: (id: string) => void
+}
+
+export function AgendasView({ onOpenProject }: AgendasViewProps) {
   const agendasResource = useResource(() => client.agendas.list(), [])
   const [agendas, setAgendas] = useState<Agenda[]>([])
   const [query, setQuery] = useState('')
@@ -22,6 +27,10 @@ export function AgendasView() {
   const [draft, setDraft] = useState({ title: '', reference: '' })
   const [renaming, setRenaming] = useState<Agenda | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<Agenda | null>(null)
+  const [usedByOpen, setUsedByOpen] = useState(false)
+
+  const projectsResource = useResource(() => client.projects.list(), [])
+  const projects: Project[] = projectsResource.data ?? []
 
   useEffect(() => {
     if (agendasResource.data) setAgendas(agendasResource.data)
@@ -41,19 +50,32 @@ export function AgendasView() {
 
   useEffect(() => {
     setSelected(detailResource.data ?? null)
+    setUsedByOpen(false)
   }, [detailResource.data])
 
   const q = query.trim().toLowerCase()
-  const visible = q
+  const filtered = q
     ? agendas.filter((a) => (a.name + ' ' + a.description).toLowerCase().includes(q))
     : agendas
+  const visible = filtered.filter((a) => !a.isTemplate)
+  const templates = filtered.filter((a) => a.isTemplate)
+
+  const usedBy = selected ? projects.filter((p) => p.agendaId === selected.id) : []
 
   function replaceSelected(next: Agenda) {
     setSelected(next)
     setAgendas((prev) =>
       prev.map((a) =>
         a.id === next.id
-          ? { ...a, name: next.name, description: next.description, itemCount: next.items.length, usedInProjects: next.usedInProjects, changedAt: next.changedAt }
+          ? {
+              ...a,
+              name: next.name,
+              description: next.description,
+              itemCount: next.items.length,
+              usedInProjects: next.usedInProjects,
+              changedAt: next.changedAt,
+              isTemplate: next.isTemplate,
+            }
           : a,
       ),
     )
@@ -80,6 +102,11 @@ export function AgendasView() {
       return [...prev.slice(0, idx + 1), copy, ...prev.slice(idx + 1)]
     })
     setSelectedId(copy.id)
+  }
+
+  async function toggleTemplate(agenda: Agenda) {
+    const updated = await client.agendas.setTemplate(agenda.id, !agenda.isTemplate)
+    replaceSelected(updated)
   }
 
   async function trash(agenda: Agenda) {
@@ -154,9 +181,9 @@ export function AgendasView() {
                   Ny
                 </button>
               </div>
-              <ul>
+              <ul class="scroll-list">
                 {agendasResource.loading && agendas.length === 0 && <li class="none">Laddar…</li>}
-                {!agendasResource.loading && visible.length === 0 && (
+                {!agendasResource.loading && visible.length === 0 && templates.length === 0 && (
                   <li class="none">Ingen dagordning matchar sökningen.</li>
                 )}
                 {visible.map((a) => (
@@ -173,6 +200,24 @@ export function AgendasView() {
                   </li>
                 ))}
               </ul>
+              {templates.length > 0 && (
+                <ul class="templates-list">
+                  {templates.map((a) => (
+                    <li key={a.id} class={a.id === selectedId ? 'sel' : ''}>
+                      <button type="button" onClick={() => setSelectedId(a.id)}>
+                        <span class="nm">
+                          <StatusChip tone="neutral">Mall</StatusChip>
+                          {a.name}
+                        </span>
+                        <span class="meta">{a.itemCount} punkter</span>
+                      </button>
+                      <button class="btn btn-sm clone" type="button" onClick={() => duplicate(a)}>
+                        Klona
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </>
           }
           detail={
@@ -183,23 +228,46 @@ export function AgendasView() {
             ) : (
               <>
                 <div class="head">
-                  <h2>{selected.name}</h2>
+                  <h2>
+                    {selected.name}
+                    {selected.isTemplate && <StatusChip tone="neutral">Mall</StatusChip>}
+                  </h2>
                   <div class="facts">
                     <span>{selected.description}</span>
                     <span>{selected.items.length} punkter</span>
                     <span>Ändrad {formatDate(selected.changedAt)}</span>
-                    {selected.usedInProjects > 0 ? (
-                      <StatusChip tone="accent">Används i {selected.usedInProjects} projekt</StatusChip>
-                    ) : (
+                    {selected.usedInProjects === 0 ? (
                       <StatusChip tone="neutral">Används inte</StatusChip>
+                    ) : selected.usedInProjects === 1 && usedBy.length === 1 ? (
+                      <span>
+                        Används i{' '}
+                        <button class="used-by-link" type="button" onClick={() => onOpenProject(usedBy[0].id)}>
+                          {usedBy[0].name}
+                        </button>
+                      </span>
+                    ) : (
+                      <span class="used-by">
+                        <button class="used-by-link" type="button" onClick={() => setUsedByOpen((v) => !v)}>
+                          Används i {selected.usedInProjects} projekt
+                        </button>
+                        {usedByOpen && usedBy.length > 0 && (
+                          <div class="used-by-menu">
+                            {usedBy.map((p) => (
+                              <button key={p.id} type="button" onClick={() => onOpenProject(p.id)}>
+                                {p.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </span>
                     )}
                   </div>
                   <div class="tools">
                     <button class="btn btn-sm" type="button" onClick={() => setRenaming(selected)}>
-                      Byt namn
+                      Redigera
                     </button>
-                    <button class="btn btn-sm" type="button" onClick={() => duplicate(selected)}>
-                      Duplicera
+                    <button class="btn btn-sm" type="button" onClick={() => toggleTemplate(selected)}>
+                      {selected.isTemplate ? 'Ta bort mallstatus' : 'Gör till mall'}
                     </button>
                     <span class="spacer" />
                     <button
@@ -234,17 +302,6 @@ export function AgendasView() {
                                 if (e.key === 'Escape') setEditingItemId(null)
                               }}
                             />
-                            <input
-                              class="ref"
-                              value={draft.reference}
-                              placeholder="Ärendenummer (valfritt)"
-                              aria-label="Ärendenummer"
-                              onInput={(e) => setDraft((d) => ({ ...d, reference: e.currentTarget.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEdit(selected, it.id)
-                                if (e.key === 'Escape') setEditingItemId(null)
-                              }}
-                            />
                           </span>
                           <span class="rowbtns">
                             <button
@@ -272,7 +329,6 @@ export function AgendasView() {
                           <span class="no">{i + 1}</span>
                           <span class="txt">
                             <b>{it.title}</b>
-                            {it.reference && <em>{it.reference}</em>}
                           </span>
                           <span class="rowbtns">
                             <button

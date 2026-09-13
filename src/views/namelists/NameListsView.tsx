@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { NameList, NameListPerson } from '../../data/types'
 import { useResource } from '../../app/useResource'
@@ -24,6 +24,8 @@ export function NameListsView() {
   const [draftName, setDraftName] = useState('')
   const [renaming, setRenaming] = useState<NameList | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<NameList | null>(null)
+  const [confirmingPersonId, setConfirmingPersonId] = useState<string | null>(null)
+  const confirmTimeoutRef = useRef<number | undefined>(undefined)
 
   useEffect(() => {
     if (listsResource.data) setNamelists(listsResource.data)
@@ -43,7 +45,10 @@ export function NameListsView() {
 
   useEffect(() => {
     setSelected(detailResource.data ?? null)
+    setConfirmingPersonId(null)
   }, [detailResource.data])
+
+  useEffect(() => () => window.clearTimeout(confirmTimeoutRef.current), [])
 
   const q = query.trim().toLowerCase()
   const visible = q
@@ -123,6 +128,18 @@ export function NameListsView() {
     const updated = await client.namelists.removePerson(list.id, personId)
     replaceSelected(updated)
     if (editingPersonId === personId) setEditingPersonId(null)
+  }
+
+  function requestRemovePerson(personId: string) {
+    window.clearTimeout(confirmTimeoutRef.current)
+    setConfirmingPersonId(personId)
+    confirmTimeoutRef.current = window.setTimeout(() => setConfirmingPersonId(null), 4000)
+  }
+
+  async function confirmRemovePerson(list: NameList, personId: string) {
+    window.clearTimeout(confirmTimeoutRef.current)
+    setConfirmingPersonId(null)
+    await removePerson(list, personId)
   }
 
   async function reorder(list: NameList, nextPeople: NameListPerson[]) {
@@ -209,15 +226,10 @@ export function NameListsView() {
                     <span>{selected.description}</span>
                     <span>{selected.people.length} namn</span>
                     <span>Ändrad {formatDate(selected.changedAt)}</span>
-                    {selected.usedInProjects > 0 ? (
-                      <StatusChip tone="accent">Används i {selected.usedInProjects} projekt</StatusChip>
-                    ) : (
-                      <StatusChip tone="neutral">Används inte</StatusChip>
-                    )}
                   </div>
                   <div class="tools">
                     <button class="btn btn-sm" type="button" onClick={() => setRenaming(selected)}>
-                      Byt namn
+                      Redigera
                     </button>
                     <button class="btn btn-sm" type="button" onClick={() => duplicate(selected)}>
                       Duplicera
@@ -312,15 +324,27 @@ export function NameListsView() {
                             >
                               <EditIcon />
                             </button>
-                            <button
-                              class="ib del"
-                              type="button"
-                              title="Ta bort"
-                              aria-label="Ta bort"
-                              onClick={() => removePerson(selected, p.id)}
-                            >
-                              <DeleteIcon />
-                            </button>
+                            {confirmingPersonId === p.id ? (
+                              <button
+                                class="ib del confirm"
+                                type="button"
+                                title="Bekräfta borttagning"
+                                aria-label="Bekräfta borttagning"
+                                onClick={() => confirmRemovePerson(selected, p.id)}
+                              >
+                                <CheckIcon />
+                              </button>
+                            ) : (
+                              <button
+                                class="ib del"
+                                type="button"
+                                title="Ta bort"
+                                aria-label="Ta bort"
+                                onClick={() => requestRemovePerson(p.id)}
+                              >
+                                <DeleteIcon />
+                              </button>
+                            )}
                           </span>
                         </>
                       )

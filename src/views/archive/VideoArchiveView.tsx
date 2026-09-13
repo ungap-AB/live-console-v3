@@ -31,7 +31,11 @@ function displayOffset(recording: Recording, chapter: Chapter): number {
   return chapter.offsetSeconds
 }
 
-export function VideoArchiveView() {
+interface VideoArchiveViewProps {
+  onOpenProject: (id: string) => void
+}
+
+export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   const resource = useResource(() => client.recordings.list(), [])
   const [recordings, setRecordings] = useState<Recording[]>([])
   const [query, setQuery] = useState('')
@@ -143,17 +147,13 @@ export function VideoArchiveView() {
                         <span class="nm">{r.name}</span>
                       </span>
                       <span class="meta-row">
-                        {r.kind === 'original' ? (
-                          <StatusChip tone="neutral">Original</StatusChip>
-                        ) : (
+                        {r.kind === 'trimmed' && (
                           <>
                             <StatusChip tone="accent">Trimmad</StatusChip>
                             {r.published && <StatusChip tone="live">Publicerad</StatusChip>}
                           </>
                         )}
-                        <span class="meta meta-mono">
-                          {formatHms(r.durationSeconds)} · {formatGb(r.sizeBytes)} · {formatDateTime(r.createdAt)}
-                        </span>
+                        <span class="meta meta-mono">{formatDateTime(r.createdAt)}</span>
                       </span>
                     </button>
                   </li>
@@ -177,9 +177,7 @@ export function VideoArchiveView() {
                     : trash(selected)
                 }
                 onDownload={() => setToast(`Laddar ner ${selected.name}`)}
-                onOpenProject={() =>
-                  selected.project && setToast(`Öppnar projektet: ${selected.project.name}`)
-                }
+                onOpenProject={() => selected.project && onOpenProject(selected.project.id)}
               />
             )
           }
@@ -233,9 +231,7 @@ function ArchiveDetail({ recording: r, chapters, onTrim, onTrash, onDownload, on
       <div class="head">
         <h2>
           {r.name}
-          {isOriginal ? (
-            <StatusChip tone="neutral">Original</StatusChip>
-          ) : (
+          {!isOriginal && (
             <>
               <StatusChip tone="accent">Trimmad</StatusChip>
               {r.published && <StatusChip tone="live">Publicerad</StatusChip>}
@@ -266,7 +262,7 @@ function ArchiveDetail({ recording: r, chapters, onTrim, onTrash, onDownload, on
           )}
           {r.project && (
             <button class="btn btn-sm" type="button" onClick={onOpenProject}>
-              Öppna projektet
+              Gå till projekt
             </button>
           )}
           <span class="spacer" />
@@ -299,23 +295,6 @@ function ArchiveDetail({ recording: r, chapters, onTrim, onTrash, onDownload, on
         <div class="block">
           <h3>HLS-länk</h3>
           <CopyField value={r.hlsUrl} monospace />
-        </div>
-
-        <div class="block">
-          <h3>Projekt</h3>
-          {r.project ? (
-            <div class="project">
-              <div class="pn">
-                {r.project.name}
-                <span>{r.project.state}</span>
-              </div>
-              <button class="btn btn-sm" type="button" onClick={onOpenProject}>
-                Öppna
-              </button>
-            </div>
-          ) : (
-            <div class="project empty">Inspelningen tillhör inget projekt.</div>
-          )}
         </div>
 
         {chapters.length > 0 && (

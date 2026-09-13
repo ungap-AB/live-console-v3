@@ -83,7 +83,7 @@ export function TrashView() {
   const visible = items
     .filter((i) => filter === 'alla' || i.type === filter)
     .filter((i) => !q || (i.name + ' ' + i.detail).toLowerCase().includes(q))
-    .sort((a, b) => daysLeft(a.purgeAt) - daysLeft(b.purgeAt))
+    .sort((a, b) => new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime())
 
   const counts: Record<string, number> = { alla: items.length }
   for (const t of TYPE_ORDER) counts[t] = items.filter((i) => i.type === t).length

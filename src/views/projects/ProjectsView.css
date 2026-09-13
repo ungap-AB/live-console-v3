@@ -6,3 +6,21 @@
 .project-row .rowtop {
   gap: 8px;
 }
+
+.view > header .clock {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.playout-frame {
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}

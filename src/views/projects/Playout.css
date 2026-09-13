@@ -40,6 +40,10 @@
   overflow: hidden;
 }
 
+.cols.two {
+  grid-template-columns: 1fr 1fr;
+}
+
 @media (max-width: 980px) {
   .cols {
     grid-template-columns: 1fr;

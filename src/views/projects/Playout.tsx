@@ -1,7 +1,9 @@
+import { useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { StatusChip } from '../../components/StatusChip'
+import { PickerModal } from '../../components/PickerModal'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
@@ -16,6 +18,7 @@ interface PlayoutProps {
 
 export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   useTick(p.channel?.state === 'live')
+  const [picking, setPicking] = useState<'agenda' | 'namelist' | null>(null)
 
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
@@ -25,6 +28,8 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
     () => (p.namelistId ? client.namelists.get(p.namelistId) : Promise.resolve(undefined)),
     [p.namelistId],
   )
+  const allAgendasResource = useResource(() => client.agendas.list(), [])
+  const allNameListsResource = useResource(() => client.namelists.list(), [])
 
   const live = p.channel?.state === 'live'
   const frozen = p.publication.state === 'published'
@@ -101,9 +106,14 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         </div>
       </div>
 
-      <div class="cols">
+      <div class={`cols ${live ? 'two' : ''}`}>
         <div class="col">
-          <h3>Dagordning</h3>
+          <h3>
+            Dagordning
+            <button class="btn btn-sm" type="button" onClick={() => setPicking('agenda')}>
+              Byt
+            </button>
+          </h3>
           <div class="col-body">
             {!agenda ? (
               <p class="muted-empty">{p.agendaId ? 'Laddar…' : 'Ingen dagordning kopplad till projektet.'}</p>
@@ -137,7 +147,12 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         </div>
 
         <div class="col">
-          <h3>Namnlista</h3>
+          <h3>
+            Namnlista
+            <button class="btn btn-sm" type="button" onClick={() => setPicking('namelist')}>
+              Byt
+            </button>
+          </h3>
           <div class="col-body">
             {!nameList ? (
               <p class="muted-empty">{p.namelistId ? 'Laddar…' : 'Ingen namnlista kopplad till projektet.'}</p>
@@ -162,40 +177,68 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
           </div>
         </div>
 
-        <div class="col">
-          <h3>
-            Tidslinje
-            {frozen && <StatusChip tone="accent">Fryst</StatusChip>}
-          </h3>
-          <div class="col-body">
-            {p.playout.timeline.length === 0 ? (
-              <p class="muted-empty">Inget utspelat ännu.</p>
-            ) : (
-              <ul class="tl">
-                {p.playout.timeline.map((e) => (
-                  <li key={e.id}>
-                    <span class="t">{formatHms(e.offsetSeconds ?? 0)}</span>
-                    <span class="what">
-                      {e.label}
-                      <em>{e.kind === 'agendaItem' ? 'Ärende' : 'Talare'}</em>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p class="tl-foot">
-              {frozen
-                ? 'Kapitellistan är fryst vid publicering och följer inte längre originaldagordningen.'
-                : 'Varje utspelning loggas här. Tidslinjen fryses som kapitellista när sändningen publiceras.'}
-            </p>
+        {!live && (
+          <div class="col">
+            <h3>
+              Tidslinje
+              {frozen && <StatusChip tone="accent">Fryst</StatusChip>}
+            </h3>
+            <div class="col-body">
+              {p.playout.timeline.length === 0 ? (
+                <p class="muted-empty">Inget utspelat ännu.</p>
+              ) : (
+                <ul class="tl">
+                  {p.playout.timeline.map((e) => (
+                    <li key={e.id}>
+                      <span class="t">{formatHms(e.offsetSeconds ?? 0)}</span>
+                      <span class="what">
+                        {e.label}
+                        <em>{e.kind === 'agendaItem' ? 'Ärende' : 'Talare'}</em>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p class="tl-foot">
+                {frozen
+                  ? 'Kapitellistan är fryst vid publicering och följer inte längre originaldagordningen.'
+                  : 'Varje utspelning loggas här. Tidslinjen fryses som kapitellista när sändningen publiceras.'}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {playNote && (
         <div class="playout-note">
           <div class="note">{playNote}</div>
         </div>
+      )}
+
+      {picking === 'agenda' && (
+        <PickerModal
+          title="Byt dagordning"
+          items={(allAgendasResource.data ?? []).map((a) => ({ id: a.id, name: a.name }))}
+          selectedId={p.agendaId}
+          onPick={(id) => {
+            actions.setAgenda(id)
+            setPicking(null)
+          }}
+          onCancel={() => setPicking(null)}
+        />
+      )}
+
+      {picking === 'namelist' && (
+        <PickerModal
+          title="Byt namnlista"
+          items={(allNameListsResource.data ?? []).map((n) => ({ id: n.id, name: n.name }))}
+          selectedId={p.namelistId}
+          onPick={(id) => {
+            actions.setNameList(id)
+            setPicking(null)
+          }}
+          onCancel={() => setPicking(null)}
+        />
       )}
     </>
   )

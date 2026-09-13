@@ -26,6 +26,7 @@ export interface ServerAgendaListItem {
   itemCount: number
   usedInProjects: number
   changedAt: string
+  isTemplate: boolean
 }
 
 export interface ServerAgenda extends ServerAgendaListItem {

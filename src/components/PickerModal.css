@@ -1,0 +1,27 @@
+.picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 50vh;
+  overflow: auto;
+}
+
+.picker-list button {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  padding: 9px 10px;
+  border-radius: 6px;
+  color: var(--ink);
+}
+
+.picker-list button:hover {
+  background: #f1f4f8;
+}
+
+.picker-list button.sel {
+  background: var(--live-bg);
+  color: var(--live);
+  font-weight: 500;
+}

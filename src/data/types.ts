@@ -37,6 +37,7 @@ export interface Agenda {
   itemCount: number
   usedInProjects: number
   changedAt: string
+  isTemplate: boolean
   items: AgendaItem[]
 }
 

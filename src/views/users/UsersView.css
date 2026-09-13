@@ -193,3 +193,17 @@ ul.log .t {
   width: 112px;
   flex: none;
 }
+
+.domain-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.domain-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--ink-2);
+}

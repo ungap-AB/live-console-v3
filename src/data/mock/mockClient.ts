@@ -3,6 +3,7 @@ import type {
   Agenda,
   AgendaItem,
   Channel,
+  Domain,
   NameList,
   NameListPerson,
   Project,
@@ -79,6 +80,7 @@ export const mockClient: Client = {
         itemCount: 0,
         usedInProjects: 0,
         changedAt: new Date().toISOString(),
+        isTemplate: false,
         items: [],
       }
       agendas = [agenda, ...agendas]
@@ -97,6 +99,7 @@ export const mockClient: Client = {
         name: `${source.name} (kopia)`,
         usedInProjects: 0,
         changedAt: new Date().toISOString(),
+        isTemplate: false,
       }
       agendas = [...agendas.slice(0, agendas.indexOf(source) + 1), copy, ...agendas.slice(agendas.indexOf(source) + 1)]
       return delay(clone(copy))
@@ -104,6 +107,11 @@ export const mockClient: Client = {
     async trash(id) {
       agendas = agendas.filter((a) => a.id !== id)
       return delay(undefined)
+    },
+    async setTemplate(id, isTemplate) {
+      const agenda = findAgenda(id)
+      agenda.isTemplate = isTemplate
+      return delay(clone(agenda))
     },
     async replaceItems(id, items) {
       const agenda = findAgenda(id)
@@ -353,6 +361,11 @@ export const mockClient: Client = {
       }))
       return delay(clone(withLiveCounts))
     },
+    async create(input) {
+      const domain: Domain = { id: `dm${nextId++}`, host: input.host, org: input.org, userCount: 0 }
+      domains.push(domain)
+      return delay(clone(domain))
+    },
   },
   users: {
     async listByDomain(domainId, query) {
@@ -431,6 +444,10 @@ export const mockClient: Client = {
       }
       projects = [project, ...projects]
       return delay(clone(project))
+    },
+    async trash(id) {
+      projects = projects.filter((p) => p.id !== id)
+      return delay(undefined)
     },
     async setVisibility(id, visibility) {
       const p = findProject(id)
