@@ -207,3 +207,73 @@ ul.log .t {
   font-size: 13px;
   color: var(--ink-2);
 }
+
+.invite-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.invite-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 140px;
+  gap: 12px;
+}
+
+.invite-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.invite-message-label {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.invite-message {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 13px;
+  color: var(--ink-2);
+  background: #fbfcfd;
+  resize: vertical;
+}
+
+.domain-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.domain-row .user-row {
+  flex: 1;
+  min-width: 0;
+}
+
+/* .pane li button (SplitPane.css) sätter display:block/width:100% med högre
+   specificitet än .ib ensamt — matcha den specificiteten här för att .ib:s
+   26x26-ikonstorlek ska vinna. */
+.pane li.domain-row button.domain-menu-btn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  margin-right: 4px;
+}
+
+.domain-org-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-bottom: 16px;
+}

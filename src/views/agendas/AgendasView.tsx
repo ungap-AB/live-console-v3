@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Agenda, AgendaItem, Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
@@ -7,7 +7,7 @@ import { StatusChip } from '../../components/StatusChip'
 import { SortableList } from '../../components/SortableList'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
-import { CheckIcon, DeleteIcon, EditIcon, CancelIcon, SearchIcon } from '../../components/icons'
+import { CheckIcon, DeleteIcon, EditIcon, CancelIcon, SearchIcon, PlusIcon } from '../../components/icons'
 import './AgendasView.css'
 
 function formatDate(iso: string): string {
@@ -28,6 +28,8 @@ export function AgendasView({ onOpenProject }: AgendasViewProps) {
   const [renaming, setRenaming] = useState<Agenda | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<Agenda | null>(null)
   const [usedByOpen, setUsedByOpen] = useState(false)
+  const [confirmingItemId, setConfirmingItemId] = useState<string | null>(null)
+  const confirmTimeoutRef = useRef<number | undefined>(undefined)
 
   const projectsResource = useResource(() => client.projects.list(), [])
   const projects: Project[] = projectsResource.data ?? []
@@ -51,7 +53,10 @@ export function AgendasView({ onOpenProject }: AgendasViewProps) {
   useEffect(() => {
     setSelected(detailResource.data ?? null)
     setUsedByOpen(false)
+    setConfirmingItemId(null)
   }, [detailResource.data])
+
+  useEffect(() => () => window.clearTimeout(confirmTimeoutRef.current), [])
 
   const q = query.trim().toLowerCase()
   const filtered = q
@@ -145,6 +150,18 @@ export function AgendasView({ onOpenProject }: AgendasViewProps) {
     if (editingItemId === itemId) setEditingItemId(null)
   }
 
+  function requestRemoveItem(itemId: string) {
+    window.clearTimeout(confirmTimeoutRef.current)
+    setConfirmingItemId(itemId)
+    confirmTimeoutRef.current = window.setTimeout(() => setConfirmingItemId(null), 4000)
+  }
+
+  async function confirmRemoveItem(agenda: Agenda, itemId: string) {
+    window.clearTimeout(confirmTimeoutRef.current)
+    setConfirmingItemId(null)
+    await removeItem(agenda, itemId)
+  }
+
   async function reorder(agenda: Agenda, nextItems: AgendaItem[]) {
     const renumbered = nextItems.map((it, i) => ({ ...it, position: i + 1 }))
     const updated = await client.agendas.replaceItems(agenda.id, renumbered)
@@ -201,22 +218,28 @@ export function AgendasView({ onOpenProject }: AgendasViewProps) {
                 ))}
               </ul>
               {templates.length > 0 && (
-                <ul class="templates-list">
-                  {templates.map((a) => (
-                    <li key={a.id} class={a.id === selectedId ? 'sel' : ''}>
-                      <button type="button" onClick={() => setSelectedId(a.id)}>
-                        <span class="nm">
-                          <StatusChip tone="neutral">Mall</StatusChip>
-                          {a.name}
-                        </span>
-                        <span class="meta">{a.itemCount} punkter</span>
-                      </button>
-                      <button class="btn btn-sm clone" type="button" onClick={() => duplicate(a)}>
-                        Klona
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <div class="templates-heading">Mallar</div>
+                  <ul class="templates-list">
+                    {templates.map((a) => (
+                      <li key={a.id} class={a.id === selectedId ? 'sel' : ''}>
+                        <button type="button" onClick={() => setSelectedId(a.id)}>
+                          <span class="nm">{a.name}</span>
+                          <span class="meta">{a.itemCount} punkter</span>
+                        </button>
+                        <button
+                          class="ib clone"
+                          type="button"
+                          title="Klona till ny dagordning"
+                          aria-label="Klona till ny dagordning"
+                          onClick={() => duplicate(a)}
+                        >
+                          <PlusIcon />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
             </>
           }
@@ -340,15 +363,27 @@ export function AgendasView({ onOpenProject }: AgendasViewProps) {
                             >
                               <EditIcon />
                             </button>
-                            <button
-                              class="ib del"
-                              type="button"
-                              title="Ta bort"
-                              aria-label="Ta bort"
-                              onClick={() => removeItem(selected, it.id)}
-                            >
-                              <DeleteIcon />
-                            </button>
+                            {confirmingItemId === it.id ? (
+                              <button
+                                class="ib del confirm"
+                                type="button"
+                                title="Bekräfta borttagning"
+                                aria-label="Bekräfta borttagning"
+                                onClick={() => confirmRemoveItem(selected, it.id)}
+                              >
+                                <CheckIcon />
+                              </button>
+                            ) : (
+                              <button
+                                class="ib del"
+                                type="button"
+                                title="Ta bort"
+                                aria-label="Ta bort"
+                                onClick={() => requestRemoveItem(it.id)}
+                              >
+                                <DeleteIcon />
+                              </button>
+                            )}
                           </span>
                         </>
                       )

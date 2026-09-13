@@ -30,6 +30,25 @@
   color: var(--ink-3);
 }
 
+.now-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.now-clear {
+  flex: none;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.now-clear:hover {
+  background: #fdf0f0;
+  color: var(--danger);
+}
+
 .cols {
   display: grid;
   grid-template-columns: 1fr 1fr 300px;

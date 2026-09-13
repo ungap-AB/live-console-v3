@@ -11,6 +11,8 @@ export interface DomainRef {
 
 export interface Domain extends DomainRef {
   userCount: number
+  contractStart?: string
+  contractEnd?: string
 }
 
 export interface CurrentUser {
@@ -38,6 +40,7 @@ export interface Agenda {
   usedInProjects: number
   changedAt: string
   isTemplate: boolean
+  domainId?: string
   items: AgendaItem[]
 }
 
@@ -58,6 +61,7 @@ export interface NameList {
   personCount: number
   usedInProjects: number
   changedAt: string
+  domainId?: string
   people: NameListPerson[]
 }
 
@@ -79,6 +83,7 @@ export interface Project {
   publication: { state: PublicationState }
   agendaId: string | null
   namelistId: string | null
+  domainId?: string
   /**
    * Mockup-bara fält för att simulera sändningsförloppet utan en riktig
    * IVS-kanal (se mockup/HANDOVER.md §6.5 — panelen som styr detta tas bort

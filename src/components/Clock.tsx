@@ -9,5 +9,9 @@ export function Clock() {
     return () => clearInterval(id)
   }, [])
 
-  return <span class="clock">{now.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}</span>
+  return (
+    <span class="clock">
+      {now.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+    </span>
+  )
 }

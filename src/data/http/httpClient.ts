@@ -85,6 +85,7 @@ function toAgendaSummary(dto: ServerAgendaListItem): Agenda {
     usedInProjects: dto.usedInProjects,
     changedAt: dto.changedAt,
     isTemplate: dto.isTemplate,
+    domainId: dto.domainId,
     items: [],
   }
 }
@@ -103,6 +104,7 @@ function toNameListSummary(dto: ServerNameListSummary): NameList {
     personCount: dto.personCount,
     usedInProjects: dto.usedInProjects,
     changedAt: dto.changedAt,
+    domainId: dto.domainId,
     people: [],
   }
 }
@@ -251,6 +253,7 @@ function toProjectLite(dto: ServerProject): Project {
     publication: { state: dto.publication.state as PublicationState },
     agendaId: dto.agendaId,
     namelistId: dto.namelistId,
+    domainId: dto.domainId,
     sim: { everSent: false, segments: 0, accumulatedSeconds: 0, recordingStartedAt: null },
     playout: { currentAgendaItemId: null, currentPersonId: null, timeline: [] },
   }
@@ -451,6 +454,16 @@ export const httpClient: Client = {
     async create(input) {
       return api<ServerDomain>('/domains', { method: 'POST', body: input })
     },
+    async update(id, input) {
+      return api<ServerDomain>(`/domains/${id}`, { method: 'PATCH', body: input })
+    },
+    async remove(id) {
+      await api<void>(`/domains/${id}`, { method: 'DELETE' })
+    },
+    async invite(domainId, input) {
+      const dto = await api<ServerUser>(`/domains/${domainId}/invitations`, { method: 'POST', body: input })
+      return toUserSummary(dto)
+    },
   },
   users: {
     async listByDomain(domainId, query) {
@@ -460,6 +473,10 @@ export const httpClient: Client = {
     async get(id) {
       const found = await getOrUndefined(api<ServerUser>(`/users/${id}`))
       return found ? fetchUserDetail(id) : undefined
+    },
+    async update(id, input) {
+      await api<ServerUser>(`/users/${id}`, { method: 'PATCH', body: input })
+      return fetchUserDetail(id)
     },
     async resendInvite(id) {
       await api<void>(`/invitations/${id}/resend`, { method: 'POST' })
@@ -560,6 +577,9 @@ export const httpClient: Client = {
     async cue(id, kind, refId, _label) {
       const dto = await api<ServerTimelineEvent>(`/projects/${id}/playout/cue`, { method: 'POST', body: { kind, refId } })
       return toTimelineEvent(dto)
+    },
+    async removeTimelineEvent(id, eventId) {
+      await api<void>(`/projects/${id}/timeline/${eventId}`, { method: 'DELETE' })
     },
     async resetSimulation(id) {
       await api<void>(`/debug/projects/${id}/reset`, { method: 'POST' })

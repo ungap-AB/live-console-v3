@@ -3,10 +3,21 @@
   min-height: 0;
 }
 
+.templates-heading {
+  flex: none;
+  padding: 8px 12px 4px;
+  border-top: 1px solid var(--line);
+  background: #fbfbfa;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
 .templates-list {
   flex: none !important;
   overflow: visible !important;
-  border-top: 1px solid var(--line);
   background: #fbfbfa;
 }
 
@@ -22,8 +33,16 @@
   min-width: 0;
 }
 
-.templates-list .clone {
+/* .pane li button (SplitPane.css) sätter display:block/width:100% med högre
+   specificitet än .ib ensamt — matcha den specificiteten här för att .ib:s
+   26x26-ikonstorlek ska vinna. */
+.templates-list li button.clone {
+  display: grid;
+  place-items: center;
   flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
 }
 
 .used-by {

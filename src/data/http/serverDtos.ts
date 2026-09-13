@@ -27,6 +27,7 @@ export interface ServerAgendaListItem {
   usedInProjects: number
   changedAt: string
   isTemplate: boolean
+  domainId?: string
 }
 
 export interface ServerAgenda extends ServerAgendaListItem {
@@ -50,6 +51,7 @@ export interface ServerNameListSummary {
   personCount: number
   usedInProjects: number
   changedAt: string
+  domainId?: string
 }
 
 export interface ServerNameList extends ServerNameListSummary {
@@ -79,6 +81,7 @@ export interface ServerProject {
   publication: { state: string }
   agendaId: string | null
   namelistId: string | null
+  domainId?: string
 }
 
 export interface ServerTimelineEvent {
@@ -191,6 +194,8 @@ export interface ServerDomain {
   host: string
   org: string
   userCount: number
+  contractStart?: string
+  contractEnd?: string
 }
 
 export interface ServerActivityEntry {

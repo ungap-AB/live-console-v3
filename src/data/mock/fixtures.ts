@@ -12,6 +12,7 @@ export const agendaFixtures: Agenda[] = [
     usedInProjects: 4,
     changedAt: '2026-09-08T00:00:00Z',
     isTemplate: false,
+    domainId: 'd1',
     items: [
       { id: 'd1i1', position: 1, title: 'Mötet öppnas' },
       { id: 'd1i2', position: 2, title: 'Upprop och justering' },
@@ -31,6 +32,7 @@ export const agendaFixtures: Agenda[] = [
     usedInProjects: 6,
     changedAt: '2026-09-02T00:00:00Z',
     isTemplate: false,
+    domainId: 'd1',
     items: [
       { id: 'd2i1', position: 1, title: 'Sammanträdet öppnas' },
       { id: 'd2i2', position: 2, title: 'Föregående protokoll' },
@@ -48,6 +50,7 @@ export const agendaFixtures: Agenda[] = [
     usedInProjects: 0,
     changedAt: '2026-08-21T00:00:00Z',
     isTemplate: true,
+    domainId: 'd3',
     items: [
       { id: 'd3i1', position: 1, title: 'Stämmans öppnande' },
       { id: 'd3i2', position: 2, title: 'Val av stämmoordförande' },
@@ -67,6 +70,7 @@ export const agendaFixtures: Agenda[] = [
     usedInProjects: 1,
     changedAt: '2026-06-14T00:00:00Z',
     isTemplate: false,
+    domainId: 'd1',
     items: [
       { id: 'd4i1', position: 1, title: 'Mötet öppnas' },
       { id: 'd4i2', position: 2, title: 'Budgetramar 2027', reference: 'KS 2026/301' },
@@ -90,6 +94,7 @@ export const nameListFixtures: NameList[] = [
     personCount: 14,
     usedInProjects: 4,
     changedAt: '2026-09-09T00:00:00Z',
+    domainId: 'd1',
     people: people('n1', [
       'Anders Mårtén',
       'Camilla Kvartoft',
@@ -114,6 +119,7 @@ export const nameListFixtures: NameList[] = [
     personCount: 5,
     usedInProjects: 6,
     changedAt: '2026-09-02T00:00:00Z',
+    domainId: 'd1',
     people: people('n2', [
       'Anders Mårtén',
       'Ingrid Blomkvist',
@@ -129,6 +135,7 @@ export const nameListFixtures: NameList[] = [
     personCount: 3,
     usedInProjects: 2,
     changedAt: '2026-08-30T00:00:00Z',
+    domainId: 'd1',
     people: people('n3', ['Ingrid Blomkvist', 'Lars Öberg', 'Clara Mårtén']),
   },
   {
@@ -138,6 +145,7 @@ export const nameListFixtures: NameList[] = [
     personCount: 3,
     usedInProjects: 0,
     changedAt: '2026-08-21T00:00:00Z',
+    domainId: 'd3',
     people: people('n4', ['Majken Mårtén', 'Nils Persson', 'Ulrika Nyberg']),
   },
 ]
@@ -415,9 +423,9 @@ export const trashFixtures: TrashItem[] = [
 
 // Exempeldata återanvänd från mockup/8-live-console-user-admin.html.
 const domainRefs = [
-  { id: 'd1', host: 'kalmar.se', org: 'Kalmar kommun' },
-  { id: 'd2', host: 'kalmarlan.se', org: 'Region Kalmar län' },
-  { id: 'd3', host: 'brfeken.se', org: 'Brf Eken' },
+  { id: 'd1', host: 'kalmar.se', org: 'Kalmar kommun', contractStart: '2024-01-01T00:00:00Z', contractEnd: '2027-12-31T00:00:00Z' },
+  { id: 'd2', host: 'kalmarlan.se', org: 'Region Kalmar län', contractStart: '2025-04-01T00:00:00Z', contractEnd: '2026-12-31T00:00:00Z' },
+  { id: 'd3', host: 'brfeken.se', org: 'Brf Eken', contractStart: '2026-05-01T00:00:00Z', contractEnd: '2027-04-30T00:00:00Z' },
 ]
 
 export const userFixtures: UserAccount[] = [
@@ -552,6 +560,7 @@ export const projectFixtures: Project[] = [
     publication: { state: 'none' },
     agendaId: 'd1',
     namelistId: 'n1',
+    domainId: 'd1',
     sim: { everSent: false, segments: 0, accumulatedSeconds: 0, recordingStartedAt: null },
     playout: { currentAgendaItemId: null, currentPersonId: null, timeline: [] },
   },
@@ -566,6 +575,7 @@ export const projectFixtures: Project[] = [
     publication: { state: 'none' },
     agendaId: 'd2',
     namelistId: 'n2',
+    domainId: 'd1',
     sim: { everSent: true, segments: 1, accumulatedSeconds: 0, recordingStartedAt: minutesAgo(37) },
     playout: {
       currentAgendaItemId: 'd2i2',
@@ -601,6 +611,7 @@ export const projectFixtures: Project[] = [
     publication: { state: 'published' },
     agendaId: null,
     namelistId: null,
+    domainId: 'd3',
     sim: { everSent: true, segments: 1, accumulatedSeconds: 4185, recordingStartedAt: null },
     playout: { currentAgendaItemId: null, currentPersonId: null, timeline: [] },
   },

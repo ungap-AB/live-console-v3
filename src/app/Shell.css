@@ -109,6 +109,21 @@
   margin-bottom: 8px;
 }
 
+.nav-user-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+}
+
+.nav-user-row .btn {
+  flex: 1;
+}
+
+.nav-user-settings {
+  flex: none;
+}
+
 .outlet {
   flex: 1;
   min-width: 0;
@@ -153,4 +168,13 @@
   .outlet {
     padding-top: 48px;
   }
+}
+
+.account-name-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--ink-2);
+  margin-bottom: 16px;
 }

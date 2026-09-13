@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { CueKind, Project, Visibility } from '../../data/types'
+import type { CueKind, PlayoutState, Project, TimelineEvent, Visibility } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { SplitPane } from '../../components/SplitPane'
 import { StatusChip } from '../../components/StatusChip'
@@ -15,6 +15,16 @@ import type { ProjectActions } from './actions'
 import './ProjectsView.css'
 
 export type ProjectScreen = 'detail' | 'playout'
+
+// currentAgendaItemId/currentPersonId härleds alltid ur tidslinjen (senaste
+// händelsen av respektive typ) — en enda källa till sanning, så optimistiska
+// uppdateringar och borttagning av en felklickad utspelning aldrig kan hamna
+// i otakt med varandra.
+function derivePlayoutState(timeline: TimelineEvent[]): PlayoutState {
+  const lastItem = [...timeline].reverse().find((e) => e.kind === 'agendaItem')
+  const lastPerson = [...timeline].reverse().find((e) => e.kind === 'person')
+  return { currentAgendaItemId: lastItem?.refId ?? null, currentPersonId: lastPerson?.refId ?? null, timeline }
+}
 
 interface ProjectsViewProps {
   selectedId: string | null
@@ -115,13 +125,73 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
         if (!selected) return
         replace(await client.projects.publish(selected.id))
       }),
-    cue: (kind: CueKind, refId: string, label: string) =>
-      withErrorToast(async () => {
-        if (!selected) return
-        await client.projects.cue(selected.id, kind, refId, label)
-        const fresh = await client.projects.get(selected.id)
-        if (fresh) replace(fresh)
-      }),
+    cue: (kind: CueKind, refId: string, label: string) => {
+      if (!selected) return
+      const project = selected
+      const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+      const live = project.channel?.state === 'live'
+      const offsetSeconds =
+        live && project.sim.recordingStartedAt
+          ? Math.round(
+              project.sim.accumulatedSeconds +
+                (Date.now() - new Date(project.sim.recordingStartedAt).getTime()) / 1000,
+            )
+          : null
+      const optimisticEvent: TimelineEvent = {
+        id: tempId,
+        kind,
+        refId,
+        label,
+        occurredAt: new Date().toISOString(),
+        offsetSeconds,
+      }
+
+      // Optimistisk uppdatering — inget behov av att vänta på eller hämta om
+      // hela projektet. Servern är sanningen i bakgrunden; vi rättar till
+      // eller rullar tillbaka om anropet faktiskt misslyckas.
+      replace({ ...project, playout: derivePlayoutState([...project.playout.timeline, optimisticEvent]) })
+
+      client.projects.cue(project.id, kind, refId, label).then(
+        (realEvent) => {
+          setProjects((prev) =>
+            prev.map((p) =>
+              p.id === project.id
+                ? { ...p, playout: derivePlayoutState(p.playout.timeline.map((e) => (e.id === tempId ? realEvent : e))) }
+                : p,
+            ),
+          )
+        },
+        (err) => {
+          setProjects((prev) =>
+            prev.map((p) =>
+              p.id === project.id
+                ? { ...p, playout: derivePlayoutState(p.playout.timeline.filter((e) => e.id !== tempId)) }
+                : p,
+            ),
+          )
+          setToast(err instanceof Error ? err.message : 'Kunde inte spela ut.')
+        },
+      )
+    },
+    removeTimelineEvent: (eventId: string) => {
+      if (!selected) return
+      const project = selected
+      const removedEvent = project.playout.timeline.find((e) => e.id === eventId)
+      if (!removedEvent) return
+
+      replace({ ...project, playout: derivePlayoutState(project.playout.timeline.filter((e) => e.id !== eventId)) })
+
+      client.projects.removeTimelineEvent(project.id, eventId).catch((err) => {
+        setProjects((prev) =>
+          prev.map((p) => {
+            if (p.id !== project.id) return p
+            const timeline = [...p.playout.timeline, removedEvent].sort((a, b) => a.occurredAt.localeCompare(b.occurredAt))
+            return { ...p, playout: derivePlayoutState(timeline) }
+          }),
+        )
+        setToast(err instanceof Error ? err.message : 'Kunde inte ta bort händelsen.')
+      })
+    },
     reset: () =>
       withErrorToast(async () => {
         if (!selected) return

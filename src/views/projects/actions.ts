@@ -12,5 +12,6 @@ export interface ProjectActions {
   createReviewLink: () => void
   publish: () => void
   cue: (kind: CueKind, refId: string, label: string) => void
+  removeTimelineEvent: (eventId: string) => void
   reset: () => void
 }

@@ -366,6 +366,36 @@ export const mockClient: Client = {
       domains.push(domain)
       return delay(clone(domain))
     },
+    async update(id, input) {
+      const domain = domains.find((d) => d.id === id)
+      if (!domain) throw new Error(`Domänen ${id} finns inte.`)
+      domain.org = input.org
+      return delay(clone(domain))
+    },
+    async remove(id) {
+      if (users.some((u) => u.domainId === id)) {
+        throw new Error('Domänen har användare kvar och kan inte tas bort.')
+      }
+      const idx = domains.findIndex((d) => d.id === id)
+      if (idx >= 0) domains.splice(idx, 1)
+      return delay(undefined)
+    },
+    async invite(domainId, input) {
+      const user: UserAccount = {
+        id: `u${nextId++}`,
+        domainId,
+        name: input.name,
+        email: input.email,
+        roles: input.roles,
+        status: 'invited',
+        ssoEnabled: false,
+        createdAt: new Date().toISOString(),
+        lastLoginAt: null,
+        activity: [],
+      }
+      users = [...users, user]
+      return delay(clone(user))
+    },
   },
   users: {
     async listByDomain(domainId, query) {
@@ -377,6 +407,13 @@ export const mockClient: Client = {
     },
     async get(id) {
       return delay(clone(users.find((u) => u.id === id)))
+    },
+    async update(id, input) {
+      const user = users.find((u) => u.id === id)
+      if (!user) throw new Error(`Användare ${id} finns inte`)
+      if (input.name !== undefined) user.name = input.name
+      if (input.email !== undefined) user.email = input.email
+      return delay(clone(user))
     },
     async resendInvite() {
       return delay(undefined)
@@ -527,23 +564,37 @@ export const mockClient: Client = {
     },
     async cue(id, kind, refId, label) {
       const p = findProject(id)
-      if (p.channel?.state !== 'live') throw new Error('Utspelning kräver aktiv sändning.')
       if (p.publication.state === 'published') throw new Error('Sändningen är publicerad. Utspelning är avstängd.')
-      const offsetSeconds =
-        p.sim.accumulatedSeconds +
-        (p.sim.recordingStartedAt ? (Date.now() - new Date(p.sim.recordingStartedAt).getTime()) / 1000 : 0)
+      // Utspelning fungerar även offline — mötet ska kunna dokumenteras trots
+      // enkoderstrul. offsetSeconds blir null tills sändningen är igång igen.
+      const live = p.channel?.state === 'live'
+      const offsetSeconds = live
+        ? Math.round(
+            p.sim.accumulatedSeconds +
+              (p.sim.recordingStartedAt ? (Date.now() - new Date(p.sim.recordingStartedAt).getTime()) / 1000 : 0),
+          )
+        : null
       const event: TimelineEvent = {
         id: `ev${nextId++}`,
         kind,
         refId,
         label,
         occurredAt: new Date().toISOString(),
-        offsetSeconds: Math.round(offsetSeconds),
+        offsetSeconds,
       }
       p.playout.timeline = [...p.playout.timeline, event]
       if (kind === 'agendaItem') p.playout.currentAgendaItemId = refId
       else p.playout.currentPersonId = refId
       return delay(clone(event))
+    },
+    async removeTimelineEvent(id, eventId) {
+      const p = findProject(id)
+      p.playout.timeline = p.playout.timeline.filter((e) => e.id !== eventId)
+      const lastItem = [...p.playout.timeline].reverse().find((e) => e.kind === 'agendaItem')
+      const lastPerson = [...p.playout.timeline].reverse().find((e) => e.kind === 'person')
+      p.playout.currentAgendaItemId = lastItem?.refId ?? null
+      p.playout.currentPersonId = lastPerson?.refId ?? null
+      return delay(undefined)
     },
     async resetSimulation(id) {
       const p = findProject(id)

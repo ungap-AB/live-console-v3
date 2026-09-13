@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Project } from '../../data/types'
+import type { CueKind, Project, TimelineEvent } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { StatusChip } from '../../components/StatusChip'
 import { PickerModal } from '../../components/PickerModal'
@@ -9,6 +9,13 @@ import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
 import { CheckIcon, PlayIcon } from '../../components/icons'
 import './Playout.css'
+
+function lastEventOfKind(timeline: TimelineEvent[], kind: CueKind): TimelineEvent | null {
+  for (let i = timeline.length - 1; i >= 0; i--) {
+    if (timeline[i].kind === kind) return timeline[i]
+  }
+  return null
+}
 
 interface PlayoutProps {
   project: Project
@@ -33,7 +40,9 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
 
   const live = p.channel?.state === 'live'
   const frozen = p.publication.state === 'published'
-  const canPlay = live && !frozen
+  // Utspelning ska fungera även offline — mötet måste dokumenteras trots
+  // enkoderstrul. Tidslinjen kan synkas mot en uppladdad film senare.
+  const canPlay = !frozen
 
   const subtitle = live
     ? `Playout · sänder sedan ${p.sim.recordingStartedAt ? formatDateTime(p.sim.recordingStartedAt) : ''}`
@@ -47,6 +56,8 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
 
   const nowItem = agenda?.items.find((it) => it.id === p.playout.currentAgendaItemId)?.title ?? null
   const nowSpeaker = nameList?.people.find((pe) => pe.id === p.playout.currentPersonId)?.name ?? null
+  const lastAgendaEvent = lastEventOfKind(p.playout.timeline, 'agendaItem')
+  const lastPersonEvent = lastEventOfKind(p.playout.timeline, 'person')
 
   function lastPlayedOffset(itemId: string): number | null {
     const events = p.playout.timeline.filter((e) => e.kind === 'agendaItem' && e.refId === itemId)
@@ -56,7 +67,8 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
 
   let playNote = ''
   if (frozen) playNote = 'Sändningen är publicerad. Utspelning är avstängd.'
-  else if (!live) playNote = 'Utspelning kräver aktiv sändning — timed metadata kan bara skickas i en pågående ström.'
+  else if (!live)
+    playNote = 'Ingen aktiv sändning just nu — utspelning loggas ändå och kan synkas mot filmen senare.'
 
   return (
     <>
@@ -98,11 +110,37 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
       <div class="now">
         <div>
           <div class="k">Ärende i bild</div>
-          <div class={`v ${nowItem ? '' : 'empty'}`}>{nowItem ?? '–'}</div>
+          <div class={`v now-value ${nowItem ? '' : 'empty'}`}>
+            <span>{nowItem ?? '–'}</span>
+            {nowItem && lastAgendaEvent && (
+              <button
+                class="ib now-clear"
+                type="button"
+                title="Ta bort senaste utspelning"
+                aria-label="Ta bort senaste utspelning"
+                onClick={() => actions.removeTimelineEvent(lastAgendaEvent.id)}
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
         <div>
           <div class="k">Talare i bild</div>
-          <div class={`v ${nowSpeaker ? '' : 'empty'}`}>{nowSpeaker ?? '–'}</div>
+          <div class={`v now-value ${nowSpeaker ? '' : 'empty'}`}>
+            <span>{nowSpeaker ?? '–'}</span>
+            {nowSpeaker && lastPersonEvent && (
+              <button
+                class="ib now-clear"
+                type="button"
+                title="Ta bort senaste utspelning"
+                aria-label="Ta bort senaste utspelning"
+                onClick={() => actions.removeTimelineEvent(lastPersonEvent.id)}
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

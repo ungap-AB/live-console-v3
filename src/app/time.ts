@@ -28,3 +28,8 @@ export function formatDateTime(iso: string): string {
     minute: '2-digit',
   })
 }
+
+export function formatDate(iso: string | undefined): string {
+  if (!iso) return '–'
+  return new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' })
+}
