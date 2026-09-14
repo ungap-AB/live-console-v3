@@ -1,9 +1,8 @@
 import type { JSX } from 'preact'
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { TrashItem, TrashItemType } from '../../data/types'
 import { useResource } from '../../app/useResource'
-import { Toast } from '../../components/Toast'
 import { AgendaIcon, NameListIcon, ProjectIcon, RecordingIcon, SearchIcon } from '../../components/icons'
 import './TrashView.css'
 
@@ -57,19 +56,12 @@ function formatRetentionPeriod(days: number): string {
   return totalMinutes === 1 ? '1 minut' : `${totalMinutes} minuter`
 }
 
-interface Pending {
-  item: TrashItem
-  settled: boolean
-}
-
 export function TrashView() {
   const resource = useResource(() => client.trash.list(), [])
   const [items, setItems] = useState<TrashItem[]>([])
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<'alla' | TrashItemType>('alla')
   const [retentionDays, setRetentionDays] = useState<number | null>(null)
-  const [toastItem, setToastItem] = useState<TrashItem | null>(null)
-  const pendingRef = useRef<Pending | null>(null)
 
   useEffect(() => {
     if (resource.data) setItems(resource.data)
@@ -88,26 +80,13 @@ export function TrashView() {
   const counts: Record<string, number> = { alla: items.length }
   for (const t of TYPE_ORDER) counts[t] = items.filter((i) => i.type === t).length
 
-  function requestRestore(item: TrashItem) {
+  async function restore(item: TrashItem) {
     setItems((prev) => prev.filter((i) => i.id !== item.id))
-    pendingRef.current = { item, settled: false }
-    setToastItem(item)
-  }
-
-  function undoRestore() {
-    const p = pendingRef.current
-    if (!p || p.settled) return
-    p.settled = true
-    setItems((prev) => [p.item, ...prev])
-    setToastItem(null)
-  }
-
-  function commitRestore() {
-    const p = pendingRef.current
-    if (!p || p.settled) return
-    p.settled = true
-    client.trash.restore(p.item.id)
-    setToastItem(null)
+    try {
+      await client.trash.restore(item.id)
+    } catch {
+      setItems((prev) => [item, ...prev])
+    }
   }
 
   return (
@@ -192,7 +171,7 @@ export function TrashView() {
                     <span class="left">{leftText(left)}</span>
                     <span class="date">{formatPurgeDate(i.purgeAt)}</span>
                   </span>
-                  <button class="btn btn-sm" type="button" onClick={() => requestRestore(i)}>
+                  <button class="btn btn-sm" type="button" onClick={() => restore(i)}>
                     Återställ
                   </button>
                 </li>
@@ -206,16 +185,6 @@ export function TrashView() {
           </div>
         </section>
       </div>
-
-      {toastItem && (
-        <Toast
-          message={`${toastItem.name} återställd`}
-          actionLabel="Ångra"
-          onAction={undoRestore}
-          onDismiss={commitRestore}
-          durationMs={6000}
-        />
-      )}
     </div>
   )
 }
