@@ -1,0 +1,12 @@
+{
+  "Version": "2023-04-17",
+  "Statement": [
+    {
+      "Sid": "PublicRead",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": ["s3:GetObject"],
+      "Resource": ["live-console-v3-prod/*"]
+    }
+  ]
+}

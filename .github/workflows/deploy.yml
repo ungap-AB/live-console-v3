@@ -1,0 +1,40 @@
+name: Deploy live-console-v3 to Scaleway
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      VITE_API_BASE: https://api.dev.live.ungap.net/api/v1
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npm run build
+      - uses: scaleway/action-scw@v0
+        with:
+          version: v2.62.0
+          access-key: ${{ secrets.SCW_ACCESS_KEY }}
+          secret-key: ${{ secrets.SCW_SECRET_KEY }}
+          default-organization-id: ${{ vars.SCW_ORGANIZATION_ID }}
+          default-project-id: ${{ vars.SCW_PROJECT_ID }}
+          save-config: true
+      - name: Installera s3cmd-config
+        run: yes | scw object config install type=s3cmd
+      - name: Synka dist/ till bucketen
+        # En bucket-policy på den här bucketen blockerar av okänd anledning
+        # även den egna Applicationens skrivåtkomst (samma mönster gäller
+        # INTE på manifest-bucketen i live-server-v3 med identisk policy —
+        # bucket-specifik Scaleway-kvirk, upptäckt 2026-09-15, aldrig
+        # förklarad). Ta bort policyn, synka, sätt tillbaka — sajten är
+        # otillgänglig i någon sekund per deploy, en accepterad kompromiss.
+        run: |
+          s3cmd delpolicy s3://${{ vars.CONSOLE_BUCKET }} || true
+          s3cmd sync --delete-removed dist/ s3://${{ vars.CONSOLE_BUCKET }}/
+          s3cmd setpolicy deploy/bucket-policy.json s3://${{ vars.CONSOLE_BUCKET }}
