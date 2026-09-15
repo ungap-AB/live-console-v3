@@ -25,6 +25,8 @@ jobs:
           default-organization-id: ${{ vars.SCW_ORGANIZATION_ID }}
           default-project-id: ${{ vars.SCW_PROJECT_ID }}
           save-config: true
+      - name: Installera s3cmd
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends s3cmd
       - name: Installera s3cmd-config
         run: yes | scw object config install type=s3cmd
       - name: Synka dist/ till bucketen
