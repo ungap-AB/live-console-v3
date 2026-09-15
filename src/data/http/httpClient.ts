@@ -480,6 +480,10 @@ export const httpClient: Client = {
         streamStartedAt: dto.streamStartedAt,
       } satisfies ChannelHealth
     },
+    async getStreamKey(id) {
+      const dto = await getOrUndefined(api<{ streamKey: string }>(`/channels/${id}/stream-key`))
+      return dto?.streamKey ?? null
+    },
   },
   trash: {
     async list(query) {

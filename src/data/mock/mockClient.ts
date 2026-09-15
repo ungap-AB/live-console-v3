@@ -368,6 +368,10 @@ export const mockClient: Client = {
         streamStartedAt: channel.createdAt,
       })
     },
+    async getStreamKey(id) {
+      const channel = channels.find((c) => c.id === id)
+      return delay(channel ? `sk_eu-north-1_${channel.id}mockrealkey` : null)
+    },
   },
   trash: {
     async list(query) {

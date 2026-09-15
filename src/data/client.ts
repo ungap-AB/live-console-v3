@@ -81,6 +81,8 @@ export interface Client {
     teardown(id: string): Promise<void>
     rotateKey(id: string): Promise<Channel>
     health(id: string): Promise<ChannelHealth>
+    /** Det riktiga, omaskerade stream key-värdet — server.channels.get()/list() returnerar bara streamKeyMasked. */
+    getStreamKey(id: string): Promise<string | null>
   }
   trash: {
     list(query?: string): Promise<TrashItem[]>

@@ -40,7 +40,7 @@ const ODM_META: Record<RecordingState, { label: string; tone: ChipTone }> = {
 }
 
 export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: ProjectDetailProps) {
-  const { channel, health } = useLiveChannel(p.channel?.id ?? null)
+  const { channel, health, streamKey, refresh } = useLiveChannel(p.channel?.id ?? null)
   const phase = health?.livePhase
   const live = phase === 'live'
   // Signalavbrott räknas som "i bruk" precis som backendens Teardown-spärr
@@ -141,7 +141,12 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
               {status.label}
             </StatusChip>
             <span class="sep" />
-            <button class="btn" type="button" disabled={hasIngest} onClick={actions.createChannel}>
+            <button
+              class="btn"
+              type="button"
+              disabled={hasIngest}
+              onClick={() => actions.createChannel().then(refresh)}
+            >
               Skapa ingest
             </button>
             <button
@@ -149,7 +154,7 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
               type="button"
               disabled={!hasIngest || inUse}
               title={inUse ? 'Går inte att riva medan signal tas emot' : undefined}
-              onClick={actions.teardownChannel}
+              onClick={() => actions.teardownChannel().then(refresh)}
             >
               Riv resurs
             </button>
@@ -167,7 +172,7 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
               </div>
               <div class="field">
                 <label>Stream key</label>
-                <CopyField value={channel?.streamKeyMasked ?? null} monospace />
+                <CopyField value={streamKey} mask monospace />
               </div>
               <div class="field">
                 <label>HLS-URL</label>
@@ -208,7 +213,7 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
               class="btn btn-sm"
               type="button"
               disabled={!hasIngest || inUse}
-              onClick={() => actions.setEncoderSending(true)}
+              onClick={() => actions.setEncoderSending(true).then(refresh)}
             >
               Simulera signal start
             </button>
@@ -216,12 +221,12 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
               class="btn btn-sm"
               type="button"
               disabled={!hasIngest || !inUse}
-              onClick={() => actions.setEncoderSending(false)}
+              onClick={() => actions.setEncoderSending(false).then(refresh)}
             >
               Simulera signal stopp
             </button>
             <span class="spacer" />
-            <button class="btn btn-sm btn-danger" type="button" onClick={actions.reset}>
+            <button class="btn btn-sm btn-danger" type="button" onClick={() => actions.reset().then(refresh)}>
               Återställ allt
             </button>
           </div>
