@@ -6,6 +6,8 @@ import { VideoLightbox } from '../../components/VideoLightbox'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
+import { useLiveChannel } from './useLiveChannel'
+import { phaseMeta } from './livePhase'
 import './ProjectDetail.css'
 
 interface ProjectDetailProps {
@@ -15,10 +17,18 @@ interface ProjectDetailProps {
   actions: ProjectActions
 }
 
+// Ondemand-flikens inspelade tid — rör inte, se scope-anteckning i steg-planen
+// (project.sim är fortfarande inspelnings-domänens fält tills den städningen
+// görs separat).
 function recordedSeconds(project: Project): number {
   const base = project.sim.accumulatedSeconds
   if (!project.sim.recordingStartedAt) return base
   return base + (Date.now() - new Date(project.sim.recordingStartedAt).getTime()) / 1000
+}
+
+function liveElapsedSeconds(streamStartedAt: string | undefined): number | null {
+  if (!streamStartedAt) return null
+  return (Date.now() - new Date(streamStartedAt).getTime()) / 1000
 }
 
 const ODM_META: Record<RecordingState, { label: string; tone: ChipTone }> = {
@@ -30,27 +40,36 @@ const ODM_META: Record<RecordingState, { label: string; tone: ChipTone }> = {
 }
 
 export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: ProjectDetailProps) {
-  useTick(p.channel?.state === 'live')
+  const { channel, health } = useLiveChannel(p.channel?.id ?? null)
+  const phase = health?.livePhase
+  const live = phase === 'live'
+  // Signalavbrott räknas som "i bruk" precis som backendens Teardown-spärr
+  // (ChannelStore.ApplyAutomaticTransition) — undviker att man kan klicka
+  // Riv resurs och bara få ett felmeddelande tillbaka.
+  const inUse = live || phase === 'signalInterrupted'
+  useTick(live)
   const [tab, setTab] = useState<'live' | 'odm'>('live')
   const [showVideo, setShowVideo] = useState(false)
 
   const hasIngest = !!p.channel
-  const live = p.channel?.state === 'live'
   const rec = p.recording?.state ?? 'none'
   const pub = p.visibility === 'open'
   const elapsed = recordedSeconds(p)
+  const liveElapsed = liveElapsedSeconds(health?.streamStartedAt)
+  const status = hasIngest ? phaseMeta(phase) : { label: 'Ingen resurs', tone: 'neutral' as ChipTone }
 
   const subtitle = live
-    ? `Projekt · sänder sedan ${p.sim.recordingStartedAt ? formatDateTime(p.sim.recordingStartedAt) : ''}`
+    ? `Projekt · sänder sedan ${health?.streamStartedAt ? formatDateTime(health.streamStartedAt) : ''}`
     : p.publication.state === 'published'
       ? 'Projekt · publicerad som ondemand'
       : `Projekt · skapad ${formatDateTime(p.createdAt)}`
 
   let liveNote = ''
   if (live) liveNote = 'Riv resurs är låst medan signal tas emot. Stoppa enkodern först.'
-  else if (hasIngest && p.sim.everSent)
+  else if (phase === 'signalInterrupted')
     liveNote =
       'Enkodern har slutat sända. Det kan vara en tillfällig störning — resursen ligger kvar tills du river den.'
+  else if (phase === 'streamEnded') liveNote = 'Sändningen är avslutad. Riv resursen när du är klar.'
   else if (hasIngest) liveNote = 'Resursen är allokerad och väntar på signal.'
 
   let odmNote = ''
@@ -118,8 +137,8 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
       {tab === 'live' && (
         <div class="tabpanel">
           <div class="actions">
-            <StatusChip tone={!hasIngest ? 'neutral' : live ? 'live' : 'danger'} dot>
-              {!hasIngest ? 'Ingen resurs' : live ? 'Sänder' : 'Offline'}
+            <StatusChip tone={status.tone} dot>
+              {status.label}
             </StatusChip>
             <span class="sep" />
             <button class="btn" type="button" disabled={hasIngest} onClick={actions.createChannel}>
@@ -128,8 +147,8 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
             <button
               class="btn btn-danger"
               type="button"
-              disabled={!hasIngest || live}
-              title={live ? 'Går inte att riva medan signal tas emot' : undefined}
+              disabled={!hasIngest || inUse}
+              title={inUse ? 'Går inte att riva medan signal tas emot' : undefined}
               onClick={actions.teardownChannel}
             >
               Riv resurs
@@ -144,22 +163,15 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
             <div class="rowset">
               <div class="field">
                 <label>Ingest-server</label>
-                <CopyField
-                  value={hasIngest ? 'rtmps://a1b2c3.global-contribute.live-video.net:443/app/' : null}
-                  placeholder="Skapa ingest först"
-                  monospace
-                />
+                <CopyField value={channel?.ingestEndpoint ?? null} placeholder="Skapa ingest först" monospace />
               </div>
               <div class="field">
                 <label>Stream key</label>
-                <CopyField value={hasIngest ? 'sk_eu-north-1_••••••••••••••••' : null} monospace />
+                <CopyField value={channel?.streamKeyMasked ?? null} monospace />
               </div>
               <div class="field">
                 <label>HLS-URL</label>
-                <CopyField
-                  value={hasIngest ? 'https://a1b2c3.eu-north-1.playback.live-video.net/…/master.m3u8' : null}
-                  monospace
-                />
+                <CopyField value={channel?.playbackUrl ?? null} monospace />
               </div>
             </div>
             <div class="health">
@@ -167,27 +179,35 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
               {live ? (
                 <dl>
                   <dt>Bitrate</dt>
-                  <dd>5 980 kbps</dd>
+                  <dd>{(health?.bitrateKbps ?? 0).toLocaleString('sv-SE')} kbps</dd>
                   <dt>Upplösning</dt>
-                  <dd>1920×1080p50</dd>
+                  <dd>{health?.resolution ?? ''}</dd>
                   <dt>Senaste bild</dt>
-                  <dd>0,4 s sedan</dd>
-                  <dt>Inspelat</dt>
-                  <dd>{formatHms(elapsed)}</dd>
+                  <dd>{(health?.lastFrameSecondsAgo ?? 0).toLocaleString('sv-SE')} s sedan</dd>
+                  <dt>Sänder sedan</dt>
+                  <dd>{liveElapsed !== null ? formatHms(liveElapsed) : ''}</dd>
                 </dl>
               ) : (
-                <p>{hasIngest ? 'Ingen signal. Starta enkodern.' : 'Ingen live-resurs allokerad.'}</p>
+                <p>
+                  {phase === 'signalInterrupted'
+                    ? 'Signalavbrott — väntar på återanslutning.'
+                    : phase === 'streamEnded'
+                      ? 'Sändningen är avslutad.'
+                      : hasIngest
+                        ? 'Ingen signal. Starta enkodern.'
+                        : 'Ingen live-resurs allokerad.'}
+                </p>
               )}
             </div>
           </div>
-          {liveNote && <div class={`note ${live ? 'warn' : ''}`}>{liveNote}</div>}
+          {liveNote && <div class={`note ${inUse ? 'warn' : ''}`}>{liveNote}</div>}
 
           <div class="debugbar">
             <span class="debugbar-label">Debug</span>
             <button
               class="btn btn-sm"
               type="button"
-              disabled={!hasIngest || live}
+              disabled={!hasIngest || inUse}
               onClick={() => actions.setEncoderSending(true)}
             >
               Simulera signal start
@@ -195,7 +215,7 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
             <button
               class="btn btn-sm"
               type="button"
-              disabled={!hasIngest || !live}
+              disabled={!hasIngest || !inUse}
               onClick={() => actions.setEncoderSending(false)}
             >
               Simulera signal stopp

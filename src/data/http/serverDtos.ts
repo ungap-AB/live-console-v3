@@ -128,6 +128,10 @@ export interface ServerChannel {
 
 export interface ServerChannelHealth {
   state: string
+  // Exakt C#-enumnamnet (t.ex. "WaitingForStream"), inte camelCase — backend
+  // serialiserar det via ToString(), ingen JsonStringEnumConverter är
+  // registrerad. Se httpClient.ts:mapLivePhase för mappningen.
+  livePhase?: string
   bitrateKbps?: number
   resolution?: string
   framerate?: number

@@ -7,6 +7,7 @@ import type {
   Chapter,
   CueKind,
   CurrentUser,
+  LivePhase,
   NameList,
   Project,
   ProjectRef,
@@ -177,6 +178,25 @@ async function fetchRecordingDetail(dto: ServerRecording): Promise<Recording> {
 }
 
 // ---- Live-resurser ----
+
+// Backend skickar exakt C#-enumnamnet (ToString(), ingen JsonStringEnumConverter
+// registrerad) — t.ex. "WaitingForStream", inte "waitingForStream".
+function mapLivePhase(raw: string | undefined): LivePhase | undefined {
+  switch (raw) {
+    case 'WaitingForStream':
+      return 'waitingForStream'
+    case 'Live':
+      return 'live'
+    case 'StreamInterrupted':
+      return 'signalInterrupted'
+    case 'StreamInterruptedDeclined':
+      return 'signalInterruptedDeclined'
+    case 'StreamEnded':
+      return 'streamEnded'
+    default:
+      return undefined
+  }
+}
 
 function toChannel(dto: ServerChannel, projects: Map<string, ServerProject>): Channel {
   return {
@@ -450,14 +470,14 @@ export const httpClient: Client = {
     },
     async health(id) {
       const dto = await api<ServerChannelHealth>(`/channels/${id}/health`)
-      if (dto.state !== 'live') return null
       return {
-        state: 'live',
-        bitrateKbps: dto.bitrateKbps ?? 0,
-        resolution: dto.resolution ?? '',
-        framerate: dto.framerate ?? 0,
-        lastFrameSecondsAgo: dto.lastFrameSecondsAgo ?? 0,
-        streamStartedAt: dto.streamStartedAt ?? '',
+        state: dto.state as ChannelState,
+        livePhase: mapLivePhase(dto.livePhase),
+        bitrateKbps: dto.bitrateKbps,
+        resolution: dto.resolution,
+        framerate: dto.framerate,
+        lastFrameSecondsAgo: dto.lastFrameSecondsAgo,
+        streamStartedAt: dto.streamStartedAt,
       } satisfies ChannelHealth
     },
   },

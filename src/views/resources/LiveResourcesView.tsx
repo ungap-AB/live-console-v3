@@ -326,13 +326,13 @@ function ResourceDetail({ channel: c, health, onRotateKey, onOpenProject, onTear
             {live && health ? (
               <dl>
                 <dt>Bitrate</dt>
-                <dd>{health.bitrateKbps.toLocaleString('sv-SE')} kbps</dd>
+                <dd>{(health.bitrateKbps ?? 0).toLocaleString('sv-SE')} kbps</dd>
                 <dt>Upplösning</dt>
-                <dd>{health.resolution}</dd>
+                <dd>{health.resolution ?? ''}</dd>
                 <dt>Senaste bild</dt>
-                <dd>{health.lastFrameSecondsAgo.toLocaleString('sv-SE')} s sedan</dd>
+                <dd>{(health.lastFrameSecondsAgo ?? 0).toLocaleString('sv-SE')} s sedan</dd>
                 <dt>Sänder sedan</dt>
-                <dd>{formatDateTime(health.streamStartedAt)}</dd>
+                <dd>{health.streamStartedAt ? formatDateTime(health.streamStartedAt) : ''}</dd>
               </dl>
             ) : (
               <p>Ingen signal. Resursen är allokerad och väntar på enkoder.</p>

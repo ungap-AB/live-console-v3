@@ -2,11 +2,13 @@ import { useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
-import { StatusChip } from '../../components/StatusChip'
+import { StatusChip, type ChipTone } from '../../components/StatusChip'
 import { PickerModal } from '../../components/PickerModal'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
+import { useLiveChannel } from './useLiveChannel'
+import { phaseMeta } from './livePhase'
 import { CheckIcon, PlayIcon } from '../../components/icons'
 import './Playout.css'
 
@@ -17,7 +19,10 @@ interface PlayoutProps {
 }
 
 export function Playout({ project: p, onClose, actions }: PlayoutProps) {
-  useTick(p.channel?.state === 'live')
+  const { health } = useLiveChannel(p.channel?.id ?? null)
+  const phase = health?.livePhase
+  const live = phase === 'live'
+  useTick(live)
   const [picking, setPicking] = useState<'agenda' | 'namelist' | null>(null)
 
   const agendaResource = useResource(
@@ -31,18 +36,22 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   const allAgendasResource = useResource(() => client.agendas.list(), [])
   const allNameListsResource = useResource(() => client.namelists.list(), [])
 
-  const live = p.channel?.state === 'live'
   const frozen = p.publication.state === 'published'
   // Utspelning ska fungera även offline — mötet måste dokumenteras trots
   // enkoderstrul. Tidslinjen kan synkas mot en uppladdad film senare.
   const canPlay = !frozen
 
   const subtitle = live
-    ? `Playout · sänder sedan ${p.sim.recordingStartedAt ? formatDateTime(p.sim.recordingStartedAt) : ''}`
+    ? `Playout · sänder sedan ${health?.streamStartedAt ? formatDateTime(health.streamStartedAt) : ''}`
     : 'Playout'
 
-  const statusTone = live ? 'live' : p.publication.state === 'published' ? 'accent' : p.channel ? 'danger' : 'neutral'
-  const statusLabel = live ? 'Sänder' : p.publication.state === 'published' ? 'Publicerad' : p.channel ? 'Offline' : 'Ingen resurs'
+  const status: { label: string; tone: ChipTone } = frozen
+    ? { label: 'Publicerad', tone: 'accent' }
+    : p.channel
+      ? phaseMeta(phase)
+      : { label: 'Ingen resurs', tone: 'neutral' }
+  const statusTone = status.tone
+  const statusLabel = status.label
 
   const agenda = agendaResource.data
   const nameList = nameListResource.data

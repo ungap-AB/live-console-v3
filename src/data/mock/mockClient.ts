@@ -354,9 +354,13 @@ export const mockClient: Client = {
     },
     async health(id) {
       const channel = channels.find((c) => c.id === id)
-      if (!channel || channel.state !== 'live') return delay(null)
+      if (!channel) throw new Error(`Resurs ${id} finns inte`)
+      // Mock-kanaler har bara binärt idle/live, ingen hysteres/avbrottskoncept
+      // — en dokumenterad förenkling, inte en egen mock-fasmaskin.
+      if (channel.state !== 'live') return delay({ state: 'idle', livePhase: 'waitingForStream' })
       return delay({
         state: 'live',
+        livePhase: 'live',
         bitrateKbps: 5980,
         resolution: '1920×1080p50',
         framerate: 50,

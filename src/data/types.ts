@@ -147,13 +147,20 @@ export interface Channel {
   idleDays: number
 }
 
+// Fas-detaljerna live-server-v3 härleder från den hysteres-baserade
+// fasövergången (se ChannelLivePhase i backend) — bara meningsfull när ett
+// projekt är kopplat till kanalen, annars är den `undefined`.
+export type LivePhase = 'waitingForStream' | 'live' | 'signalInterrupted' | 'signalInterruptedDeclined' | 'streamEnded'
+
 export interface ChannelHealth {
   state: ChannelState
-  bitrateKbps: number
-  resolution: string
-  framerate: number
-  lastFrameSecondsAgo: number
-  streamStartedAt: string
+  livePhase?: LivePhase
+  // Bara satta när state är 'live'.
+  bitrateKbps?: number
+  resolution?: string
+  framerate?: number
+  lastFrameSecondsAgo?: number
+  streamStartedAt?: string
 }
 
 export interface ChannelQuota {

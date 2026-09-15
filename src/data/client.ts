@@ -80,7 +80,7 @@ export interface Client {
     create(input: { label: string }): Promise<Channel>
     teardown(id: string): Promise<void>
     rotateKey(id: string): Promise<Channel>
-    health(id: string): Promise<ChannelHealth | null>
+    health(id: string): Promise<ChannelHealth>
   }
   trash: {
     list(query?: string): Promise<TrashItem[]>
