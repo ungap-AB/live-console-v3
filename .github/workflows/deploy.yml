@@ -36,7 +36,22 @@ jobs:
         # bucket-specifik Scaleway-kvirk, upptäckt 2026-09-15, aldrig
         # förklarad). Ta bort policyn, synka, sätt tillbaka — sajten är
         # otillgänglig i någon sekund per deploy, en accepterad kompromiss.
+        # --no-mime-magic: s3cmds innehålls-sniffing gissar fel content-type
+        # för .css (blir text/plain) — extensionbaserad gissning är korrekt.
+        # index.html/rot-filer får no-cache (namnet ändras aldrig, måste alltid
+        # kunna peka på nya hashade filnamn); assets/* är innehålls-hashade av
+        # Vite och får därför cachas i ett år utan risk för inaktuellt innehåll.
         run: |
           s3cmd delpolicy s3://${{ vars.CONSOLE_BUCKET }} || true
-          s3cmd sync --delete-removed dist/ s3://${{ vars.CONSOLE_BUCKET }}/
+          s3cmd sync --delete-removed --no-mime-magic \
+            --exclude 'assets/*' \
+            --add-header="Cache-Control: public, max-age=0, must-revalidate" \
+            dist/ s3://${{ vars.CONSOLE_BUCKET }}/
+          s3cmd sync --delete-removed --no-mime-magic \
+            --add-header="Cache-Control: public, max-age=31536000, immutable" \
+            dist/assets/ s3://${{ vars.CONSOLE_BUCKET }}/assets/
           s3cmd setpolicy deploy/bucket-policy.json s3://${{ vars.CONSOLE_BUCKET }}
+      - name: Rensa CDN-cache
+        run: |
+          scw edge-services purge-request create \
+            pipeline-id=${{ vars.CONSOLE_PIPELINE_ID }} all=true
