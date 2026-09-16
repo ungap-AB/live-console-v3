@@ -173,6 +173,10 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
       await actions.refreshProject()
       await refresh()
       setTrimming(null)
+      // Trimning är sista manuella steget i det guidade flödet — publicera
+      // (och riv en kvarvarande ingest) direkt istället för att kräva ett
+      // eget klick på "Publicera" efteråt.
+      await publishAndTeardownIngest()
     }
   }
 
@@ -249,7 +253,15 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         </div>
       )}
 
-      {guidedPhase === 'waiting' && (
+      {guidedPhase === 'waiting' && phase === 'signalInterrupted' && (
+        <div class="guided-banner">
+          <p class="gb-note warn">
+            Signalavbrott — väntar på återanslutning. Stäng för publik om sändningen är avslutad.
+          </p>
+        </div>
+      )}
+
+      {guidedPhase === 'waiting' && phase !== 'signalInterrupted' && (
         <div class="guided-banner">
           <div class="rowset">
             <div class="field">
@@ -261,31 +273,24 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
               <CopyField value={streamKey} mask monospace />
             </div>
           </div>
-          <p class={phase === 'signalInterrupted' ? 'gb-note warn' : 'gb-note'}>
-            {phase === 'signalInterrupted'
-              ? 'Signalavbrott — väntar på återanslutning. Resursen ligger kvar tills du river den.'
-              : 'Ingest skapad. Väntar på signal från enkodern.'}
-          </p>
+          <p class="gb-note">Ingest skapad. Väntar på signal från enkodern.</p>
           <button class="btn btn-danger btn-sm" type="button" onClick={() => void teardownIngest()}>
             Riv ingest
           </button>
         </div>
       )}
 
-      {guidedPhase === 'live' && p.visibility === 'open' && (
+      {guidedPhase === 'live' && p.visibility === 'closed' && (
         <div class="guided-banner">
-          <p class="gb-note">
-            Stäng projektet för publik och stoppa enkodern när sändningen är klar, så kan du publicera den som
-            ondemand. Det går bra att starta enkodern igen om du vill fortsätta sända.
-          </p>
+          <p class="gb-note">Stoppa enkodern för att kunna publicera sändningen som ondemand.</p>
         </div>
       )}
 
       {guidedPhase === 'ended' && (
         <div class="guided-banner">
           <p class="gb-note">
-            Sändningen är avslutad. Starta enkodern igen för att fortsätta sända, eller trimma inspelningen för
-            att publicera den som ondemand.
+            Sändningen är avslutad. Trimma inspelningen för att publicera ondemand. Starta enkodern igen för att
+            fortsätta sända.
           </p>
           <button class="btn btn-primary" type="button" onClick={() => void openTrim()}>
             Trimma inspelning
@@ -354,7 +359,9 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         </div>
       </div>
 
-      <div class={`cols ${live ? 'two' : ''}`}>
+      <div class={`cols ${live ? 'two' : ''} ${guidedPhase === 'published' ? 'published' : ''}`}>
+        {guidedPhase !== 'published' && (
+        <>
         <div class="col">
           <h3>
             Dagordning
@@ -448,6 +455,8 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
             )}
           </div>
         </div>
+        </>
+        )}
 
         {!live && (
           <div class="col">

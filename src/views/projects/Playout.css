@@ -95,6 +95,12 @@
   grid-template-columns: 1fr 1fr;
 }
 
+/* Publicerat — bara Tidslinjen kvar (dagordning/namnlista är oväsentliga
+   efter publicering, se resonemanget 2026-09-17). Full bredd åt den. */
+.cols.published {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 980px) {
   .cols {
     grid-template-columns: 1fr;
