@@ -106,7 +106,7 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
   else if (rec === 'recorded')
     odmNote = `Inspelningen är klar (${formatHms(elapsed)}). Trimma den innan du publicerar.`
   else if (rec === 'trimmed')
-    odmNote = 'Trimmad. Dela granskningslänken för godkännande — materialet är ännu inte publikt.'
+    odmNote = 'Trimmad. Publicera inspelningen när du är klar — materialet är ännu inte publikt.'
   else odmNote = pub ? 'Publicerad och öppen för publik. Kapitellistan är fryst.' : 'Publicerad men stängd för publik.'
   if (p.sim.segments > 1 && rec !== 'recording' && rec !== 'none') {
     odmNote += ` Inspelningen har ${p.sim.segments - 1} glapp — kontrollera kapitlens offset efter trimning.`
@@ -136,9 +136,12 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
     if (original) setTrimming(original)
   }
 
-  async function saveTrim(range: { startOffsetSeconds: number; endOffsetSeconds: number }) {
-    await actions.trim(range)
-    setTrimming(null)
+  async function saveTrim(range: { startOffsetSeconds: number; endOffsetSeconds: number }): Promise<void> {
+    if (await actions.trim(range)) {
+      await actions.refreshProject()
+      await refresh()
+      setTrimming(null)
+    }
   }
 
   return (
@@ -334,8 +337,8 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
             <div class="field">
               <label>HLS-URL</label>
               <CopyField
-                value={p.publication.state === 'published' ? (p.recording?.hlsUrl ?? null) : null}
-                placeholder="Tillgänglig efter publicering"
+                value={p.recording?.hlsUrl ?? null}
+                placeholder="Tillgänglig efter trimning"
                 monospace
               />
             </div>
@@ -359,7 +362,7 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
         <TrimDialog
           recording={trimming}
           onCancel={() => setTrimming(null)}
-          onSave={(range) => void saveTrim(range)}
+          onSave={saveTrim}
         />
       )}
 

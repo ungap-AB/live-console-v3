@@ -129,11 +129,16 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
         if (!selected) return
         replace(await client.projects.setEncoderSending(selected.id, sending))
       }),
-    trim: (range) =>
-      withErrorToast(async () => {
-        if (!selected) return
+    trim: async (range) => {
+      try {
+        if (!selected) return false
         replace(await client.projects.trim(selected.id, range))
-      }),
+        return true
+      } catch (err) {
+        setToast(err instanceof Error ? err.message : 'Något gick fel.')
+        return false
+      }
+    },
     publish: () =>
       withErrorToast(async () => {
         if (!selected) return

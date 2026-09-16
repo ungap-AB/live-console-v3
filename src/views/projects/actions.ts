@@ -9,7 +9,7 @@ export interface ProjectActions {
   createChannel: () => Promise<void>
   teardownChannel: () => Promise<void>
   setEncoderSending: (sending: boolean) => Promise<void>
-  trim: (range: { startOffsetSeconds: number; endOffsetSeconds: number }) => Promise<void>
+  trim: (range: { startOffsetSeconds: number; endOffsetSeconds: number }) => Promise<boolean>
   publish: () => void
   returnToLive: () => Promise<void>
   cue: (kind: CueKind, refId: string, label: string) => void

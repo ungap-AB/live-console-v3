@@ -186,8 +186,8 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
 
       {trimming && (
         <TrimDialog
-          recording={trimming}
-          initialRange={childrenOf(trimming.id)[0]?.trimRange}
+          recording={detail?.recording.id === trimming.id ? detail.original ?? trimming : trimming}
+          initialRange={trimming.trimRange ?? childrenOf(trimming.id)[0]?.trimRange}
           onCancel={() => setTrimming(null)}
           onSave={saveTrim}
         />

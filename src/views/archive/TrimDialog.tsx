@@ -1,4 +1,7 @@
-import { useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
+import { create, isPlayerSupported, PlayerEventType } from 'amazon-ivs-player'
+import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
+import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { Modal } from '../../components/Modal'
 import type { Recording } from '../../data/types'
 import { formatHms, parseHms } from '../../app/time'
@@ -8,7 +11,7 @@ interface TrimDialogProps {
   recording: Recording
   initialRange?: { startOffsetSeconds: number; endOffsetSeconds: number }
   onCancel: () => void
-  onSave: (range: { startOffsetSeconds: number; endOffsetSeconds: number }) => void
+  onSave: (range: { startOffsetSeconds: number; endOffsetSeconds: number }) => Promise<void>
 }
 
 export function TrimDialog({ recording, initialRange, onCancel, onSave }: TrimDialogProps) {
@@ -16,9 +19,41 @@ export function TrimDialog({ recording, initialRange, onCancel, onSave }: TrimDi
   const [to, setTo] = useState(initialRange?.endOffsetSeconds ?? recording.durationSeconds)
   const [fromText, setFromText] = useState(formatHms(from))
   const [toText, setToText] = useState(formatHms(to))
+  const [saving, setSaving] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [videoError, setVideoError] = useState<string | null>(null)
+  const [rangeError, setRangeError] = useState<string | null>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   const duration = recording.durationSeconds
-  const pct = (t: number) => (t / duration) * 100
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || !recording.hlsUrl) return
+    if (!isPlayerSupported) {
+      setVideoError('AWS IVS Player kan inte köras i den här webbläsaren.')
+      return
+    }
+
+    const player = create({ wasmWorker, wasmBinary })
+    player.attachHTMLVideoElement(video)
+    player.addEventListener(PlayerEventType.ERROR, (error) => {
+      setVideoError(error.message || 'Originalvideon kunde inte laddas.')
+    })
+    player.load(recording.hlsUrl)
+
+    return () => {
+      player.pause()
+      player.delete()
+    }
+  }, [recording.hlsUrl])
+
+  function setVideoTime(value: number) {
+    const video = videoRef.current
+    if (!video) return
+    video.currentTime = Math.max(0, Math.min(value, duration))
+    setCurrentTime(video.currentTime)
+  }
 
   function updateFrom(v: number) {
     const clamped = Math.max(0, Math.min(v, to - 1))
@@ -30,6 +65,14 @@ export function TrimDialog({ recording, initialRange, onCancel, onSave }: TrimDi
     const clamped = Math.min(duration, Math.max(v, from + 1))
     setTo(clamped)
     setToText(formatHms(clamped))
+  }
+
+  function setFromCurrent() {
+    updateFrom(currentTime)
+  }
+
+  function setToCurrent() {
+    updateTo(currentTime)
   }
 
   function commitFromText() {
@@ -50,13 +93,37 @@ export function TrimDialog({ recording, initialRange, onCancel, onSave }: TrimDi
     updateTo(v)
   }
 
-  const chapters = recording.chapters
-  const dropped = chapters.filter((c) => c.offsetSeconds < from || c.offsetSeconds > to)
-  const note = chapters.length
-    ? dropped.length
-      ? `${dropped.length} kapitel hamnar utanför klippet och följer inte med till den trimmade versionen.`
-      : `Alla ${chapters.length} kapitel ligger inom klippet. Offset räknas om mot den nya startpunkten.`
-    : 'Inspelningen har inga kapitelmärken.'
+  async function save() {
+    const parsedFrom = parseHms(fromText)
+    const parsedTo = parseHms(toText)
+    if (
+      parsedFrom === null ||
+      parsedTo === null ||
+      !Number.isFinite(parsedFrom) ||
+      !Number.isFinite(parsedTo) ||
+      parsedFrom < 0 ||
+      parsedTo > duration ||
+      parsedTo <= parsedFrom
+    ) {
+      setRangeError('Start- och sluttid måste vara giltiga och slutpunkten måste ligga efter startpunkten.')
+      return
+    }
+
+    const startOffsetSeconds = Math.round(parsedFrom)
+    const endOffsetSeconds = Math.round(parsedTo)
+    if (endOffsetSeconds <= startOffsetSeconds) {
+      setRangeError('Trimintervallet måste vara minst en sekund långt.')
+      return
+    }
+
+    setRangeError(null)
+    setSaving(true)
+    try {
+      await onSave({ startOffsetSeconds, endOffsetSeconds })
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <Modal
@@ -68,31 +135,44 @@ export function TrimDialog({ recording, initialRange, onCancel, onSave }: TrimDi
         <>
           <span class="lenout">Längd efter trim: {formatHms(to - from)}</span>
           <span class="spacer" />
-          <button class="btn" type="button" onClick={onCancel}>
+          <button class="btn" type="button" disabled={saving} onClick={onCancel}>
             Avbryt
           </button>
           <button
             class="btn btn-primary"
             type="button"
-            onClick={() => onSave({ startOffsetSeconds: from, endOffsetSeconds: to })}
+            disabled={saving}
+            onClick={() => void save()}
           >
-            Spara trimmad version
+            {saving ? 'Bearbetar' : 'Spara trimmad version'}
           </button>
         </>
       }
     >
-      <div class="bar">
-        <div class="keep" style={{ left: `${pct(from)}%`, width: `${pct(to - from)}%` }} />
-        {chapters.map((c) => (
-          <div
-            key={c.offsetSeconds + c.label}
-            class={`mark ${c.offsetSeconds >= from && c.offsetSeconds <= to ? 'inside' : ''}`}
-            style={{ left: `${pct(c.offsetSeconds)}%` }}
-          />
-        ))}
-        <span class="lbl" style={{ left: `${pct(from)}%` }}>
-          {formatHms(from)}
-        </span>
+      <div class="trim-editor-video">
+        {recording.hlsUrl ? (
+          <>
+            {videoError && <div class="trim-video-error">{videoError}</div>}
+            <video
+              ref={videoRef}
+              controls
+              playsInline
+              onError={() => setVideoError('Originalvideon kunde inte spelas upp.')}
+              onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+            />
+          </>
+        ) : (
+          <div class="trim-video-empty">Ingen förhandsvisning</div>
+        )}
+      </div>
+      <div class="trim-video-tools">
+        <span class="trim-current">Aktuell tid {formatHms(currentTime)}</span>
+        <button class="btn btn-sm" type="button" disabled={!recording.hlsUrl || saving} onClick={setFromCurrent}>
+          Sätt start här
+        </button>
+        <button class="btn btn-sm" type="button" disabled={!recording.hlsUrl || saving} onClick={setToCurrent}>
+          Sätt slut här
+        </button>
       </div>
       <div class="ranges">
         <input
@@ -122,6 +202,9 @@ export function TrimDialog({ recording, initialRange, onCancel, onSave }: TrimDi
             onBlur={commitFromText}
             onKeyDown={(e) => e.key === 'Enter' && commitFromText()}
           />
+          <button class="btn btn-sm" type="button" disabled={!recording.hlsUrl} onClick={() => setVideoTime(from)}>
+            Hoppa
+          </button>
         </label>
         <label>
           Slut{' '}
@@ -132,9 +215,12 @@ export function TrimDialog({ recording, initialRange, onCancel, onSave }: TrimDi
             onBlur={commitToText}
             onKeyDown={(e) => e.key === 'Enter' && commitToText()}
           />
+          <button class="btn btn-sm" type="button" disabled={!recording.hlsUrl} onClick={() => setVideoTime(to)}>
+            Hoppa
+          </button>
         </label>
       </div>
-      <p class={`note ${dropped.length ? 'warn' : ''}`}>{note}</p>
+      {rangeError && <p class="note warn">{rangeError}</p>}
     </Modal>
   )
 }
