@@ -365,6 +365,7 @@ export function ProjectsView({
               <ProjectDetail
                 project={selected}
                 onDelete={() => setConfirmDelete(selected)}
+                onDeleteBlocked={setToast}
                 actions={actions}
                 onOpenAgenda={onOpenAgenda}
                 onOpenNameList={onOpenNameList}

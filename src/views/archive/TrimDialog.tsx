@@ -152,7 +152,17 @@ export function TrimDialog({ recording, initialRange, onCancel, onSave }: TrimDi
       <div class="trim-editor-video">
         {recording.hlsUrl ? (
           <>
-            {videoError && <div class="trim-video-error">{videoError}</div>}
+            {videoError && (
+              <div class="trim-video-error">
+                <p>{videoError}</p>
+                {duration < 90 && (
+                  <p>
+                    Korta sändningar kan ta upp till en minut innan AWS gjort inspelningen tillgänglig. Vänta en
+                    stund och öppna trimningen igen.
+                  </p>
+                )}
+              </div>
+            )}
             <video
               ref={videoRef}
               controls

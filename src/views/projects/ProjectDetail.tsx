@@ -21,6 +21,7 @@ import './ProjectDetail.css'
 interface ProjectDetailProps {
   project: Project
   onDelete: () => void
+  onDeleteBlocked: (reason: string) => void
   actions: ProjectActions
   onOpenAgenda: (id: string) => void
   onOpenNameList: (id: string) => void
@@ -63,8 +64,8 @@ function initialTab(project: Project): 'live' | 'odm' {
     : 'live'
 }
 
-export function ProjectDetail({ project: p, onDelete, actions, onOpenAgenda, onOpenNameList }: ProjectDetailProps) {
-  const { channel, health, streamKey, refresh } = useLiveChannel(p.channel?.id ?? null)
+export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, onOpenAgenda, onOpenNameList }: ProjectDetailProps) {
+  const { channel, health, streamKey, refresh, stopPolling } = useLiveChannel(p.channel?.id ?? null)
   const phase = health?.livePhase
   const live = phase === 'live'
   // Signalavbrott räknas som "i bruk" precis som backendens Teardown-spärr
@@ -119,6 +120,11 @@ export function ProjectDetail({ project: p, onDelete, actions, onOpenAgenda, onO
   const rec = p.recording?.state ?? 'none'
   const pub = p.visibility === 'open'
   const canDelete = !pub && !live
+  const deleteBlockedReason = pub
+    ? 'Stäng projektet innan det raderas'
+    : live
+      ? 'Går inte att radera medan signal tas emot'
+      : null
   const canUseOnDemand = !pub && !live
   const elapsed = recordedSeconds(p)
   const liveElapsed = liveElapsedSeconds(health?.streamStartedAt)
@@ -198,12 +204,11 @@ export function ProjectDetail({ project: p, onDelete, actions, onOpenAgenda, onO
             <span class="subtitle">{subtitle}</span>
           </div>
           <button
-            class="ib del"
+            class={`ib del${canDelete ? '' : ' is-blocked'}`}
             type="button"
-            disabled={!canDelete}
-            title={pub ? 'Stäng projektet innan det raderas' : live ? 'Går inte att radera medan signal tas emot' : 'Radera projekt'}
+            title={deleteBlockedReason ?? 'Radera projekt'}
             aria-label="Radera projekt"
-            onClick={onDelete}
+            onClick={() => (deleteBlockedReason ? onDeleteBlocked(deleteBlockedReason) : onDelete())}
           >
             <DeleteIcon />
           </button>
@@ -317,7 +322,14 @@ export function ProjectDetail({ project: p, onDelete, actions, onOpenAgenda, onO
               type="button"
               disabled={!hasIngest || inUse}
               title={inUse ? 'Går inte att riva medan signal tas emot' : undefined}
-              onClick={() => actions.teardownChannel().then(refresh)}
+              onClick={() => {
+                // Stoppa pollningen istället för att refresh:a — kanalen är
+                // borta direkt efter teardown, en efterföljande hälsokoll
+                // mot samma id 404:ar bara i onödan (se minnesanteckningen
+                // om useLiveChannel.refresh-racet, 2026-09-16/18).
+                stopPolling()
+                void actions.teardownChannel()
+              }}
             >
               Riv ingest
             </button>

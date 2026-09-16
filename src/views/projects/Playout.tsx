@@ -27,7 +27,7 @@ interface PlayoutProps {
 }
 
 export function Playout({ project: p, onClose, actions }: PlayoutProps) {
-  const { channel, health, streamKey, refresh } = useLiveChannel(p.channel?.id ?? null)
+  const { channel, health, streamKey, refresh, stopPolling } = useLiveChannel(p.channel?.id ?? null)
   const phase = health?.livePhase
   const live = phase === 'live'
   useTick(live)
@@ -158,8 +158,11 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   }
 
   async function teardownIngest() {
+    // Stoppa pollningen istället för att refresh:a — kanalen är borta direkt
+    // efter teardown, en efterföljande hälsokoll mot samma id 404:ar bara i
+    // onödan (se minnesanteckningen om useLiveChannel.refresh-racet).
+    stopPolling()
     await actions.teardownChannel()
-    await refresh()
   }
 
   async function openTrim() {

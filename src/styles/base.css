@@ -155,6 +155,12 @@ button {
   color: var(--danger);
 }
 
+/* Fortfarande klickbar (för att kunna visa EN förklarande toast) — bara
+   nedtonad, inte native disabled (som skulle tysta klicket helt). */
+.ib.is-blocked {
+  opacity: 0.35;
+}
+
 /* Tvåstegs-borttagning i listor: klick visar en röd bekräfta-ikon i samma
    läge, som faller tillbaka till papperskorgs-ikonen efter en kort timeout. */
 .ib.del.confirm {
