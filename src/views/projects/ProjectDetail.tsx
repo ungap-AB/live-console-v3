@@ -424,7 +424,15 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
               class="btn"
               type="button"
               disabled={!canUseOnDemand || !(rec === 'recorded' || rec === 'trimmed')}
-              title={pub ? 'Stäng projektet först' : live ? 'Tillgänglig först när enkodern slutat sända' : undefined}
+              title={
+                pub
+                  ? 'Stäng projektet först'
+                  : live
+                    ? 'Tillgänglig först när enkodern slutat sända'
+                    : rec === 'processing'
+                      ? 'Inspelningen bearbetas fortfarande'
+                      : undefined
+              }
               onClick={() => void openTrimDialog()}
             >
               Trimma inspelning
