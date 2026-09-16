@@ -510,6 +510,7 @@ export const mockClient: Client = {
         channel: null,
         recording: null,
         publication: { state: 'none' },
+        onDemandLocked: false,
         agendaId: null,
         namelistId: null,
         sim: { everSent: false, segments: 0, accumulatedSeconds: 0, recordingStartedAt: null },
@@ -579,6 +580,7 @@ export const mockClient: Client = {
         throw new Error('Inspelningen måste vara klar innan den kan trimmas.')
       }
       p.recording.state = 'trimmed'
+      p.onDemandLocked = true
       return delay(clone(p))
     },
     async createReviewLink(id) {
@@ -587,6 +589,7 @@ export const mockClient: Client = {
         throw new Error('Trimma inspelningen innan en granskningslänk kan skapas.')
       }
       if (p.publication.state === 'none') p.publication.state = 'review'
+      p.onDemandLocked = true
       return delay(clone(p))
     },
     async publish(id) {
@@ -596,6 +599,14 @@ export const mockClient: Client = {
       }
       p.recording.state = 'published'
       p.publication.state = 'published'
+      p.onDemandLocked = true
+      return delay(clone(p))
+    },
+    async returnToLive(id) {
+      const p = findProject(id)
+      if (p.recording?.state === 'trimmed' || p.recording?.state === 'published') p.recording = null
+      p.publication.state = 'none'
+      p.onDemandLocked = false
       return delay(clone(p))
     },
     async cue(id, kind, refId, label) {
@@ -652,6 +663,7 @@ export const mockClient: Client = {
       p.channel = null
       p.recording = null
       p.publication = { state: 'none' }
+      p.onDemandLocked = false
       p.sim = { everSent: false, segments: 0, accumulatedSeconds: 0, recordingStartedAt: null }
       p.playout = { currentAgendaItemId: null, currentPersonId: null, timeline: [] }
       return delay(clone(p))

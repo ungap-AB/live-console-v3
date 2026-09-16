@@ -272,8 +272,9 @@ function toProjectLite(dto: ServerProject): Project {
     visibility: dto.visibility as Visibility,
     playerUrl: dto.playerUrl,
     channel: dto.channel ? { id: dto.channel.id, state: dto.channel.state as ChannelState } : null,
-    recording: dto.recording ? { id: dto.recording.id, state: dto.recording.state as RecordingState } : null,
+    recording: dto.recording ? { id: dto.recording.id, state: dto.recording.state as RecordingState, hlsUrl: dto.recording.hlsUrl } : null,
     publication: { state: dto.publication.state as PublicationState },
+    onDemandLocked: dto.onDemandLocked,
     agendaId: dto.agendaId,
     namelistId: dto.namelistId,
     domainId: dto.domainId,
@@ -583,7 +584,7 @@ export const httpClient: Client = {
       if (project.channel) throw new Error('Projektet har redan en live-resurs.')
       const channel = await api<ServerChannel>('/channels', {
         method: 'POST',
-        body: { name: project.name, projectId: null, type: 'STANDARD', latencyMode: 'LOW', recording: true },
+        body: { name: project.name, projectId: id, type: 'STANDARD', latencyMode: 'LOW', recording: true },
       })
       await api<void>(`/channels/${channel.id}/project`, { method: 'PUT', body: { projectId: id } })
       return fetchProject(id)
@@ -600,7 +601,7 @@ export const httpClient: Client = {
       await api<void>(`/debug/projects/${id}/encoder/${sending ? 'start' : 'stop'}`, { method: 'POST' })
       return fetchProject(id)
     },
-    async trim(id) {
+    async trim(id, range) {
       const project = await api<ServerProject>(`/projects/${id}`)
       if (!project.recording || !['recorded', 'trimmed'].includes(project.recording.state)) {
         throw new Error('Inspelningen måste vara klar innan den kan trimmas.')
@@ -610,7 +611,7 @@ export const httpClient: Client = {
         recording.kind === 'trim' && recording.parentId ? await api<ServerRecording>(`/recordings/${recording.parentId}`) : recording
       const job = await api<ServerTrimJob>(`/recordings/${original.id}/trim`, {
         method: 'POST',
-        body: { startOffsetSeconds: 0, endOffsetSeconds: original.durationSeconds },
+        body: range,
       })
       await pollTrimJob(job.jobId)
       return fetchProject(id)
@@ -622,6 +623,10 @@ export const httpClient: Client = {
     async publish(id) {
       await api<void>(`/projects/${id}/publish`, { method: 'POST' })
       return fetchProject(id)
+    },
+    async returnToLive(id) {
+      const dto = await api<ServerProject>(`/projects/${id}/return-to-live`, { method: 'POST' })
+      return toProjectFull(dto)
     },
     async cue(id, kind, refId, _label) {
       const dto = await api<ServerTimelineEvent>(`/projects/${id}/playout/cue`, { method: 'POST', body: { kind, refId } })

@@ -79,8 +79,9 @@ export interface Project {
   visibility: Visibility
   playerUrl: string
   channel: { id: string; state: ChannelState } | null
-  recording: { id: string; state: RecordingState } | null
+  recording: { id: string; state: RecordingState; hlsUrl?: string } | null
   publication: { state: PublicationState }
+  onDemandLocked: boolean
   agendaId: string | null
   namelistId: string | null
   domainId?: string

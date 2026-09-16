@@ -94,6 +94,11 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
   }
 
   const actions: ProjectActions = {
+    refreshProject: async () => {
+      if (!selected) return
+      const refreshed = await client.projects.get(selected.id)
+      if (refreshed) replace(refreshed)
+    },
     setVisibility: (visibility: Visibility) =>
       withErrorToast(async () => {
         if (!selected) return
@@ -124,20 +129,20 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
         if (!selected) return
         replace(await client.projects.setEncoderSending(selected.id, sending))
       }),
-    trim: () =>
+    trim: (range) =>
       withErrorToast(async () => {
         if (!selected) return
-        replace(await client.projects.trim(selected.id))
-      }),
-    createReviewLink: () =>
-      withErrorToast(async () => {
-        if (!selected) return
-        replace(await client.projects.createReviewLink(selected.id))
+        replace(await client.projects.trim(selected.id, range))
       }),
     publish: () =>
       withErrorToast(async () => {
         if (!selected) return
         replace(await client.projects.publish(selected.id))
+      }),
+    returnToLive: () =>
+      withErrorToast(async () => {
+        if (!selected) return
+        replace(await client.projects.returnToLive(selected.id))
       }),
     cue: (kind: CueKind, refId: string, label: string) => {
       if (!selected) return

@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "amazon-ivs-player": "^1.56.1",
+    "events": "^3.3.0",
     "preact": "^10.29.8"
   },
   "devDependencies": {

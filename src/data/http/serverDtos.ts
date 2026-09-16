@@ -68,6 +68,7 @@ export interface ServerChannelRef {
 export interface ServerRecordingRef {
   id: string
   state: string
+  hlsUrl?: string
 }
 
 export interface ServerProject {
@@ -79,6 +80,7 @@ export interface ServerProject {
   channel: ServerChannelRef | null
   recording: ServerRecordingRef | null
   publication: { state: string }
+  onDemandLocked: boolean
   agendaId: string | null
   namelistId: string | null
   domainId?: string

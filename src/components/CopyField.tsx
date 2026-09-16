@@ -12,15 +12,29 @@ interface CopyFieldProps {
 export function CopyField({ label, value, placeholder = '–', monospace = false, mask = false }: CopyFieldProps) {
   const [copied, setCopied] = useState(false)
 
+  function fallbackCopy(text: string): boolean {
+    const field = document.createElement('textarea')
+    field.value = text
+    field.setAttribute('readonly', '')
+    field.style.position = 'fixed'
+    field.style.left = '-9999px'
+    document.body.appendChild(field)
+    field.select()
+    const ok = document.execCommand('copy')
+    document.body.removeChild(field)
+    return ok
+  }
+
   async function copy() {
     if (value == null) return
     try {
-      await navigator.clipboard.writeText(value)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(value)
+      else if (!fallbackCopy(value)) return
     } catch {
-      // clipboard access denied — nothing sensible to show the user beyond leaving the button unchanged
+      if (!fallbackCopy(value)) return
     }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
   }
 
   const displayValue =

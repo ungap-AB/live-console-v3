@@ -1,13 +1,16 @@
-import { useState } from 'preact/hooks'
-import type { Project, RecordingState } from '../../data/types'
+import { useEffect, useState } from 'preact/hooks'
+import { client } from '../../data'
+import type { Project, Recording, RecordingState } from '../../data/types'
 import { StatusChip, type ChipTone } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
 import { VideoLightbox } from '../../components/VideoLightbox'
+import { ConfirmModal } from '../../components/ConfirmModal'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
 import { useLiveChannel } from './useLiveChannel'
 import { phaseMeta } from './livePhase'
+import { TrimDialog } from '../archive/TrimDialog'
 import './ProjectDetail.css'
 
 interface ProjectDetailProps {
@@ -39,6 +42,12 @@ const ODM_META: Record<RecordingState, { label: string; tone: ChipTone }> = {
   published: { label: 'Publicerad', tone: 'accent' },
 }
 
+function initialTab(project: Project): 'live' | 'odm' {
+  return project.onDemandLocked || project.publication.state !== 'none' || project.recording?.state === 'trimmed' || project.recording?.state === 'published'
+    ? 'odm'
+    : 'live'
+}
+
 export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: ProjectDetailProps) {
   const { channel, health, streamKey, refresh } = useLiveChannel(p.channel?.id ?? null)
   const phase = health?.livePhase
@@ -48,12 +57,29 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
   // Riv resurs och bara få ett felmeddelande tillbaka.
   const inUse = live || phase === 'signalInterrupted'
   useTick(live)
-  const [tab, setTab] = useState<'live' | 'odm'>('live')
+  const [tab, setTab] = useState<'live' | 'odm'>(() => initialTab(p))
   const [showVideo, setShowVideo] = useState(false)
+  const [trimming, setTrimming] = useState<Recording | null>(null)
+  const [confirmReturnToLive, setConfirmReturnToLive] = useState(false)
+
+  useEffect(() => {
+    setTab(initialTab(p))
+    setShowVideo(false)
+    setTrimming(null)
+    setConfirmReturnToLive(false)
+  }, [p.id])
+
+  useEffect(() => {
+    if (phase === 'streamEnded' && p.recording?.state === 'recording') {
+      void actions.refreshProject()
+    }
+  }, [phase, p.recording?.state])
 
   const hasIngest = !!p.channel
   const rec = p.recording?.state ?? 'none'
   const pub = p.visibility === 'open'
+  const canDelete = !pub && !live
+  const canUseOnDemand = !pub && !live
   const elapsed = recordedSeconds(p)
   const liveElapsed = liveElapsedSeconds(health?.streamStartedAt)
   const status = hasIngest ? phaseMeta(phase) : { label: 'Ingen resurs', tone: 'neutral' as ChipTone }
@@ -69,11 +95,13 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
   else if (phase === 'signalInterrupted')
     liveNote =
       'Enkodern har slutat sända. Det kan vara en tillfällig störning — resursen ligger kvar tills du river den.'
-  else if (phase === 'streamEnded') liveNote = 'Sändningen är avslutad. Riv resursen när du är klar.'
+  else if (phase === 'streamEnded') liveNote = 'Sändningen är avslutad. Starta enkodern igen eller arbeta vidare i Ondemand.'
   else if (hasIngest) liveNote = 'Resursen är allokerad och väntar på signal.'
 
   let odmNote = ''
-  if (rec === 'recording') odmNote = 'Trimning blir tillgänglig när enkodern slutat sända.'
+  if (pub) odmNote = 'Stäng projektet innan ondemand-funktionerna blir tillgängliga.'
+  else if (live) odmNote = 'Stoppa enkodern innan ondemand-funktionerna blir tillgängliga.'
+  else if (rec === 'recording') odmNote = 'Trimning blir tillgänglig när enkodern slutat sända.'
   else if (rec === 'none') odmNote = 'Ingen inspelning finns ännu.'
   else if (rec === 'recorded')
     odmNote = `Inspelningen är klar (${formatHms(elapsed)}). Trimma den innan du publicerar.`
@@ -82,6 +110,35 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
   else odmNote = pub ? 'Publicerad och öppen för publik. Kapitellistan är fryst.' : 'Publicerad men stängd för publik.'
   if (p.sim.segments > 1 && rec !== 'recording' && rec !== 'none') {
     odmNote += ` Inspelningen har ${p.sim.segments - 1} glapp — kontrollera kapitlens offset efter trimning.`
+  }
+
+  async function selectTab(next: 'live' | 'odm') {
+    if (next === 'live' && tab === 'odm' && p.onDemandLocked) {
+      setConfirmReturnToLive(true)
+      return
+    }
+    setTab(next)
+  }
+
+  async function returnToLive() {
+    await actions.returnToLive()
+    setConfirmReturnToLive(false)
+    setTab('live')
+  }
+
+  async function openTrimDialog() {
+    if (!p.recording) return
+    const recording = await client.recordings.get(p.recording.id)
+    if (!recording) return
+    const original = recording.kind === 'trimmed' && recording.parentId
+      ? await client.recordings.get(recording.parentId)
+      : recording
+    if (original) setTrimming(original)
+  }
+
+  async function saveTrim(range: { startOffsetSeconds: number; endOffsetSeconds: number }) {
+    await actions.trim(range)
+    setTrimming(null)
   }
 
   return (
@@ -119,17 +176,23 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
           <button class="btn btn-primary" type="button" onClick={onOpenPlayout}>
             Öppna playout
           </button>
-          <button class="btn btn-danger" type="button" onClick={onDelete}>
+          <button
+            class="btn btn-danger"
+            type="button"
+            disabled={!canDelete}
+            title={pub ? 'Stäng projektet innan det raderas' : live ? 'Går inte att radera medan signal tas emot' : undefined}
+            onClick={onDelete}
+          >
             Radera projekt
           </button>
         </div>
       </div>
 
       <div class="tabs" role="tablist">
-        <button role="tab" type="button" aria-selected={tab === 'live'} onClick={() => setTab('live')}>
+        <button role="tab" type="button" aria-selected={tab === 'live'} onClick={() => void selectTab('live')}>
           Live
         </button>
-        <button role="tab" type="button" aria-selected={tab === 'odm'} onClick={() => setTab('odm')}>
+        <button role="tab" type="button" aria-selected={tab === 'odm'} onClick={() => void selectTab('odm')}>
           Ondemand
         </button>
       </div>
@@ -158,11 +221,14 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
             >
               Riv resurs
             </button>
-            {live && (
-              <button class="btn btn-sm" type="button" onClick={() => setShowVideo(true)}>
-                Visa bild
-              </button>
-            )}
+            <button
+              class="btn btn-sm"
+              type="button"
+              disabled={!channel?.playbackUrl}
+              onClick={() => setShowVideo(true)}
+            >
+              Visa livesändning
+            </button>
           </div>
           <div class="resource">
             <div class="rowset">
@@ -243,48 +309,32 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
             <button
               class="btn"
               type="button"
-              disabled={!(rec === 'recorded' || rec === 'trimmed')}
-              title={live ? 'Tillgänglig först när enkodern slutat sända' : undefined}
-              onClick={actions.trim}
+              disabled={!canUseOnDemand || !(rec === 'recorded' || rec === 'trimmed')}
+              title={pub ? 'Stäng projektet först' : live ? 'Tillgänglig först när enkodern slutat sända' : undefined}
+              onClick={() => void openTrimDialog()}
             >
               Trimma inspelning
             </button>
             <button
-              class="btn"
-              type="button"
-              disabled={rec === 'none' || rec === 'recording'}
-              onClick={actions.createReviewLink}
-            >
-              Skapa granskningslänk
-            </button>
-            <button
               class="btn btn-primary"
               type="button"
-              disabled={rec !== 'trimmed'}
-              title={rec !== 'trimmed' ? 'Trimma inspelningen först' : undefined}
+              disabled={!canUseOnDemand || rec !== 'trimmed'}
+              title={pub ? 'Stäng projektet först' : live ? 'Tillgänglig först när enkodern slutat sända' : rec !== 'trimmed' ? 'Trimma inspelningen först' : undefined}
               onClick={actions.publish}
             >
               Publicera
             </button>
             {p.publication.state === 'published' && (
-              <button class="btn btn-sm" type="button" onClick={() => setShowVideo(true)}>
+              <button class="btn btn-sm" type="button" disabled={!p.recording?.hlsUrl} onClick={() => setShowVideo(true)}>
                 Visa inspelning
               </button>
             )}
           </div>
           <div class="rowset" style={{ maxWidth: '660px' }}>
             <div class="field">
-              <label>Granskningslänk</label>
-              <CopyField
-                value={p.publication.state !== 'none' ? 'https://play.ungap.se/review/9f3a-kf2409' : null}
-                placeholder="Skapas när inspelningen är trimmad"
-                monospace
-              />
-            </div>
-            <div class="field">
               <label>HLS-URL</label>
               <CopyField
-                value={p.publication.state === 'published' ? `https://cdn.ungap.se/vod/${p.id}/master.m3u8` : null}
+                value={p.publication.state === 'published' ? (p.recording?.hlsUrl ?? null) : null}
                 placeholder="Tillgänglig efter publicering"
                 monospace
               />
@@ -299,10 +349,33 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
       {showVideo && (
         <VideoLightbox
           title={p.name}
-          src={live ? p.playerUrl : `https://cdn.ungap.se/vod/${p.id}/master.m3u8`}
-          live={live}
+          src={tab === 'live' ? (channel?.playbackUrl ?? '') : (p.recording?.hlsUrl ?? '')}
+          live={tab === 'live'}
           onClose={() => setShowVideo(false)}
         />
+      )}
+
+      {trimming && (
+        <TrimDialog
+          recording={trimming}
+          onCancel={() => setTrimming(null)}
+          onSave={(range) => void saveTrim(range)}
+        />
+      )}
+
+      {confirmReturnToLive && (
+        <ConfirmModal
+          title="Gå tillbaka till live?"
+          confirmLabel="Gå till live"
+          danger
+          onCancel={() => setConfirmReturnToLive(false)}
+          onConfirm={() => void returnToLive()}
+        >
+          <p>
+            Den kopplade ondemand-versionen kopplas bort och publiken kan inte längre se den. För att
+            sända igen behöver du skapa en ny ingest-resurs och använda en ny stream key i enkodern.
+          </p>
+        </ConfirmModal>
       )}
     </>
   )
