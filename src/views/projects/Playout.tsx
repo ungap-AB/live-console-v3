@@ -3,6 +3,7 @@ import { client } from '../../data'
 import type { Agenda, NameList, Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { StatusChip, type ChipTone } from '../../components/StatusChip'
+import { CopyField } from '../../components/CopyField'
 import { PickerModal } from '../../components/PickerModal'
 import { EditableItemList } from '../../components/EditableItemList'
 import type { ProjectActions } from './actions'
@@ -59,7 +60,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
     ? { label: 'Publicerad', tone: 'accent' }
     : p.channel
       ? phaseMeta(phase)
-      : { label: 'Ingen resurs', tone: 'neutral' }
+      : { label: 'Ingen ingest', tone: 'neutral' }
   const statusTone = status.tone
   const statusLabel = status.label
 
@@ -120,14 +121,14 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   }
 
   async function createAndAttachAgenda() {
-    const created = await client.agendas.create({ name: 'Ny dagordning', description: 'Utkast' })
+    const created = await client.agendas.create({ name: p.name, description: 'Utkast' })
     actions.setAgenda(created.id)
     allAgendasResource.reload()
     setPicking(null)
   }
 
   async function createAndAttachNameList() {
-    const created = await client.namelists.create({ name: 'Ny namnlista', description: 'Utkast' })
+    const created = await client.namelists.create({ name: p.name, description: 'Utkast' })
     actions.setNameList(created.id)
     allNameListsResource.reload()
     setPicking(null)
@@ -154,15 +155,19 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
           </button>
         </div>
         <div class="panel-head-row">
+          <div class="field field-grow">
+            <label>Spelarlänk</label>
+            <CopyField value={p.playerUrl} monospace />
+          </div>
           <div class="field">
-            <label>Publik</label>
+            <label>Synlighet</label>
             <div class="seg">
               <button
                 type="button"
                 aria-pressed={p.visibility === 'open'}
                 onClick={() => actions.setVisibility('open')}
               >
-                Öppen
+                Öppen för publik
               </button>
               <button
                 type="button"
@@ -170,7 +175,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
                 aria-pressed={p.visibility === 'closed'}
                 onClick={() => actions.setVisibility('closed')}
               >
-                Stängd
+                Stängd för publik
               </button>
             </div>
           </div>

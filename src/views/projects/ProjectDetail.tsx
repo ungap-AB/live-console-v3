@@ -85,7 +85,7 @@ export function ProjectDetail({ project: p, onDelete, actions }: ProjectDetailPr
   const canUseOnDemand = !pub && !live
   const elapsed = recordedSeconds(p)
   const liveElapsed = liveElapsedSeconds(health?.streamStartedAt)
-  const status = hasIngest ? phaseMeta(phase) : { label: 'Ingen resurs', tone: 'neutral' as ChipTone }
+  const status = hasIngest ? phaseMeta(phase) : { label: 'Ingen ingest', tone: 'neutral' as ChipTone }
 
   const subtitle = live
     ? `Projekt · sänder sedan ${health?.streamStartedAt ? formatDateTime(health.streamStartedAt) : ''}`

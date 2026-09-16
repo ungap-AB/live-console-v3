@@ -47,23 +47,46 @@ export function EditableItemList<T>({
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [pendingEditId, setPendingEditId] = useState<string | null>(null)
   const confirmTimeoutRef = useRef<number | undefined>(undefined)
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  // Håller alltid det senaste draft-värdet tillgängligt synkront (utan att
+  // vänta på Preacts state-flush) — TAB/Lägg till-genvägarna behöver kunna
+  // spara det som just skrevs innan de hoppar vidare till nästa rad.
+  const draftRef = useRef('')
+  draftRef.current = draft
 
   useEffect(() => () => window.clearTimeout(confirmTimeoutRef.current), [])
 
+  // `autoFocus` är inte alltid pålitligt för ett fält som byts in i en
+  // redan monterad rad (inte sidladdning) — sätt fokus imperativt istället
+  // varje gång redigeringsläget faktiskt öppnas för en rad.
+  useEffect(() => {
+    if (editingId) inputRef.current?.focus()
+  }, [editingId])
+
   // Ett nyss tillagt objekt finns inte i `items` förrän förälderns state
   // hunnit uppdateras (nästa render) — vänta in det innan redigeringsläget
-  // öppnas, annars saknas draft-texten att fylla i.
+  // öppnas. Fältet ska vara tomt (inte serverns platshållartitel som
+  // "Ny punkt"/"Ny person") så man skriver in den riktiga titeln direkt.
   useEffect(() => {
     if (!pendingEditId) return
     const item = items.find((it) => getId(it) === pendingEditId)
     if (item) {
       setEditingId(pendingEditId)
-      setDraft(getLabel(item))
+      setDraft('')
       setPendingEditId(null)
     }
   }, [items, pendingEditId])
 
+  // Sparar en pågående redigering (om någon) innan vi går vidare till att
+  // lägga till en ny rad — annars tappas den bort tyst.
+  async function saveCurrentEditIfAny() {
+    if (!editingId) return
+    if (draftRef.current.trim()) await onRename(editingId, draftRef.current.trim())
+    setEditingId(null)
+  }
+
   async function handleAdd() {
+    await saveCurrentEditIfAny()
     const newId = await onAdd()
     if (newId) setPendingEditId(newId)
   }
@@ -74,8 +97,8 @@ export function EditableItemList<T>({
   }
 
   async function saveEdit(id: string) {
-    if (!draft.trim()) return
-    await onRename(id, draft.trim())
+    if (!draftRef.current.trim()) return
+    await onRename(id, draftRef.current.trim())
     setEditingId(null)
   }
 
@@ -107,14 +130,23 @@ export function EditableItemList<T>({
               {numbered && <span class="no">{i + 1}</span>}
               <span class="txt">
                 <input
+                  ref={inputRef}
                   value={draft}
                   placeholder="Namn"
                   aria-label="Namn"
-                  autoFocus
                   onInput={(e) => setDraft(e.currentTarget.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') saveEdit(id)
                     if (e.key === 'Escape') setEditingId(null)
+                    if (e.key === 'Tab' && !e.shiftKey) {
+                      // Snabbinmatning: TAB sparar raden och hoppar direkt
+                      // till en ny tom rad, som i ett kalkylark.
+                      e.preventDefault()
+                      void (async () => {
+                        await saveEdit(id)
+                        await handleAdd()
+                      })()
+                    }
                   }}
                 />
               </span>
