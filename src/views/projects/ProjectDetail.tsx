@@ -53,6 +53,7 @@ function formatCreatedAt(iso: string): string {
 const ODM_META: Record<RecordingState, { label: string; tone: ChipTone }> = {
   none: { label: 'Ingen inspelning', tone: 'neutral' },
   recording: { label: 'Spelas in', tone: 'neutral' },
+  processing: { label: 'Bearbetas', tone: 'warn' },
   recorded: { label: 'Ej publicerad', tone: 'neutral' },
   trimmed: { label: 'Granskas', tone: 'warn' },
   published: { label: 'Publicerad', tone: 'accent' },
@@ -119,13 +120,14 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
   const hasIngest = !!p.channel
   const rec = p.recording?.state ?? 'none'
   const pub = p.visibility === 'open'
-  const canDelete = !pub && !live
+  const canDelete = !pub && p.capabilities.teardownChannel.status === 'allowed'
   const deleteBlockedReason = pub
     ? 'Stäng projektet innan det raderas'
     : live
       ? 'Går inte att radera medan signal tas emot'
       : null
-  const canUseOnDemand = !pub && !live
+  const canTrim = p.capabilities.trimRecording.status === 'allowed'
+  const canPublish = p.capabilities.publishVod.status === 'allowed'
   const elapsed = recordedSeconds(p)
   const liveElapsed = liveElapsedSeconds(health?.streamStartedAt)
   const status = hasIngest ? phaseMeta(phase) : { label: 'Ingen ingest', tone: 'neutral' as ChipTone }
@@ -423,7 +425,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
             <button
               class="btn"
               type="button"
-              disabled={!canUseOnDemand || !(rec === 'recorded' || rec === 'trimmed')}
+              disabled={!canTrim}
               title={
                 pub
                   ? 'Stäng projektet först'
@@ -440,7 +442,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
             <button
               class="btn btn-primary"
               type="button"
-              disabled={!canUseOnDemand || rec !== 'trimmed'}
+              disabled={!canPublish}
               title={pub ? 'Stäng projektet först' : live ? 'Tillgänglig först när enkodern slutat sända' : rec !== 'trimmed' ? 'Trimma inspelningen först' : undefined}
               onClick={actions.publish}
             >

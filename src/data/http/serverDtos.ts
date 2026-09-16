@@ -80,6 +80,11 @@ export interface ServerProject {
   channel: ServerChannelRef | null
   recording: ServerRecordingRef | null
   publication: { state: string }
+  capabilities: {
+    trimRecording: { status: string; reasonCode?: string }
+    publishVod: { status: string; reasonCode?: string }
+    teardownChannel: { status: string; reasonCode?: string }
+  }
   onDemandLocked: boolean
   agendaId: string | null
   namelistId: string | null

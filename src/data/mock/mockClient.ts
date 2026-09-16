@@ -27,6 +27,14 @@ import {
 const CHANNEL_QUOTA_LIMIT = 20
 const TRASH_RETENTION_DAYS = 30
 
+function defaultCapabilities() {
+  return {
+    trimRecording: { status: 'blocked' as const, reasonCode: 'recording_missing' },
+    publishVod: { status: 'blocked' as const, reasonCode: 'recording_missing' },
+    teardownChannel: { status: 'allowed' as const },
+  }
+}
+
 // In-memory kopior — muteras av create/update/trash så att en session känns
 // verklig utan en backend. Fördröjningen tvingar fram loading-tillstånd i
 // vyerna redan nu, vilket annars glöms bort tills steg 2.
@@ -46,6 +54,23 @@ function delay<T>(value: T): Promise<T> {
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value))
+}
+
+function projectSnapshot(project: Project): Project {
+  const snapshot = clone(project)
+  const closed = snapshot.visibility === 'closed'
+  const channelLive = snapshot.channel?.state === 'live'
+  const recordingState = snapshot.recording?.state
+  const blocked = (reasonCode: string) => ({ status: 'blocked' as const, reasonCode })
+
+  snapshot.capabilities = {
+    trimRecording:
+      !closed ? blocked('project_open') : channelLive ? blocked('channel_live') : recordingState === 'recorded' || recordingState === 'trimmed' ? { status: 'allowed' as const } : blocked(recordingState === 'processing' ? 'recording_processing' : recordingState ? 'recording_not_ready' : 'recording_missing'),
+    publishVod:
+      !closed ? blocked('project_open') : channelLive ? blocked('channel_live') : recordingState === 'trimmed' ? { status: 'allowed' as const } : blocked(recordingState === 'processing' ? 'recording_processing' : recordingState ? 'recording_not_trimmed' : 'recording_missing'),
+    teardownChannel: !snapshot.channel || !channelLive ? { status: 'allowed' as const } : blocked('channel_in_use'),
+  }
+  return snapshot
 }
 
 function findAgenda(id: string): Agenda {
@@ -517,10 +542,11 @@ export const mockClient: Client = {
     async list(query) {
       const q = query?.trim().toLowerCase()
       const hits = !q ? projects : projects.filter((p) => p.name.toLowerCase().includes(q))
-      return delay(clone(hits))
+      return delay(hits.map(projectSnapshot))
     },
     async get(id) {
-      return delay(clone(projects.find((p) => p.id === id)))
+      const project = projects.find((p) => p.id === id)
+      return delay(project ? projectSnapshot(project) : undefined)
     },
     async create(input) {
       const project: Project = {
@@ -532,6 +558,7 @@ export const mockClient: Client = {
         channel: null,
         recording: null,
         publication: { state: 'none' },
+        capabilities: defaultCapabilities(),
         onDemandLocked: false,
         agendaId: null,
         namelistId: null,
@@ -539,12 +566,12 @@ export const mockClient: Client = {
         playout: { currentAgendaItemId: null, currentPersonId: null, timeline: [] },
       }
       projects = [project, ...projects]
-      return delay(clone(project))
+      return delay(projectSnapshot(project))
     },
     async rename(id, name) {
       const p = findProject(id)
       p.name = name
-      return delay(clone(p))
+      return delay(projectSnapshot(p))
     },
     async trash(id) {
       projects = projects.filter((p) => p.id !== id)
@@ -553,17 +580,17 @@ export const mockClient: Client = {
     async setVisibility(id, visibility) {
       const p = findProject(id)
       p.visibility = visibility
-      return delay(clone(p))
+      return delay(projectSnapshot(p))
     },
     async setAgenda(id, agendaId) {
       const p = findProject(id)
       p.agendaId = agendaId
-      return delay(clone(p))
+      return delay(projectSnapshot(p))
     },
     async setNameList(id, namelistId) {
       const p = findProject(id)
       p.namelistId = namelistId
-      return delay(clone(p))
+      return delay(projectSnapshot(p))
     },
     async createChannel(id) {
       const p = findProject(id)
@@ -590,17 +617,17 @@ export const mockClient: Client = {
       }
       channels = [channel, ...channels]
       p.channel = { id: channelId, state: 'idle' }
-      return delay(clone(p))
+      return delay(projectSnapshot(p))
     },
     async teardownChannel(id) {
       const p = findProject(id)
-      if (!p.channel) return delay(clone(p))
+      if (!p.channel) return delay(projectSnapshot(p))
       if (p.channel.state === 'live') {
         throw new Error('Går inte att riva medan signal tas emot.')
       }
       channels = channels.filter((c) => c.id !== p.channel!.id)
       p.channel = null
-      return delay(clone(p))
+      return delay(projectSnapshot(p))
     },
     async setEncoderSending(id, sending) {
       const p = findProject(id)
@@ -653,7 +680,7 @@ export const mockClient: Client = {
           recording.segments = [{ startedAt: recording.createdAt, durationSeconds: elapsed }]
         }
       }
-      return delay(clone(p))
+      return delay(projectSnapshot(p))
     },
     async trim(id, range) {
       const p = findProject(id)
@@ -668,7 +695,7 @@ export const mockClient: Client = {
       p.recording.state = 'trimmed'
       p.recording.hlsUrl = trimmed.hlsUrl
       p.onDemandLocked = true
-      return delay(clone(p))
+      return delay(projectSnapshot(p))
     },
     async createReviewLink(id) {
       const p = findProject(id)
@@ -677,7 +704,7 @@ export const mockClient: Client = {
       }
       if (p.publication.state === 'none') p.publication.state = 'review'
       p.onDemandLocked = true
-      return delay(clone(p))
+      return delay(projectSnapshot(p))
     },
     async publish(id) {
       const p = findProject(id)
@@ -687,14 +714,14 @@ export const mockClient: Client = {
       p.recording.state = 'published'
       p.publication.state = 'published'
       p.onDemandLocked = true
-      return delay(clone(p))
+      return delay(projectSnapshot(p))
     },
     async returnToLive(id) {
       const p = findProject(id)
       if (p.recording?.state === 'trimmed' || p.recording?.state === 'published') p.recording = null
       p.publication.state = 'none'
       p.onDemandLocked = false
-      return delay(clone(p))
+      return delay(projectSnapshot(p))
     },
     async cue(id, kind, refId, label) {
       const p = findProject(id)
@@ -753,7 +780,7 @@ export const mockClient: Client = {
       p.onDemandLocked = false
       p.sim = { everSent: false, segments: 0, accumulatedSeconds: 0, recordingStartedAt: null }
       p.playout = { currentAgendaItemId: null, currentPersonId: null, timeline: [] }
-      return delay(clone(p))
+      return delay(projectSnapshot(p))
     },
   },
 }

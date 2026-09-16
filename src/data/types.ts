@@ -69,8 +69,21 @@ export interface NameList {
 
 export type Visibility = 'open' | 'closed'
 export type ChannelState = 'none' | 'idle' | 'live'
-export type RecordingState = 'none' | 'recording' | 'recorded' | 'trimmed' | 'published'
+export type RecordingState = 'none' | 'recording' | 'processing' | 'recorded' | 'trimmed' | 'published'
 export type PublicationState = 'none' | 'review' | 'published'
+
+export type CapabilityStatus = 'allowed' | 'allowedWithWarning' | 'blocked'
+
+export interface OperationCapability {
+  status: CapabilityStatus
+  reasonCode?: string
+}
+
+export interface ProjectCapabilities {
+  trimRecording: OperationCapability
+  publishVod: OperationCapability
+  teardownChannel: OperationCapability
+}
 
 export interface Project {
   id: string
@@ -81,6 +94,7 @@ export interface Project {
   channel: { id: string; state: ChannelState } | null
   recording: { id: string; state: RecordingState; hlsUrl?: string } | null
   publication: { state: PublicationState }
+  capabilities: ProjectCapabilities
   onDemandLocked: boolean
   agendaId: string | null
   namelistId: string | null

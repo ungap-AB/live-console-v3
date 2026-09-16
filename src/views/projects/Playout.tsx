@@ -34,6 +34,9 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
 
   const rec = p.recording?.state ?? 'none'
   const guidedPhase = resolveGuidedPhase(p, phase, rec)
+  const canTrim = p.capabilities.trimRecording.status === 'allowed'
+  const canPublish = p.capabilities.publishVod.status === 'allowed'
+  const canTeardown = p.capabilities.teardownChannel.status === 'allowed'
   const [showVideo, setShowVideo] = useState(false)
   const [trimming, setTrimming] = useState<Recording | null>(null)
   const [confirmReturnToLive, setConfirmReturnToLive] = useState(false)
@@ -277,7 +280,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
             </div>
           </div>
           <p class="gb-note">Ingest skapad. Väntar på signal från enkodern.</p>
-          <button class="btn btn-danger btn-sm" type="button" onClick={() => void teardownIngest()}>
+          <button class="btn btn-danger btn-sm" type="button" disabled={!canTeardown} onClick={() => void teardownIngest()}>
             Riv ingest
           </button>
         </div>
@@ -295,10 +298,10 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
             Sändningen är avslutad. Trimma inspelningen för att publicera ondemand. Starta enkodern igen för att
             fortsätta sända.
           </p>
-          <button class="btn btn-primary" type="button" onClick={() => void openTrim()}>
+          <button class="btn btn-primary" type="button" disabled={!canTrim} onClick={() => void openTrim()}>
             Trimma inspelning
           </button>
-          <button class="btn btn-danger btn-sm" type="button" onClick={() => void teardownIngest()}>
+          <button class="btn btn-danger btn-sm" type="button" disabled={!canTeardown} onClick={() => void teardownIngest()}>
             Riv ingest
           </button>
         </div>
@@ -307,7 +310,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
       {guidedPhase === 'readyToPublish' && (
         <div class="guided-banner">
           <p class="gb-note">Inspelningen är trimmad och redo att publiceras.</p>
-          <button class="btn btn-primary" type="button" onClick={() => void publishAndTeardownIngest()}>
+          <button class="btn btn-primary" type="button" disabled={!canPublish} onClick={() => void publishAndTeardownIngest()}>
             Publicera
           </button>
           <button class="btn btn-sm" type="button" disabled={!p.recording?.hlsUrl} onClick={() => setShowVideo(true)}>

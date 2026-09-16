@@ -9,6 +9,7 @@ import type {
   CurrentUser,
   LivePhase,
   NameList,
+  OperationCapability,
   Project,
   ProjectRef,
   PublicationState,
@@ -62,6 +63,10 @@ async function getOrUndefined<T>(promise: Promise<T>): Promise<T | undefined> {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function toCapability(value: { status: string; reasonCode?: string }): OperationCapability {
+  return { status: value.status as OperationCapability['status'], reasonCode: value.reasonCode }
 }
 
 async function pollTrimJob(jobId: string): Promise<ServerTrimJob> {
@@ -274,6 +279,11 @@ function toProjectLite(dto: ServerProject): Project {
     channel: dto.channel ? { id: dto.channel.id, state: dto.channel.state as ChannelState } : null,
     recording: dto.recording ? { id: dto.recording.id, state: dto.recording.state as RecordingState, hlsUrl: dto.recording.hlsUrl } : null,
     publication: { state: dto.publication.state as PublicationState },
+    capabilities: {
+      trimRecording: toCapability(dto.capabilities.trimRecording),
+      publishVod: toCapability(dto.capabilities.publishVod),
+      teardownChannel: toCapability(dto.capabilities.teardownChannel),
+    },
     onDemandLocked: dto.onDemandLocked,
     agendaId: dto.agendaId,
     namelistId: dto.namelistId,
