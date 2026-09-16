@@ -102,48 +102,20 @@
   overflow: auto;
 }
 
-ul.list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-ul.list li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid var(--line-soft);
-  border-radius: 7px;
-  padding: 8px 10px;
-  background: #fff;
-}
-
-ul.list li.active {
+/* Radhöljet kommer nu från SortableList.css (delad med Dagordningar/
+   Namnlistor, se EditableItemList) — bara Playout-specifika tillägg kvar:
+   "aktiv" (spelas ut just nu) och tidsstämpeln bredvid en redan spelad rad. */
+.sortable-list li.active {
   border-color: #b9ceec;
   background: #f5f9ff;
   box-shadow: inset 3px 0 0 var(--focus);
 }
 
-ul.list li .grip {
-  color: var(--line);
-  cursor: grab;
-  font-size: 15px;
-  line-height: 1;
-  user-select: none;
-}
-
-ul.list li .label {
-  flex: 1;
-  min-width: 0;
-}
-
-ul.list li .time {
+.time {
   font-family: var(--mono);
   font-size: 11.5px;
   color: var(--ink-3);
+  flex: none;
 }
 
 .play {

@@ -564,6 +564,10 @@ export const httpClient: Client = {
       const dto = await api<ServerProject>('/projects', { method: 'POST', body: input })
       return toProjectFull(dto)
     },
+    async rename(id, name) {
+      const dto = await api<ServerProject>(`/projects/${id}`, { method: 'PATCH', body: { name } })
+      return toProjectFull(dto)
+    },
     async trash(id) {
       await api<void>(`/projects/${id}`, { method: 'DELETE' })
     },

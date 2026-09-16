@@ -31,14 +31,23 @@ interface ProjectsViewProps {
   onSelectedIdChange: (id: string | null) => void
   screen: ProjectScreen
   onScreenChange: (screen: ProjectScreen) => void
+  /** Lyft till App.tsx så navmenyns "+ Ny"-knapp (bild 1) kan öppna dialogen utifrån. */
+  creating: boolean
+  onCreatingChange: (creating: boolean) => void
 }
 
-export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenChange }: ProjectsViewProps) {
+export function ProjectsView({
+  selectedId,
+  onSelectedIdChange,
+  screen,
+  onScreenChange,
+  creating,
+  onCreatingChange,
+}: ProjectsViewProps) {
   const resource = useResource(() => client.projects.list(), [])
   const [projects, setProjects] = useState<Project[]>([])
   const [query, setQuery] = useState('')
   const [toast, setToast] = useState<string | null>(null)
-  const [creating, setCreating] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<Project | null>(null)
 
   useEffect(() => {
@@ -82,7 +91,7 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
     setProjects((prev) => [created, ...prev])
     onSelectedIdChange(created.id)
     onScreenChange('detail')
-    setCreating(false)
+    onCreatingChange(false)
   }
 
   async function deleteProject(project: Project) {
@@ -99,6 +108,11 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
       const refreshed = await client.projects.get(selected.id)
       if (refreshed) replace(refreshed)
     },
+    rename: (name: string) =>
+      withErrorToast(async () => {
+        if (!selected) return
+        replace(await client.projects.rename(selected.id, name))
+      }),
     setVisibility: (visibility: Visibility) =>
       withErrorToast(async () => {
         if (!selected) return
@@ -256,11 +270,10 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
   const visible = projects.filter((p) => !q || p.name.toLowerCase().includes(q))
 
   return (
-    <div class="view">
+    <div class="view projects-view">
       <header>
         <div>
           <h1>Projekt</h1>
-          <div class="sub">Möten, live-sändning och ondemand-publicering</div>
         </div>
         <Clock />
       </header>
@@ -274,10 +287,12 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
         <SplitPane
           listLabel="Projekt"
           detailLabel="Valt projekt"
+          listClassName="project-list-pane"
           list={
             <>
               <div class="top">
-                <div class="search">
+                {/* Dolt tills vidare (inte borttaget) — plockas fram igen senare. */}
+                <div class="search search-hidden">
                   <SearchIcon />
                   <input
                     type="search"
@@ -287,7 +302,7 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
                     onInput={(e) => setQuery(e.currentTarget.value)}
                   />
                 </div>
-                <button class="btn btn-sm" type="button" onClick={() => setCreating(true)}>
+                <button class="btn btn-sm" type="button" onClick={() => onCreatingChange(true)}>
                   Nytt projekt
                 </button>
               </div>
@@ -323,6 +338,17 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
                         </StatusChip>
                       </span>
                     </button>
+                    <button
+                      class="btn-playout"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onSelectedIdChange(p.id)
+                        onScreenChange('playout')
+                      }}
+                    >
+                      Playout
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -334,7 +360,6 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
             ) : (
               <ProjectDetail
                 project={selected}
-                onOpenPlayout={() => onScreenChange('playout')}
                 onDelete={() => setConfirmDelete(selected)}
                 actions={actions}
               />
@@ -363,7 +388,7 @@ export function ProjectsView({ selectedId, onSelectedIdChange, screen, onScreenC
         <RenameModal
           title="Nytt projekt"
           initialValue=""
-          onCancel={() => setCreating(false)}
+          onCancel={() => onCreatingChange(false)}
           onSave={createProject}
         />
       )}

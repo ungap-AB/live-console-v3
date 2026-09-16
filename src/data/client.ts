@@ -111,6 +111,7 @@ export interface Client {
     list(query?: string): Promise<Project[]>
     get(id: string): Promise<Project | undefined>
     create(input: { name: string }): Promise<Project>
+    rename(id: string, name: string): Promise<Project>
     trash(id: string): Promise<void>
     setVisibility(id: string, visibility: Visibility): Promise<Project>
     setAgenda(id: string, agendaId: string | null): Promise<Project>

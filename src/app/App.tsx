@@ -40,6 +40,9 @@ export function App() {
   // Playout-genvägen i sidomenyn meningsfull.
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
   const [projectScreen, setProjectScreen] = useState<ProjectScreen>('detail')
+  // Lyft hit av samma skäl som projectScreen — navmenyns "+ Ny"-knapp (bild 1)
+  // måste kunna öppna ProjectsViews skapa-dialog utifrån, inte bara inifrån.
+  const [creatingProject, setCreatingProject] = useState(false)
 
   // Delad av Dagordningar/Videoarkiv för "gå till projekt"-snabblänkar.
   function openProject(id: string) {
@@ -51,10 +54,20 @@ export function App() {
   if (auth.status === 'loading') return <div class="login-screen">Laddar…</div>
   if (auth.status === 'anon') return <LoginView onLogin={login} />
 
+  // "Playout" vinner om en sändning redan är öppen (går att hoppa tillbaka
+  // till den från vilken vy som helst) — annars "+ Ny" bara medan man
+  // faktiskt tittar på Projekt-listan/detaljvyn.
+  const projectsNavAction =
+    projectScreen === 'playout'
+      ? { label: 'Playout', onClick: () => { window.location.hash = routeHref('projects') } }
+      : route === 'projects'
+        ? { label: '+ Ny', onClick: () => setCreatingProject(true) }
+        : null
+
   return (
     <Shell
       active={route}
-      showPlayoutShortcut={projectScreen === 'playout'}
+      projectsNavAction={projectsNavAction}
       onLogout={logout}
       currentUserId={auth.user.id}
     >
@@ -64,6 +77,8 @@ export function App() {
           onSelectedIdChange={setActiveProjectId}
           screen={projectScreen}
           onScreenChange={setProjectScreen}
+          creating={creatingProject}
+          onCreatingChange={setCreatingProject}
         />
       )}
       {route === 'agendas' && <AgendasView onOpenProject={openProject} />}

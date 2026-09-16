@@ -3,6 +3,7 @@ import type { CueKind, Visibility } from '../../data/types'
 // Delas mellan ProjectDetail och Playout.
 export interface ProjectActions {
   refreshProject: () => Promise<void>
+  rename: (name: string) => Promise<void>
   setVisibility: (visibility: Visibility) => void
   setAgenda: (agendaId: string | null) => void
   setNameList: (namelistId: string | null) => void

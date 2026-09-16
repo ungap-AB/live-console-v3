@@ -25,3 +25,25 @@
   color: var(--live);
   font-weight: 500;
 }
+
+.picker-list button.picker-create {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--odm);
+  font-weight: 500;
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: 0;
+  margin-bottom: 4px;
+  padding-bottom: 11px;
+}
+
+.picker-list button.picker-create:hover {
+  background: var(--odm-bg);
+}
+
+.picker-list button.picker-create svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}

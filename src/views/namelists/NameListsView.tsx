@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { NameList, NameListPerson } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { SplitPane } from '../../components/SplitPane'
 import { StatusChip } from '../../components/StatusChip'
-import { SortableList } from '../../components/SortableList'
+import { EditableItemList } from '../../components/EditableItemList'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
-import { CheckIcon, DeleteIcon, EditIcon, CancelIcon, SearchIcon } from '../../components/icons'
+import { SearchIcon } from '../../components/icons'
 import './NameListsView.css'
 
 function formatDate(iso: string): string {
@@ -20,12 +20,8 @@ export function NameListsView() {
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [personFilter, setPersonFilter] = useState('')
-  const [editingPersonId, setEditingPersonId] = useState<string | null>(null)
-  const [draftName, setDraftName] = useState('')
   const [renaming, setRenaming] = useState<NameList | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<NameList | null>(null)
-  const [confirmingPersonId, setConfirmingPersonId] = useState<string | null>(null)
-  const confirmTimeoutRef = useRef<number | undefined>(undefined)
 
   useEffect(() => {
     if (listsResource.data) setNamelists(listsResource.data)
@@ -45,10 +41,7 @@ export function NameListsView() {
 
   useEffect(() => {
     setSelected(detailResource.data ?? null)
-    setConfirmingPersonId(null)
   }, [detailResource.data])
-
-  useEffect(() => () => window.clearTimeout(confirmTimeoutRef.current), [])
 
   const q = query.trim().toLowerCase()
   const visible = q
@@ -104,42 +97,20 @@ export function NameListsView() {
     setConfirmTrash(null)
   }
 
-  async function addPerson(list: NameList) {
+  async function addPerson(list: NameList): Promise<string> {
     const updated = await client.namelists.addPerson(list.id, { name: 'Ny person' })
     replaceSelected(updated)
-    const added = updated.people[updated.people.length - 1]
-    setEditingPersonId(added.id)
-    setDraftName(added.name)
+    return updated.people[updated.people.length - 1].id
   }
 
-  function startEdit(person: NameListPerson) {
-    setEditingPersonId(person.id)
-    setDraftName(person.name)
-  }
-
-  async function saveEdit(list: NameList, personId: string) {
-    if (!draftName.trim()) return
-    const updated = await client.namelists.updatePerson(list.id, personId, { name: draftName.trim() })
+  async function renamePerson(list: NameList, personId: string, name: string) {
+    const updated = await client.namelists.updatePerson(list.id, personId, { name })
     replaceSelected(updated)
-    setEditingPersonId(null)
   }
 
   async function removePerson(list: NameList, personId: string) {
     const updated = await client.namelists.removePerson(list.id, personId)
     replaceSelected(updated)
-    if (editingPersonId === personId) setEditingPersonId(null)
-  }
-
-  function requestRemovePerson(personId: string) {
-    window.clearTimeout(confirmTimeoutRef.current)
-    setConfirmingPersonId(personId)
-    confirmTimeoutRef.current = window.setTimeout(() => setConfirmingPersonId(null), 4000)
-  }
-
-  async function confirmRemovePerson(list: NameList, personId: string) {
-    window.clearTimeout(confirmTimeoutRef.current)
-    setConfirmingPersonId(null)
-    await removePerson(list, personId)
   }
 
   async function reorder(list: NameList, nextPeople: NameListPerson[]) {
@@ -267,100 +238,22 @@ export function NameListsView() {
                     <p class="hint">Inget namn matchar filtret.</p>
                   )}
 
-                  <SortableList
+                  <EditableItemList
                     items={visiblePeople}
                     getId={(p) => p.id}
+                    getLabel={(p) => p.name}
                     disabled={filterActive}
+                    addLabel="Lägg till namn"
                     onReorder={(next) => reorder(selected, next)}
-                    renderItem={(p) =>
-                      editingPersonId === p.id ? (
-                        <>
-                          <span class="txt">
-                            <input
-                              value={draftName}
-                              placeholder="Namn"
-                              aria-label="Namn"
-                              autoFocus
-                              onInput={(e) => setDraftName(e.currentTarget.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEdit(selected, p.id)
-                                if (e.key === 'Escape') setEditingPersonId(null)
-                              }}
-                            />
-                          </span>
-                          <span class="rowbtns">
-                            <button
-                              class="ib"
-                              type="button"
-                              title="Spara"
-                              aria-label="Spara"
-                              onClick={() => saveEdit(selected, p.id)}
-                            >
-                              <CheckIcon />
-                            </button>
-                            <button
-                              class="ib"
-                              type="button"
-                              title="Avbryt"
-                              aria-label="Avbryt"
-                              onClick={() => setEditingPersonId(null)}
-                            >
-                              <CancelIcon />
-                            </button>
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <span class="txt">
-                            <b>{p.name}</b>
-                          </span>
-                          <span class="rowbtns">
-                            <button
-                              class="ib"
-                              type="button"
-                              title="Redigera"
-                              aria-label="Redigera"
-                              onClick={() => startEdit(p)}
-                            >
-                              <EditIcon />
-                            </button>
-                            {confirmingPersonId === p.id ? (
-                              <button
-                                class="ib del confirm"
-                                type="button"
-                                title="Bekräfta borttagning"
-                                aria-label="Bekräfta borttagning"
-                                onClick={() => confirmRemovePerson(selected, p.id)}
-                              >
-                                <CheckIcon />
-                              </button>
-                            ) : (
-                              <button
-                                class="ib del"
-                                type="button"
-                                title="Ta bort"
-                                aria-label="Ta bort"
-                                onClick={() => requestRemovePerson(p.id)}
-                              >
-                                <DeleteIcon />
-                              </button>
-                            )}
-                          </span>
-                        </>
-                      )
+                    onAdd={() => addPerson(selected)}
+                    onRename={(id, name) => renamePerson(selected, id, name)}
+                    onRemove={(id) => removePerson(selected, id)}
+                    hint={
+                      selected.usedInProjects > 0
+                        ? 'Ändringar slår igenom i projekt som ännu inte publicerats. Publicerade sändningar har en fryst kopia och påverkas inte.'
+                        : undefined
                     }
                   />
-                  <div class="addrow">
-                    <button class="btn btn-sm" type="button" onClick={() => addPerson(selected)}>
-                      Lägg till namn
-                    </button>
-                  </div>
-                  {selected.usedInProjects > 0 && (
-                    <p class="hint">
-                      Ändringar slår igenom i projekt som ännu inte publicerats. Publicerade sändningar
-                      har en fryst kopia och påverkas inte.
-                    </p>
-                  )}
                 </div>
               </>
             )

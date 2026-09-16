@@ -8,6 +8,8 @@ interface SortableListProps<T> {
   onReorder: (nextItems: T[]) => void
   renderItem: (item: T, index: number) => ComponentChildren
   disabled?: boolean
+  /** Extra klass per rad (t.ex. "active" i Playout-vyn) — utöver dragging/over. */
+  getItemClassName?: (item: T) => string
 }
 
 export function SortableList<T>({
@@ -16,6 +18,7 @@ export function SortableList<T>({
   onReorder,
   renderItem,
   disabled = false,
+  getItemClassName,
 }: SortableListProps<T>) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [overIndex, setOverIndex] = useState<number | null>(null)
@@ -44,6 +47,7 @@ export function SortableList<T>({
           class={[
             dragIndex === index ? 'dragging' : '',
             overIndex === index && dragIndex !== index ? 'over' : '',
+            getItemClassName?.(item) ?? '',
           ]
             .filter(Boolean)
             .join(' ')}

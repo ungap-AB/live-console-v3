@@ -519,6 +519,11 @@ export const mockClient: Client = {
       projects = [project, ...projects]
       return delay(clone(project))
     },
+    async rename(id, name) {
+      const p = findProject(id)
+      p.name = name
+      return delay(clone(p))
+    },
     async trash(id) {
       projects = projects.filter((p) => p.id !== id)
       return delay(undefined)

@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Agenda, AgendaItem, Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { SplitPane } from '../../components/SplitPane'
 import { StatusChip } from '../../components/StatusChip'
-import { SortableList } from '../../components/SortableList'
+import { EditableItemList } from '../../components/EditableItemList'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
-import { CheckIcon, DeleteIcon, EditIcon, CancelIcon, SearchIcon, PlusIcon } from '../../components/icons'
+import { SearchIcon, PlusIcon } from '../../components/icons'
 import './AgendasView.css'
 
 function formatDate(iso: string): string {
@@ -23,13 +23,9 @@ export function AgendasView({ onOpenProject }: AgendasViewProps) {
   const [agendas, setAgendas] = useState<Agenda[]>([])
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [editingItemId, setEditingItemId] = useState<string | null>(null)
-  const [draft, setDraft] = useState({ title: '', reference: '' })
   const [renaming, setRenaming] = useState<Agenda | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<Agenda | null>(null)
   const [usedByOpen, setUsedByOpen] = useState(false)
-  const [confirmingItemId, setConfirmingItemId] = useState<string | null>(null)
-  const confirmTimeoutRef = useRef<number | undefined>(undefined)
 
   const projectsResource = useResource(() => client.projects.list(), [])
   const projects: Project[] = projectsResource.data ?? []
@@ -53,10 +49,7 @@ export function AgendasView({ onOpenProject }: AgendasViewProps) {
   useEffect(() => {
     setSelected(detailResource.data ?? null)
     setUsedByOpen(false)
-    setConfirmingItemId(null)
   }, [detailResource.data])
-
-  useEffect(() => () => window.clearTimeout(confirmTimeoutRef.current), [])
 
   const q = query.trim().toLowerCase()
   const filtered = q
@@ -121,45 +114,20 @@ export function AgendasView({ onOpenProject }: AgendasViewProps) {
     setConfirmTrash(null)
   }
 
-  async function addItem(agenda: Agenda) {
+  async function addItem(agenda: Agenda): Promise<string> {
     const updated = await client.agendas.addItem(agenda.id, { title: 'Ny punkt' })
     replaceSelected(updated)
-    const added = updated.items[updated.items.length - 1]
-    setEditingItemId(added.id)
-    setDraft({ title: added.title, reference: added.reference ?? '' })
+    return updated.items[updated.items.length - 1].id
   }
 
-  function startEdit(item: AgendaItem) {
-    setEditingItemId(item.id)
-    setDraft({ title: item.title, reference: item.reference ?? '' })
-  }
-
-  async function saveEdit(agenda: Agenda, itemId: string) {
-    if (!draft.title.trim()) return
-    const updated = await client.agendas.updateItem(agenda.id, itemId, {
-      title: draft.title.trim(),
-      reference: draft.reference.trim() || undefined,
-    })
+  async function renameItem(agenda: Agenda, itemId: string, title: string) {
+    const updated = await client.agendas.updateItem(agenda.id, itemId, { title })
     replaceSelected(updated)
-    setEditingItemId(null)
   }
 
   async function removeItem(agenda: Agenda, itemId: string) {
     const updated = await client.agendas.removeItem(agenda.id, itemId)
     replaceSelected(updated)
-    if (editingItemId === itemId) setEditingItemId(null)
-  }
-
-  function requestRemoveItem(itemId: string) {
-    window.clearTimeout(confirmTimeoutRef.current)
-    setConfirmingItemId(itemId)
-    confirmTimeoutRef.current = window.setTimeout(() => setConfirmingItemId(null), 4000)
-  }
-
-  async function confirmRemoveItem(agenda: Agenda, itemId: string) {
-    window.clearTimeout(confirmTimeoutRef.current)
-    setConfirmingItemId(null)
-    await removeItem(agenda, itemId)
   }
 
   async function reorder(agenda: Agenda, nextItems: AgendaItem[]) {
@@ -305,101 +273,22 @@ export function AgendasView({ onOpenProject }: AgendasViewProps) {
                   </div>
                 </div>
                 <div class="body">
-                  <SortableList
+                  <EditableItemList
                     items={selected.items}
                     getId={(it) => it.id}
+                    getLabel={(it) => it.title}
+                    numbered
+                    addLabel="Lägg till punkt"
                     onReorder={(next) => reorder(selected, next)}
-                    renderItem={(it, i) =>
-                      editingItemId === it.id ? (
-                        <>
-                          <span class="no">{i + 1}</span>
-                          <span class="txt">
-                            <input
-                              value={draft.title}
-                              placeholder="Rubrik"
-                              aria-label="Rubrik"
-                              autoFocus
-                              onInput={(e) => setDraft((d) => ({ ...d, title: e.currentTarget.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEdit(selected, it.id)
-                                if (e.key === 'Escape') setEditingItemId(null)
-                              }}
-                            />
-                          </span>
-                          <span class="rowbtns">
-                            <button
-                              class="ib"
-                              type="button"
-                              title="Spara"
-                              aria-label="Spara"
-                              onClick={() => saveEdit(selected, it.id)}
-                            >
-                              <CheckIcon />
-                            </button>
-                            <button
-                              class="ib"
-                              type="button"
-                              title="Avbryt"
-                              aria-label="Avbryt"
-                              onClick={() => setEditingItemId(null)}
-                            >
-                              <CancelIcon />
-                            </button>
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <span class="no">{i + 1}</span>
-                          <span class="txt">
-                            <b>{it.title}</b>
-                          </span>
-                          <span class="rowbtns">
-                            <button
-                              class="ib"
-                              type="button"
-                              title="Redigera"
-                              aria-label="Redigera"
-                              onClick={() => startEdit(it)}
-                            >
-                              <EditIcon />
-                            </button>
-                            {confirmingItemId === it.id ? (
-                              <button
-                                class="ib del confirm"
-                                type="button"
-                                title="Bekräfta borttagning"
-                                aria-label="Bekräfta borttagning"
-                                onClick={() => confirmRemoveItem(selected, it.id)}
-                              >
-                                <CheckIcon />
-                              </button>
-                            ) : (
-                              <button
-                                class="ib del"
-                                type="button"
-                                title="Ta bort"
-                                aria-label="Ta bort"
-                                onClick={() => requestRemoveItem(it.id)}
-                              >
-                                <DeleteIcon />
-                              </button>
-                            )}
-                          </span>
-                        </>
-                      )
+                    onAdd={() => addItem(selected)}
+                    onRename={(id, title) => renameItem(selected, id, title)}
+                    onRemove={(id) => removeItem(selected, id)}
+                    hint={
+                      selected.usedInProjects > 0
+                        ? 'Ändringar slår igenom i projekt som ännu inte publicerats. Publicerade sändningar har en fryst kopia och påverkas inte.'
+                        : undefined
                     }
                   />
-                  <div class="addrow">
-                    <button class="btn btn-sm" type="button" onClick={() => addItem(selected)}>
-                      Lägg till punkt
-                    </button>
-                  </div>
-                  {selected.usedInProjects > 0 && (
-                    <p class="hint">
-                      Ändringar slår igenom i projekt som ännu inte publicerats. Publicerade sändningar
-                      har en fryst kopia och påverkas inte.
-                    </p>
-                  )}
                 </div>
               </>
             )

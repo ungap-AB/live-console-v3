@@ -3,7 +3,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { client } from '../data'
 import type { Domain, UserAccount } from '../data/types'
 import { Modal } from '../components/Modal'
-import { GearIcon } from '../components/icons'
+import { Icon } from '../components/Icon'
 import { formatDate } from './time'
 import { routeHref, type RouteKey } from './router'
 import logoUrl from '../images/ungap-icon-text-2026-black.png'
@@ -12,7 +12,7 @@ import './Shell.css'
 interface NavItem {
   route: RouteKey
   label: string
-  quickAction?: { label: string }
+  icon: string
 }
 
 interface NavGroup {
@@ -24,23 +24,23 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Innehåll',
     items: [
-      { route: 'projects', label: 'Projekt', quickAction: { label: 'Playout' } },
-      { route: 'agendas', label: 'Dagordningar' },
-      { route: 'namelists', label: 'Namnlistor' },
+      { route: 'projects', label: 'Projekt', icon: 'folder_open' },
+      { route: 'agendas', label: 'Dagordningar', icon: 'event_note' },
+      { route: 'namelists', label: 'Namnlistor', icon: 'group' },
     ],
   },
   {
     label: 'Sändning',
     items: [
-      { route: 'live', label: 'Live' },
-      { route: 'archive', label: 'Videoarkiv' },
+      { route: 'live', label: 'Live', icon: 'podcasts' },
+      { route: 'archive', label: 'Videoarkiv', icon: 'video_library' },
     ],
   },
   {
     label: 'Administration',
     items: [
-      { route: 'trash', label: 'Papperskorg' },
-      { route: 'users', label: 'Användare' },
+      { route: 'trash', label: 'Papperskorg', icon: 'delete' },
+      { route: 'users', label: 'Användare', icon: 'manage_accounts' },
     ],
   },
 ]
@@ -48,12 +48,13 @@ const NAV_GROUPS: NavGroup[] = [
 interface ShellProps {
   active: RouteKey
   children: ComponentChildren
-  showPlayoutShortcut: boolean
+  /** Kontextuell knapp bredvid "Projekt" i navmenyn — "+ Ny" i listläge, "Playout" när en sändning är öppen. Null döljer knappen (t.ex. på andra vyer). */
+  projectsNavAction: { label: string; onClick: () => void } | null
   onLogout: () => void
   currentUserId: string
 }
 
-export function Shell({ active, children, showPlayoutShortcut, onLogout, currentUserId }: ShellProps) {
+export function Shell({ active, children, projectsNavAction, onLogout, currentUserId }: ShellProps) {
   const [navOpen, setNavOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null)
   const [currentDomain, setCurrentDomain] = useState<Domain | null>(null)
@@ -104,16 +105,20 @@ export function Shell({ active, children, showPlayoutShortcut, onLogout, current
                     class={`nav-item ${active === item.route ? 'sel' : ''}`}
                     onClick={() => setNavOpen(false)}
                   >
+                    <Icon name={item.icon} size={18} />
                     {item.label}
                   </a>
-                  {item.quickAction && showPlayoutShortcut && (
-                    <a
-                      href={routeHref(item.route)}
+                  {item.route === 'projects' && projectsNavAction && (
+                    <button
+                      type="button"
                       class="nav-quick"
-                      onClick={() => setNavOpen(false)}
+                      onClick={() => {
+                        setNavOpen(false)
+                        projectsNavAction.onClick()
+                      }}
                     >
-                      {item.quickAction.label}
-                    </a>
+                      {projectsNavAction.label}
+                    </button>
                   )}
                 </div>
               ))}
@@ -122,20 +127,27 @@ export function Shell({ active, children, showPlayoutShortcut, onLogout, current
         </div>
 
         <div class="nav-user">
-          <div class="nav-user-name">{currentUser?.name ?? '…'}</div>
-          <div class="nav-user-domain">{currentDomain?.host ?? ''}</div>
+          <div class="nav-user-identity">
+            <Icon name="account_circle" size={28} />
+            <div class="nav-user-text">
+              <div class="nav-user-toprow">
+                <span class="nav-user-name">{currentUser?.name ?? '…'}</span>
+                <button
+                  class="ib nav-user-settings"
+                  type="button"
+                  title="Kontoinställningar"
+                  aria-label="Kontoinställningar"
+                  onClick={() => setShowAccount(true)}
+                >
+                  <Icon name="settings" size={17} />
+                </button>
+              </div>
+              <div class="nav-user-domain">{currentDomain?.host ?? ''}</div>
+            </div>
+          </div>
           <div class="nav-user-row">
             <button class="btn btn-sm" type="button" onClick={onLogout}>
               Logga ut
-            </button>
-            <button
-              class="ib nav-user-settings"
-              type="button"
-              title="Kontoinställningar"
-              aria-label="Kontoinställningar"
-              onClick={() => setShowAccount(true)}
-            >
-              <GearIcon />
             </button>
           </div>
         </div>

@@ -55,7 +55,9 @@
 }
 
 .nav-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 9px;
   flex: 1;
   min-width: 0;
   padding: 8px 10px;
@@ -64,6 +66,16 @@
   text-decoration: none;
   font-weight: 500;
   font-size: 13.5px;
+}
+
+.nav-item .material-symbols-outlined {
+  flex: none;
+  color: var(--ink-3);
+}
+
+.nav-item.sel .material-symbols-outlined,
+.nav-item:hover .material-symbols-outlined {
+  color: inherit;
 }
 
 .nav-item:hover {
@@ -86,7 +98,9 @@
   text-decoration: none;
   font-weight: 600;
   font-size: 11.5px;
+  font-family: inherit;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .nav-quick:hover {
@@ -99,17 +113,42 @@
   margin-top: 12px;
 }
 
+.nav-user-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  margin-bottom: 8px;
+}
+
+.nav-user-identity .material-symbols-outlined {
+  flex: none;
+  color: var(--ink-3);
+}
+
+.nav-user-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-user-toprow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
 .nav-user-name {
   font-weight: 600;
   font-size: 13px;
-  padding: 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nav-user-domain {
   font-size: 12px;
   color: var(--ink-3);
-  padding: 0 10px;
-  margin-bottom: 8px;
 }
 
 .nav-user-row {

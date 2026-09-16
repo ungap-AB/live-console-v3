@@ -1,15 +1,17 @@
-import { useState } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Project } from '../../data/types'
+import type { Agenda, NameList, Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { StatusChip, type ChipTone } from '../../components/StatusChip'
 import { PickerModal } from '../../components/PickerModal'
+import { EditableItemList } from '../../components/EditableItemList'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
 import { useLiveChannel } from './useLiveChannel'
 import { phaseMeta } from './livePhase'
 import { CheckIcon, PlayIcon } from '../../components/icons'
+import { Icon } from '../../components/Icon'
 import './Playout.css'
 
 interface PlayoutProps {
@@ -36,6 +38,14 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   const allAgendasResource = useResource(() => client.agendas.list(), [])
   const allNameListsResource = useResource(() => client.namelists.list(), [])
 
+  // Lokal, muterbar kopia (samma mönster som AgendasView/NameListsViews
+  // "selected") — så redigering av dagordningen/namnlistan direkt här i
+  // Playout kan uppdatera UI:t omedelbart utan en full omhämtning.
+  const [agenda, setAgenda] = useState<Agenda | null>(null)
+  const [nameList, setNameList] = useState<NameList | null>(null)
+  useEffect(() => setAgenda(agendaResource.data ?? null), [agendaResource.data])
+  useEffect(() => setNameList(nameListResource.data ?? null), [nameListResource.data])
+
   const frozen = p.publication.state === 'published'
   // Utspelning ska fungera även offline — mötet måste dokumenteras trots
   // enkoderstrul. Tidslinjen kan synkas mot en uppladdad film senare.
@@ -53,9 +63,6 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   const statusTone = status.tone
   const statusLabel = status.label
 
-  const agenda = agendaResource.data
-  const nameList = nameListResource.data
-
   const nowItem = agenda?.items.find((it) => it.id === p.playout.currentAgendaItemId)?.title ?? null
   const nowSpeaker = nameList?.people.find((pe) => pe.id === p.playout.currentPersonId)?.name ?? null
 
@@ -63,6 +70,67 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
     const events = p.playout.timeline.filter((e) => e.kind === 'agendaItem' && e.refId === itemId)
     if (events.length === 0) return null
     return events[events.length - 1].offsetSeconds
+  }
+
+  // Samma redigeringsanrop som AgendasView/NameListsView gör mot samma
+  // klient-API — bara mot den dagordning/namnlista som råkar vara kopplad
+  // till det här projektet, och med en lokal setter istället för replaceSelected.
+  async function addAgendaItem(): Promise<string> {
+    const updated = await client.agendas.addItem(agenda!.id, { title: 'Ny punkt' })
+    setAgenda(updated)
+    return updated.items[updated.items.length - 1].id
+  }
+
+  async function renameAgendaItem(itemId: string, title: string) {
+    const updated = await client.agendas.updateItem(agenda!.id, itemId, { title })
+    setAgenda(updated)
+  }
+
+  async function removeAgendaItem(itemId: string) {
+    const updated = await client.agendas.removeItem(agenda!.id, itemId)
+    setAgenda(updated)
+  }
+
+  async function reorderAgendaItems(nextItems: Agenda['items']) {
+    const renumbered = nextItems.map((it, i) => ({ ...it, position: i + 1 }))
+    const updated = await client.agendas.replaceItems(agenda!.id, renumbered)
+    setAgenda(updated)
+  }
+
+  async function addPerson(): Promise<string> {
+    const updated = await client.namelists.addPerson(nameList!.id, { name: 'Ny person' })
+    setNameList(updated)
+    return updated.people[updated.people.length - 1].id
+  }
+
+  async function renamePerson(personId: string, name: string) {
+    const updated = await client.namelists.updatePerson(nameList!.id, personId, { name })
+    setNameList(updated)
+  }
+
+  async function removePerson(personId: string) {
+    const updated = await client.namelists.removePerson(nameList!.id, personId)
+    setNameList(updated)
+  }
+
+  async function reorderPeople(nextPeople: NameList['people']) {
+    const renumbered = nextPeople.map((pe, i) => ({ ...pe, position: i + 1 }))
+    const updated = await client.namelists.replacePeople(nameList!.id, renumbered)
+    setNameList(updated)
+  }
+
+  async function createAndAttachAgenda() {
+    const created = await client.agendas.create({ name: 'Ny dagordning', description: 'Utkast' })
+    actions.setAgenda(created.id)
+    allAgendasResource.reload()
+    setPicking(null)
+  }
+
+  async function createAndAttachNameList() {
+    const created = await client.namelists.create({ name: 'Ny namnlista', description: 'Utkast' })
+    actions.setNameList(created.id)
+    allNameListsResource.reload()
+    setPicking(null)
   }
 
   let playNote = ''
@@ -73,14 +141,19 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   return (
     <>
       <div class="panel-head">
-        <div class="title">
-          {p.name}
-          <span>{subtitle}</span>
+        <div class="title-row">
+          <div class="title">
+            <StatusChip tone={statusTone} dot>
+              {statusLabel}
+            </StatusChip>
+            {p.name}
+            <span class="subtitle">{subtitle}</span>
+          </div>
+          <button class="ib" type="button" title="Stäng playout" aria-label="Stäng playout" onClick={onClose}>
+            <Icon name="close" />
+          </button>
         </div>
         <div class="panel-head-row">
-          <StatusChip tone={statusTone} dot>
-            {statusLabel}
-          </StatusChip>
           <div class="field">
             <label>Publik</label>
             <div class="seg">
@@ -101,9 +174,6 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
               </button>
             </div>
           </div>
-          <button class="btn" type="button" onClick={onClose}>
-            Stäng playout
-          </button>
         </div>
       </div>
 
@@ -149,23 +219,29 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
           <h3>
             Dagordning
             <button class="btn btn-sm" type="button" onClick={() => setPicking('agenda')}>
-              Byt
+              Välj...
             </button>
           </h3>
           <div class="col-body">
             {!agenda ? (
               <p class="muted-empty">{p.agendaId ? 'Laddar…' : 'Ingen dagordning kopplad till projektet.'}</p>
             ) : (
-              <ul class="list">
-                {agenda.items.map((it) => {
+              <EditableItemList
+                items={agenda.items}
+                getId={(it) => it.id}
+                getLabel={(it) => it.title}
+                numbered
+                addLabel="Lägg till punkt"
+                getItemClassName={(it) => (p.playout.currentAgendaItemId === it.id ? 'active' : '')}
+                onReorder={reorderAgendaItems}
+                onAdd={addAgendaItem}
+                onRename={renameAgendaItem}
+                onRemove={removeAgendaItem}
+                renderExtra={(it) => {
                   const offset = lastPlayedOffset(it.id)
                   const done = offset != null
                   return (
-                    <li key={it.id} class={p.playout.currentAgendaItemId === it.id ? 'active' : ''}>
-                      <span class="grip" aria-hidden="true">
-                        ⠿
-                      </span>
-                      <span class="label">{it.title}</span>
+                    <>
                       {done && <span class="time">{formatHms(offset)}</span>}
                       <button
                         class={`play ${done ? 'done' : ''}`}
@@ -176,10 +252,10 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
                       >
                         {done ? <CheckIcon /> : <PlayIcon />}
                       </button>
-                    </li>
+                    </>
                   )
-                })}
-              </ul>
+                }}
+              />
             )}
           </div>
         </div>
@@ -188,29 +264,35 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
           <h3>
             Namnlista
             <button class="btn btn-sm" type="button" onClick={() => setPicking('namelist')}>
-              Byt
+              Välj...
             </button>
           </h3>
           <div class="col-body">
             {!nameList ? (
               <p class="muted-empty">{p.namelistId ? 'Laddar…' : 'Ingen namnlista kopplad till projektet.'}</p>
             ) : (
-              <ul class="list">
-                {nameList.people.map((person) => (
-                  <li key={person.id} class={p.playout.currentPersonId === person.id ? 'active' : ''}>
-                    <span class="label">{person.name}</span>
-                    <button
-                      class="play"
-                      type="button"
-                      disabled={!canPlay}
-                      title="Spela ut"
-                      onClick={() => actions.cue('person', person.id, person.name)}
-                    >
-                      <PlayIcon />
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <EditableItemList
+                items={nameList.people}
+                getId={(person) => person.id}
+                getLabel={(person) => person.name}
+                addLabel="Lägg till namn"
+                getItemClassName={(person) => (p.playout.currentPersonId === person.id ? 'active' : '')}
+                onReorder={reorderPeople}
+                onAdd={addPerson}
+                onRename={renamePerson}
+                onRemove={removePerson}
+                renderExtra={(person) => (
+                  <button
+                    class="play"
+                    type="button"
+                    disabled={!canPlay}
+                    title="Spela ut"
+                    onClick={() => actions.cue('person', person.id, person.name)}
+                  >
+                    <PlayIcon />
+                  </button>
+                )}
+              />
             )}
           </div>
         </div>
@@ -263,6 +345,8 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
             setPicking(null)
           }}
           onCancel={() => setPicking(null)}
+          createNewLabel="Ny dagordning"
+          onCreateNew={() => void createAndAttachAgenda()}
         />
       )}
 
@@ -276,6 +360,8 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
             setPicking(null)
           }}
           onCancel={() => setPicking(null)}
+          createNewLabel="Ny namnlista"
+          onCreateNew={() => void createAndAttachNameList()}
         />
       )}
     </>

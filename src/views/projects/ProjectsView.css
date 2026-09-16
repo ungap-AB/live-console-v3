@@ -1,6 +1,57 @@
+/* Full-bleed-läge: listan ska ligga dikt an mot vänstermenyn, inte se ut som
+   ett eget flytande kort — detaljvyn (.doc) behåller sitt vanliga utseende. */
+.projects-view > .content {
+  padding-left: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
 .project-list-pane {
   height: 100%;
   max-height: 100%;
+  border: none;
+  border-radius: 0;
+  border-right: 1px solid var(--line);
+}
+
+.project-list-pane li {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.project-list-pane li .row {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+
+.project-list-pane .btn-playout {
+  flex: none;
+  width: auto;
+  align-self: center;
+  margin-right: 6px;
+  padding: 5px 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.project-list-pane .btn-playout:hover {
+  background: #e6eaf0;
+}
+
+/* .pane li.sel button annars slår igenom på båda knapparna i raden */
+.project-list-pane li.sel .btn-playout {
+  background: var(--accent-soft);
+}
+
+/* Dold tills vidare, se kommentar i ProjectsView.tsx — koden finns kvar. */
+.search-hidden {
+  display: none;
 }
 
 .project-row .rowtop {

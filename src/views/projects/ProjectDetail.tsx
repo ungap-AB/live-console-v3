@@ -5,6 +5,8 @@ import { StatusChip, type ChipTone } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
 import { VideoLightbox } from '../../components/VideoLightbox'
 import { ConfirmModal } from '../../components/ConfirmModal'
+import { RenameModal } from '../../components/RenameModal'
+import { EditIcon, DeleteIcon } from '../../components/icons'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
@@ -15,7 +17,6 @@ import './ProjectDetail.css'
 
 interface ProjectDetailProps {
   project: Project
-  onOpenPlayout: () => void
   onDelete: () => void
   actions: ProjectActions
 }
@@ -48,7 +49,7 @@ function initialTab(project: Project): 'live' | 'odm' {
     : 'live'
 }
 
-export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: ProjectDetailProps) {
+export function ProjectDetail({ project: p, onDelete, actions }: ProjectDetailProps) {
   const { channel, health, streamKey, refresh } = useLiveChannel(p.channel?.id ?? null)
   const phase = health?.livePhase
   const live = phase === 'live'
@@ -61,12 +62,14 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
   const [showVideo, setShowVideo] = useState(false)
   const [trimming, setTrimming] = useState<Recording | null>(null)
   const [confirmReturnToLive, setConfirmReturnToLive] = useState(false)
+  const [renaming, setRenaming] = useState(false)
 
   useEffect(() => {
     setTab(initialTab(p))
     setShowVideo(false)
     setTrimming(null)
     setConfirmReturnToLive(false)
+    setRenaming(false)
   }, [p.id])
 
   useEffect(() => {
@@ -147,9 +150,31 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
   return (
     <>
       <div class="panel-head">
-        <div class="title">
-          {p.name}
-          <span>{subtitle}</span>
+        <div class="title-row">
+          <div class="title">
+            {p.name}
+            <button
+              class="ib"
+              type="button"
+              title="Byt namn på projektet"
+              aria-label="Byt namn på projektet"
+              onClick={() => setRenaming(true)}
+            >
+              <EditIcon />
+            </button>
+            <span class="subtitle">{subtitle}</span>
+            <span class="project-id">{p.id}</span>
+          </div>
+          <button
+            class="ib del"
+            type="button"
+            disabled={!canDelete}
+            title={pub ? 'Stäng projektet innan det raderas' : live ? 'Går inte att radera medan signal tas emot' : 'Radera projekt'}
+            aria-label="Radera projekt"
+            onClick={onDelete}
+          >
+            <DeleteIcon />
+          </button>
         </div>
         <div class="panel-head-row">
           <div class="field field-grow">
@@ -157,14 +182,14 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
             <CopyField value={p.playerUrl} monospace />
           </div>
           <div class="field">
-            <label>Publik</label>
+            <label>Synlighet</label>
             <div class="seg">
               <button
                 type="button"
                 aria-pressed={p.visibility === 'open'}
                 onClick={() => actions.setVisibility('open')}
               >
-                Öppen
+                Öppen för publik
               </button>
               <button
                 type="button"
@@ -172,24 +197,24 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
                 aria-pressed={p.visibility === 'closed'}
                 onClick={() => actions.setVisibility('closed')}
               >
-                Stängd
+                Stängd för publik
               </button>
             </div>
           </div>
-          <button class="btn btn-primary" type="button" onClick={onOpenPlayout}>
-            Öppna playout
-          </button>
-          <button
-            class="btn btn-danger"
-            type="button"
-            disabled={!canDelete}
-            title={pub ? 'Stäng projektet innan det raderas' : live ? 'Går inte att radera medan signal tas emot' : undefined}
-            onClick={onDelete}
-          >
-            Radera projekt
-          </button>
         </div>
       </div>
+
+      {renaming && (
+        <RenameModal
+          title="Byt namn på projektet"
+          initialValue={p.name}
+          onCancel={() => setRenaming(false)}
+          onSave={async (name) => {
+            await actions.rename(name)
+            setRenaming(false)
+          }}
+        />
+      )}
 
       <div class="tabs" role="tablist">
         <button role="tab" type="button" aria-selected={tab === 'live'} onClick={() => void selectTab('live')}>
@@ -222,7 +247,7 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
               title={inUse ? 'Går inte att riva medan signal tas emot' : undefined}
               onClick={() => actions.teardownChannel().then(refresh)}
             >
-              Riv resurs
+              Riv ingest
             </button>
             <button
               class="btn btn-sm"
@@ -274,6 +299,8 @@ export function ProjectDetail({ project: p, onOpenPlayout, onDelete, actions }: 
               )}
             </div>
           </div>
+          {/* .resource är nu en enkel stapel (se ProjectDetail.css) — Inkommande
+              signal ligger under HLS-URL istället för bredvid i en egen kolumn. */}
           {liveNote && <div class={`note ${inUse ? 'warn' : ''}`}>{liveNote}</div>}
 
           <div class="debugbar">

@@ -1,4 +1,5 @@
 import { Modal } from './Modal'
+import { PlusIcon } from './icons'
 import './PickerModal.css'
 
 interface PickerItem {
@@ -13,12 +14,32 @@ interface PickerModalProps {
   noneLabel?: string
   onPick: (id: string | null) => void
   onCancel: () => void
+  /** Visar ett "Ny lista"-alternativ överst som skapar en tom lista och kopplar in den direkt. */
+  createNewLabel?: string
+  onCreateNew?: () => void
 }
 
-export function PickerModal({ title, items, selectedId, noneLabel = 'Ingen', onPick, onCancel }: PickerModalProps) {
+export function PickerModal({
+  title,
+  items,
+  selectedId,
+  noneLabel = 'Ingen',
+  onPick,
+  onCancel,
+  createNewLabel,
+  onCreateNew,
+}: PickerModalProps) {
   return (
     <Modal title={title} onClose={onCancel}>
       <ul class="picker-list">
+        {onCreateNew && createNewLabel && (
+          <li>
+            <button type="button" class="picker-create" onClick={onCreateNew}>
+              <PlusIcon />
+              {createNewLabel}
+            </button>
+          </li>
+        )}
         <li>
           <button type="button" class={selectedId === null ? 'sel' : ''} onClick={() => onPick(null)}>
             {noneLabel}
