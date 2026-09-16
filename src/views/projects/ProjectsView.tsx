@@ -34,6 +34,8 @@ interface ProjectsViewProps {
   /** Lyft till App.tsx så navmenyns "+ Ny"-knapp (bild 1) kan öppna dialogen utifrån. */
   creating: boolean
   onCreatingChange: (creating: boolean) => void
+  onOpenAgenda: (id: string) => void
+  onOpenNameList: (id: string) => void
 }
 
 export function ProjectsView({
@@ -43,6 +45,8 @@ export function ProjectsView({
   onScreenChange,
   creating,
   onCreatingChange,
+  onOpenAgenda,
+  onOpenNameList,
 }: ProjectsViewProps) {
   const resource = useResource(() => client.projects.list(), [])
   const [projects, setProjects] = useState<Project[]>([])
@@ -362,6 +366,8 @@ export function ProjectsView({
                 project={selected}
                 onDelete={() => setConfirmDelete(selected)}
                 actions={actions}
+                onOpenAgenda={onOpenAgenda}
+                onOpenNameList={onOpenNameList}
               />
             )
           }

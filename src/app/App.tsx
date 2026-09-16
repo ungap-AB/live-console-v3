@@ -51,6 +51,23 @@ export function App() {
     window.location.hash = routeHref('projects')
   }
 
+  // Motsatt riktning — ProjectDetails "Öppna..." bredvid en kopplad
+  // dagordning/namnlista. Engångs-förval: AgendasView/NameListsView
+  // avmonteras/monteras om varje gång man navigerar bort och tillbaka, så
+  // det räcker att konsumera det en gång vid montering (se onInitialSelectionConsumed).
+  const [pendingAgendaId, setPendingAgendaId] = useState<string | null>(null)
+  const [pendingNameListId, setPendingNameListId] = useState<string | null>(null)
+
+  function openAgenda(id: string) {
+    setPendingAgendaId(id)
+    window.location.hash = routeHref('agendas')
+  }
+
+  function openNameList(id: string) {
+    setPendingNameListId(id)
+    window.location.hash = routeHref('namelists')
+  }
+
   if (auth.status === 'loading') return <div class="login-screen">Laddar…</div>
   if (auth.status === 'anon') return <LoginView onLogin={login} />
 
@@ -79,10 +96,23 @@ export function App() {
           onScreenChange={setProjectScreen}
           creating={creatingProject}
           onCreatingChange={setCreatingProject}
+          onOpenAgenda={openAgenda}
+          onOpenNameList={openNameList}
         />
       )}
-      {route === 'agendas' && <AgendasView onOpenProject={openProject} />}
-      {route === 'namelists' && <NameListsView />}
+      {route === 'agendas' && (
+        <AgendasView
+          onOpenProject={openProject}
+          initialSelectedId={pendingAgendaId}
+          onInitialSelectionConsumed={() => setPendingAgendaId(null)}
+        />
+      )}
+      {route === 'namelists' && (
+        <NameListsView
+          initialSelectedId={pendingNameListId}
+          onInitialSelectionConsumed={() => setPendingNameListId(null)}
+        />
+      )}
       {route === 'live' && <LiveResourcesView />}
       {route === 'archive' && <VideoArchiveView onOpenProject={openProject} />}
       {route === 'trash' && <TrashView />}

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Project, Recording, RecordingState } from '../../data/types'
+import { useResource } from '../../app/useResource'
 import { StatusChip, type ChipTone } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
 import { VideoLightbox } from '../../components/VideoLightbox'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { RenameModal } from '../../components/RenameModal'
+import { AttachedListPicker } from '../../components/AttachedListPicker'
 import { EditIcon, DeleteIcon } from '../../components/icons'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
@@ -13,12 +15,15 @@ import { useTick } from './useTick'
 import { useLiveChannel } from './useLiveChannel'
 import { phaseMeta } from './livePhase'
 import { TrimDialog } from '../archive/TrimDialog'
+import { resolveOriginalRecordingForTrim } from './openTrimDialog'
 import './ProjectDetail.css'
 
 interface ProjectDetailProps {
   project: Project
   onDelete: () => void
   actions: ProjectActions
+  onOpenAgenda: (id: string) => void
+  onOpenNameList: (id: string) => void
 }
 
 // Ondemand-flikens inspelade tid — rör inte, se scope-anteckning i steg-planen
@@ -35,6 +40,15 @@ function liveElapsedSeconds(streamStartedAt: string | undefined): number | null 
   return (Date.now() - new Date(streamStartedAt).getTime()) / 1000
 }
 
+// "16 sep 2026 kl 19:00" — egen formatering (inte den delade formatDateTime,
+// som ger "16 sep. 2026 12:37" och används på flera andra ställen redan).
+function formatCreatedAt(iso: string): string {
+  const d = new Date(iso)
+  const date = d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' }).replace('.', '')
+  const time = d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
+  return `${date} kl ${time}`
+}
+
 const ODM_META: Record<RecordingState, { label: string; tone: ChipTone }> = {
   none: { label: 'Ingen inspelning', tone: 'neutral' },
   recording: { label: 'Spelas in', tone: 'neutral' },
@@ -49,7 +63,7 @@ function initialTab(project: Project): 'live' | 'odm' {
     : 'live'
 }
 
-export function ProjectDetail({ project: p, onDelete, actions }: ProjectDetailProps) {
+export function ProjectDetail({ project: p, onDelete, actions, onOpenAgenda, onOpenNameList }: ProjectDetailProps) {
   const { channel, health, streamKey, refresh } = useLiveChannel(p.channel?.id ?? null)
   const phase = health?.livePhase
   const live = phase === 'live'
@@ -63,6 +77,29 @@ export function ProjectDetail({ project: p, onDelete, actions }: ProjectDetailPr
   const [trimming, setTrimming] = useState<Recording | null>(null)
   const [confirmReturnToLive, setConfirmReturnToLive] = useState(false)
   const [renaming, setRenaming] = useState(false)
+
+  const agendaResource = useResource(
+    () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
+    [p.agendaId],
+  )
+  const nameListResource = useResource(
+    () => (p.namelistId ? client.namelists.get(p.namelistId) : Promise.resolve(undefined)),
+    [p.namelistId],
+  )
+  const allAgendasResource = useResource(() => client.agendas.list(), [])
+  const allNameListsResource = useResource(() => client.namelists.list(), [])
+
+  async function createAndAttachAgenda() {
+    const created = await client.agendas.create({ name: p.name, description: 'Utkast' })
+    actions.setAgenda(created.id)
+    allAgendasResource.reload()
+  }
+
+  async function createAndAttachNameList() {
+    const created = await client.namelists.create({ name: p.name, description: 'Utkast' })
+    actions.setNameList(created.id)
+    allNameListsResource.reload()
+  }
 
   useEffect(() => {
     setTab(initialTab(p))
@@ -88,10 +125,10 @@ export function ProjectDetail({ project: p, onDelete, actions }: ProjectDetailPr
   const status = hasIngest ? phaseMeta(phase) : { label: 'Ingen ingest', tone: 'neutral' as ChipTone }
 
   const subtitle = live
-    ? `Projekt · sänder sedan ${health?.streamStartedAt ? formatDateTime(health.streamStartedAt) : ''}`
+    ? `Projekt (${p.id}) · sänder sedan ${health?.streamStartedAt ? formatDateTime(health.streamStartedAt) : ''}`
     : p.publication.state === 'published'
-      ? 'Projekt · publicerad som ondemand'
-      : `Projekt · skapad ${formatDateTime(p.createdAt)}`
+      ? `Projekt (${p.id}) · publicerad som ondemand`
+      : `Projekt (${p.id}) skapat ${formatCreatedAt(p.createdAt)}`
 
   let liveNote = ''
   if (live) liveNote = 'Riv resurs är låst medan signal tas emot. Stoppa enkodern först.'
@@ -131,11 +168,7 @@ export function ProjectDetail({ project: p, onDelete, actions }: ProjectDetailPr
 
   async function openTrimDialog() {
     if (!p.recording) return
-    const recording = await client.recordings.get(p.recording.id)
-    if (!recording) return
-    const original = recording.kind === 'trimmed' && recording.parentId
-      ? await client.recordings.get(recording.parentId)
-      : recording
+    const original = await resolveOriginalRecordingForTrim(p.recording.id)
     if (original) setTrimming(original)
   }
 
@@ -163,7 +196,6 @@ export function ProjectDetail({ project: p, onDelete, actions }: ProjectDetailPr
               <EditIcon />
             </button>
             <span class="subtitle">{subtitle}</span>
-            <span class="project-id">{p.id}</span>
           </div>
           <button
             class="ib del"
@@ -199,6 +231,46 @@ export function ProjectDetail({ project: p, onDelete, actions }: ProjectDetailPr
               >
                 Stängd för publik
               </button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Dagordning</label>
+            <div class="attached-list">
+              <span class="attached-list-name">{agendaResource.data?.name ?? 'Ingen kopplad'}</span>
+              {p.agendaId && (
+                <button class="btn btn-sm" type="button" onClick={() => onOpenAgenda(p.agendaId!)}>
+                  Öppna...
+                </button>
+              )}
+              <AttachedListPicker
+                currentId={p.agendaId}
+                items={(allAgendasResource.data ?? []).map((a) => ({ id: a.id, name: a.name }))}
+                pickerTitle="Byt dagordning"
+                createNewLabel="Ny dagordning"
+                onPick={(id) => actions.setAgenda(id)}
+                onCreateNew={createAndAttachAgenda}
+                buttonLabel="Välj..."
+              />
+            </div>
+          </div>
+          <div class="field">
+            <label>Namnlista</label>
+            <div class="attached-list">
+              <span class="attached-list-name">{nameListResource.data?.name ?? 'Ingen kopplad'}</span>
+              {p.namelistId && (
+                <button class="btn btn-sm" type="button" onClick={() => onOpenNameList(p.namelistId!)}>
+                  Öppna...
+                </button>
+              )}
+              <AttachedListPicker
+                currentId={p.namelistId}
+                items={(allNameListsResource.data ?? []).map((n) => ({ id: n.id, name: n.name }))}
+                pickerTitle="Byt namnlista"
+                createNewLabel="Ny namnlista"
+                onPick={(id) => actions.setNameList(id)}
+                onCreateNew={createAndAttachNameList}
+                buttonLabel="Välj..."
+              />
             </div>
           </div>
         </div>

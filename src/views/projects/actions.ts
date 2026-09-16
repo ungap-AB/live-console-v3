@@ -11,7 +11,7 @@ export interface ProjectActions {
   teardownChannel: () => Promise<void>
   setEncoderSending: (sending: boolean) => Promise<void>
   trim: (range: { startOffsetSeconds: number; endOffsetSeconds: number }) => Promise<boolean>
-  publish: () => void
+  publish: () => Promise<void>
   returnToLive: () => Promise<void>
   cue: (kind: CueKind, refId: string, label: string) => void
   /** Rensar aktiv dagordningspunkt/namnskylt — loggas som en egen händelse, tar inte bort tidigare utspelningar. */

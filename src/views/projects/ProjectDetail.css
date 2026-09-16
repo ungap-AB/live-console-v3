@@ -48,16 +48,6 @@
   letter-spacing: 0;
 }
 
-.project-id {
-  display: block;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--ink-3);
-  letter-spacing: 0;
-  font-family: ui-monospace, 'SF Mono', monospace;
-  opacity: 0.75;
-}
-
 .field {
   display: flex;
   align-items: center;
@@ -80,6 +70,21 @@
   color: var(--ink-2);
   white-space: nowrap;
   font-size: 13px;
+}
+
+.attached-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.attached-list-name {
+  font-size: 13px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .seg {

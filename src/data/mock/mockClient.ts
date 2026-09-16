@@ -3,6 +3,7 @@ import type {
   Agenda,
   AgendaItem,
   Channel,
+  ChannelState,
   CurrentUser,
   Domain,
   NameList,
@@ -57,6 +58,22 @@ function findNameList(id: string): NameList {
   const list = namelists.find((n) => n.id === id)
   if (!list) throw new Error(`Namnlista ${id} finns inte`)
   return list
+}
+
+// project.channel ({id,state}) och den fristående live-resurs-listan
+// (`channels`, egen "tjänst" i mocken) är medvetet separata datamodeller —
+// precis som i den riktiga arkitekturen (IVS-kanaler är en egen resurs, inte
+// en del av projekt-tabellen). Mocken måste därför hålla dem synkade manuellt
+// vid varje tillståndsändring, annars svarar channels.health()/get() aldrig
+// rätt för en dynamiskt skapad/startad kanal.
+function syncChannelState(id: string, state: ChannelState, markUsed = false) {
+  const channel = channels.find((c) => c.id === id)
+  if (!channel) return
+  channel.state = state
+  // lastUsedAt dubblar som "har den här kanalen varit live förut" — behövs för
+  // att health() ska kunna skilja waitingForStream (aldrig sänt) från
+  // streamEnded (sänt, nu tyst) utan en egen hysteres-modell.
+  if (markUsed) channel.lastUsedAt = new Date().toISOString()
 }
 
 let nextId = 100
@@ -355,9 +372,14 @@ export const mockClient: Client = {
     async health(id) {
       const channel = channels.find((c) => c.id === id)
       if (!channel) throw new Error(`Resurs ${id} finns inte`)
-      // Mock-kanaler har bara binärt idle/live, ingen hysteres/avbrottskoncept
-      // — en dokumenterad förenkling, inte en egen mock-fasmaskin.
-      if (channel.state !== 'live') return delay({ state: 'idle', livePhase: 'waitingForStream' })
+      // Mock-kanaler har bara binärt idle/live, ingen signalavbrotts-hysteres
+      // — en dokumenterad förenkling, inte en egen mock-fasmaskin. lastUsedAt
+      // (satt av setEncoderSending) skiljer ändå waitingForStream (aldrig
+      // sänt) från streamEnded (sänt, nu tyst), så det guidade flödet i
+      // Playout kan verifieras mot mocken.
+      if (channel.state !== 'live') {
+        return delay({ state: 'idle', livePhase: channel.lastUsedAt ? 'streamEnded' : 'waitingForStream' })
+      }
       return delay({
         state: 'live',
         livePhase: 'live',
@@ -365,7 +387,7 @@ export const mockClient: Client = {
         resolution: '1920×1080p50',
         framerate: 50,
         lastFrameSecondsAgo: 0.4,
-        streamStartedAt: channel.createdAt,
+        streamStartedAt: channel.lastUsedAt ?? channel.createdAt,
       })
     },
     async getStreamKey(id) {
@@ -546,7 +568,28 @@ export const mockClient: Client = {
     async createChannel(id) {
       const p = findProject(id)
       if (p.channel) throw new Error('Projektet har redan en live-resurs.')
-      p.channel = { id: `ch-${id}`, state: 'idle' }
+      const channelId = `ch-${id}`
+      const slug = p.name.trim().toLowerCase().replace(/\s+/g, '-')
+      const channel: Channel = {
+        id: channelId,
+        name: slug,
+        label: p.name,
+        state: 'idle',
+        region: 'eu-north-1',
+        type: 'STANDARD',
+        latencyMode: 'LOW',
+        recording: true,
+        project: { id: p.id, name: p.name, state: p.visibility },
+        arn: `arn:aws:ivs:eu-north-1:4417:channel/${channelId}`,
+        ingestEndpoint: `rtmps://${slug}.global-contribute.live-video.net:443/app/`,
+        streamKeyMasked: 'sk_eu-north-1_••••••••••••••••',
+        playbackUrl: `https://${slug}.eu-north-1.playback.live-video.net/…/master.m3u8`,
+        createdAt: new Date().toISOString(),
+        lastUsedAt: null,
+        idleDays: 0,
+      }
+      channels = [channel, ...channels]
+      p.channel = { id: channelId, state: 'idle' }
       return delay(clone(p))
     },
     async teardownChannel(id) {
@@ -555,6 +598,7 @@ export const mockClient: Client = {
       if (p.channel.state === 'live') {
         throw new Error('Går inte att riva medan signal tas emot.')
       }
+      channels = channels.filter((c) => c.id !== p.channel!.id)
       p.channel = null
       return delay(clone(p))
     },
@@ -563,28 +607,66 @@ export const mockClient: Client = {
       if (!p.channel) throw new Error('Ingen live-resurs allokerad.')
       if (sending) {
         p.channel.state = 'live'
+        syncChannelState(p.channel.id, 'live', true)
         p.sim.everSent = true
         p.sim.segments += 1
         p.sim.recordingStartedAt = new Date().toISOString()
-        p.recording = p.recording
-          ? { ...p.recording, state: 'recording' }
-          : { id: `rec-${id}`, state: 'recording' }
+        const recordingId = p.recording?.id ?? `rec-${id}`
+        p.recording = p.recording ? { ...p.recording, state: 'recording' } : { id: recordingId, state: 'recording' }
+        // project.recording ({id,state}) och den fristående videoarkiv-listan
+        // (`recordings`) är, precis som channels/project.channel, medvetet
+        // separata modeller — annars kraschar recordings.get()/trim() på en
+        // inspelning som bara "finns" i projektets lättviktsreferens.
+        if (!recordings.find((r) => r.id === recordingId)) {
+          const slug = p.name.trim().toLowerCase().replace(/\s+/g, '-')
+          recordings = [
+            {
+              id: recordingId,
+              kind: 'original',
+              name: p.name,
+              createdAt: new Date().toISOString(),
+              durationSeconds: 0,
+              sizeBytes: 0,
+              resolution: '1920×1080p50',
+              source: 'IVS',
+              hlsUrl: `https://dev.media.ungap.net/mock/${slug}/${recordingId}/master.m3u8`,
+              project: { id: p.id, name: p.name, state: p.visibility },
+              segments: [],
+              chapters: [],
+            },
+            ...recordings,
+          ]
+        }
       } else {
         if (p.sim.recordingStartedAt) {
           p.sim.accumulatedSeconds += (Date.now() - new Date(p.sim.recordingStartedAt).getTime()) / 1000
         }
         p.sim.recordingStartedAt = null
         p.channel.state = 'idle'
+        syncChannelState(p.channel.id, 'idle')
         if (p.recording?.state === 'recording') p.recording.state = 'recorded'
+        const recording = recordings.find((r) => r.id === p.recording?.id)
+        if (recording) {
+          const elapsed = Math.max(1, Math.round(p.sim.accumulatedSeconds))
+          recording.durationSeconds = elapsed
+          recording.sizeBytes = elapsed * 1_500_000
+          recording.segments = [{ startedAt: recording.createdAt, durationSeconds: elapsed }]
+        }
       }
       return delay(clone(p))
     },
-    async trim(id) {
+    async trim(id, range) {
       const p = findProject(id)
       if (!p.recording || !['recorded', 'trimmed'].includes(p.recording.state)) {
         throw new Error('Inspelningen måste vara klar innan den kan trimmas.')
       }
+      // p.recording.id pekar alltid på originalet (bara .state ändras här) —
+      // den trimmade varianten lever som en egen post i `recordings`, se
+      // recordings.trim(). HLS-URL:en som visas i projektets Ondemand-flik är
+      // den trimmade (spelbara) varianten, inte originalets.
+      const trimmed = await mockClient.recordings.trim(p.recording.id, range)
       p.recording.state = 'trimmed'
+      p.recording.hlsUrl = trimmed.hlsUrl
       p.onDemandLocked = true
       return delay(clone(p))
     },

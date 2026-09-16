@@ -16,13 +16,21 @@ function formatDate(iso: string): string {
 
 interface AgendasViewProps {
   onOpenProject: (id: string) => void
+  /** Sätts av App.tsx när man kommer hit via "Öppna..." i ProjektDetail — konsumeras en gång vid montering (vyn avmonteras/monteras om varje gång man navigerar hit, se App.tsx). */
+  initialSelectedId?: string | null
+  onInitialSelectionConsumed?: () => void
 }
 
-export function AgendasView({ onOpenProject }: AgendasViewProps) {
+export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelectionConsumed }: AgendasViewProps) {
   const agendasResource = useResource(() => client.agendas.list(), [])
   const [agendas, setAgendas] = useState<Agenda[]>([])
   const [query, setQuery] = useState('')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null)
+
+  useEffect(() => {
+    if (initialSelectedId) onInitialSelectionConsumed?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [renaming, setRenaming] = useState<Agenda | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<Agenda | null>(null)
   const [usedByOpen, setUsedByOpen] = useState(false)

@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Agenda, NameList, Project } from '../../data/types'
+import type { Agenda, NameList, Project, Recording } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { StatusChip, type ChipTone } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
-import { PickerModal } from '../../components/PickerModal'
+import { AttachedListPicker } from '../../components/AttachedListPicker'
 import { EditableItemList } from '../../components/EditableItemList'
+import { VideoLightbox } from '../../components/VideoLightbox'
+import { ConfirmModal } from '../../components/ConfirmModal'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
 import { useLiveChannel } from './useLiveChannel'
 import { phaseMeta } from './livePhase'
+import { resolveGuidedPhase } from './guidedPhase'
+import { resolveOriginalRecordingForTrim } from './openTrimDialog'
+import { TrimDialog } from '../archive/TrimDialog'
 import { CheckIcon, PlayIcon } from '../../components/icons'
 import { Icon } from '../../components/Icon'
 import './Playout.css'
@@ -22,11 +27,26 @@ interface PlayoutProps {
 }
 
 export function Playout({ project: p, onClose, actions }: PlayoutProps) {
-  const { health } = useLiveChannel(p.channel?.id ?? null)
+  const { channel, health, streamKey, refresh } = useLiveChannel(p.channel?.id ?? null)
   const phase = health?.livePhase
   const live = phase === 'live'
   useTick(live)
-  const [picking, setPicking] = useState<'agenda' | 'namelist' | null>(null)
+
+  const rec = p.recording?.state ?? 'none'
+  const guidedPhase = resolveGuidedPhase(p, phase, rec)
+  const [showVideo, setShowVideo] = useState(false)
+  const [trimming, setTrimming] = useState<Recording | null>(null)
+  const [confirmReturnToLive, setConfirmReturnToLive] = useState(false)
+
+  // Samma nödvändiga knuff som ProjectDetail redan hade — p.recording.state
+  // hänger annars kvar på 'recording' i förälderns state tills något annat
+  // råkar trigga en omhämtning, så guidedPhase kan aldrig nå 'ended' bara för
+  // att kanalens hälsopollning (i den här komponenten) upptäcker streamEnded.
+  useEffect(() => {
+    if (phase === 'streamEnded' && p.recording?.state === 'recording') {
+      void actions.refreshProject()
+    }
+  }, [phase, p.recording?.state])
 
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
@@ -124,14 +144,52 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
     const created = await client.agendas.create({ name: p.name, description: 'Utkast' })
     actions.setAgenda(created.id)
     allAgendasResource.reload()
-    setPicking(null)
   }
 
   async function createAndAttachNameList() {
     const created = await client.namelists.create({ name: p.name, description: 'Utkast' })
     actions.setNameList(created.id)
     allNameListsResource.reload()
-    setPicking(null)
+  }
+
+  async function createIngest() {
+    await actions.createChannel()
+    await refresh()
+  }
+
+  async function teardownIngest() {
+    await actions.teardownChannel()
+    await refresh()
+  }
+
+  async function openTrim() {
+    if (!p.recording) return
+    const original = await resolveOriginalRecordingForTrim(p.recording.id)
+    if (original) setTrimming(original)
+  }
+
+  async function saveTrim(range: { startOffsetSeconds: number; endOffsetSeconds: number }): Promise<void> {
+    if (await actions.trim(range)) {
+      await actions.refreshProject()
+      await refresh()
+      setTrimming(null)
+    }
+  }
+
+  async function doReturnToLive() {
+    await actions.returnToLive()
+    setConfirmReturnToLive(false)
+  }
+
+  // Publicering är den definitiva "sändningen är klar"-handlingen — en
+  // kvarvarande ingest fyller ingen funktion längre efter det, så den rivs
+  // som en del av samma steg istället för att kräva ett separat handgrepp
+  // som lätt glöms bort (se resonemanget 2026-09-16). p.channel är den
+  // fångade project-propen från INNAN publish — publish rör aldrig kanalen,
+  // så den är fortfarande korrekt att läsa direkt efteråt.
+  async function publishAndTeardownIngest() {
+    await actions.publish()
+    if (p.channel) await teardownIngest()
   }
 
   let playNote = ''
@@ -182,6 +240,83 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         </div>
       </div>
 
+      {guidedPhase === 'prepare' && (
+        <div class="guided-banner">
+          <p>Skapa en ingest-resurs för att kunna ta emot signal från enkodern.</p>
+          <button class="btn btn-primary" type="button" onClick={() => void createIngest()}>
+            Skapa ingest
+          </button>
+        </div>
+      )}
+
+      {guidedPhase === 'waiting' && (
+        <div class="guided-banner">
+          <div class="rowset">
+            <div class="field">
+              <label>Ingest-server</label>
+              <CopyField value={channel?.ingestEndpoint ?? null} placeholder="Skapar…" monospace />
+            </div>
+            <div class="field">
+              <label>Stream key</label>
+              <CopyField value={streamKey} mask monospace />
+            </div>
+          </div>
+          <p class={phase === 'signalInterrupted' ? 'gb-note warn' : 'gb-note'}>
+            {phase === 'signalInterrupted'
+              ? 'Signalavbrott — väntar på återanslutning. Resursen ligger kvar tills du river den.'
+              : 'Ingest skapad. Väntar på signal från enkodern.'}
+          </p>
+          <button class="btn btn-danger btn-sm" type="button" onClick={() => void teardownIngest()}>
+            Riv ingest
+          </button>
+        </div>
+      )}
+
+      {guidedPhase === 'live' && p.visibility === 'open' && (
+        <div class="guided-banner">
+          <p class="gb-note">
+            Stäng projektet för publik och stoppa enkodern när sändningen är klar, så kan du publicera den som
+            ondemand. Det går bra att starta enkodern igen om du vill fortsätta sända.
+          </p>
+        </div>
+      )}
+
+      {guidedPhase === 'ended' && (
+        <div class="guided-banner">
+          <p class="gb-note">
+            Sändningen är avslutad. Starta enkodern igen för att fortsätta sända, eller trimma inspelningen för
+            att publicera den som ondemand.
+          </p>
+          <button class="btn btn-primary" type="button" onClick={() => void openTrim()}>
+            Trimma inspelning
+          </button>
+          <button class="btn btn-danger btn-sm" type="button" onClick={() => void teardownIngest()}>
+            Riv ingest
+          </button>
+        </div>
+      )}
+
+      {guidedPhase === 'readyToPublish' && (
+        <div class="guided-banner">
+          <p class="gb-note">Inspelningen är trimmad och redo att publiceras.</p>
+          <button class="btn btn-primary" type="button" onClick={() => void publishAndTeardownIngest()}>
+            Publicera
+          </button>
+          <button class="btn btn-sm" type="button" disabled={!p.recording?.hlsUrl} onClick={() => setShowVideo(true)}>
+            Visa inspelning
+          </button>
+        </div>
+      )}
+
+      {guidedPhase === 'published' && (
+        <div class="guided-banner">
+          <p class="gb-note">Sändningen är publicerad som ondemand.</p>
+          <button class="btn btn-sm" type="button" onClick={() => setConfirmReturnToLive(true)}>
+            Gå tillbaka till live
+          </button>
+        </div>
+      )}
+
       <div class="now">
         <div class={nowItem ? '' : 'now-empty'}>
           <div class="k">Ärende i bild</div>
@@ -223,9 +358,15 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         <div class="col">
           <h3>
             Dagordning
-            <button class="btn btn-sm" type="button" onClick={() => setPicking('agenda')}>
-              Välj...
-            </button>
+            <AttachedListPicker
+              currentId={p.agendaId}
+              items={(allAgendasResource.data ?? []).map((a) => ({ id: a.id, name: a.name }))}
+              pickerTitle="Byt dagordning"
+              createNewLabel="Ny dagordning"
+              onPick={(id) => actions.setAgenda(id)}
+              onCreateNew={createAndAttachAgenda}
+              buttonLabel="Välj..."
+            />
           </h3>
           <div class="col-body">
             {!agenda ? (
@@ -268,9 +409,15 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         <div class="col">
           <h3>
             Namnlista
-            <button class="btn btn-sm" type="button" onClick={() => setPicking('namelist')}>
-              Välj...
-            </button>
+            <AttachedListPicker
+              currentId={p.namelistId}
+              items={(allNameListsResource.data ?? []).map((n) => ({ id: n.id, name: n.name }))}
+              pickerTitle="Byt namnlista"
+              createNewLabel="Ny namnlista"
+              onPick={(id) => actions.setNameList(id)}
+              onCreateNew={createAndAttachNameList}
+              buttonLabel="Välj..."
+            />
           </h3>
           <div class="col-body">
             {!nameList ? (
@@ -340,34 +487,25 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         </div>
       )}
 
-      {picking === 'agenda' && (
-        <PickerModal
-          title="Byt dagordning"
-          items={(allAgendasResource.data ?? []).map((a) => ({ id: a.id, name: a.name }))}
-          selectedId={p.agendaId}
-          onPick={(id) => {
-            actions.setAgenda(id)
-            setPicking(null)
-          }}
-          onCancel={() => setPicking(null)}
-          createNewLabel="Ny dagordning"
-          onCreateNew={() => void createAndAttachAgenda()}
-        />
+      {showVideo && (
+        <VideoLightbox title={p.name} src={p.recording?.hlsUrl ?? ''} onClose={() => setShowVideo(false)} />
       )}
 
-      {picking === 'namelist' && (
-        <PickerModal
-          title="Byt namnlista"
-          items={(allNameListsResource.data ?? []).map((n) => ({ id: n.id, name: n.name }))}
-          selectedId={p.namelistId}
-          onPick={(id) => {
-            actions.setNameList(id)
-            setPicking(null)
-          }}
-          onCancel={() => setPicking(null)}
-          createNewLabel="Ny namnlista"
-          onCreateNew={() => void createAndAttachNameList()}
-        />
+      {trimming && <TrimDialog recording={trimming} onCancel={() => setTrimming(null)} onSave={saveTrim} />}
+
+      {confirmReturnToLive && (
+        <ConfirmModal
+          title="Gå tillbaka till live?"
+          confirmLabel="Gå till live"
+          danger
+          onCancel={() => setConfirmReturnToLive(false)}
+          onConfirm={() => void doReturnToLive()}
+        >
+          <p>
+            Den kopplade ondemand-versionen kopplas bort och publiken kan inte längre se den. För att
+            sända igen behöver du skapa en ny ingest-resurs och använda en ny stream key i enkodern.
+          </p>
+        </ConfirmModal>
       )}
     </>
   )

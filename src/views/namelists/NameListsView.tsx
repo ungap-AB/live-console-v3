@@ -14,11 +14,22 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export function NameListsView() {
+interface NameListsViewProps {
+  /** Sätts av App.tsx när man kommer hit via "Öppna..." i ProjektDetail — konsumeras en gång vid montering (vyn avmonteras/monteras om varje gång man navigerar hit, se App.tsx). */
+  initialSelectedId?: string | null
+  onInitialSelectionConsumed?: () => void
+}
+
+export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }: NameListsViewProps = {}) {
   const listsResource = useResource(() => client.namelists.list(), [])
   const [namelists, setNamelists] = useState<NameList[]>([])
   const [query, setQuery] = useState('')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null)
+
+  useEffect(() => {
+    if (initialSelectedId) onInitialSelectionConsumed?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [personFilter, setPersonFilter] = useState('')
   const [renaming, setRenaming] = useState<NameList | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<NameList | null>(null)
