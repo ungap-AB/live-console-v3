@@ -71,6 +71,13 @@ export interface ServerRecordingRef {
   hlsUrl?: string
 }
 
+export interface ServerProjectTechnicalHealth {
+  channelState: string | null
+  channelLivePhase: string | null
+  streamStartedAt: string | null
+  recordingState: string | null
+}
+
 export interface ServerProject {
   id: string
   name: string
@@ -78,6 +85,7 @@ export interface ServerProject {
   visibility: string
   playerUrl: string
   channel: ServerChannelRef | null
+  technicalHealth: ServerProjectTechnicalHealth
   recording: ServerRecordingRef | null
   publication: { state: string }
   capabilities: {

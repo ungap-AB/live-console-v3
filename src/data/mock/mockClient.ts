@@ -35,6 +35,15 @@ function defaultCapabilities() {
   }
 }
 
+function defaultTechnicalHealth() {
+  return {
+    channelState: null,
+    channelLivePhase: null,
+    streamStartedAt: null,
+    recordingState: null,
+  }
+}
+
 // In-memory kopior — muteras av create/update/trash så att en session känns
 // verklig utan en backend. Fördröjningen tvingar fram loading-tillstånd i
 // vyerna redan nu, vilket annars glöms bort tills steg 2.
@@ -69,6 +78,12 @@ function projectSnapshot(project: Project): Project {
     publishVod:
       !closed ? blocked('project_open') : channelLive ? blocked('channel_live') : recordingState === 'trimmed' ? { status: 'allowed' as const } : blocked(recordingState === 'processing' ? 'recording_processing' : recordingState ? 'recording_not_trimmed' : 'recording_missing'),
     teardownChannel: !snapshot.channel || !channelLive ? { status: 'allowed' as const } : blocked('channel_in_use'),
+  }
+  snapshot.technicalHealth = {
+    channelState: snapshot.channel?.state ?? null,
+    channelLivePhase: channelLive ? 'live' : null,
+    streamStartedAt: snapshot.sim.recordingStartedAt,
+    recordingState: recordingState ?? null,
   }
   return snapshot
 }
@@ -556,6 +571,7 @@ export const mockClient: Client = {
         visibility: 'closed',
         playerUrl: `https://play.ungap.se/p/${input.name.trim().toLowerCase().replace(/\s+/g, '-')}`,
         channel: null,
+        technicalHealth: defaultTechnicalHealth(),
         recording: null,
         publication: { state: 'none' },
         capabilities: defaultCapabilities(),

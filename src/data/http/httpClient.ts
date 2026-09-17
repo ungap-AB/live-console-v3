@@ -277,6 +277,12 @@ function toProjectLite(dto: ServerProject): Project {
     visibility: dto.visibility as Visibility,
     playerUrl: dto.playerUrl,
     channel: dto.channel ? { id: dto.channel.id, state: dto.channel.state as ChannelState } : null,
+    technicalHealth: {
+      channelState: dto.technicalHealth.channelState as ChannelState | null,
+      channelLivePhase: dto.technicalHealth.channelLivePhase,
+      streamStartedAt: dto.technicalHealth.streamStartedAt,
+      recordingState: dto.technicalHealth.recordingState as RecordingState | null,
+    },
     recording: dto.recording ? { id: dto.recording.id, state: dto.recording.state as RecordingState, hlsUrl: dto.recording.hlsUrl } : null,
     publication: { state: dto.publication.state as PublicationState },
     capabilities: {

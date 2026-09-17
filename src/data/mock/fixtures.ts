@@ -556,6 +556,7 @@ export const projectFixtures: Project[] = [
     visibility: 'closed',
     playerUrl: 'https://play.ungap.se/p/kf-2409',
     channel: null,
+    technicalHealth: { channelState: null, channelLivePhase: null, streamStartedAt: null, recordingState: null },
     recording: null,
     publication: { state: 'none' },
     capabilities: {
@@ -577,6 +578,7 @@ export const projectFixtures: Project[] = [
     visibility: 'open',
     playerUrl: 'https://play.ungap.se/p/ks-0309',
     channel: { id: 'ch-p2', state: 'live' },
+    technicalHealth: { channelState: 'live', channelLivePhase: 'live', streamStartedAt: minutesAgo(37), recordingState: 'recording' },
     recording: { id: 'rec-p2', state: 'recording' },
     publication: { state: 'none' },
     capabilities: {
@@ -619,6 +621,7 @@ export const projectFixtures: Project[] = [
     visibility: 'open',
     playerUrl: 'https://play.ungap.se/p/brf-eken-2026',
     channel: null,
+    technicalHealth: { channelState: null, channelLivePhase: null, streamStartedAt: null, recordingState: 'published' },
     recording: { id: 'rec-p3', state: 'published' },
     publication: { state: 'published' },
     capabilities: {

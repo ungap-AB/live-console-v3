@@ -85,6 +85,13 @@ export interface ProjectCapabilities {
   teardownChannel: OperationCapability
 }
 
+export interface ProjectTechnicalHealth {
+  channelState: ChannelState | null
+  channelLivePhase: string | null
+  streamStartedAt: string | null
+  recordingState: RecordingState | null
+}
+
 export interface Project {
   id: string
   name: string
@@ -92,6 +99,7 @@ export interface Project {
   visibility: Visibility
   playerUrl: string
   channel: { id: string; state: ChannelState } | null
+  technicalHealth: ProjectTechnicalHealth
   recording: { id: string; state: RecordingState; hlsUrl?: string } | null
   publication: { state: PublicationState }
   capabilities: ProjectCapabilities

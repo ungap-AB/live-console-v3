@@ -41,12 +41,11 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   const [trimming, setTrimming] = useState<Recording | null>(null)
   const [confirmReturnToLive, setConfirmReturnToLive] = useState(false)
 
-  // Samma nödvändiga knuff som ProjectDetail redan hade — p.recording.state
-  // hänger annars kvar på 'recording' i förälderns state tills något annat
-  // råkar trigga en omhämtning, så guidedPhase kan aldrig nå 'ended' bara för
-  // att kanalens hälsopollning (i den här komponenten) upptäcker streamEnded.
+  // Hälsan upptäcker fasen före projektets recording-ref. Hämta projektet
+  // igen både efter stopp och medan asseten verifieras, så trim blir tillgänglig
+  // när backend faktiskt har markerat inspelningen som klar.
   useEffect(() => {
-    if (phase === 'streamEnded' && p.recording?.state === 'recording') {
+    if (phase === 'streamEnded' && p.recording?.state !== 'recorded' && p.recording?.state !== 'trimmed' && p.recording?.state !== 'published') {
       void actions.refreshProject()
     }
   }, [phase, p.recording?.state])
@@ -289,6 +288,12 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
       {guidedPhase === 'live' && p.visibility === 'closed' && (
         <div class="guided-banner">
           <p class="gb-note">Stoppa enkodern för att kunna publicera sändningen som ondemand.</p>
+        </div>
+      )}
+
+      {guidedPhase === 'processing' && (
+        <div class="guided-banner">
+          <p class="gb-note">Sändningen är avslutad. Inspelningen bearbetas fortfarande och kan trimmas när den är klar.</p>
         </div>
       )}
 
