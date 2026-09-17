@@ -17,7 +17,10 @@ interface TrimDialogProps {
 }
 
 export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSave }: TrimDialogProps) {
-  const defaultSessionId = sessionId ?? recording.sessions?.toSorted((a, b) => b.durationSeconds - a.durationSeconds)[0]?.id
+  const availableSessions = recording.sessions?.filter((session) => session.hlsUrl)
+  const defaultSessionId = sessionId && availableSessions?.some((session) => session.id === sessionId)
+    ? sessionId
+    : availableSessions?.toSorted((a, b) => b.durationSeconds - a.durationSeconds)[0]?.id
   // `activeRecording` speglar VILKEN sessions manifest/längd som just nu
   // förhandsvisas — måste bytas ut när operatören väljer en annan session i
   // listan, annars trimmas offset:er som satts mot en video mot en helt
@@ -217,7 +220,7 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
           <div class="trim-video-empty">Ingen förhandsvisning</div>
         )}
       </div>
-      {recording.sessions && recording.sessions.length > 0 && (
+      {availableSessions && availableSessions.length > 0 && (
         <label class="trim-session-select">
           Inspelningssession
           <select
@@ -225,13 +228,16 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
             disabled={switchingSession}
             onChange={(e) => void selectSession(e.currentTarget.value)}
           >
-            {recording.sessions.map((session) => (
+            {availableSessions.map((session) => (
               <option value={session.id} key={session.id}>
                 {formatDateTime(session.startedAt)} · {formatHms(session.durationSeconds)}
               </option>
             ))}
           </select>
         </label>
+      )}
+      {recording.sessions && recording.sessions.length > 0 && availableSessions?.length === 0 && (
+        <p class="trim-session-empty">Ingen av inspelningssessionerna har ett färdigt manifest ännu.</p>
       )}
       <div class="trim-video-tools">
         <span class="trim-current">Aktuell tid {formatHms(currentTime)}</span>

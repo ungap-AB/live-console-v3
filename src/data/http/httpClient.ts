@@ -185,6 +185,7 @@ function toRecordingSession(dto: ServerRecordingSession): RecordingSession {
     endedAt: dto.endedAt,
     durationSeconds: dto.durationSeconds,
     hlsUrl: dto.hlsUrl,
+    availabilityReason: dto.availabilityReason,
   }
 }
 

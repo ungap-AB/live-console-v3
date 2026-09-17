@@ -69,6 +69,7 @@ export interface ServerRecordingRef {
   id: string
   state: string
   hlsUrl?: string
+  availabilityReason?: string
 }
 
 export interface ServerProjectTechnicalHealth {
@@ -173,6 +174,7 @@ export interface ServerRecordingSession {
   endedAt?: string
   durationSeconds: number
   hlsUrl?: string
+  availabilityReason?: string
 }
 
 export interface ServerRecording {

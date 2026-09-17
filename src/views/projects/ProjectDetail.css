@@ -253,6 +253,11 @@
   border-bottom: 1px dotted var(--line-soft);
 }
 
+.recording-session-unavailable {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
 .debugbar {
   display: flex;
   align-items: center;

@@ -494,6 +494,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
                   <li key={session.id}>
                     <span>{formatDateTime(session.startedAt)}</span>
                     <span>{formatHms(session.durationSeconds)}</span>
+                    {!session.hlsUrl && <span class="recording-session-unavailable">Manifest saknas</span>}
                     <button
                       class="play"
                       type="button"

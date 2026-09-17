@@ -78,6 +78,7 @@ export interface RecordingSession {
   endedAt?: string
   durationSeconds: number
   hlsUrl?: string
+  availabilityReason?: string
 }
 export type PublicationState = 'none' | 'review' | 'published'
 
