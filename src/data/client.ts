@@ -70,8 +70,9 @@ export interface Client {
   recordings: {
     list(query?: string): Promise<Recording[]>
     get(id: string): Promise<Recording | undefined>
+    selectSession(id: string, sessionId: string): Promise<Recording | undefined>
     trash(id: string): Promise<void>
-    trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number }): Promise<Recording>
+    trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }): Promise<Recording>
   }
   channels: {
     list(query?: string): Promise<Channel[]>

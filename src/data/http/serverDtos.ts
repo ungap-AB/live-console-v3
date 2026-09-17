@@ -166,6 +166,14 @@ export interface ServerRecordingSegment {
   durationSeconds: number
 }
 
+export interface ServerRecordingSession {
+  id: string
+  streamId: string
+  startedAt: string
+  endedAt?: string
+  durationSeconds: number
+}
+
 export interface ServerRecording {
   id: string
   kind: 'original' | 'trim'
@@ -184,6 +192,7 @@ export interface ServerRecording {
   startOffsetSeconds?: number
   endOffsetSeconds?: number
   published?: boolean
+  sessions?: ServerRecordingSession[]
 }
 
 export interface ServerTrimJob {

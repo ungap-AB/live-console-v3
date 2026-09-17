@@ -4,17 +4,18 @@ import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { Modal } from '../../components/Modal'
 import type { Recording } from '../../data/types'
-import { formatHms, parseHms } from '../../app/time'
+import { formatDateTime, formatHms, parseHms } from '../../app/time'
 import './TrimDialog.css'
 
 interface TrimDialogProps {
   recording: Recording
+  sessionId?: string
   initialRange?: { startOffsetSeconds: number; endOffsetSeconds: number }
   onCancel: () => void
-  onSave: (range: { startOffsetSeconds: number; endOffsetSeconds: number }) => Promise<void>
+  onSave: (range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }) => Promise<void>
 }
 
-export function TrimDialog({ recording, initialRange, onCancel, onSave }: TrimDialogProps) {
+export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSave }: TrimDialogProps) {
   const [from, setFrom] = useState(initialRange?.startOffsetSeconds ?? 0)
   const [to, setTo] = useState(initialRange?.endOffsetSeconds ?? recording.durationSeconds)
   const [fromText, setFromText] = useState(formatHms(from))
@@ -23,6 +24,9 @@ export function TrimDialog({ recording, initialRange, onCancel, onSave }: TrimDi
   const [currentTime, setCurrentTime] = useState(0)
   const [videoError, setVideoError] = useState<string | null>(null)
   const [rangeError, setRangeError] = useState<string | null>(null)
+  const [selectedSessionId, setSelectedSessionId] = useState(
+    sessionId ?? recording.sessions?.toSorted((a, b) => b.durationSeconds - a.durationSeconds)[0]?.id,
+  )
   const videoRef = useRef<HTMLVideoElement>(null)
 
   const duration = recording.durationSeconds
@@ -119,7 +123,7 @@ export function TrimDialog({ recording, initialRange, onCancel, onSave }: TrimDi
     setRangeError(null)
     setSaving(true)
     try {
-      await onSave({ startOffsetSeconds, endOffsetSeconds })
+      await onSave({ startOffsetSeconds, endOffsetSeconds, sessionId: selectedSessionId })
     } finally {
       setSaving(false)
     }
@@ -175,6 +179,18 @@ export function TrimDialog({ recording, initialRange, onCancel, onSave }: TrimDi
           <div class="trim-video-empty">Ingen förhandsvisning</div>
         )}
       </div>
+      {recording.sessions && recording.sessions.length > 0 && (
+        <label class="trim-session-select">
+          Inspelningssession
+          <select value={selectedSessionId ?? ''} onChange={(e) => setSelectedSessionId(e.currentTarget.value)}>
+            {recording.sessions.map((session) => (
+              <option value={session.id} key={session.id}>
+                {formatDateTime(session.startedAt)} · {formatHms(session.durationSeconds)}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <div class="trim-video-tools">
         <span class="trim-current">Aktuell tid {formatHms(currentTime)}</span>
         <button class="btn btn-sm" type="button" disabled={!recording.hlsUrl || saving} onClick={setFromCurrent}>

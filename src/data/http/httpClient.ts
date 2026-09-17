@@ -18,6 +18,7 @@ import type {
   TimelineEvent,
   UserAccount,
   Visibility,
+  RecordingSession,
 } from '../types'
 import { ApiError, api, setAuthToken } from './fetchJson'
 import type {
@@ -35,6 +36,7 @@ import type {
   ServerPaged,
   ServerProject,
   ServerRecording,
+  ServerRecordingSession,
   ServerTimelineEvent,
   ServerTrashItem,
   ServerTrimJob,
@@ -171,6 +173,17 @@ function toRecording(dto: ServerRecording, chapters: ServerChapter[], project: P
         ? { startOffsetSeconds: dto.startOffsetSeconds, endOffsetSeconds: dto.endOffsetSeconds }
         : undefined,
     published: dto.published,
+    sessions: dto.sessions?.map(toRecordingSession),
+  }
+}
+
+function toRecordingSession(dto: ServerRecordingSession): RecordingSession {
+  return {
+    id: dto.id,
+    streamId: dto.streamId,
+    startedAt: dto.startedAt,
+    endedAt: dto.endedAt,
+    durationSeconds: dto.durationSeconds,
   }
 }
 
@@ -440,13 +453,21 @@ export const httpClient: Client = {
       const dto = await getOrUndefined(api<ServerRecording>(`/recordings/${id}`))
       return dto ? fetchRecordingDetail(dto) : undefined
     },
+    async selectSession(id, sessionId) {
+      const dto = await api<ServerRecording>(`/recordings/${id}/sessions/${sessionId}/select`, { method: 'POST' })
+      return fetchRecordingDetail(dto)
+    },
     async trash(id) {
       await api<void>(`/recordings/${id}`, { method: 'DELETE' })
     },
     async trim(id, range) {
       const job = await api<ServerTrimJob>(`/recordings/${id}/trim`, {
         method: 'POST',
-        body: { startOffsetSeconds: range.startOffsetSeconds, endOffsetSeconds: range.endOffsetSeconds },
+        body: {
+          startOffsetSeconds: range.startOffsetSeconds,
+          endOffsetSeconds: range.endOffsetSeconds,
+          sessionId: range.sessionId,
+        },
       })
       const done = await pollTrimJob(job.jobId)
       const fresh = await api<ServerRecording>(`/recordings/${done.recordingId}`)

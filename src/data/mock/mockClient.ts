@@ -318,6 +318,9 @@ export const mockClient: Client = {
     async get(id) {
       return delay(clone(recordings.find((r) => r.id === id)))
     },
+    async selectSession(id) {
+      return delay(clone(recordings.find((r) => r.id === id)))
+    },
     async trash(id) {
       const target = recordings.find((r) => r.id === id)
       if (!target) return delay(undefined)

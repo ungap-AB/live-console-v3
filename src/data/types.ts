@@ -70,6 +70,14 @@ export interface NameList {
 export type Visibility = 'open' | 'closed'
 export type ChannelState = 'none' | 'idle' | 'live'
 export type RecordingState = 'none' | 'recording' | 'processing' | 'recorded' | 'trimmed' | 'published'
+
+export interface RecordingSession {
+  id: string
+  streamId: string
+  startedAt: string
+  endedAt?: string
+  durationSeconds: number
+}
 export type PublicationState = 'none' | 'review' | 'published'
 
 export type CapabilityStatus = 'allowed' | 'allowedWithWarning' | 'blocked'
@@ -219,6 +227,8 @@ export interface Recording {
   project: ProjectRef | null
   /** Endast original — glapp syns som segments.length > 1. */
   segments: RecordingSegment[]
+  /** IVS-sessioner som sparats innan ingest-kanalen revs. */
+  sessions?: RecordingSession[]
   /** Endast original — en trimmad version läser kapitel via parentId och filtrerar på trimRange. */
   chapters: Chapter[]
   /** Endast trimmade versioner. */
