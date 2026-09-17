@@ -1,17 +1,9 @@
-.panel-head {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  flex: none;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--line-soft);
-}
-
 .panel-head-row {
   display: flex;
   align-items: flex-start;
   gap: 20px;
   flex-wrap: wrap;
+  margin-bottom: 18px;
 }
 
 .panel-head-row > .grow {
@@ -19,46 +11,11 @@
   min-width: 180px;
 }
 
-.title-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.title {
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.title .chip {
-  margin-right: 10px;
-  vertical-align: middle;
-}
-
-.title .ib {
+.doc h2 .ib {
   display: inline-grid;
   vertical-align: middle;
   width: 22px;
   height: 22px;
-  margin-left: 4px;
-}
-
-.title-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: none;
-}
-
-.subtitle {
-  display: block;
-  margin: -6px 0 0;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--ink-3);
-  letter-spacing: 0;
 }
 
 .seg {
@@ -93,7 +50,6 @@
 .tabs {
   display: flex;
   gap: 24px;
-  padding: 0 18px;
   flex: none;
   border-bottom: 1px solid var(--line-soft);
 }
@@ -114,10 +70,7 @@
 }
 
 .tabpanel {
-  padding: 18px;
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
+  padding-top: 18px;
 }
 
 .actions {

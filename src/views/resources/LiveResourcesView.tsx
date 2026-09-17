@@ -6,6 +6,7 @@ import { SplitPane } from '../../components/SplitPane'
 import { StatusChip } from '../../components/StatusChip'
 import { QuotaBar } from '../../components/QuotaBar'
 import { CopyField } from '../../components/CopyField'
+import { OverflowMenu } from '../../components/OverflowMenu'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
@@ -266,24 +267,26 @@ function ResourceDetail({ channel: c, health, onRotateKey, onOpenProject, onTear
           <span>Skapad {formatDateTime(c.createdAt)}</span>
         </div>
         <div class="tools">
-          <button class="btn btn-sm" type="button" onClick={onRotateKey}>
-            Rotera stream key
-          </button>
           {c.project && (
             <button class="btn btn-sm" type="button" onClick={onOpenProject}>
               Öppna projektet
             </button>
           )}
-          <span class="spacer" />
-          <button
-            class="btn btn-sm btn-danger"
-            type="button"
-            disabled={live}
-            title={live ? 'Går inte att riva medan signal tas emot' : undefined}
-            onClick={onTeardown}
-          >
-            Riv resurs
+          <button class="btn btn-sm" type="button" onClick={onRotateKey}>
+            Rotera stream key
           </button>
+          <span class="spacer" />
+          <OverflowMenu
+            items={[
+              {
+                label: 'Riv resurs',
+                danger: true,
+                disabled: live,
+                title: live ? 'Går inte att riva medan signal tas emot' : undefined,
+                onClick: onTeardown,
+              },
+            ]}
+          />
         </div>
       </div>
 

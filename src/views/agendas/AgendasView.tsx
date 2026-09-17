@@ -4,6 +4,7 @@ import type { Agenda, AgendaItem, Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { SplitPane } from '../../components/SplitPane'
 import { StatusChip } from '../../components/StatusChip'
+import { OverflowMenu } from '../../components/OverflowMenu'
 import { EditableItemList } from '../../components/EditableItemList'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
@@ -262,22 +263,23 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
                     )}
                   </div>
                   <div class="tools">
-                    <button class="btn btn-sm" type="button" onClick={() => setRenaming(selected)}>
-                      Redigera
-                    </button>
                     <button class="btn btn-sm" type="button" onClick={() => toggleTemplate(selected)}>
                       {selected.isTemplate ? 'Ta bort mallstatus' : 'Gör till mall'}
                     </button>
-                    <span class="spacer" />
-                    <button
-                      class="btn btn-sm btn-danger"
-                      type="button"
-                      onClick={() =>
-                        selected.usedInProjects > 0 ? setConfirmTrash(selected) : trash(selected)
-                      }
-                    >
-                      Flytta till papperskorgen
+                    <button class="btn btn-sm btn-primary" type="button" onClick={() => setRenaming(selected)}>
+                      Redigera
                     </button>
+                    <span class="spacer" />
+                    <OverflowMenu
+                      items={[
+                        {
+                          label: 'Flytta till papperskorgen',
+                          danger: true,
+                          onClick: () =>
+                            selected.usedInProjects > 0 ? setConfirmTrash(selected) : trash(selected),
+                        },
+                      ]}
+                    />
                   </div>
                 </div>
                 <div class="body">

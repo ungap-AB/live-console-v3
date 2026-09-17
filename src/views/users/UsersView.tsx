@@ -6,6 +6,7 @@ import { StatusChip } from '../../components/StatusChip'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Modal } from '../../components/Modal'
 import { CopyField } from '../../components/CopyField'
+import { OverflowMenu } from '../../components/OverflowMenu'
 import { Toast } from '../../components/Toast'
 import { SearchIcon } from '../../components/icons'
 import { formatDate, formatDateTime } from '../../app/time'
@@ -762,9 +763,6 @@ function UserDetail({
           {domain && <StatusChip tone="neutral">{domain.org}</StatusChip>}
         </div>
         <div class="tools">
-          <button class="btn btn-sm" type="button" onClick={onInvite}>
-            Bjud in
-          </button>
           {u.status === 'invited' ? (
             <button class="btn btn-sm" type="button" onClick={onResendInvite}>
               Skicka om inbjudan
@@ -774,31 +772,29 @@ function UserDetail({
               Skicka återställningslänk
             </button>
           )}
-          {u.status === 'disabled' ? (
-            <button class="btn btn-sm btn-primary" type="button" onClick={onEnable}>
-              Aktivera konto
-            </button>
-          ) : (
-            <button
-              class="btn btn-sm"
-              type="button"
-              disabled={lastAdmin}
-              title={lastAdmin ? 'Domänen måste ha minst en aktiv administratör' : undefined}
-              onClick={onDisable}
-            >
-              Inaktivera konto
-            </button>
-          )}
-          <span class="spacer" />
-          <button
-            class="btn btn-sm btn-danger"
-            type="button"
-            disabled={lastAdmin}
-            title={lastAdmin ? 'Domänen måste ha minst en aktiv administratör' : undefined}
-            onClick={onRemove}
-          >
-            Ta bort
+          <button class="btn btn-sm btn-primary" type="button" onClick={onInvite}>
+            Bjud in
           </button>
+          <span class="spacer" />
+          <OverflowMenu
+            items={[
+              u.status === 'disabled'
+                ? { label: 'Aktivera konto', onClick: onEnable }
+                : {
+                    label: 'Inaktivera konto',
+                    disabled: lastAdmin,
+                    title: lastAdmin ? 'Domänen måste ha minst en aktiv administratör' : undefined,
+                    onClick: onDisable,
+                  },
+              {
+                label: 'Ta bort',
+                danger: true,
+                disabled: lastAdmin,
+                title: lastAdmin ? 'Domänen måste ha minst en aktiv administratör' : undefined,
+                onClick: onRemove,
+              },
+            ]}
+          />
         </div>
       </div>
 

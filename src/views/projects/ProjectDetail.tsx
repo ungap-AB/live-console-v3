@@ -216,38 +216,49 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
 
   return (
     <>
-      <div class="panel-head">
-        <div class="title-row">
-          <div class="title">
-            {p.name}
-            <button
-              class="ib"
-              type="button"
-              title="Byt namn på projektet"
-              aria-label="Byt namn på projektet"
-              onClick={() => setRenaming(true)}
-            >
-              <EditIcon />
-            </button>
-          </div>
-          <div class="title-actions">
-            <button class="btn btn-sm" type="button" onClick={onOpenPlayout}>
-              <PlayIcon /> Öppna playout
-            </button>
-            <OverflowMenu
-              items={[
-                {
-                  label: 'Radera projekt',
-                  danger: true,
-                  disabled: !canDelete,
-                  title: deleteBlockedReason ?? undefined,
-                  onClick: () => (deleteBlockedReason ? onDeleteBlocked(deleteBlockedReason) : onDelete()),
-                },
-              ]}
-            />
-          </div>
+      <div class="head">
+        <h2>
+          {p.name}
+          <button
+            class="ib"
+            type="button"
+            title="Byt namn på projektet"
+            aria-label="Byt namn på projektet"
+            onClick={() => setRenaming(true)}
+          >
+            <EditIcon />
+          </button>
+        </h2>
+        <div class="facts">
+          <span>{subtitle}</span>
         </div>
-        <p class="subtitle">{subtitle}</p>
+        <div class="tools">
+          <button class="btn btn-sm" type="button" onClick={onOpenPlayout}>
+            <PlayIcon /> Öppna playout
+          </button>
+          <button
+            class="btn btn-sm btn-primary"
+            type="button"
+            onClick={() => actions.setVisibility(p.visibility === 'open' ? 'closed' : 'open')}
+          >
+            {p.visibility === 'open' ? 'Stäng för publik' : 'Öppna för publik'}
+          </button>
+          <span class="spacer" />
+          <OverflowMenu
+            items={[
+              {
+                label: 'Flytta till papperskorgen',
+                danger: true,
+                disabled: !canDelete,
+                title: deleteBlockedReason ?? undefined,
+                onClick: () => (deleteBlockedReason ? onDeleteBlocked(deleteBlockedReason) : onDelete()),
+              },
+            ]}
+          />
+        </div>
+      </div>
+
+      <div class="body">
         <div class="panel-head-row">
           <CopyField label="Spelarlänk" value={p.playerUrl} monospace grow />
           <div class="field-block">
@@ -309,19 +320,6 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
             />
           </FieldBlock>
         </div>
-      </div>
-
-      {renaming && (
-        <RenameModal
-          title="Byt namn på projektet"
-          initialValue={p.name}
-          onCancel={() => setRenaming(false)}
-          onSave={async (name) => {
-            await actions.rename(name)
-            setRenaming(false)
-          }}
-        />
-      )}
 
       <div class="tabs" role="tablist">
         <button role="tab" type="button" aria-selected={tab === 'live'} onClick={() => void selectTab('live')}>
@@ -513,6 +511,19 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
             <div class={`note ${p.sim.segments > 1 || rec === 'trimmed' ? 'warn' : ''}`}>{odmNote}</div>
           )}
         </div>
+      )}
+      </div>
+
+      {renaming && (
+        <RenameModal
+          title="Byt namn på projektet"
+          initialValue={p.name}
+          onCancel={() => setRenaming(false)}
+          onSave={async (name) => {
+            await actions.rename(name)
+            setRenaming(false)
+          }}
+        />
       )}
 
       {showVideo && (

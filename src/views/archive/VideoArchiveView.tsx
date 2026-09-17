@@ -5,6 +5,7 @@ import { useResource } from '../../app/useResource'
 import { SplitPane } from '../../components/SplitPane'
 import { StatusChip } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
+import { OverflowMenu } from '../../components/OverflowMenu'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
 import { SearchIcon } from '../../components/icons'
@@ -252,23 +253,21 @@ function ArchiveDetail({ recording: r, chapters, onTrim, onTrash, onDownload, on
           )}
         </div>
         <div class="tools">
-          <button class="btn btn-sm btn-primary" type="button" onClick={onDownload}>
+          <button class="btn btn-sm" type="button" onClick={onDownload}>
             Ladda ner
           </button>
-          {isOriginal && (
-            <button class="btn btn-sm" type="button" onClick={onTrim}>
-              Trimma inspelning
-            </button>
-          )}
           {r.project && (
             <button class="btn btn-sm" type="button" onClick={onOpenProject}>
               Gå till projekt
             </button>
           )}
+          {isOriginal && (
+            <button class="btn btn-sm btn-primary" type="button" onClick={onTrim}>
+              Trimma inspelning
+            </button>
+          )}
           <span class="spacer" />
-          <button class="btn btn-sm btn-danger" type="button" onClick={onTrash}>
-            Flytta till papperskorgen
-          </button>
+          <OverflowMenu items={[{ label: 'Flytta till papperskorgen', danger: true, onClick: onTrash }]} />
         </div>
       </div>
 
