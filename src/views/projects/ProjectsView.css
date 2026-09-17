@@ -26,36 +26,20 @@
   min-width: 0;
 }
 
-.project-list-pane .btn-playout {
-  flex: none;
-  width: auto;
-  align-self: center;
-  margin-right: 6px;
-  padding: 5px 10px;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--ink-2);
-  background: var(--accent-soft);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-}
-
-.project-list-pane .btn-playout:hover {
-  background: var(--surface-3);
-}
-
-/* .pane li.sel button annars slår igenom på båda knapparna i raden */
-.project-list-pane li.sel .btn-playout {
-  background: var(--accent-soft);
-}
-
-/* Dold tills vidare, se kommentar i ProjectsView.tsx — koden finns kvar. */
-.search-hidden {
-  display: none;
-}
-
 .project-row .rowtop {
   gap: 8px;
+}
+
+/* En status-chip + datum per rad istället för upp till tre staplade chips —
+   se granskningen 2026-09-17 (Live Console Dark Mode - take 2). */
+.project-list-pane .meta-row {
+  justify-content: space-between;
+}
+
+.project-list-pane .row-date {
+  font-size: 12px;
+  color: var(--ink-3);
+  flex: none;
 }
 
 .view > header .clock {

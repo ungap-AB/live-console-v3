@@ -3,18 +3,29 @@ import { client } from '../../data'
 import type { CueKind, PlayoutState, Project, TimelineEvent, Visibility } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { SplitPane } from '../../components/SplitPane'
-import { StatusChip } from '../../components/StatusChip'
+import { StatusChip, type ChipTone } from '../../components/StatusChip'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
 import { Clock } from '../../components/Clock'
 import { SearchIcon } from '../../components/icons'
+import { formatShortDate } from '../../app/time'
 import { ProjectDetail } from './ProjectDetail'
 import { Playout } from './Playout'
 import type { ProjectActions } from './actions'
 import './ProjectsView.css'
 
 export type ProjectScreen = 'detail' | 'playout'
+
+// En enda status per listrad istället för upp till tre samtidiga chips —
+// återanvänder samma backend-härledda fält (technicalHealth/publication)
+// som redan finns, bara i en fast prioritetsordning på ETT ställe. Se
+// granskningen 2026-09-17 (Live Console Dark Mode - take 2).
+function deriveProjectStatus(p: Project): { tone: ChipTone; label: string } {
+  if (p.technicalHealth.channelState === 'live') return { tone: 'live', label: 'Sänder' }
+  if (p.publication.state === 'published') return { tone: 'accent', label: 'Publicerad' }
+  return p.visibility === 'open' ? { tone: 'neutral', label: 'Öppen' } : { tone: 'warn', label: 'Stängd' }
+}
 
 // currentAgendaItemId/currentPersonId härleds alltid ur tidslinjen (senaste
 // händelsen av respektive typ) — en enda källa till sanning, så optimistiska
@@ -300,8 +311,7 @@ export function ProjectsView({
           list={
             <>
               <div class="top">
-                {/* Dolt tills vidare (inte borttaget) — plockas fram igen senare. */}
-                <div class="search search-hidden">
+                <div class="search">
                   <SearchIcon />
                   <input
                     type="search"
@@ -320,46 +330,31 @@ export function ProjectsView({
                 {!resource.loading && visible.length === 0 && (
                   <li class="none">Inget projekt matchar sökningen.</li>
                 )}
-                {visible.map((p) => (
-                  <li key={p.id} class={p.id === selectedId ? 'sel' : ''}>
-                    <button
-                      class="row"
-                      type="button"
-                      onClick={() => {
-                        onSelectedIdChange(p.id)
-                        onScreenChange('detail')
-                      }}
-                    >
-                      <span class="rowtop">
-                        <span class="nm">{p.name}</span>
-                      </span>
-                      <span class="meta-row">
-                        {p.channel?.state === 'live' && (
-                          <StatusChip tone="live" dot>
-                            Sänder
+                {visible.map((p) => {
+                  const status = deriveProjectStatus(p)
+                  return (
+                    <li key={p.id} class={p.id === selectedId ? 'sel' : ''}>
+                      <button
+                        class="row"
+                        type="button"
+                        onClick={() => {
+                          onSelectedIdChange(p.id)
+                          onScreenChange('detail')
+                        }}
+                      >
+                        <span class="rowtop">
+                          <span class="nm">{p.name}</span>
+                        </span>
+                        <span class="meta-row">
+                          <StatusChip tone={status.tone} dot={status.tone === 'live'}>
+                            {status.label}
                           </StatusChip>
-                        )}
-                        {p.publication.state === 'published' && (
-                          <StatusChip tone="accent">Publicerad</StatusChip>
-                        )}
-                        <StatusChip tone={p.visibility === 'open' ? 'neutral' : 'warn'}>
-                          {p.visibility === 'open' ? 'Öppen' : 'Stängd'}
-                        </StatusChip>
-                      </span>
-                    </button>
-                    <button
-                      class="btn-playout"
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onSelectedIdChange(p.id)
-                        onScreenChange('playout')
-                      }}
-                    >
-                      Playout
-                    </button>
-                  </li>
-                ))}
+                          <span class="row-date">{formatShortDate(p.createdAt)}</span>
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             </>
           }
@@ -374,6 +369,7 @@ export function ProjectsView({
                 actions={actions}
                 onOpenAgenda={onOpenAgenda}
                 onOpenNameList={onOpenNameList}
+                onOpenPlayout={() => onScreenChange('playout')}
               />
             )
           }

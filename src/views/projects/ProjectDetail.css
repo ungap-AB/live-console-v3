@@ -9,9 +9,14 @@
 
 .panel-head-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 20px;
   flex-wrap: wrap;
+}
+
+.panel-head-row > .grow {
+  flex: 1 1 220px;
+  min-width: 180px;
 }
 
 .title-row {
@@ -40,51 +45,20 @@
   margin-left: 4px;
 }
 
-.title .subtitle {
+.title-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.subtitle {
   display: block;
+  margin: -6px 0 0;
   font-size: 12px;
   font-weight: 400;
   color: var(--ink-3);
   letter-spacing: 0;
-}
-
-.field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.field-grow {
-  flex: 1 1 220px;
-  min-width: 180px;
-  max-width: 420px;
-}
-
-.field-grow .copy-field {
-  flex: 1;
-  min-width: 0;
-}
-
-.field > label {
-  color: var(--ink-2);
-  white-space: nowrap;
-  font-size: 13px;
-}
-
-.attached-list {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.attached-list-name {
-  font-size: 13px;
-  color: var(--ink-2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .seg {
@@ -209,21 +183,6 @@
   min-width: 0;
 }
 
-.rowset .field {
-  align-items: flex-start;
-}
-
-.rowset .field > label {
-  width: 112px;
-  flex: none;
-  padding-top: 7px;
-}
-
-.rowset .field .copy-field {
-  flex: 1;
-  min-width: 0;
-}
-
 .recording-sessions {
   max-width: 660px;
   margin-top: 18px;
@@ -259,9 +218,6 @@
 }
 
 .debugbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   margin-top: 16px;
   padding: 10px 13px;
   border: 1px dashed var(--line);
@@ -275,4 +231,12 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink-3);
+  cursor: pointer;
+}
+
+.debugbar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
 }

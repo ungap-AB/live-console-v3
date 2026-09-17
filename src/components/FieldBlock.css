@@ -25,3 +25,13 @@
   background: var(--field-bg);
   min-width: 0;
 }
+
+.field-block-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--ink-2);
+}

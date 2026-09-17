@@ -4,11 +4,14 @@ import type { Project, Recording, RecordingState } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { StatusChip, type ChipTone } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
+import { FieldBlock } from '../../components/FieldBlock'
+import { OverflowMenu } from '../../components/OverflowMenu'
+import { StatusCard } from '../../components/StatusCard'
 import { VideoLightbox } from '../../components/VideoLightbox'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { RenameModal } from '../../components/RenameModal'
 import { AttachedListPicker } from '../../components/AttachedListPicker'
-import { EditIcon, DeleteIcon, PlayIcon } from '../../components/icons'
+import { EditIcon, PlayIcon } from '../../components/icons'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
@@ -25,6 +28,7 @@ interface ProjectDetailProps {
   actions: ProjectActions
   onOpenAgenda: (id: string) => void
   onOpenNameList: (id: string) => void
+  onOpenPlayout: () => void
 }
 
 // Ondemand-flikens inspelade tid — rör inte, se scope-anteckning i steg-planen
@@ -65,7 +69,7 @@ function initialTab(project: Project): 'live' | 'odm' {
     : 'live'
 }
 
-export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, onOpenAgenda, onOpenNameList }: ProjectDetailProps) {
+export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, onOpenAgenda, onOpenNameList, onOpenPlayout }: ProjectDetailProps) {
   const { channel, health, streamKey, refresh, stopPolling } = useLiveChannel(p.channel?.id ?? null)
   const phase = health?.livePhase
   const live = phase === 'live'
@@ -225,25 +229,29 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
             >
               <EditIcon />
             </button>
-            <span class="subtitle">{subtitle}</span>
           </div>
-          <button
-            class={`ib del${canDelete ? '' : ' is-blocked'}`}
-            type="button"
-            title={deleteBlockedReason ?? 'Radera projekt'}
-            aria-label="Radera projekt"
-            onClick={() => (deleteBlockedReason ? onDeleteBlocked(deleteBlockedReason) : onDelete())}
-          >
-            <DeleteIcon />
-          </button>
+          <div class="title-actions">
+            <button class="btn btn-sm" type="button" onClick={onOpenPlayout}>
+              <PlayIcon /> Öppna playout
+            </button>
+            <OverflowMenu
+              items={[
+                {
+                  label: 'Radera projekt',
+                  danger: true,
+                  disabled: !canDelete,
+                  title: deleteBlockedReason ?? undefined,
+                  onClick: () => (deleteBlockedReason ? onDeleteBlocked(deleteBlockedReason) : onDelete()),
+                },
+              ]}
+            />
+          </div>
         </div>
+        <p class="subtitle">{subtitle}</p>
         <div class="panel-head-row">
-          <div class="field field-grow">
-            <label>Spelarlänk</label>
-            <CopyField value={p.playerUrl} monospace />
-          </div>
-          <div class="field">
-            <label>Synlighet</label>
+          <CopyField label="Spelarlänk" value={p.playerUrl} monospace grow />
+          <div class="field-block">
+            <div class="field-block-label">Synlighet</div>
             <div class="seg">
               <button
                 type="button"
@@ -262,46 +270,44 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
               </button>
             </div>
           </div>
-          <div class="field">
-            <label>Dagordning</label>
-            <div class="attached-list">
-              <span class="attached-list-name">{agendaResource.data?.name ?? 'Ingen kopplad'}</span>
-              {p.agendaId && (
-                <button class="btn btn-sm" type="button" onClick={() => onOpenAgenda(p.agendaId!)}>
-                  Öppna...
-                </button>
-              )}
-              <AttachedListPicker
-                currentId={p.agendaId}
-                items={(allAgendasResource.data ?? []).map((a) => ({ id: a.id, name: a.name }))}
-                pickerTitle="Byt dagordning"
-                createNewLabel="Ny dagordning"
-                onPick={(id) => actions.setAgenda(id)}
-                onCreateNew={createAndAttachAgenda}
-                buttonLabel="Välj..."
-              />
-            </div>
-          </div>
-          <div class="field">
-            <label>Namnlista</label>
-            <div class="attached-list">
-              <span class="attached-list-name">{nameListResource.data?.name ?? 'Ingen kopplad'}</span>
-              {p.namelistId && (
-                <button class="btn btn-sm" type="button" onClick={() => onOpenNameList(p.namelistId!)}>
-                  Öppna...
-                </button>
-              )}
-              <AttachedListPicker
-                currentId={p.namelistId}
-                items={(allNameListsResource.data ?? []).map((n) => ({ id: n.id, name: n.name }))}
-                pickerTitle="Byt namnlista"
-                createNewLabel="Ny namnlista"
-                onPick={(id) => actions.setNameList(id)}
-                onCreateNew={createAndAttachNameList}
-                buttonLabel="Välj..."
-              />
-            </div>
-          </div>
+        </div>
+        <div class="panel-head-row">
+          <FieldBlock label="Dagordning" grow>
+            <span class="field-block-value">{agendaResource.data?.name ?? 'Ingen kopplad'}</span>
+            {p.agendaId && (
+              <button class="btn btn-sm" type="button" onClick={() => onOpenAgenda(p.agendaId!)}>
+                Öppna...
+              </button>
+            )}
+            <AttachedListPicker
+              currentId={p.agendaId}
+              items={(allAgendasResource.data ?? []).map((a) => ({ id: a.id, name: a.name }))}
+              pickerTitle="Byt dagordning"
+              createNewLabel="Ny dagordning"
+              onPick={(id) => actions.setAgenda(id)}
+              onCreateNew={createAndAttachAgenda}
+              buttonLabel="Byt..."
+            />
+          </FieldBlock>
+        </div>
+        <div class="panel-head-row">
+          <FieldBlock label="Namnlista" grow>
+            <span class="field-block-value">{nameListResource.data?.name ?? 'Ingen kopplad'}</span>
+            {p.namelistId && (
+              <button class="btn btn-sm" type="button" onClick={() => onOpenNameList(p.namelistId!)}>
+                Öppna...
+              </button>
+            )}
+            <AttachedListPicker
+              currentId={p.namelistId}
+              items={(allNameListsResource.data ?? []).map((n) => ({ id: n.id, name: n.name }))}
+              pickerTitle="Byt namnlista"
+              createNewLabel="Ny namnlista"
+              onPick={(id) => actions.setNameList(id)}
+              onCreateNew={createAndAttachNameList}
+              buttonLabel="Byt..."
+            />
+          </FieldBlock>
         </div>
       </div>
 
@@ -328,58 +334,52 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
 
       {tab === 'live' && (
         <div class="tabpanel">
-          <div class="actions">
-            <StatusChip tone={status.tone} dot>
-              {status.label}
-            </StatusChip>
-            <span class="sep" />
-            <button
-              class="btn"
-              type="button"
-              disabled={hasIngest}
-              onClick={() => actions.createChannel().then(refresh)}
-            >
-              Skapa ingest
-            </button>
-            <button
-              class="btn btn-danger"
-              type="button"
-              disabled={!hasIngest || inUse}
-              title={inUse ? 'Går inte att riva medan signal tas emot' : undefined}
-              onClick={() => {
-                // Stoppa pollningen istället för att refresh:a — kanalen är
-                // borta direkt efter teardown, en efterföljande hälsokoll
-                // mot samma id 404:ar bara i onödan (se minnesanteckningen
-                // om useLiveChannel.refresh-racet, 2026-09-16/18).
-                stopPolling()
-                void actions.teardownChannel()
-              }}
-            >
-              Riv ingest
-            </button>
-            <button
-              class="btn btn-sm"
-              type="button"
-              disabled={!channel?.playbackUrl}
-              onClick={() => setShowVideo(true)}
-            >
-              Visa livesändning
-            </button>
-          </div>
+          <StatusCard
+            tone={status.tone}
+            title={status.label}
+            actions={
+              <>
+                {!hasIngest && (
+                  <button class="btn" type="button" onClick={() => actions.createChannel().then(refresh)}>
+                    Skapa ingest
+                  </button>
+                )}
+                {hasIngest && !inUse && (
+                  <button
+                    class="btn btn-danger"
+                    type="button"
+                    onClick={() => {
+                      // Stoppa pollningen istället för att refresh:a — kanalen är
+                      // borta direkt efter teardown, en efterföljande hälsokoll
+                      // mot samma id 404:ar bara i onödan (se minnesanteckningen
+                      // om useLiveChannel.refresh-racet, 2026-09-16/18).
+                      stopPolling()
+                      void actions.teardownChannel()
+                    }}
+                  >
+                    Riv ingest
+                  </button>
+                )}
+                {channel?.playbackUrl && (
+                  <button class="btn btn-sm" type="button" onClick={() => setShowVideo(true)}>
+                    Visa livesändning
+                  </button>
+                )}
+              </>
+            }
+          >
+            {liveNote}
+          </StatusCard>
           <div class="resource">
             <div class="rowset">
-              <div class="field">
-                <label>Ingest-server</label>
-                <CopyField value={channel?.ingestEndpoint ?? null} placeholder="Skapa ingest först" monospace />
-              </div>
-              <div class="field">
-                <label>Stream key</label>
-                <CopyField value={streamKey} mask monospace />
-              </div>
-              <div class="field">
-                <label>HLS-URL</label>
-                <CopyField value={channel?.playbackUrl ?? null} monospace />
-              </div>
+              <CopyField
+                label="Ingest-server"
+                value={channel?.ingestEndpoint ?? null}
+                placeholder="Skapa ingest först"
+                monospace
+              />
+              <CopyField label="Stream key" value={streamKey} mask monospace />
+              <CopyField label="HLS-URL" value={channel?.playbackUrl ?? null} monospace />
             </div>
             <div class="health">
               <h4>Inkommande signal</h4>
@@ -409,31 +409,32 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
           </div>
           {/* .resource är nu en enkel stapel (se ProjectDetail.css) — Inkommande
               signal ligger under HLS-URL istället för bredvid i en egen kolumn. */}
-          {liveNote && <div class={`note ${inUse ? 'warn' : ''}`}>{liveNote}</div>}
 
-          <div class="debugbar">
-            <span class="debugbar-label">Debug</span>
-            <button
-              class="btn btn-sm"
-              type="button"
-              disabled={!hasIngest || inUse}
-              onClick={() => actions.setEncoderSending(true).then(refresh)}
-            >
-              Simulera signal start
-            </button>
-            <button
-              class="btn btn-sm"
-              type="button"
-              disabled={!hasIngest || !inUse}
-              onClick={() => actions.setEncoderSending(false).then(refresh)}
-            >
-              Simulera signal stopp
-            </button>
-            <span class="spacer" />
-            <button class="btn btn-sm btn-danger" type="button" onClick={() => actions.reset().then(refresh)}>
-              Återställ allt
-            </button>
-          </div>
+          <details class="debugbar">
+            <summary class="debugbar-label">Debug</summary>
+            <div class="debugbar-row">
+              <button
+                class="btn btn-sm"
+                type="button"
+                disabled={!hasIngest || inUse}
+                onClick={() => actions.setEncoderSending(true).then(refresh)}
+              >
+                Simulera signal start
+              </button>
+              <button
+                class="btn btn-sm"
+                type="button"
+                disabled={!hasIngest || !inUse}
+                onClick={() => actions.setEncoderSending(false).then(refresh)}
+              >
+                Simulera signal stopp
+              </button>
+              <span class="spacer" />
+              <button class="btn btn-sm btn-danger" type="button" onClick={() => actions.reset().then(refresh)}>
+                Återställ allt
+              </button>
+            </div>
+          </details>
         </div>
       )}
 
@@ -477,14 +478,12 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
             )}
           </div>
           <div class="rowset" style={{ maxWidth: '660px' }}>
-            <div class="field">
-              <label>HLS-URL</label>
-              <CopyField
-                value={p.recording?.hlsUrl ?? null}
-                placeholder="Tillgänglig efter trimning"
-                monospace
-              />
-            </div>
+            <CopyField
+              label="HLS-URL"
+              value={p.recording?.hlsUrl ?? null}
+              placeholder="Tillgänglig efter trimning"
+              monospace
+            />
           </div>
           {sourceRecording?.sessions && sourceRecording.sessions.length > 0 && (
             <div class="recording-sessions">

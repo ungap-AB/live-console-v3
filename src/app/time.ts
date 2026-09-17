@@ -33,3 +33,11 @@ export function formatDate(iso: string | undefined): string {
   if (!iso) return '–'
   return new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' })
 }
+
+// Kompakt datum för listrader ("idag"/"17 sep") — se Live Console Dark Mode
+// - take 2 (Projekt-listans nya datumkolumn).
+export function formatShortDate(iso: string): string {
+  const d = new Date(iso)
+  if (d.toDateString() === new Date().toDateString()) return 'idag'
+  return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })
+}
