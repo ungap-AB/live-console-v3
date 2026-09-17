@@ -6,14 +6,12 @@ interface SplitPaneProps {
   detail: ComponentChildren
   listLabel: string
   detailLabel: string
-  /** Valfri extra klass på list-panen, för vy-specifik styling (t.ex. Projekt-listans full-bleed-läge). */
-  listClassName?: string
 }
 
-export function SplitPane({ list, detail, listLabel, detailLabel, listClassName }: SplitPaneProps) {
+export function SplitPane({ list, detail, listLabel, detailLabel }: SplitPaneProps) {
   return (
     <div class="split">
-      <section class={`pane ${listClassName ?? ''}`} aria-label={listLabel}>
+      <section class="pane" aria-label={listLabel}>
         {list}
       </section>
       <section class="doc" aria-label={detailLabel}>

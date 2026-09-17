@@ -1,7 +1,7 @@
 .three {
   display: grid;
   grid-template-columns: 236px 300px 1fr;
-  gap: 18px;
+  gap: 22px;
   height: 100%;
   min-height: 0;
 }

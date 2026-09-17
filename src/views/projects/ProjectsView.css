@@ -1,46 +1,6 @@
-/* Full-bleed-läge: listan ska ligga dikt an mot vänstermenyn, inte se ut som
-   ett eget flytande kort — detaljvyn (.doc) behåller sitt vanliga utseende. */
-.projects-view > .content {
-  padding-left: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.project-list-pane {
-  height: 100%;
-  max-height: 100%;
-  border: none;
-  border-radius: 0;
-  border-right: 1px solid var(--line);
-}
-
-.project-list-pane li {
-  display: flex;
-  align-items: stretch;
-  gap: 4px;
-}
-
-.project-list-pane li .row {
-  flex: 1;
-  width: auto;
-  min-width: 0;
-}
-
-.project-row .rowtop {
-  gap: 8px;
-}
-
-/* En status-chip + datum per rad istället för upp till tre staplade chips —
-   se granskningen 2026-09-17 (Live Console Dark Mode - take 2). */
-.project-list-pane .meta-row {
-  justify-content: space-between;
-}
-
-.project-list-pane .row-date {
-  font-size: 12px;
-  color: var(--ink-3);
-  flex: none;
-}
+/* Listlägets full-bleed-utseende (status-chip vänster, datum höger, kant
+   i kant) är nu standard för alla lista+detalj-vyer — se SplitPane.css
+   och HANDOVER-ui-iteration-2.md §1. Inget Projekt-specifikt kvar här. */
 
 .view > header .clock {
   margin-left: auto;

@@ -1,7 +1,7 @@
 .split {
   display: grid;
   grid-template-columns: 296px 1fr;
-  gap: 18px;
+  gap: 22px;
   height: 100%;
   min-height: 0;
 }
@@ -21,6 +21,49 @@
   flex-direction: column;
   min-height: 0;
   min-width: 0;
+}
+
+/* Listpanelen (alltid första barnet i .split/.three) ligger dikt an mot
+   vänsterkant, header och botten — bara en kantlinje mot detaljen till
+   höger. Detaljpanelen (.doc) behåller sitt vanliga fristående kort men
+   får samma marginal runt om som listan har till kanterna, så de två
+   panelerna känns lika "tunga". Tidigare bara Projekt-vyns eget läge
+   (.project-list-pane) — nu standard i alla lista+detalj-vyer, se
+   HANDOVER-ui-iteration-2.md §1. */
+.view > .content:has(> .split, > .three) {
+  padding: 0 22px 0 0;
+}
+
+.split > .pane:first-child,
+.three > .pane:first-child {
+  height: 100%;
+  max-height: 100%;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.split > :not(:first-child),
+.three > :not(:first-child) {
+  margin: 22px 0;
+}
+
+/* Radlayouten från projektlistan (status-chip vänster, datum höger) är nu
+   standard för alla listor. */
+.pane li .row {
+  flex: 1 1 0%;
+  width: auto;
+  min-width: 0;
+}
+
+.pane .meta-row {
+  justify-content: space-between;
+}
+
+.pane .row-date {
+  font-size: 12px;
+  color: var(--ink-3);
+  flex: none;
 }
 
 .pane .top {

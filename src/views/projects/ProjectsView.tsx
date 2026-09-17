@@ -290,7 +290,7 @@ export function ProjectsView({
   const visible = projects.filter((p) => !q || p.name.toLowerCase().includes(q))
 
   return (
-    <div class="view projects-view">
+    <div class="view">
       <header>
         <div>
           <h1>Projekt</h1>
@@ -307,7 +307,6 @@ export function ProjectsView({
         <SplitPane
           listLabel="Projekt"
           detailLabel="Valt projekt"
-          listClassName="project-list-pane"
           list={
             <>
               <div class="top">
