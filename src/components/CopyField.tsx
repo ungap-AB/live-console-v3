@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks'
+import { FieldBlock } from './FieldBlock'
 import './CopyField.css'
 
 interface CopyFieldProps {
@@ -7,9 +8,10 @@ interface CopyFieldProps {
   placeholder?: string
   monospace?: boolean
   mask?: boolean
+  grow?: boolean
 }
 
-export function CopyField({ label, value, placeholder = '–', monospace = false, mask = false }: CopyFieldProps) {
+export function CopyField({ label, value, placeholder = '–', monospace = false, mask = false, grow = false }: CopyFieldProps) {
   const [copied, setCopied] = useState(false)
 
   function fallbackCopy(text: string): boolean {
@@ -41,23 +43,20 @@ export function CopyField({ label, value, placeholder = '–', monospace = false
     value == null ? placeholder : mask ? '•'.repeat(Math.min(value.length, 24)) : value
 
   return (
-    <div class="copy-field">
-      {label && <div class="copy-field-label">{label}</div>}
-      <div class="copy-field-row">
-        <span class={`copy-field-value ${monospace ? 'mono' : ''} ${value == null ? 'placeholder' : ''}`}>
-          {displayValue}
-        </span>
-        <button
-          class="ib"
-          type="button"
-          onClick={copy}
-          disabled={value == null}
-          title="Kopiera"
-          aria-label={`Kopiera ${label ?? 'värde'}`}
-        >
-          {copied ? '✓' : '⧉'}
-        </button>
-      </div>
-    </div>
+    <FieldBlock label={label} grow={grow}>
+      <span class={`copy-field-value ${monospace ? 'mono' : ''} ${value == null ? 'placeholder' : ''}`}>
+        {displayValue}
+      </span>
+      <button
+        class="ib"
+        type="button"
+        onClick={copy}
+        disabled={value == null}
+        title="Kopiera"
+        aria-label={`Kopiera ${label ?? 'värde'}`}
+      >
+        {copied ? '✓' : '⧉'}
+      </button>
+    </FieldBlock>
   )
 }

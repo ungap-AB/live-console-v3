@@ -1,0 +1,79 @@
+.status-card {
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  padding: 14px 16px;
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.status-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-card-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.status-card-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.status-card-body {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.status-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.status-card-neutral .status-card-dot {
+  color: var(--ink-3);
+}
+
+.status-card-live {
+  background: var(--live-bg);
+  border-color: var(--live-line);
+}
+.status-card-live .status-card-dot {
+  color: var(--live);
+}
+
+.status-card-warn {
+  background: var(--warn-bg);
+  border-color: var(--warn-line);
+}
+.status-card-warn .status-card-dot {
+  color: var(--warn);
+}
+
+.status-card-danger {
+  background: var(--danger-bg);
+  border-color: var(--danger-line);
+}
+.status-card-danger .status-card-dot {
+  color: var(--danger);
+}
+
+.status-card-accent {
+  background: var(--odm-bg);
+  border-color: var(--odm-line);
+}
+.status-card-accent .status-card-dot {
+  color: var(--odm);
+}

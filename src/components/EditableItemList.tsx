@@ -117,6 +117,11 @@ export function EditableItemList<T>({
 
   return (
     <>
+      <div class="addrow">
+        <button class="btn btn-sm" type="button" onClick={() => void handleAdd()}>
+          {addLabel}
+        </button>
+      </div>
       <SortableList
         items={items}
         getId={getId}
@@ -208,11 +213,6 @@ export function EditableItemList<T>({
           )
         }}
       />
-      <div class="addrow">
-        <button class="btn btn-sm" type="button" onClick={() => void handleAdd()}>
-          {addLabel}
-        </button>
-      </div>
       {hint && <p class="hint">{hint}</p>}
     </>
   )

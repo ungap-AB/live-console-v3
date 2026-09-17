@@ -73,7 +73,7 @@ select:focus-visible {
 .btn:disabled {
   background: var(--btn-disabled-bg);
   color: var(--btn-disabled-fg);
-  border-color: transparent;
+  border-color: var(--line);
   cursor: default;
 }
 
