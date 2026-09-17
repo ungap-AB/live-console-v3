@@ -8,7 +8,7 @@ import { VideoLightbox } from '../../components/VideoLightbox'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { RenameModal } from '../../components/RenameModal'
 import { AttachedListPicker } from '../../components/AttachedListPicker'
-import { EditIcon, DeleteIcon } from '../../components/icons'
+import { EditIcon, DeleteIcon, PlayIcon } from '../../components/icons'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
@@ -78,6 +78,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
   const [showVideo, setShowVideo] = useState(false)
   const [trimming, setTrimming] = useState<Recording | null>(null)
   const [sourceRecording, setSourceRecording] = useState<Recording | null>(null)
+  const [sessionVideo, setSessionVideo] = useState<{ name: string; hlsUrl: string } | null>(null)
   const [confirmReturnToLive, setConfirmReturnToLive] = useState(false)
   const [renaming, setRenaming] = useState(false)
 
@@ -109,13 +110,14 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
     setShowVideo(false)
     setTrimming(null)
     setSourceRecording(null)
+    setSessionVideo(null)
     setConfirmReturnToLive(false)
     setRenaming(false)
   }, [p.id])
 
   useEffect(() => {
     let cancelled = false
-    if (!p.recording) {
+    if (!p.recording || p.recording.state === 'recording' || p.recording.state === 'processing') {
       setSourceRecording(null)
       return
     }
@@ -492,6 +494,16 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
                   <li key={session.id}>
                     <span>{formatDateTime(session.startedAt)}</span>
                     <span>{formatHms(session.durationSeconds)}</span>
+                    <button
+                      class="play"
+                      type="button"
+                      title="Spela inspelning"
+                      aria-label="Spela inspelning"
+                      disabled={!session.hlsUrl}
+                      onClick={() => session.hlsUrl && setSessionVideo({ name: `${p.name} · ${formatDateTime(session.startedAt)}`, hlsUrl: session.hlsUrl })}
+                    >
+                      <PlayIcon />
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -510,6 +522,10 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
           live={tab === 'live'}
           onClose={() => setShowVideo(false)}
         />
+      )}
+
+      {sessionVideo && (
+        <VideoLightbox title={sessionVideo.name} src={sessionVideo.hlsUrl} onClose={() => setSessionVideo(null)} />
       )}
 
       {trimming && (

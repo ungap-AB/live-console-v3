@@ -61,7 +61,7 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
       player.pause()
       player.delete()
     }
-  }, [activeRecording.hlsUrl])
+  }, [activeRecording.hlsUrl, switchingSession])
 
   async function selectSession(nextSessionId: string) {
     const previousSessionId = selectedSessionId

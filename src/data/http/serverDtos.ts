@@ -172,6 +172,7 @@ export interface ServerRecordingSession {
   startedAt: string
   endedAt?: string
   durationSeconds: number
+  hlsUrl?: string
 }
 
 export interface ServerRecording {
