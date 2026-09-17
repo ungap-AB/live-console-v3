@@ -7,11 +7,11 @@ export type GuidedPhase = 'prepare' | 'waiting' | 'live' | 'processing' | 'ended
 // sändningsdagen, med en dominant CTA per fas.
 export function resolveGuidedPhase(p: Project, phase: LivePhase | undefined, rec: RecordingState): GuidedPhase {
   if (p.publication.state === 'published') return 'published'
+  if (!p.channel) return 'prepare'
   if (rec === 'trimmed') return 'readyToPublish'
   if (rec === 'processing') return 'processing'
   if (rec === 'recorded') return 'ended'
   if (phase === 'live') return 'live'
-  if (!p.channel) return 'prepare'
   // Ingest finns, väntar på (åter)anslutning — signalInterrupted visas som en
   // varningsbanner inom det här läget, inte som en egen fas.
   return 'waiting'
