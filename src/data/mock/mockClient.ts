@@ -701,6 +701,11 @@ export const mockClient: Client = {
       }
       return delay(projectSnapshot(p))
     },
+    async interruptionDecision(id, decision) {
+      const p = findProject(id)
+      if (decision === 'end') p.visibility = 'closed'
+      return delay(projectSnapshot(p))
+    },
     async trim(id, range) {
       const p = findProject(id)
       if (!p.recording || !['recorded', 'trimmed'].includes(p.recording.state)) {

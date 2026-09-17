@@ -10,6 +10,7 @@ export interface ProjectActions {
   createChannel: () => Promise<void>
   teardownChannel: () => Promise<void>
   setEncoderSending: (sending: boolean) => Promise<void>
+  interruptionDecision: (decision: 'wait_for_reconnect' | 'end') => Promise<void>
   trim: (range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }) => Promise<boolean>
   publish: () => Promise<void>
   returnToLive: () => Promise<void>

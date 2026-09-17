@@ -642,6 +642,13 @@ export const httpClient: Client = {
       await api<void>(`/debug/projects/${id}/encoder/${sending ? 'start' : 'stop'}`, { method: 'POST' })
       return fetchProject(id)
     },
+    async interruptionDecision(id, decision) {
+      const dto = await api<ServerProject>(`/projects/${id}/interruption-decision`, {
+        method: 'POST',
+        body: { decision },
+      })
+      return toProjectFull(dto)
+    },
     async trim(id, range) {
       const project = await api<ServerProject>(`/projects/${id}`)
       if (!project.recording || !['recorded', 'trimmed'].includes(project.recording.state)) {

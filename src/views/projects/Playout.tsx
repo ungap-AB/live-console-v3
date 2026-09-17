@@ -258,11 +258,21 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         </div>
       )}
 
-      {guidedPhase === 'waiting' && phase === 'signalInterrupted' && (
+      {guidedPhase === 'waiting' && (phase === 'signalInterrupted' || phase === 'signalInterruptedDeclined') && (
         <div class="guided-banner">
           <p class="gb-note warn">
-            Signalavbrott — väntar på återanslutning. Stäng för publik om sändningen är avslutad.
+            {phase === 'signalInterrupted'
+              ? 'Signalavbrott — videosignalen har avbrutits medan playern är öppen.'
+              : 'Signalavbrott — inväntar att enkodern återansluter.'}
           </p>
+          <div class="rowset">
+            <button class="btn btn-sm" type="button" onClick={() => void actions.interruptionDecision('wait_for_reconnect')}>
+              Invänta återanslutning
+            </button>
+            <button class="btn btn-danger btn-sm" type="button" onClick={() => void actions.interruptionDecision('end')}>
+              Stäng player och avsluta
+            </button>
+          </div>
         </div>
       )}
 

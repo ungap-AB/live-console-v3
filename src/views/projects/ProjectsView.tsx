@@ -147,6 +147,11 @@ export function ProjectsView({
         if (!selected) return
         replace(await client.projects.setEncoderSending(selected.id, sending))
       }),
+    interruptionDecision: (decision) =>
+      withErrorToast(async () => {
+        if (!selected) return
+        replace(await client.projects.interruptionDecision(selected.id, decision))
+      }),
     trim: async (range) => {
       try {
         if (!selected) return false
