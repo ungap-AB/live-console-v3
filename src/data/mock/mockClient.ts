@@ -708,7 +708,7 @@ export const mockClient: Client = {
     },
     async trim(id, range) {
       const p = findProject(id)
-      if (!p.recording || !['recorded', 'trimmed'].includes(p.recording.state)) {
+      if (!p.recording || !['recorded', 'trimmed', 'published'].includes(p.recording.state)) {
         throw new Error('Inspelningen måste vara klar innan den kan trimmas.')
       }
       // p.recording.id pekar alltid på originalet (bara .state ändras här) —

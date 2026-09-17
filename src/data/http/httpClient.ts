@@ -651,7 +651,7 @@ export const httpClient: Client = {
     },
     async trim(id, range) {
       const project = await api<ServerProject>(`/projects/${id}`)
-      if (!project.recording || !['recorded', 'trimmed'].includes(project.recording.state)) {
+      if (!project.recording || !['recorded', 'trimmed', 'published'].includes(project.recording.state)) {
         throw new Error('Inspelningen måste vara klar innan den kan trimmas.')
       }
       const recording = await api<ServerRecording>(`/recordings/${project.recording.id}`)

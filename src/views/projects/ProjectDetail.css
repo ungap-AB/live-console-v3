@@ -224,6 +224,35 @@
   min-width: 0;
 }
 
+.recording-sessions {
+  max-width: 660px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.recording-sessions h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.recording-sessions ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 13px;
+}
+
+.recording-sessions li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px dotted var(--line-soft);
+}
+
 .debugbar {
   display: flex;
   align-items: center;

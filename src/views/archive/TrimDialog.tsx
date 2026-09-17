@@ -39,7 +39,7 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
 
   useEffect(() => {
     if (defaultSessionId) void selectSession(defaultSessionId)
-  }, [recording.id])
+  }, [recording.id, defaultSessionId])
 
   useEffect(() => {
     const video = videoRef.current
@@ -50,6 +50,7 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
     }
 
     const player = create({ wasmWorker, wasmBinary })
+    setVideoError(null)
     player.attachHTMLVideoElement(video)
     player.addEventListener(PlayerEventType.ERROR, (error) => {
       setVideoError(error.message || 'Originalvideon kunde inte laddas.')
@@ -63,6 +64,7 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
   }, [activeRecording.hlsUrl])
 
   async function selectSession(nextSessionId: string) {
+    const previousSessionId = selectedSessionId
     setSelectedSessionId(nextSessionId)
     setSwitchingSession(true)
     setVideoError(null)
@@ -76,6 +78,9 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
       setTo(next.durationSeconds)
       setFromText(formatHms(0))
       setToText(formatHms(next.durationSeconds))
+    } catch (error) {
+      setSelectedSessionId(previousSessionId)
+      setVideoError(error instanceof Error ? error.message : 'Sessionen kunde inte laddas.')
     } finally {
       setSwitchingSession(false)
     }
@@ -199,9 +204,11 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
               </div>
             )}
             <video
+              key={activeRecording.hlsUrl}
               ref={videoRef}
               controls
               playsInline
+              preload="auto"
               onError={() => setVideoError('Originalvideon kunde inte spelas upp.')}
               onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
             />

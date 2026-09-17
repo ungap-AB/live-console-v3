@@ -77,6 +77,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
   const [tab, setTab] = useState<'live' | 'odm'>(() => initialTab(p))
   const [showVideo, setShowVideo] = useState(false)
   const [trimming, setTrimming] = useState<Recording | null>(null)
+  const [sourceRecording, setSourceRecording] = useState<Recording | null>(null)
   const [confirmReturnToLive, setConfirmReturnToLive] = useState(false)
   const [renaming, setRenaming] = useState(false)
 
@@ -107,9 +108,28 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
     setTab(initialTab(p))
     setShowVideo(false)
     setTrimming(null)
+    setSourceRecording(null)
     setConfirmReturnToLive(false)
     setRenaming(false)
   }, [p.id])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!p.recording) {
+      setSourceRecording(null)
+      return
+    }
+    client.recordings.get(p.recording.id).then(async (recording) => {
+      if (!recording) return
+      const original = recording.kind === 'trimmed' && recording.parentId
+        ? await client.recordings.get(recording.parentId)
+        : recording
+      if (!cancelled) setSourceRecording(original ?? null)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [p.recording?.id])
 
   useEffect(() => {
     if (phase === 'streamEnded' && p.recording?.state === 'recording') {
@@ -464,6 +484,19 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
               />
             </div>
           </div>
+          {sourceRecording?.sessions && sourceRecording.sessions.length > 0 && (
+            <div class="recording-sessions">
+              <h4>IVS-inspelningar för kanalen</h4>
+              <ul>
+                {sourceRecording.sessions.map((session) => (
+                  <li key={session.id}>
+                    <span>{formatDateTime(session.startedAt)}</span>
+                    <span>{formatHms(session.durationSeconds)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {odmNote && (
             <div class={`note ${p.sim.segments > 1 || rec === 'trimmed' ? 'warn' : ''}`}>{odmNote}</div>
           )}

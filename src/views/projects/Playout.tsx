@@ -36,8 +36,8 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   const guidedPhase = resolveGuidedPhase(p, phase, rec)
   const canTrim = p.capabilities.trimRecording.status === 'allowed'
   const canPublish = p.capabilities.publishVod.status === 'allowed'
-  const canTeardown = p.capabilities.teardownChannel.status === 'allowed'
   const [showVideo, setShowVideo] = useState(false)
+  const [showIngestInfo, setShowIngestInfo] = useState(false)
   const [trimming, setTrimming] = useState<Recording | null>(null)
   const [confirmReturnToLive, setConfirmReturnToLive] = useState(false)
 
@@ -246,8 +246,30 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
               </button>
             </div>
           </div>
+          <button class="btn btn-sm" type="button" disabled={!channel} onClick={() => setShowIngestInfo((visible) => !visible)}>
+            {showIngestInfo ? 'Dölj ingest-info' : 'Visa ingest-info'}
+          </button>
         </div>
       </div>
+
+      {showIngestInfo && channel && (
+        <div class="guided-banner">
+          <div class="rowset">
+            <div class="field">
+              <label>Ingest-server</label>
+              <CopyField value={channel.ingestEndpoint} monospace />
+            </div>
+            <div class="field">
+              <label>Stream key</label>
+              <CopyField value={streamKey} mask monospace />
+            </div>
+            <div class="field">
+              <label>HLS-URL</label>
+              <CopyField value={channel.playbackUrl} monospace />
+            </div>
+          </div>
+        </div>
+      )}
 
       {guidedPhase === 'prepare' && (
         <div class="guided-banner">
@@ -289,9 +311,6 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
             </div>
           </div>
           <p class="gb-note">Ingest skapad. Väntar på signal från enkodern.</p>
-          <button class="btn btn-danger btn-sm" type="button" disabled={!canTeardown} onClick={() => void teardownIngest()}>
-            Riv ingest
-          </button>
         </div>
       )}
 
@@ -315,9 +334,6 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
           </p>
           <button class="btn btn-primary" type="button" disabled={!canTrim} onClick={() => void openTrim()}>
             Trimma inspelning
-          </button>
-          <button class="btn btn-danger btn-sm" type="button" disabled={!canTeardown} onClick={() => void teardownIngest()}>
-            Riv ingest
           </button>
         </div>
       )}
