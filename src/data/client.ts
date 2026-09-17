@@ -121,7 +121,7 @@ export interface Client {
     teardownChannel(id: string): Promise<Project>
     /** Mockup-bara: simulerar att enkodern startar/stoppar sändning. */
     setEncoderSending(id: string, sending: boolean): Promise<Project>
-    trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number }): Promise<Project>
+    trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }): Promise<Project>
     createReviewLink(id: string): Promise<Project>
     publish(id: string): Promise<Project>
     returnToLive(id: string): Promise<Project>

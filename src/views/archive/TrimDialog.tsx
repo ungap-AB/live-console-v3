@@ -38,6 +38,10 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
   const duration = activeRecording.durationSeconds
 
   useEffect(() => {
+    if (defaultSessionId) void selectSession(defaultSessionId)
+  }, [recording.id])
+
+  useEffect(() => {
     const video = videoRef.current
     if (!video || !activeRecording.hlsUrl) return
     if (!isPlayerSupported) {
@@ -59,7 +63,6 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
   }, [activeRecording.hlsUrl])
 
   async function selectSession(nextSessionId: string) {
-    if (nextSessionId === selectedSessionId) return
     setSelectedSessionId(nextSessionId)
     setSwitchingSession(true)
     setVideoError(null)

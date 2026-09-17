@@ -8,8 +8,8 @@ export type GuidedPhase = 'prepare' | 'waiting' | 'live' | 'processing' | 'ended
 export function resolveGuidedPhase(p: Project, phase: LivePhase | undefined, rec: RecordingState): GuidedPhase {
   if (p.publication.state === 'published') return 'published'
   if (rec === 'trimmed') return 'readyToPublish'
-  if (phase === 'streamEnded' && rec === 'processing') return 'processing'
-  if (phase === 'streamEnded' && rec === 'recorded') return 'ended'
+  if (rec === 'processing') return 'processing'
+  if (rec === 'recorded') return 'ended'
   if (phase === 'live') return 'live'
   if (!p.channel) return 'prepare'
   // Ingest finns, väntar på (åter)anslutning — signalInterrupted visas som en

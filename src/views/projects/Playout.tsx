@@ -173,7 +173,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
     if (original) setTrimming(original)
   }
 
-  async function saveTrim(range: { startOffsetSeconds: number; endOffsetSeconds: number }): Promise<void> {
+  async function saveTrim(range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }): Promise<void> {
     if (await actions.trim(range)) {
       await actions.refreshProject()
       await refresh()
