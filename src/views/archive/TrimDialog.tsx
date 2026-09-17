@@ -239,15 +239,7 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
       {recording.sessions && recording.sessions.length > 0 && availableSessions?.length === 0 && (
         <p class="trim-session-empty">Ingen av inspelningssessionerna har ett färdigt manifest ännu.</p>
       )}
-      <div class="trim-video-tools">
-        <span class="trim-current">Aktuell tid {formatHms(currentTime)}</span>
-        <button class="btn btn-sm" type="button" disabled={!activeRecording.hlsUrl || saving} onClick={setFromCurrent}>
-          Sätt start här
-        </button>
-        <button class="btn btn-sm" type="button" disabled={!activeRecording.hlsUrl || saving} onClick={setToCurrent}>
-          Sätt slut här
-        </button>
-      </div>
+      <p class="trim-current">Aktuell tid {formatHms(currentTime)}</p>
       <div class="ranges">
         <input
           type="range"
@@ -267,8 +259,8 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
         />
       </div>
       <div class="times">
-        <label>
-          Start{' '}
+        <div class="time-row">
+          <label>Start</label>
           <input
             value={fromText}
             aria-label="Startpunkt som tid"
@@ -276,12 +268,15 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
             onBlur={commitFromText}
             onKeyDown={(e) => e.key === 'Enter' && commitFromText()}
           />
+          <button class="btn btn-sm" type="button" disabled={!activeRecording.hlsUrl || saving} onClick={setFromCurrent}>
+            Sätt start här
+          </button>
           <button class="btn btn-sm" type="button" disabled={!activeRecording.hlsUrl} onClick={() => setVideoTime(from)}>
             Hoppa
           </button>
-        </label>
-        <label>
-          Slut{' '}
+        </div>
+        <div class="time-row">
+          <label>Slut</label>
           <input
             value={toText}
             aria-label="Slutpunkt som tid"
@@ -289,10 +284,13 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
             onBlur={commitToText}
             onKeyDown={(e) => e.key === 'Enter' && commitToText()}
           />
+          <button class="btn btn-sm" type="button" disabled={!activeRecording.hlsUrl || saving} onClick={setToCurrent}>
+            Sätt slut här
+          </button>
           <button class="btn btn-sm" type="button" disabled={!activeRecording.hlsUrl} onClick={() => setVideoTime(to)}>
             Hoppa
           </button>
-        </label>
+        </div>
       </div>
       {rangeError && <p class="note warn">{rangeError}</p>}
     </Modal>
