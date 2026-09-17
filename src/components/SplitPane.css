@@ -50,12 +50,6 @@
 
 /* Radlayouten från projektlistan (status-chip vänster, datum höger) är nu
    standard för alla listor. */
-.pane li .row {
-  flex: 1 1 0%;
-  width: auto;
-  min-width: 0;
-}
-
 .pane .meta-row {
   justify-content: space-between;
 }
@@ -71,10 +65,16 @@
   border-bottom: 1px solid var(--line-soft);
   display: flex;
   gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.pane .top .btn {
+  flex: 0 0 auto;
 }
 
 .search {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   position: relative;
   display: flex;
   align-items: center;
@@ -113,7 +113,10 @@
   background: none;
   padding: 9px 11px;
   border-radius: 8px;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 
 .pane li button:hover {
@@ -134,7 +137,6 @@
 .pane .meta {
   font-size: 12px;
   color: var(--ink-3);
-  margin-top: 1px;
 }
 
 .pane .meta-row {
@@ -142,7 +144,6 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 3px;
 }
 
 .pane .none {

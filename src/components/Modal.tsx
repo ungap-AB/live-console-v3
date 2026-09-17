@@ -9,9 +9,11 @@ interface ModalProps {
   children: ComponentChildren
   footer?: ComponentChildren
   wide?: boolean
+  /** Extra klass på .mbody, för vyer som behöver egen flex-layout (t.ex. TrimDialog). */
+  bodyClassName?: string
 }
 
-export function Modal({ title, subtitle, onClose, children, footer, wide = false }: ModalProps) {
+export function Modal({ title, subtitle, onClose, children, footer, wide = false, bodyClassName }: ModalProps) {
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -38,7 +40,7 @@ export function Modal({ title, subtitle, onClose, children, footer, wide = false
             ✕
           </button>
         </div>
-        <div class="mbody">{children}</div>
+        <div class={`mbody ${bodyClassName ?? ''}`}>{children}</div>
         {footer && <div class="mfoot">{footer}</div>}
       </div>
     </div>

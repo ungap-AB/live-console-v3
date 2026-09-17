@@ -169,13 +169,12 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
   return (
     <Modal
       title="Trimma inspelning"
-      subtitle={`${recording.name} · original ${formatHms(duration)}`}
+      subtitle={`Original ${formatHms(duration)}`}
       onClose={onCancel}
       wide
+      bodyClassName="trim-body"
       footer={
         <>
-          <span class="lenout">Längd efter trim: {formatHms(to - from)}</span>
-          <span class="spacer" />
           <button class="btn" type="button" disabled={saving} onClick={onCancel}>
             Avbryt
           </button>
@@ -190,6 +189,25 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
         </>
       }
     >
+      {availableSessions && availableSessions.length > 0 && (
+        <div class="trim-session-select">
+          <label>Inspelningssession</label>
+          <select
+            value={selectedSessionId ?? ''}
+            disabled={switchingSession}
+            onChange={(e) => void selectSession(e.currentTarget.value)}
+          >
+            {availableSessions.map((session) => (
+              <option value={session.id} key={session.id}>
+                {formatDateTime(session.startedAt)} · {formatHms(session.durationSeconds)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {recording.sessions && recording.sessions.length > 0 && availableSessions?.length === 0 && (
+        <p class="trim-session-empty">Ingen av inspelningssessionerna har ett färdigt manifest ännu.</p>
+      )}
       <div class="trim-editor-video">
         {switchingSession ? (
           <div class="trim-video-empty">Byter session…</div>
@@ -220,45 +238,7 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
           <div class="trim-video-empty">Ingen förhandsvisning</div>
         )}
       </div>
-      {availableSessions && availableSessions.length > 0 && (
-        <label class="trim-session-select">
-          Inspelningssession
-          <select
-            value={selectedSessionId ?? ''}
-            disabled={switchingSession}
-            onChange={(e) => void selectSession(e.currentTarget.value)}
-          >
-            {availableSessions.map((session) => (
-              <option value={session.id} key={session.id}>
-                {formatDateTime(session.startedAt)} · {formatHms(session.durationSeconds)}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-      {recording.sessions && recording.sessions.length > 0 && availableSessions?.length === 0 && (
-        <p class="trim-session-empty">Ingen av inspelningssessionerna har ett färdigt manifest ännu.</p>
-      )}
-      <p class="trim-current">Aktuell tid {formatHms(currentTime)}</p>
-      <div class="ranges">
-        <input
-          type="range"
-          min={0}
-          max={duration}
-          value={from}
-          aria-label="Startpunkt"
-          onInput={(e) => updateFrom(Number(e.currentTarget.value))}
-        />
-        <input
-          type="range"
-          min={0}
-          max={duration}
-          value={to}
-          aria-label="Slutpunkt"
-          onInput={(e) => updateTo(Number(e.currentTarget.value))}
-        />
-      </div>
-      <div class="times">
+      <div class="trim-range-row">
         <div class="time-row">
           <label>Start</label>
           <input
@@ -269,7 +249,7 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
             onKeyDown={(e) => e.key === 'Enter' && commitFromText()}
           />
           <button class="btn btn-sm" type="button" disabled={!activeRecording.hlsUrl || saving} onClick={setFromCurrent}>
-            Sätt start här
+            Sätt här
           </button>
           <button class="btn btn-sm" type="button" disabled={!activeRecording.hlsUrl} onClick={() => setVideoTime(from)}>
             Hoppa
@@ -285,12 +265,13 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
             onKeyDown={(e) => e.key === 'Enter' && commitToText()}
           />
           <button class="btn btn-sm" type="button" disabled={!activeRecording.hlsUrl || saving} onClick={setToCurrent}>
-            Sätt slut här
+            Sätt här
           </button>
           <button class="btn btn-sm" type="button" disabled={!activeRecording.hlsUrl} onClick={() => setVideoTime(to)}>
             Hoppa
           </button>
         </div>
+        <span class="trim-length">Längd {formatHms(to - from)}</span>
       </div>
       {rangeError && <p class="note warn">{rangeError}</p>}
     </Modal>
