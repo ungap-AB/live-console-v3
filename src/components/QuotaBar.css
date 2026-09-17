@@ -37,7 +37,7 @@
 }
 
 .quota-fill-neutral {
-  background: #b6c0cc;
+  background: var(--ink-3);
 }
 
 .quota-fill-warn {

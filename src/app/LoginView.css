@@ -37,14 +37,6 @@
   color: var(--ink-2);
 }
 
-.login-field input {
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 8px 10px;
-  background: #fbfcfd;
-  color: var(--ink);
-}
-
 .login-error {
   font-size: 13px;
   color: var(--danger);

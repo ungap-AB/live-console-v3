@@ -52,7 +52,7 @@
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 7px 10px 7px 30px;
-  background: #fbfcfd;
+  background: var(--field-bg);
 }
 
 .pane ul {
@@ -78,7 +78,7 @@
 }
 
 .pane li.sel button {
-  background: #e6eaf0;
+  background: var(--surface-3);
 }
 
 .pane .nm {

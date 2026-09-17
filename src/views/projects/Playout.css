@@ -5,7 +5,7 @@
   flex-wrap: wrap;
   padding: 12px 18px;
   border-bottom: 1px solid var(--line-soft);
-  background: #fafbfc;
+  background: var(--surface-2);
   flex: none;
 }
 
@@ -77,7 +77,7 @@
 }
 
 .now-clear:hover {
-  background: #fdf0f0;
+  background: var(--danger-bg-hover);
   color: var(--danger);
 }
 
@@ -140,8 +140,8 @@
    Namnlistor, se EditableItemList) — bara Playout-specifika tillägg kvar:
    "aktiv" (spelas ut just nu) och tidsstämpeln bredvid en redan spelad rad. */
 .sortable-list li.active {
-  border-color: #b9ceec;
-  background: #f5f9ff;
+  border-color: var(--odm-line);
+  background: var(--odm-bg);
   box-shadow: inset 3px 0 0 var(--focus);
 }
 
@@ -154,8 +154,8 @@
 
 .play {
   border: 0;
-  background: var(--ink);
-  color: #fff;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
   width: 26px;
   height: 26px;
   border-radius: 50%;
@@ -165,13 +165,13 @@
 }
 
 .play:hover:not(:disabled) {
-  background: #2b323b;
+  background: var(--btn-primary-bg-hover);
 }
 
 .play.done {
   background: var(--live-bg);
   color: var(--live);
-  border: 1px solid #bfe3cc;
+  border: 1px solid var(--live-line);
 }
 
 .play:disabled {

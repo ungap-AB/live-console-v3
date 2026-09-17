@@ -1,7 +1,8 @@
 import { useState } from 'preact/hooks'
 import { client } from '../data'
 import type { CurrentUser } from '../data/types'
-import logoUrl from '../images/ungap-icon-text-2026-black.png'
+import logoLightUrl from '../images/ungap-presenter-2026-black.png'
+import logoDarkUrl from '../images/ungap-presenter-2026-white.png'
 import './LoginView.css'
 
 interface LoginViewProps {
@@ -31,7 +32,8 @@ export function LoginView({ onLogin }: LoginViewProps) {
   return (
     <div class="login-screen">
       <form class="login-card" onSubmit={submit}>
-        <img class="login-logo" src={logoUrl} alt="Ungap" />
+        <img class="login-logo theme-light-only" src={logoLightUrl} alt="Ungap" />
+        <img class="login-logo theme-dark-only" src={logoDarkUrl} alt="Ungap" />
         <p class="login-sub">Logga in för att fortsätta.</p>
         <label class="login-field">
           E-post

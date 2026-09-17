@@ -3,8 +3,8 @@
   left: 50%;
   bottom: 24px;
   transform: translateX(-50%);
-  background: var(--ink);
-  color: #fff;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
   border-radius: 8px;
   padding: 10px 12px 10px 16px;
   display: flex;
@@ -17,10 +17,10 @@
 
 .toast .btn {
   background: transparent;
-  border-color: rgba(255, 255, 255, 0.35);
-  color: #fff;
+  border-color: var(--toast-btn-border);
+  color: var(--btn-primary-fg);
 }
 
 .toast .btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--toast-btn-hover);
 }

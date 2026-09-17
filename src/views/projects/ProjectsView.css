@@ -41,7 +41,7 @@
 }
 
 .project-list-pane .btn-playout:hover {
-  background: #e6eaf0;
+  background: var(--surface-3);
 }
 
 /* .pane li.sel button annars slår igenom på båda knapparna i raden */

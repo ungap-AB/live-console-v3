@@ -110,7 +110,7 @@
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 6px 8px;
-  background: #fbfcfd;
+  background: var(--field-bg);
 }
 
 .lenout {

@@ -15,7 +15,7 @@
   border: 1px solid var(--line-soft);
   border-radius: 8px;
   padding: 9px 11px;
-  background: #fff;
+  background: var(--panel);
 }
 
 .sortable-list li.dragging {
@@ -97,7 +97,7 @@
   padding: 10px 13px;
   border-radius: 7px;
   font-size: 13px;
-  background: #eef2f7;
+  background: var(--surface-2);
   color: var(--ink-2);
   border: 1px solid var(--line);
 }

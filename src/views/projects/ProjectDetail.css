@@ -96,7 +96,7 @@
 
 .seg button {
   border: 0;
-  background: #fbfcfd;
+  background: var(--btn-bg);
   padding: 7px 15px;
   color: var(--ink-2);
   font-weight: 500;
@@ -266,7 +266,7 @@
   padding: 10px 13px;
   border: 1px dashed var(--line);
   border-radius: 7px;
-  background: #fafafa;
+  background: var(--surface-2);
 }
 
 .debugbar-label {

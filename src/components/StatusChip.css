@@ -26,23 +26,23 @@
 .chip-accent {
   background: var(--odm-bg);
   color: var(--odm);
-  border-color: #c6d8f0;
+  border-color: var(--odm-line);
 }
 
 .chip-live {
   background: var(--live-bg);
   color: var(--live);
-  border-color: #bfe4cb;
+  border-color: var(--live-line);
 }
 
 .chip-warn {
   background: var(--warn-bg);
   color: var(--warn);
-  border-color: #f0ddb0;
+  border-color: var(--warn-line);
 }
 
 .chip-danger {
   background: var(--danger-bg);
   color: var(--danger);
-  border-color: #e5c4c4;
+  border-color: var(--danger-line);
 }

@@ -29,7 +29,181 @@
      share a color, and may diverge later */
   --danger: #a51c1c;
   --danger-bg: #fbeaea;
+  --danger-line: #e5c4c4;
+  --warn-line: #f0ddb0;
+  --live-line: #bfe4cb;
+  --odm-line: #c6d8f0;
+
+  /* ytor/fält/knappar — centraliserar det som tidigare var utspridda
+     hårdkodade hexvärden per komponent (.btn, input, .project, .note osv.) */
+  --field-bg: #fbfcfd;
+  --field-fg: var(--ink);
+  --placeholder: var(--ink-3);
+
+  --btn-bg: #fbfcfd;
+  --btn-bg-hover: #f1f4f8;
+  --btn-fg: var(--ink);
+  --btn-primary-bg: var(--ink);
+  --btn-primary-bg-hover: #333a44;
+  --btn-primary-fg: #fff;
+  --btn-disabled-bg: var(--accent-soft);
+  --btn-disabled-fg: var(--ink-3);
+  --danger-bg-hover: #fdf0f0;
+
+  /* toast-ytan inverterar alltid (samma yta som --btn-primary-bg/-fg) —
+     dessa är halvtransparenta overlays MOT den ytan, inte mot sidan. */
+  --toast-btn-border: rgba(255, 255, 255, 0.35);
+  --toast-btn-hover: rgba(255, 255, 255, 0.12);
+
+  --surface-2: #f1f4f8;
+  --surface-3: #e8ecf1;
 
   --sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --mono: 'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  color-scheme: light;
+}
+
+/* Tre lägen: 'light'/'dark' sätts explicit via [data-theme] (se
+   src/app/theme.ts); "auto" tar bort attributet helt och lämnar det åt
+   prefers-color-scheme nedan. Variabellistan upprepas medvetet i båda
+   blocken — CSS custom properties kan inte ärva från en media query. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --ink: #e9ecf1;
+    --ink-2: #a9b2c0;
+    --ink-3: #707a89;
+
+    --line: #333947;
+    --line-soft: #262b36;
+
+    --bg: #14171d;
+    --panel: #1c2028;
+    --rail: #10131a;
+
+    --accent: #e9ecf1;
+    --accent-soft: #262b36;
+    --focus: #5b9bf0;
+
+    --live: #3ecb7a;
+    --live-bg: #123321;
+    --odm: #6fa8f2;
+    --odm-bg: #16233a;
+    --off: #f2726b;
+    --off-bg: #3a1414;
+    --warn: #e0a83c;
+    --warn-bg: #3a2c0c;
+
+    --danger: #f2726b;
+    --danger-bg: #3a1414;
+    --danger-line: #6b2a2a;
+    --warn-line: #5c4514;
+    --live-line: #1e5c38;
+    --odm-line: #2a4a72;
+
+    --field-bg: #10131a;
+    --field-fg: var(--ink);
+    --placeholder: #7f899a;
+
+    --btn-bg: #262b36;
+    --btn-bg-hover: #2f3542;
+    --btn-fg: var(--ink);
+    --btn-primary-bg: var(--ink);
+    --btn-primary-bg-hover: #d5d9e0;
+    --btn-primary-fg: #14171d;
+    --btn-disabled-bg: #1c2028;
+    --btn-disabled-fg: #707a89;
+    --danger-bg-hover: #4a1919;
+
+    --toast-btn-border: rgba(20, 23, 29, 0.35);
+    --toast-btn-hover: rgba(20, 23, 29, 0.12);
+
+    --surface-2: #262b36;
+    --surface-3: #2f3542;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --ink: #e9ecf1;
+  --ink-2: #a9b2c0;
+  --ink-3: #707a89;
+
+  --line: #333947;
+  --line-soft: #262b36;
+
+  --bg: #14171d;
+  --panel: #1c2028;
+  --rail: #10131a;
+
+  --accent: #e9ecf1;
+  --accent-soft: #262b36;
+  --focus: #5b9bf0;
+
+  --live: #3ecb7a;
+  --live-bg: #123321;
+  --odm: #6fa8f2;
+  --odm-bg: #16233a;
+  --off: #f2726b;
+  --off-bg: #3a1414;
+  --warn: #e0a83c;
+  --warn-bg: #3a2c0c;
+
+  --danger: #f2726b;
+  --danger-bg: #3a1414;
+  --danger-line: #6b2a2a;
+  --warn-line: #5c4514;
+  --live-line: #1e5c38;
+  --odm-line: #2a4a72;
+
+  --field-bg: #10131a;
+  --field-fg: var(--ink);
+  --placeholder: #7f899a;
+
+  --btn-bg: #262b36;
+  --btn-bg-hover: #2f3542;
+  --btn-fg: var(--ink);
+  --btn-primary-bg: var(--ink);
+  --btn-primary-bg-hover: #d5d9e0;
+  --btn-primary-fg: #14171d;
+  --btn-disabled-bg: #1c2028;
+  --btn-disabled-fg: #707a89;
+  --danger-bg-hover: #4a1919;
+
+  --toast-btn-border: rgba(20, 23, 29, 0.35);
+  --toast-btn-hover: rgba(20, 23, 29, 0.12);
+
+  --surface-2: #262b36;
+  --surface-3: #2f3542;
+
+  color-scheme: dark;
+}
+
+/* Ljus/mörk-bildpar (t.ex. loggor): båda ligger i DOM, det här döljer den
+   som inte matchar aktuellt tema. Undviker att upprepa hela
+   ljust/mörkt/auto-växlingen i varje komponents egen CSS.
+   `img.`-kvalificeringen ger högre specificitet än en enkel komponentklass
+   (t.ex. `.brand-logo { display: block }`) oavsett i vilken ordning
+   CSS-filerna råkar laddas. */
+img.theme-dark-only {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) img.theme-light-only {
+    display: none;
+  }
+
+  :root:not([data-theme='light']) img.theme-dark-only {
+    display: block;
+  }
+}
+
+:root[data-theme='dark'] img.theme-light-only {
+  display: none;
+}
+
+:root[data-theme='dark'] img.theme-dark-only {
+  display: block;
 }

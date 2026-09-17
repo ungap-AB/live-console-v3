@@ -37,7 +37,7 @@ ul.chapters li:last-child {
 }
 
 ul.chapters li.out {
-  background: #fbf7ef;
+  background: var(--warn-bg);
   color: var(--ink-3);
 }
 

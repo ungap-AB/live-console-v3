@@ -6,7 +6,9 @@ import { Modal } from '../components/Modal'
 import { Icon } from '../components/Icon'
 import { formatDate } from './time'
 import { routeHref, type RouteKey } from './router'
-import logoUrl from '../images/ungap-icon-text-2026-black.png'
+import { getStoredThemePreference, setThemePreference, type ThemePreference } from './theme'
+import logoLightUrl from '../images/ungap-presenter-2026-black.png'
+import logoDarkUrl from '../images/ungap-presenter-2026-white.png'
 import './Shell.css'
 
 interface NavItem {
@@ -91,7 +93,8 @@ export function Shell({ active, children, projectsNavAction, onLogout, currentUs
 
       <nav class={`rail ${navOpen ? 'open' : ''}`}>
         <div class="brand">
-          <img class="brand-logo" src={logoUrl} alt="Ungap" />
+          <img class="brand-logo theme-light-only" src={logoLightUrl} alt="Ungap" />
+          <img class="brand-logo theme-dark-only" src={logoDarkUrl} alt="Ungap" />
         </div>
 
         <div class="nav-groups">
@@ -182,10 +185,22 @@ const STATUS_LABEL: Record<UserAccount['status'], string> = {
   disabled: 'Inaktiverad',
 }
 
+const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
+  { value: 'light', label: 'Ljust' },
+  { value: 'dark', label: 'Mörkt' },
+  { value: 'auto', label: 'Auto' },
+]
+
 function MyAccountDialog({ user, domain, quota, onClose, onSaved }: MyAccountDialogProps) {
   const [name, setName] = useState(user.name)
   const [saving, setSaving] = useState(false)
+  const [theme, setTheme] = useState<ThemePreference>(getStoredThemePreference)
   const dirty = name.trim().length > 0 && name.trim() !== user.name
+
+  function chooseTheme(value: ThemePreference) {
+    setTheme(value)
+    setThemePreference(value)
+  }
 
   async function save() {
     if (!dirty) return
@@ -240,6 +255,21 @@ function MyAccountDialog({ user, domain, quota, onClose, onSaved }: MyAccountDia
       <div class="block">
         <h3>Kvarvarande kvot (live-resurser)</h3>
         <div class="v">{quota ? `${quota.limit - quota.used} av ${quota.limit} lediga` : '…'}</div>
+      </div>
+      <div class="block">
+        <h3>Utseende</h3>
+        <div class="theme-seg">
+          {THEME_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={theme === option.value}
+              onClick={() => chooseTheme(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
     </Modal>
   )

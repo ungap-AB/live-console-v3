@@ -11,7 +11,7 @@
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 6px 6px 6px 10px;
-  background: #fbfcfd;
+  background: var(--field-bg);
 }
 
 .copy-field-value {

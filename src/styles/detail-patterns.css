@@ -15,7 +15,7 @@
 }
 
 .grid > div {
-  background: #fff;
+  background: var(--panel);
   padding: 10px 12px;
 }
 
@@ -49,7 +49,7 @@
   border: 1px solid var(--line-soft);
   border-radius: 8px;
   padding: 10px 12px;
-  background: #fafbfc;
+  background: var(--surface-2);
 }
 
 .project .pn {
@@ -91,7 +91,7 @@
   border: 1px solid var(--line-soft);
   border-radius: 8px;
   padding: 12px 14px;
-  background: #fafbfc;
+  background: var(--surface-2);
 }
 
 .health h4 {
