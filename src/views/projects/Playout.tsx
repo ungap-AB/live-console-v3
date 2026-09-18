@@ -37,7 +37,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
       if (!cancelled) void actions.refreshPlayout().catch(() => undefined)
     }
     poll()
-    const interval = live ? window.setInterval(poll, 2000) : null
+    const interval = window.setInterval(poll, 2000)
     return () => {
       cancelled = true
       if (interval !== null) window.clearInterval(interval)
