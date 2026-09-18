@@ -16,6 +16,6 @@ export default defineConfig({
   resolve: {
     alias: { events: 'events' },
   },
-  server: { host: true, port, strictPort: false, https, allowedHosts: ['local.console.live.ungap.net'] },
+  server: { host: true, port, strictPort: true, https, allowedHosts: ['local.console.live.ungap.net'] },
   preview: { port, https },
 })
