@@ -233,17 +233,10 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
           <span>{subtitle}</span>
         </div>
         <div class="tools">
-          <button class="btn btn-sm" type="button" onClick={onOpenPlayout}>
-            <PlayIcon /> Öppna playout
-          </button>
-          <button
-            class="btn btn-sm btn-primary"
-            type="button"
-            onClick={() => actions.setVisibility(p.visibility === 'open' ? 'closed' : 'open')}
-          >
-            {p.visibility === 'open' ? 'Stäng för publik' : 'Öppna för publik'}
-          </button>
           <span class="spacer" />
+          <button class="btn btn-sm" type="button" onClick={onOpenPlayout}>
+            <PlayIcon /> Playout
+          </button>
           <OverflowMenu
             items={[
               {

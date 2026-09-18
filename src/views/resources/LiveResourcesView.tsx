@@ -4,13 +4,11 @@ import type { Channel, ChannelHealth } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { SplitPane } from '../../components/SplitPane'
 import { StatusChip } from '../../components/StatusChip'
-import { QuotaBar } from '../../components/QuotaBar'
 import { CopyField } from '../../components/CopyField'
 import { OverflowMenu } from '../../components/OverflowMenu'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
-import { SearchIcon } from '../../components/icons'
 import { formatDateTime } from '../../app/time'
 
 const STALE_DAYS = 30
@@ -37,7 +35,6 @@ export function LiveResourcesView() {
   const resource = useResource(() => client.channels.list(), [])
   const [channels, setChannels] = useState<Channel[]>([])
   const [quota, setQuota] = useState<{ used: number; limit: number } | null>(null)
-  const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [confirmRotate, setConfirmRotate] = useState<Channel | null>(null)
@@ -56,10 +53,9 @@ export function LiveResourcesView() {
     if (!selectedId && channels.length > 0) setSelectedId(channels[0].id)
   }, [channels, selectedId])
 
-  const q = query.trim().toLowerCase()
-  const visible = channels
-    .filter((c) => !q || (c.name + ' ' + c.label).toLowerCase().includes(q))
-    .sort((a, b) => Number(b.state === 'live') - Number(a.state === 'live') || b.idleDays - a.idleDays)
+  const visible = [...channels].sort(
+    (a, b) => Number(b.state === 'live') - Number(a.state === 'live') || b.idleDays - a.idleDays,
+  )
 
   const selected = channels.find((c) => c.id === selectedId) ?? null
 
@@ -108,16 +104,16 @@ export function LiveResourcesView() {
     }
   }
 
-  const liveCount = channels.filter((c) => c.state === 'live').length
-  const idleCount = channels.length - liveCount
-
   return (
     <div class="view">
       <header>
         <div>
           <h1>Live-resurser</h1>
-          <div class="sub">Allokerade IVS-kanaler, med eller utan kopplat projekt</div>
         </div>
+        <span class="spacer" />
+        <button class="btn btn-sm" type="button" onClick={requestNewChannel}>
+          + Ny
+        </button>
       </header>
 
       <div class="content">
@@ -126,26 +122,9 @@ export function LiveResourcesView() {
           detailLabel="Vald resurs"
           list={
             <>
-              <div class="top">
-                <div class="search">
-                  <SearchIcon />
-                  <input
-                    type="search"
-                    placeholder="Sök resurs"
-                    aria-label="Sök resurs"
-                    value={query}
-                    onInput={(e) => setQuery(e.currentTarget.value)}
-                  />
-                </div>
-                <button class="btn btn-sm" type="button" onClick={requestNewChannel}>
-                  Ny resurs
-                </button>
-              </div>
               <ul>
                 {resource.loading && channels.length === 0 && <li class="none">Laddar…</li>}
-                {!resource.loading && visible.length === 0 && (
-                  <li class="none">Ingen resurs matchar sökningen.</li>
-                )}
+                {!resource.loading && visible.length === 0 && <li class="none">Ingen resurs ännu.</li>}
                 {visible.map((c) => (
                   <li key={c.id} class={c.id === selectedId ? 'sel' : ''}>
                     <button class="row" type="button" onClick={() => setSelectedId(c.id)}>
@@ -164,16 +143,6 @@ export function LiveResourcesView() {
                   </li>
                 ))}
               </ul>
-              {quota && (
-                <QuotaBar
-                  used={quota.used}
-                  limit={quota.limit}
-                  segments={[
-                    { label: 'sänder', value: liveCount, tone: 'live' },
-                    { label: 'vilande', value: idleCount, tone: 'neutral' },
-                  ]}
-                />
-              )}
             </>
           }
           detail={

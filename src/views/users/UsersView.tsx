@@ -8,7 +8,6 @@ import { Modal } from '../../components/Modal'
 import { CopyField } from '../../components/CopyField'
 import { OverflowMenu } from '../../components/OverflowMenu'
 import { Toast } from '../../components/Toast'
-import { SearchIcon } from '../../components/icons'
 import { formatDate, formatDateTime } from '../../app/time'
 import './UsersView.css'
 
@@ -46,7 +45,6 @@ export function UsersView() {
   const domainsResource = useResource(() => client.domains.list(), [])
   const [domains, setDomains] = useState<Domain[]>([])
   const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null)
-  const [query, setQuery] = useState('')
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [confirmDisable, setConfirmDisable] = useState<UserAccount | null>(null)
@@ -81,7 +79,6 @@ export function UsersView() {
 
   function selectDomain(id: string) {
     setSelectedDomainId(id)
-    setQuery('')
     setSelectedUserId(null)
   }
 
@@ -208,10 +205,7 @@ export function UsersView() {
     }
   }
 
-  const q = query.trim().toLowerCase()
-  const visibleUsers = domainUsers
-    .filter((u) => !q || (u.name + ' ' + u.email).toLowerCase().includes(q))
-    .sort((a, b) => a.name.localeCompare(b.name, 'sv'))
+  const visibleUsers = [...domainUsers].sort((a, b) => a.name.localeCompare(b.name, 'sv'))
 
   const selectedUser = selectedUserDetail
   const selectedDomain = domains.find((d) => d.id === selectedDomainId) ?? null
@@ -221,8 +215,11 @@ export function UsersView() {
       <header>
         <div>
           <h1>Användare</h1>
-          <div class="sub">Domäner, konton och behörigheter</div>
         </div>
+        <span class="spacer" />
+        <button class="btn btn-sm" type="button" disabled={!selectedDomainId} onClick={() => setCreatingUser(true)}>
+          + Ny
+        </button>
       </header>
 
       <div class="content">
@@ -262,25 +259,10 @@ export function UsersView() {
           </section>
 
           <section class="pane" aria-label="Användare">
-            <div class="top">
-              <div class="search">
-                <SearchIcon />
-                <input
-                  type="search"
-                  placeholder="Sök användare"
-                  aria-label="Sök användare"
-                  value={query}
-                  onInput={(e) => setQuery(e.currentTarget.value)}
-                />
-              </div>
-              <button class="btn btn-sm" type="button" disabled={!selectedDomainId} onClick={() => setCreatingUser(true)}>
-                Ny
-              </button>
-            </div>
             <ul>
               {usersResource.loading && domainUsers.length === 0 && <li class="none">Laddar…</li>}
               {!usersResource.loading && visibleUsers.length === 0 && (
-                <li class="none">{q ? 'Ingen användare matchar sökningen.' : 'Domänen har inga användare.'}</li>
+                <li class="none">Domänen har inga användare.</li>
               )}
               {visibleUsers.map((u) => (
                 <li key={u.id} class={u.id === selectedUserId ? 'sel' : ''}>
@@ -298,7 +280,7 @@ export function UsersView() {
             </ul>
           </section>
 
-          <section class="doc" aria-label="Användarens detaljer">
+          <section class="doc users-doc" aria-label="Användarens detaljer">
             {!selectedUserId ? (
               <div class="docnone">Välj en användare i listan.</div>
             ) : !selectedUser ? (
@@ -773,7 +755,7 @@ function UserDetail({
             </button>
           ) : (
             <button class="btn btn-sm" type="button" onClick={onSendPasswordReset}>
-              Skicka återställningslänk
+              Återställningslänk
             </button>
           )}
           <button class="btn btn-sm btn-primary" type="button" onClick={onInvite}>

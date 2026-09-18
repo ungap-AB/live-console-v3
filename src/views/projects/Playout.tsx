@@ -208,46 +208,41 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
 
   return (
     <>
-      <div class="panel-head">
-        <div class="title-row">
-          <div class="title">
-            <StatusChip tone={statusTone} dot>
-              {statusLabel}
-            </StatusChip>
-            {p.name}
-            <span class="subtitle">{subtitle}</span>
-          </div>
-          <button class="ib" type="button" title="Stäng playout" aria-label="Stäng playout" onClick={onClose}>
-            <Icon name="close" />
-          </button>
+      <div class="head">
+        <h2>
+          {p.name}
+          <StatusChip tone={statusTone} dot>
+            {statusLabel}
+          </StatusChip>
+        </h2>
+        <div class="facts">
+          <span>{subtitle}</span>
         </div>
-        <div class="panel-head-row">
-          <div class="field field-grow">
-            <label>Spelarlänk</label>
-            <CopyField value={p.playerUrl} monospace />
-          </div>
-          <div class="field">
-            <label>Synlighet</label>
-            <div class="seg">
-              <button
-                type="button"
-                aria-pressed={p.visibility === 'open'}
-                onClick={() => actions.setVisibility('open')}
-              >
-                Öppen för publik
-              </button>
-              <button
-                type="button"
-                class="closed"
-                aria-pressed={p.visibility === 'closed'}
-                onClick={() => actions.setVisibility('closed')}
-              >
-                Stängd för publik
-              </button>
-            </div>
+        <div class="tools">
+          <CopyField value={p.playerUrl} monospace grow />
+          <div class="seg">
+            <button
+              type="button"
+              aria-pressed={p.visibility === 'open'}
+              onClick={() => actions.setVisibility('open')}
+            >
+              Öppen
+            </button>
+            <button
+              type="button"
+              class="closed"
+              aria-pressed={p.visibility === 'closed'}
+              onClick={() => actions.setVisibility('closed')}
+            >
+              Stängd
+            </button>
           </div>
           <button class="btn btn-sm" type="button" disabled={!channel} onClick={() => setShowIngestInfo((visible) => !visible)}>
             {showIngestInfo ? 'Dölj ingest-info' : 'Visa ingest-info'}
+          </button>
+          <span class="spacer" />
+          <button class="ib" type="button" title="Stäng playout" aria-label="Stäng playout" onClick={onClose}>
+            <Icon name="close" />
           </button>
         </div>
       </div>

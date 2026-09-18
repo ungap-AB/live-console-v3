@@ -8,7 +8,7 @@ import { OverflowMenu } from '../../components/OverflowMenu'
 import { EditableItemList } from '../../components/EditableItemList'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
-import { SearchIcon } from '../../components/icons'
+import { SearchIcon, EditIcon } from '../../components/icons'
 import './NameListsView.css'
 
 function formatDate(iso: string): string {
@@ -24,7 +24,6 @@ interface NameListsViewProps {
 export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }: NameListsViewProps = {}) {
   const listsResource = useResource(() => client.namelists.list(), [])
   const [namelists, setNamelists] = useState<NameList[]>([])
-  const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null)
 
   useEffect(() => {
@@ -55,11 +54,6 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
     setSelected(detailResource.data ?? null)
   }, [detailResource.data])
 
-  const q = query.trim().toLowerCase()
-  const visible = q
-    ? namelists.filter((n) => (n.name + ' ' + n.description).toLowerCase().includes(q))
-    : namelists
-
   const personQuery = personFilter.trim().toLowerCase()
   const visiblePeople = selected
     ? personQuery
@@ -83,7 +77,6 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
     const created = await client.namelists.create({ name: 'Ny namnlista', description: 'Utkast' })
     setNamelists((prev) => [created, ...prev])
     setSelectedId(created.id)
-    setQuery('')
   }
 
   async function confirmRename(name: string) {
@@ -144,8 +137,11 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
       <header>
         <div>
           <h1>Namnlistor</h1>
-          <div class="sub">Mallar som kan läggas in i projekt</div>
         </div>
+        <span class="spacer" />
+        <button class="btn btn-sm" type="button" onClick={createNameList}>
+          + Ny
+        </button>
       </header>
 
       <div class="content">
@@ -154,27 +150,12 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
           detailLabel="Vald namnlista"
           list={
             <>
-              <div class="top">
-                <div class="search">
-                  <SearchIcon />
-                  <input
-                    type="search"
-                    placeholder="Sök namnlista"
-                    aria-label="Sök namnlista"
-                    value={query}
-                    onInput={(e) => setQuery(e.currentTarget.value)}
-                  />
-                </div>
-                <button class="btn btn-sm" type="button" onClick={createNameList}>
-                  Ny
-                </button>
-              </div>
               <ul>
                 {listsResource.loading && namelists.length === 0 && <li class="none">Laddar…</li>}
-                {!listsResource.loading && visible.length === 0 && (
-                  <li class="none">Ingen namnlista matchar sökningen.</li>
+                {!listsResource.loading && namelists.length === 0 && (
+                  <li class="none">Ingen namnlista ännu.</li>
                 )}
-                {visible.map((n) => (
+                {namelists.map((n) => (
                   <li key={n.id} class={n.id === selectedId ? 'sel' : ''}>
                     <button
                       type="button"
@@ -204,22 +185,28 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
             ) : (
               <>
                 <div class="head">
-                  <h2>{selected.name}</h2>
+                  <h2>
+                    {selected.name}
+                    <button
+                      class="ib"
+                      type="button"
+                      title="Byt namn på namnlistan"
+                      aria-label="Byt namn på namnlistan"
+                      onClick={() => setRenaming(selected)}
+                    >
+                      <EditIcon />
+                    </button>
+                  </h2>
                   <div class="facts">
                     <span>{selected.description}</span>
                     <span>{selected.people.length} namn</span>
                     <span>Ändrad {formatDate(selected.changedAt)}</span>
                   </div>
                   <div class="tools">
-                    <button class="btn btn-sm" type="button" onClick={() => duplicate(selected)}>
-                      Duplicera
-                    </button>
-                    <button class="btn btn-sm btn-primary" type="button" onClick={() => setRenaming(selected)}>
-                      Redigera
-                    </button>
                     <span class="spacer" />
                     <OverflowMenu
                       items={[
+                        { label: 'Duplicera', onClick: () => duplicate(selected) },
                         {
                           label: 'Flytta till papperskorgen',
                           danger: true,

@@ -8,7 +8,7 @@ import { OverflowMenu } from '../../components/OverflowMenu'
 import { EditableItemList } from '../../components/EditableItemList'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
-import { SearchIcon, PlusIcon } from '../../components/icons'
+import { PlusIcon, EditIcon } from '../../components/icons'
 import './AgendasView.css'
 
 function formatDate(iso: string): string {
@@ -25,7 +25,6 @@ interface AgendasViewProps {
 export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelectionConsumed }: AgendasViewProps) {
   const agendasResource = useResource(() => client.agendas.list(), [])
   const [agendas, setAgendas] = useState<Agenda[]>([])
-  const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null)
 
   useEffect(() => {
@@ -60,12 +59,8 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
     setUsedByOpen(false)
   }, [detailResource.data])
 
-  const q = query.trim().toLowerCase()
-  const filtered = q
-    ? agendas.filter((a) => (a.name + ' ' + a.description).toLowerCase().includes(q))
-    : agendas
-  const visible = filtered.filter((a) => !a.isTemplate)
-  const templates = filtered.filter((a) => a.isTemplate)
+  const visible = agendas.filter((a) => !a.isTemplate)
+  const templates = agendas.filter((a) => a.isTemplate)
 
   const usedBy = selected ? projects.filter((p) => p.agendaId === selected.id) : []
 
@@ -92,7 +87,6 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
     const created = await client.agendas.create({ name: 'Ny dagordning', description: 'Utkast' })
     setAgendas((prev) => [created, ...prev])
     setSelectedId(created.id)
-    setQuery('')
   }
 
   async function confirmRename(name: string) {
@@ -150,8 +144,11 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
       <header>
         <div>
           <h1>Dagordningar</h1>
-          <div class="sub">Mallar som kan läggas in i projekt</div>
         </div>
+        <span class="spacer" />
+        <button class="btn btn-sm" type="button" onClick={createAgenda}>
+          + Ny
+        </button>
       </header>
 
       <div class="content">
@@ -160,25 +157,10 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
           detailLabel="Vald dagordning"
           list={
             <>
-              <div class="top">
-                <div class="search">
-                  <SearchIcon />
-                  <input
-                    type="search"
-                    placeholder="Sök dagordning"
-                    aria-label="Sök dagordning"
-                    value={query}
-                    onInput={(e) => setQuery(e.currentTarget.value)}
-                  />
-                </div>
-                <button class="btn btn-sm" type="button" onClick={createAgenda}>
-                  Ny
-                </button>
-              </div>
               <ul class="scroll-list">
                 {agendasResource.loading && agendas.length === 0 && <li class="none">Laddar…</li>}
                 {!agendasResource.loading && visible.length === 0 && templates.length === 0 && (
-                  <li class="none">Ingen dagordning matchar sökningen.</li>
+                  <li class="none">Ingen dagordning ännu.</li>
                 )}
                 {visible.map((a) => (
                   <li key={a.id} class={a.id === selectedId ? 'sel' : ''}>
@@ -230,6 +212,15 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
                 <div class="head">
                   <h2>
                     {selected.name}
+                    <button
+                      class="ib"
+                      type="button"
+                      title="Byt namn på dagordningen"
+                      aria-label="Byt namn på dagordningen"
+                      onClick={() => setRenaming(selected)}
+                    >
+                      <EditIcon />
+                    </button>
                     {selected.isTemplate && <StatusChip tone="neutral">Mall</StatusChip>}
                   </h2>
                   <div class="facts">
@@ -263,15 +254,13 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
                     )}
                   </div>
                   <div class="tools">
-                    <button class="btn btn-sm" type="button" onClick={() => toggleTemplate(selected)}>
-                      {selected.isTemplate ? 'Ta bort mallstatus' : 'Gör till mall'}
-                    </button>
-                    <button class="btn btn-sm btn-primary" type="button" onClick={() => setRenaming(selected)}>
-                      Redigera
-                    </button>
                     <span class="spacer" />
                     <OverflowMenu
                       items={[
+                        {
+                          label: selected.isTemplate ? 'Ta bort mallstatus' : 'Gör till mall',
+                          onClick: () => toggleTemplate(selected),
+                        },
                         {
                           label: 'Flytta till papperskorgen',
                           danger: true,

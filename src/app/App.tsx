@@ -72,13 +72,13 @@ export function App() {
   if (auth.status === 'anon') return <LoginView onLogin={login} />
 
   // "Playout" vinner om en sändning redan är öppen (går att hoppa tillbaka
-  // till den från vilken vy som helst) — annars "+ Ny" bara medan man
+  // till den från vilken vy som helst) — annars "+ Nytt" bara medan man
   // faktiskt tittar på Projekt-listan/detaljvyn.
   const projectsNavAction =
     projectScreen === 'playout'
       ? { label: 'Playout', onClick: () => { window.location.hash = routeHref('projects') } }
       : route === 'projects'
-        ? { label: '+ Ny', onClick: () => setCreatingProject(true) }
+        ? { label: '+ Nytt', onClick: () => setCreatingProject(true) }
         : null
 
   return (

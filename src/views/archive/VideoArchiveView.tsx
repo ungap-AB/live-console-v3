@@ -8,7 +8,6 @@ import { CopyField } from '../../components/CopyField'
 import { OverflowMenu } from '../../components/OverflowMenu'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
-import { SearchIcon } from '../../components/icons'
 import { TrimDialog } from './TrimDialog'
 import { formatDateTime, formatGb, formatHms } from '../../app/time'
 import './VideoArchiveView.css'
@@ -39,7 +38,6 @@ interface VideoArchiveViewProps {
 export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   const resource = useResource(() => client.recordings.list(), [])
   const [recordings, setRecordings] = useState<Recording[]>([])
-  const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [trimming, setTrimming] = useState<Recording | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<Recording | null>(null)
@@ -53,21 +51,18 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
     if (!selectedId && recordings.length > 0) setSelectedId(recordings[0].id)
   }, [recordings, selectedId])
 
-  const q = query.trim().toLowerCase()
   const originals = recordings.filter((r) => r.kind === 'original')
   const childrenOf = (id: string) => recordings.filter((r) => r.kind === 'trimmed' && r.parentId === id)
-  const rows = originals.flatMap((o) => {
-    const kids = childrenOf(o.id)
-    const hit = !q || o.name.toLowerCase().includes(q) || kids.some((k) => k.name.toLowerCase().includes(q))
-    return hit ? [{ recording: o, child: false }, ...kids.map((k) => ({ recording: k, child: true }))] : []
-  })
+  const rows = originals.flatMap((o) => [{ recording: o, child: false }, ...childrenOf(o.id).map((k) => ({ recording: k, child: true }))])
 
   // Listan är medvetet lätt (inga kapitel) — full detalj, och vid trimmad
   // version även originalets kapitel, hämtas separat när något väljs. Se
-  // PLAN-live-server-v3.md Steg 2.
+  // PLAN-live-server-v3.md Steg 2. Kollar lokal state FÖRST (inte bara vid
+  // client-miss) — en nyss skapad videoresurs (se createRecording) finns
+  // bara lokalt tills skapandet är kopplat mot en riktig backend.
   const detailResource = useResource(async () => {
     if (!selectedId) return null
-    const recording = await client.recordings.get(selectedId)
+    const recording = recordings.find((r) => r.id === selectedId) ?? (await client.recordings.get(selectedId))
     if (!recording) return null
     const original =
       recording.kind === 'trimmed' && recording.parentId ? await client.recordings.get(recording.parentId) : undefined
@@ -81,6 +76,29 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
 
   const selected = detail?.recording ?? null
   const chapters = !detail ? [] : detail.recording.kind === 'original' ? detail.recording.chapters : detail.original?.chapters ?? []
+
+  // Skapandet av en riktig videoresurs (uppladdning, referens till en
+  // existerande IVS-inspelning, m.m.) är inte byggt än — den här vyn är en
+  // mock. "+ Ny" skapar därför bara en tom lokal platshållare (aldrig
+  // sparad hos client/backend) och visar den, sedan stannar flödet där.
+  function createRecording() {
+    const draft: Recording = {
+      id: `local-${Date.now()}`,
+      kind: 'original',
+      name: 'Ny videoresurs',
+      createdAt: new Date().toISOString(),
+      durationSeconds: 0,
+      sizeBytes: 0,
+      resolution: '–',
+      source: 'Manuellt tillagd',
+      hlsUrl: '',
+      project: null,
+      segments: [],
+      chapters: [],
+    }
+    setRecordings((prev) => [draft, ...prev])
+    setSelectedId(draft.id)
+  }
 
   async function trash(recording: Recording) {
     await client.recordings.trash(recording.id)
@@ -107,8 +125,11 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
       <header>
         <div>
           <h1>Videoarkiv</h1>
-          <div class="sub">Originalinspelningar och trimmade versioner</div>
         </div>
+        <span class="spacer" />
+        <button class="btn btn-sm" type="button" onClick={createRecording}>
+          + Ny
+        </button>
       </header>
 
       <div class="content">
@@ -117,30 +138,9 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
           detailLabel="Vald inspelning"
           list={
             <>
-              <div class="top">
-                <div class="search">
-                  <SearchIcon />
-                  <input
-                    type="search"
-                    placeholder="Sök inspelning"
-                    aria-label="Sök inspelning"
-                    value={query}
-                    onInput={(e) => setQuery(e.currentTarget.value)}
-                  />
-                </div>
-                <button
-                  class="btn btn-sm"
-                  type="button"
-                  onClick={() => setToast('Uppladdning är inte kopplad i mockupen ännu.')}
-                >
-                  Ladda upp
-                </button>
-              </div>
               <ul>
                 {resource.loading && recordings.length === 0 && <li class="none">Laddar…</li>}
-                {!resource.loading && rows.length === 0 && (
-                  <li class="none">Ingen inspelning matchar sökningen.</li>
-                )}
+                {!resource.loading && rows.length === 0 && <li class="none">Ingen inspelning ännu.</li>}
                 {rows.map(({ recording: r, child }) => (
                   <li key={r.id} class={`${r.id === selectedId ? 'sel' : ''} ${child ? 'child' : ''}`}>
                     <button class="row" type="button" onClick={() => setSelectedId(r.id)}>

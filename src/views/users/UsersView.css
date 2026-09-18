@@ -19,6 +19,13 @@
   }
 }
 
+/* Skicka återställningslänk/Skicka om inbjudan + Bjud in + "..." radbröt
+   annars till en egen rad under varandra i den smalare tredje kolumnen
+   (uppmätt 2026-09-18) — tvinga en rad, texten är redan förkortad ovan. */
+.users-doc .tools {
+  flex-wrap: nowrap;
+}
+
 .pane .top h2 {
   margin: 0;
   font-size: 12.5px;
@@ -27,8 +34,14 @@
   flex: 1;
 }
 
+/* .pane li button (SplitPane.css) sätter flex-direction:column för den
+   vanliga radlayouten (rubrik ovanpå metarad) — .user-row/.dom är byggda
+   som en enda rad (avatar/domän + text) och måste explicit tillbaka till
+   row, annars ärvs column och avataren hamnar ovanför texten, centrerad
+   (uppmätt i Användare, 2026-09-18). */
 .pane li button.user-row {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 10px;
 }

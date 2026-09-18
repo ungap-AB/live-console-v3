@@ -11,13 +11,6 @@
   min-width: 180px;
 }
 
-.doc h2 .ib {
-  display: inline-grid;
-  vertical-align: middle;
-  width: 22px;
-  height: 22px;
-}
-
 .seg {
   display: inline-flex;
   border: 1px solid var(--line);

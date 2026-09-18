@@ -8,7 +8,6 @@ import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
 import { Clock } from '../../components/Clock'
-import { SearchIcon } from '../../components/icons'
 import { formatShortDate } from '../../app/time'
 import { ProjectDetail } from './ProjectDetail'
 import { Playout } from './Playout'
@@ -61,7 +60,6 @@ export function ProjectsView({
 }: ProjectsViewProps) {
   const resource = useResource(() => client.projects.list(), [])
   const [projects, setProjects] = useState<Project[]>([])
-  const [query, setQuery] = useState('')
   const [toast, setToast] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Project | null>(null)
 
@@ -286,21 +284,22 @@ export function ProjectsView({
       }),
   }
 
-  const q = query.trim().toLowerCase()
-  const visible = projects.filter((p) => !q || p.name.toLowerCase().includes(q))
-
   return (
     <div class="view">
       <header>
         <div>
           <h1>Projekt</h1>
         </div>
+        <span class="spacer" />
+        <button class="btn btn-sm" type="button" onClick={() => onCreatingChange(true)}>
+          Nytt projekt
+        </button>
         <Clock />
       </header>
 
       <div class="content">
         {selected && screen === 'playout' ? (
-          <div class="playout-frame">
+          <div class="playout-frame doc">
             <Playout project={selected} onClose={() => onScreenChange('detail')} actions={actions} />
           </div>
         ) : (
@@ -309,27 +308,10 @@ export function ProjectsView({
           detailLabel="Valt projekt"
           list={
             <>
-              <div class="top">
-                <div class="search">
-                  <SearchIcon />
-                  <input
-                    type="search"
-                    placeholder="Sök projekt"
-                    aria-label="Sök projekt"
-                    value={query}
-                    onInput={(e) => setQuery(e.currentTarget.value)}
-                  />
-                </div>
-                <button class="btn btn-sm" type="button" onClick={() => onCreatingChange(true)}>
-                  Nytt projekt
-                </button>
-              </div>
               <ul>
                 {resource.loading && projects.length === 0 && <li class="none">Laddar…</li>}
-                {!resource.loading && visible.length === 0 && (
-                  <li class="none">Inget projekt matchar sökningen.</li>
-                )}
-                {visible.map((p) => {
+                {!resource.loading && projects.length === 0 && <li class="none">Inga projekt ännu.</li>}
+                {projects.map((p) => {
                   const status = deriveProjectStatus(p)
                   return (
                     <li key={p.id} class={p.id === selectedId ? 'sel' : ''}>

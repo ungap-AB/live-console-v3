@@ -94,7 +94,6 @@ export function TrashView() {
       <header>
         <div>
           <h1>Papperskorg</h1>
-          <div class="sub">Borttaget material som ännu går att återställa</div>
         </div>
       </header>
 

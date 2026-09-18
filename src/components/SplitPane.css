@@ -46,6 +46,16 @@
 .split > :not(:first-child),
 .three > :not(:first-child) {
   margin: 22px 0;
+  height: auto;
+  min-height: 0;
+}
+
+/* Utan explicit radhöjd kan griden annars växa förbi behållarens höjd om
+   ett barn av någon anledning blir för högt — hela vyn skrollar då istället
+   för bara den avsedda listan/panelen (uppmätt i Användare, 2026-09-18). */
+.split,
+.three {
+  grid-template-rows: minmax(0, 1fr);
 }
 
 /* Radlayouten från projektlistan (status-chip vänster, datum höger) är nu
@@ -177,6 +187,13 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.doc h2 .ib {
+  display: inline-grid;
+  vertical-align: middle;
+  width: 22px;
+  height: 22px;
 }
 
 .rowtop {
