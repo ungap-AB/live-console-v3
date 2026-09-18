@@ -231,26 +231,6 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
                   </div>
                 </div>
                 <div class="body">
-                  <div class="person-toolbar">
-                    <div class="search">
-                      <SearchIcon />
-                      <input
-                        type="search"
-                        placeholder="Filtrera namn"
-                        aria-label="Filtrera namn"
-                        value={personFilter}
-                        onInput={(e) => setPersonFilter(e.currentTarget.value)}
-                      />
-                    </div>
-                    <button class="btn btn-sm" type="button" onClick={() => sortAZ(selected)}>
-                      Sortera A–Ö
-                    </button>
-                  </div>
-
-                  {filterActive && visiblePeople.length === 0 && (
-                    <p class="hint">Inget namn matchar filtret.</p>
-                  )}
-
                   <EditableItemList
                     items={visiblePeople}
                     getId={(p) => p.id}
@@ -261,6 +241,24 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
                     onAdd={() => addPerson(selected)}
                     onRename={(id, name) => renamePerson(selected, id, name)}
                     onRemove={(id) => removePerson(selected, id)}
+                    toolbarExtra={
+                      <div class="person-toolbar-fields">
+                        <div class="search">
+                          <SearchIcon />
+                          <input
+                            type="search"
+                            placeholder="Filtrera namn"
+                            aria-label="Filtrera namn"
+                            value={personFilter}
+                            onInput={(e) => setPersonFilter(e.currentTarget.value)}
+                          />
+                        </div>
+                        <button class="btn btn-sm" type="button" onClick={() => sortAZ(selected)}>
+                          Sortera A–Ö
+                        </button>
+                      </div>
+                    }
+                    emptyMessage={filterActive ? 'Inget namn matchar filtret.' : undefined}
                     hint={
                       selected.usedInProjects > 0
                         ? 'Ändringar slår igenom i projekt som ännu inte publicerats. Publicerade sändningar har en fryst kopia och påverkas inte.'

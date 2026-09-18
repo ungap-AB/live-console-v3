@@ -93,6 +93,18 @@ select:focus-visible {
   border-color: var(--btn-primary-bg-hover);
 }
 
+/* Behåller primärknappens ljusa yta i disabled-läge (bara opacitet på ytan,
+   inte på texten) istället för att falla tillbaka på den generiska
+   .btn:disabled-gråtonen — annars ser en väntande primär åtgärd ut som ren
+   text utan knappyta. */
+.btn-primary:disabled {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+  border-color: var(--btn-primary-bg);
+  opacity: 0.45;
+  cursor: default;
+}
+
 .btn-danger {
   color: var(--danger);
   border-color: var(--danger-line);

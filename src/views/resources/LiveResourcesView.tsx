@@ -291,7 +291,7 @@ function ResourceDetail({ channel: c, health, onRotateKey, onOpenProject, onTear
       </div>
 
       <div class="body">
-        <div class="grid">
+        <div class="grid grid-fixed4">
           <div>
             <div class="k">Status</div>
             <div class="v">{live ? 'LIVE' : 'OFFLINE'}</div>

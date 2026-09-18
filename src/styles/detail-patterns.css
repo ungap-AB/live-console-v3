@@ -19,6 +19,18 @@
   padding: 10px 12px;
 }
 
+/* Tvingar exakt fyra jämnstora kolumner (2×2 på smala bredder) istället för
+   att auto-fit ibland lämnar en ensam fjärde cell på en egen rad. */
+.grid-fixed4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 480px) {
+  .grid-fixed4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .grid .k {
   font-size: 11.5px;
   color: var(--ink-3);

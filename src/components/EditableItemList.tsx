@@ -20,6 +20,10 @@ interface EditableItemListProps<T> {
   renderExtra?: (item: T) => ComponentChildren
   getItemClassName?: (item: T) => string
   hint?: string
+  /** Extra kontroller (t.ex. filtrera/sortera) i samma rad som "Lägg till"-knappen, till vänster om den. */
+  toolbarExtra?: ComponentChildren
+  /** Visas istället för listan när items är tom av ett annat skäl än att den faktiskt är tom (t.ex. ett aktivt filter utan träffar). */
+  emptyMessage?: string
 }
 
 // Bruten ut ur AgendasView/NameListsView (de var identiska förutom vilket
@@ -41,6 +45,8 @@ export function EditableItemList<T>({
   renderExtra,
   getItemClassName,
   hint,
+  toolbarExtra,
+  emptyMessage,
 }: EditableItemListProps<T>) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
@@ -118,10 +124,14 @@ export function EditableItemList<T>({
   return (
     <>
       <div class="addrow">
+        {toolbarExtra}
         <button class="btn btn-sm" type="button" onClick={() => void handleAdd()}>
           {addLabel}
         </button>
       </div>
+      {items.length === 0 && emptyMessage ? (
+        <p class="hint">{emptyMessage}</p>
+      ) : (
       <SortableList
         items={items}
         getId={getId}
@@ -213,6 +223,7 @@ export function EditableItemList<T>({
           )
         }}
       />
+      )}
       {hint && <p class="hint">{hint}</p>}
     </>
   )

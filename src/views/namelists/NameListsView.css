@@ -1,7 +1,7 @@
-.person-toolbar {
+.person-toolbar-fields {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
-  max-width: 720px;
+  flex: 1;
+  min-width: 160px;
 }

@@ -751,16 +751,20 @@ function UserDetail({
             <div class="mail">{u.email}</div>
           </div>
         </div>
+        <div class="facts">
+          <span>
+            {u.status === 'active' && 'Aktiv'}
+            {u.status === 'invited' && 'Inbjuden – har inte loggat in'}
+            {u.status === 'disabled' && 'Inaktiverad'}
+          </span>
+          {domain && <span>{domain.org}</span>}
+        </div>
         <div class="badges">
-          {u.status === 'active' && <StatusChip tone="live">Aktiv</StatusChip>}
-          {u.status === 'invited' && <StatusChip tone="warn">Inbjuden – har inte loggat in</StatusChip>}
-          {u.status === 'disabled' && <StatusChip tone="neutral">Inaktiverad</StatusChip>}
           {u.roles.map((r) => (
             <StatusChip key={r} tone={r === 'admin' ? 'accent' : 'neutral'}>
               {ROLES[r].label}
             </StatusChip>
           ))}
-          {domain && <StatusChip tone="neutral">{domain.org}</StatusChip>}
         </div>
         <div class="tools">
           {u.status === 'invited' ? (

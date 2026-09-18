@@ -83,7 +83,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
   const [trimming, setTrimming] = useState<Recording | null>(null)
   const [sourceRecording, setSourceRecording] = useState<Recording | null>(null)
   const [sessionVideo, setSessionVideo] = useState<{ name: string; hlsUrl: string } | null>(null)
-  const [confirmReturnToLive, setConfirmReturnToLive] = useState(false)
+  const [confirmUnpublish, setConfirmUnpublish] = useState<'toLive' | 'fromAction' | null>(null)
   const [renaming, setRenaming] = useState(false)
 
   const agendaResource = useResource(
@@ -115,7 +115,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
     setTrimming(null)
     setSourceRecording(null)
     setSessionVideo(null)
-    setConfirmReturnToLive(false)
+    setConfirmUnpublish(null)
     setRenaming(false)
   }, [p.id])
 
@@ -188,7 +188,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
 
   async function selectTab(next: 'live' | 'odm') {
     if (next === 'live' && tab === 'odm' && p.onDemandLocked) {
-      setConfirmReturnToLive(true)
+      setConfirmUnpublish('toLive')
       return
     }
     setTab(next)
@@ -196,7 +196,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
 
   async function returnToLive() {
     await actions.returnToLive()
-    setConfirmReturnToLive(false)
+    setConfirmUnpublish(null)
     setTab('live')
   }
 
@@ -495,36 +495,52 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
               {rec === 'recording' ? 'Spelas in' : ODM_META[rec].label}
             </StatusChip>
             <span class="sep" />
-            <button
-              class="btn"
-              type="button"
-              disabled={!canTrim}
-              title={
-                pub
-                  ? 'Stäng projektet först'
-                  : live
-                    ? 'Tillgänglig först när enkodern slutat sända'
-                    : rec === 'processing'
-                      ? 'Inspelningen bearbetas fortfarande'
-                      : undefined
-              }
-              onClick={() => void openTrimDialog()}
-            >
-              Trimma inspelning
-            </button>
-            <button
-              class="btn btn-primary"
-              type="button"
-              disabled={!canPublish}
-              title={pub ? 'Stäng projektet först' : live ? 'Tillgänglig först när enkodern slutat sända' : rec !== 'trimmed' ? 'Trimma inspelningen först' : undefined}
-              onClick={actions.publish}
-            >
-              Publicera
-            </button>
+            {p.publication.state !== 'published' && (
+              <>
+                <button
+                  class={`btn ${rec === 'recorded' ? 'btn-primary' : ''}`}
+                  type="button"
+                  disabled={!canTrim}
+                  title={
+                    pub
+                      ? 'Stäng projektet först'
+                      : live
+                        ? 'Tillgänglig först när enkodern slutat sända'
+                        : rec === 'processing'
+                          ? 'Inspelningen bearbetas fortfarande'
+                          : undefined
+                  }
+                  onClick={() => void openTrimDialog()}
+                >
+                  Trimma inspelning
+                </button>
+                <button
+                  class={`btn ${rec === 'trimmed' ? 'btn-primary' : ''}`}
+                  type="button"
+                  disabled={!canPublish}
+                  title={pub ? 'Stäng projektet först' : live ? 'Tillgänglig först när enkodern slutat sända' : rec !== 'trimmed' ? 'Trimma inspelningen först' : undefined}
+                  onClick={actions.publish}
+                >
+                  Publicera
+                </button>
+              </>
+            )}
             {p.publication.state === 'published' && (
-              <button class="btn btn-sm" type="button" disabled={!p.recording?.hlsUrl} onClick={() => setShowVideo(true)}>
-                Visa inspelning
-              </button>
+              <>
+                <button class="btn btn-sm" type="button" disabled={!p.recording?.hlsUrl} onClick={() => setShowVideo(true)}>
+                  Visa inspelning
+                </button>
+                <span class="spacer" />
+                <OverflowMenu
+                  items={[
+                    {
+                      label: 'Avpublicera',
+                      danger: true,
+                      onClick: () => setConfirmUnpublish('fromAction'),
+                    },
+                  ]}
+                />
+              </>
             )}
           </div>
           <div class="rowset" style={{ maxWidth: '660px' }}>
@@ -599,18 +615,25 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
         />
       )}
 
-      {confirmReturnToLive && (
+      {confirmUnpublish && (
         <ConfirmModal
-          title="Gå tillbaka till live?"
-          confirmLabel="Gå till live"
+          title={confirmUnpublish === 'toLive' ? 'Gå tillbaka till live?' : 'Avpublicera inspelningen?'}
+          confirmLabel={confirmUnpublish === 'toLive' ? 'Gå till live' : 'Avpublicera'}
           danger
-          onCancel={() => setConfirmReturnToLive(false)}
+          onCancel={() => setConfirmUnpublish(null)}
           onConfirm={() => void returnToLive()}
         >
-          <p>
-            Den kopplade ondemand-versionen kopplas bort och publiken kan inte längre se den. För att
-            sända igen behöver du skapa en ny ingest-resurs och använda en ny stream key i enkodern.
-          </p>
+          {confirmUnpublish === 'toLive' ? (
+            <p>
+              Den kopplade ondemand-versionen kopplas bort och publiken kan inte längre se den. För att
+              sända igen behöver du skapa en ny ingest-resurs och använda en ny stream key i enkodern.
+            </p>
+          ) : (
+            <p>
+              Ondemand-versionen kopplas bort och publiken kan inte längre se den. Du kan trimma och
+              publicera på nytt senare, eller skapa en ny ingest-resurs för att sända live igen.
+            </p>
+          )}
         </ConfirmModal>
       )}
     </>
