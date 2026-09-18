@@ -155,6 +155,22 @@ select:focus-visible {
   margin-top: 1px;
 }
 
+/* Håller "+ Ny"/"Nytt X"-knappen i linje med listpanelens högerkant under
+   den (296 px, --list-col-width i SplitPane.css) istället för headerns
+   egen fulla bredd. Negativ vänstermarginal tar bort headerns padding-left
+   så att zonens box börjar vid samma x=0 som listpanelen, och egen
+   padding-left återställer det visuella indraget för rubriktexten. */
+.view > header .header-list-zone {
+  width: var(--list-col-width);
+  margin-left: -26px;
+  padding-left: 26px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
 .view > .content {
   flex: 1;
   padding: 22px 26px;

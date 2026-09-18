@@ -142,13 +142,13 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
   return (
     <div class="view">
       <header>
-        <div>
+        <div class="header-list-zone">
           <h1>Dagordningar</h1>
+          <span class="spacer" />
+          <button class="btn btn-sm" type="button" onClick={createAgenda}>
+            + Ny
+          </button>
         </div>
-        <span class="spacer" />
-        <button class="btn btn-sm" type="button" onClick={createAgenda}>
-          + Ny
-        </button>
       </header>
 
       <div class="content">
@@ -222,6 +222,22 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
                       <EditIcon />
                     </button>
                     {selected.isTemplate && <StatusChip tone="neutral">Mall</StatusChip>}
+                    <span class="head-actions">
+                      <OverflowMenu
+                        items={[
+                          {
+                            label: selected.isTemplate ? 'Ta bort mallstatus' : 'Gör till mall',
+                            onClick: () => toggleTemplate(selected),
+                          },
+                          {
+                            label: 'Flytta till papperskorgen',
+                            danger: true,
+                            onClick: () =>
+                              selected.usedInProjects > 0 ? setConfirmTrash(selected) : trash(selected),
+                          },
+                        ]}
+                      />
+                    </span>
                   </h2>
                   <div class="facts">
                     <span>{selected.description}</span>
@@ -252,23 +268,6 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
                         )}
                       </span>
                     )}
-                  </div>
-                  <div class="tools">
-                    <span class="spacer" />
-                    <OverflowMenu
-                      items={[
-                        {
-                          label: selected.isTemplate ? 'Ta bort mallstatus' : 'Gör till mall',
-                          onClick: () => toggleTemplate(selected),
-                        },
-                        {
-                          label: 'Flytta till papperskorgen',
-                          danger: true,
-                          onClick: () =>
-                            selected.usedInProjects > 0 ? setConfirmTrash(selected) : trash(selected),
-                        },
-                      ]}
-                    />
                   </div>
                 </div>
                 <div class="body">

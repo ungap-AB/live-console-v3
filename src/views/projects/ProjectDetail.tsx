@@ -228,26 +228,25 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
           >
             <EditIcon />
           </button>
+          <span class="head-actions">
+            <button class="btn btn-sm" type="button" onClick={onOpenPlayout}>
+              <PlayIcon /> Playout
+            </button>
+            <OverflowMenu
+              items={[
+                {
+                  label: 'Flytta till papperskorgen',
+                  danger: true,
+                  disabled: !canDelete,
+                  title: deleteBlockedReason ?? undefined,
+                  onClick: () => (deleteBlockedReason ? onDeleteBlocked(deleteBlockedReason) : onDelete()),
+                },
+              ]}
+            />
+          </span>
         </h2>
         <div class="facts">
           <span>{subtitle}</span>
-        </div>
-        <div class="tools">
-          <span class="spacer" />
-          <button class="btn btn-sm" type="button" onClick={onOpenPlayout}>
-            <PlayIcon /> Playout
-          </button>
-          <OverflowMenu
-            items={[
-              {
-                label: 'Flytta till papperskorgen',
-                danger: true,
-                disabled: !canDelete,
-                title: deleteBlockedReason ?? undefined,
-                onClick: () => (deleteBlockedReason ? onDeleteBlocked(deleteBlockedReason) : onDelete()),
-              },
-            ]}
-          />
         </div>
       </div>
 

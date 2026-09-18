@@ -123,13 +123,13 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   return (
     <div class="view">
       <header>
-        <div>
+        <div class="header-list-zone">
           <h1>Videoarkiv</h1>
+          <span class="spacer" />
+          <button class="btn btn-sm" type="button" onClick={createRecording}>
+            + Ny
+          </button>
         </div>
-        <span class="spacer" />
-        <button class="btn btn-sm" type="button" onClick={createRecording}>
-          + Ny
-        </button>
       </header>
 
       <div class="content">
@@ -241,6 +241,9 @@ function ArchiveDetail({ recording: r, chapters, onTrim, onTrash, onDownload, on
           {isOriginal && r.segments.length > 1 && (
             <StatusChip tone="warn">{r.segments.length - 1} glapp</StatusChip>
           )}
+          <span class="head-actions">
+            <OverflowMenu items={[{ label: 'Flytta till papperskorgen', danger: true, onClick: onTrash }]} />
+          </span>
         </h2>
         <div class="facts">
           <span>{formatDateTime(r.createdAt)}</span>
@@ -266,8 +269,6 @@ function ArchiveDetail({ recording: r, chapters, onTrim, onTrash, onDownload, on
               Trimma inspelning
             </button>
           )}
-          <span class="spacer" />
-          <OverflowMenu items={[{ label: 'Flytta till papperskorgen', danger: true, onClick: onTrash }]} />
         </div>
       </div>
 

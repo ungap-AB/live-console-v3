@@ -216,10 +216,6 @@ export function UsersView() {
         <div>
           <h1>Användare</h1>
         </div>
-        <span class="spacer" />
-        <button class="btn btn-sm" type="button" disabled={!selectedDomainId} onClick={() => setCreatingUser(true)}>
-          + Ny
-        </button>
       </header>
 
       <div class="content">
@@ -259,6 +255,12 @@ export function UsersView() {
           </section>
 
           <section class="pane" aria-label="Användare">
+            <div class="top">
+              <h2>Användare</h2>
+              <button class="btn btn-sm" type="button" disabled={!selectedDomainId} onClick={() => setCreatingUser(true)}>
+                + Ny
+              </button>
+            </div>
             <ul>
               {usersResource.loading && domainUsers.length === 0 && <li class="none">Laddar…</li>}
               {!usersResource.loading && visibleUsers.length === 0 && (
@@ -732,6 +734,27 @@ function UserDetail({
             <h2>{u.name}</h2>
             <div class="mail">{u.email}</div>
           </div>
+          <span class="head-actions">
+            <OverflowMenu
+              items={[
+                u.status === 'disabled'
+                  ? { label: 'Aktivera konto', onClick: onEnable }
+                  : {
+                      label: 'Inaktivera konto',
+                      disabled: lastAdmin,
+                      title: lastAdmin ? 'Domänen måste ha minst en aktiv administratör' : undefined,
+                      onClick: onDisable,
+                    },
+                {
+                  label: 'Ta bort',
+                  danger: true,
+                  disabled: lastAdmin,
+                  title: lastAdmin ? 'Domänen måste ha minst en aktiv administratör' : undefined,
+                  onClick: onRemove,
+                },
+              ]}
+            />
+          </span>
         </div>
         <div class="facts">
           <span>
@@ -761,26 +784,6 @@ function UserDetail({
           <button class="btn btn-sm btn-primary" type="button" onClick={onInvite}>
             Bjud in
           </button>
-          <span class="spacer" />
-          <OverflowMenu
-            items={[
-              u.status === 'disabled'
-                ? { label: 'Aktivera konto', onClick: onEnable }
-                : {
-                    label: 'Inaktivera konto',
-                    disabled: lastAdmin,
-                    title: lastAdmin ? 'Domänen måste ha minst en aktiv administratör' : undefined,
-                    onClick: onDisable,
-                  },
-              {
-                label: 'Ta bort',
-                danger: true,
-                disabled: lastAdmin,
-                title: lastAdmin ? 'Domänen måste ha minst en aktiv administratör' : undefined,
-                onClick: onRemove,
-              },
-            ]}
-          />
         </div>
       </div>
 

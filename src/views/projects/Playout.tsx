@@ -17,7 +17,6 @@ import { resolveGuidedPhase } from './guidedPhase'
 import { resolveOriginalRecordingForTrim } from './openTrimDialog'
 import { TrimDialog } from '../archive/TrimDialog'
 import { CheckIcon, PlayIcon } from '../../components/icons'
-import { Icon } from '../../components/Icon'
 import './Playout.css'
 
 interface PlayoutProps {
@@ -219,6 +218,9 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
           <span>{subtitle}</span>
         </div>
         <div class="tools">
+          <button class="btn btn-sm" type="button" onClick={onClose}>
+            &lt; Projekt
+          </button>
           <CopyField value={p.playerUrl} monospace grow />
           <div class="seg">
             <button
@@ -239,10 +241,6 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
           </div>
           <button class="btn btn-sm" type="button" disabled={!channel} onClick={() => setShowIngestInfo((visible) => !visible)}>
             {showIngestInfo ? 'Dölj ingest-info' : 'Visa ingest-info'}
-          </button>
-          <span class="spacer" />
-          <button class="ib" type="button" title="Stäng playout" aria-label="Stäng playout" onClick={onClose}>
-            <Icon name="close" />
           </button>
         </div>
       </div>

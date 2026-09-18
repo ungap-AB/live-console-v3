@@ -107,13 +107,13 @@ export function LiveResourcesView() {
   return (
     <div class="view">
       <header>
-        <div>
+        <div class="header-list-zone">
           <h1>Live-resurser</h1>
+          <span class="spacer" />
+          <button class="btn btn-sm" type="button" onClick={requestNewChannel}>
+            + Ny
+          </button>
         </div>
-        <span class="spacer" />
-        <button class="btn btn-sm" type="button" onClick={requestNewChannel}>
-          + Ny
-        </button>
       </header>
 
       <div class="content">
@@ -226,6 +226,19 @@ function ResourceDetail({ channel: c, health, onRotateKey, onOpenProject, onTear
           ) : (
             <StatusChip tone="neutral">Fristående</StatusChip>
           )}
+          <span class="head-actions">
+            <OverflowMenu
+              items={[
+                {
+                  label: 'Riv resurs',
+                  danger: true,
+                  disabled: live,
+                  title: live ? 'Går inte att riva medan signal tas emot' : undefined,
+                  onClick: onTeardown,
+                },
+              ]}
+            />
+          </span>
         </h2>
         <div class="facts">
           <span>{c.name}</span>
@@ -244,18 +257,6 @@ function ResourceDetail({ channel: c, health, onRotateKey, onOpenProject, onTear
           <button class="btn btn-sm" type="button" onClick={onRotateKey}>
             Rotera stream key
           </button>
-          <span class="spacer" />
-          <OverflowMenu
-            items={[
-              {
-                label: 'Riv resurs',
-                danger: true,
-                disabled: live,
-                title: live ? 'Går inte att riva medan signal tas emot' : undefined,
-                onClick: onTeardown,
-              },
-            ]}
-          />
         </div>
       </div>
 

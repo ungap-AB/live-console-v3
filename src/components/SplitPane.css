@@ -1,6 +1,12 @@
+:root {
+  /* Delas med .view > header .header-list-zone (base.css) — knappen som
+     skapar nytt i headern ska linjera i högerkant med listpanelen under den. */
+  --list-col-width: 296px;
+}
+
 .split {
   display: grid;
-  grid-template-columns: 296px 1fr;
+  grid-template-columns: var(--list-col-width) 1fr;
   gap: 22px;
   height: 100%;
   min-height: 0;
@@ -194,6 +200,17 @@
   vertical-align: middle;
   width: 22px;
   height: 22px;
+}
+
+/* "..."-menyn (och ev. en Playout-genväg) hör hemma i rubrikraden, uppe
+   till höger — inte i en egen tools-rad längre ner. Används både inuti
+   .doc h2 och (Användare) i .idrow, som har samma flex-rad-form. */
+.head-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
 }
 
 .rowtop {

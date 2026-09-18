@@ -135,13 +135,13 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
   return (
     <div class="view">
       <header>
-        <div>
+        <div class="header-list-zone">
           <h1>Namnlistor</h1>
+          <span class="spacer" />
+          <button class="btn btn-sm" type="button" onClick={createNameList}>
+            + Ny
+          </button>
         </div>
-        <span class="spacer" />
-        <button class="btn btn-sm" type="button" onClick={createNameList}>
-          + Ny
-        </button>
       </header>
 
       <div class="content">
@@ -196,25 +196,24 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
                     >
                       <EditIcon />
                     </button>
+                    <span class="head-actions">
+                      <OverflowMenu
+                        items={[
+                          { label: 'Duplicera', onClick: () => duplicate(selected) },
+                          {
+                            label: 'Flytta till papperskorgen',
+                            danger: true,
+                            onClick: () =>
+                              selected.usedInProjects > 0 ? setConfirmTrash(selected) : trash(selected),
+                          },
+                        ]}
+                      />
+                    </span>
                   </h2>
                   <div class="facts">
                     <span>{selected.description}</span>
                     <span>{selected.people.length} namn</span>
                     <span>Ändrad {formatDate(selected.changedAt)}</span>
-                  </div>
-                  <div class="tools">
-                    <span class="spacer" />
-                    <OverflowMenu
-                      items={[
-                        { label: 'Duplicera', onClick: () => duplicate(selected) },
-                        {
-                          label: 'Flytta till papperskorgen',
-                          danger: true,
-                          onClick: () =>
-                            selected.usedInProjects > 0 ? setConfirmTrash(selected) : trash(selected),
-                        },
-                      ]}
-                    />
                   </div>
                 </div>
                 <div class="body">

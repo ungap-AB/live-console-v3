@@ -287,13 +287,13 @@ export function ProjectsView({
   return (
     <div class="view">
       <header>
-        <div>
+        <div class="header-list-zone">
           <h1>Projekt</h1>
+          <span class="spacer" />
+          <button class="btn btn-sm" type="button" onClick={() => onCreatingChange(true)}>
+            Nytt projekt
+          </button>
         </div>
-        <span class="spacer" />
-        <button class="btn btn-sm" type="button" onClick={() => onCreatingChange(true)}>
-          Nytt projekt
-        </button>
         <Clock />
       </header>
 
