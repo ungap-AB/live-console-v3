@@ -22,6 +22,8 @@ interface EditableItemListProps<T> {
   hint?: string
   /** Extra kontroller (t.ex. filtrera/sortera) i samma rad som "Lägg till"-knappen, till vänster om den. */
   toolbarExtra?: ComponentChildren
+  /** Extra kontroller som ska ligga efter "Lägg till"-knappen. */
+  toolbarExtraAfter?: ComponentChildren
   /** Visas istället för listan när items är tom av ett annat skäl än att den faktiskt är tom (t.ex. ett aktivt filter utan träffar). */
   emptyMessage?: string
 }
@@ -46,6 +48,7 @@ export function EditableItemList<T>({
   getItemClassName,
   hint,
   toolbarExtra,
+  toolbarExtraAfter,
   emptyMessage,
 }: EditableItemListProps<T>) {
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -128,6 +131,7 @@ export function EditableItemList<T>({
         <button class="btn btn-sm" type="button" onClick={() => void handleAdd()}>
           {addLabel}
         </button>
+        {toolbarExtraAfter}
       </div>
       {items.length === 0 && emptyMessage ? (
         <p class="hint">{emptyMessage}</p>
