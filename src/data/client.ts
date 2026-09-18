@@ -120,6 +120,8 @@ export interface Client {
     setVisibility(id: string, visibility: Visibility): Promise<Project>
     setAgenda(id: string, agendaId: string | null): Promise<Project>
     setNameList(id: string, namelistId: string | null): Promise<Project>
+    setMeetingBinding(id: string, meetingDomain: string, meetingId: string): Promise<Project>
+    clearMeetingBinding(id: string): Promise<Project>
     createChannel(id: string): Promise<Project>
     teardownChannel(id: string): Promise<Project>
     /** Mockup-bara: simulerar att enkodern startar/stoppar sändning. */

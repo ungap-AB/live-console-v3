@@ -8,6 +8,8 @@ export interface ProjectActions {
   setVisibility: (visibility: Visibility) => void
   setAgenda: (agendaId: string | null) => void
   setNameList: (namelistId: string | null) => void
+  setMeetingBinding: (meetingDomain: string, meetingId: string) => Promise<void>
+  clearMeetingBinding: () => Promise<void>
   createChannel: () => Promise<void>
   teardownChannel: () => Promise<void>
   setEncoderSending: (sending: boolean) => Promise<void>

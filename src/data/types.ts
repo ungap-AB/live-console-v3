@@ -117,6 +117,9 @@ export interface Project {
   agendaId: string | null
   namelistId: string | null
   domainId?: string
+  meetingBindingId?: string
+  meetingDomain?: string
+  meetingId?: string
   /**
    * Mockup-bara fält för att simulera sändningsförloppet utan en riktig
    * IVS-kanal (se mockup/HANDOVER.md §6.5 — panelen som styr detta tas bort

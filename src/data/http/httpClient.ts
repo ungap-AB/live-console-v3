@@ -314,6 +314,9 @@ function toProjectLite(dto: ServerProject): Project {
     agendaId: dto.agendaId,
     namelistId: dto.namelistId,
     domainId: dto.domainId,
+    meetingBindingId: dto.meetingBindingId,
+    meetingDomain: dto.meetingDomain,
+    meetingId: dto.meetingId,
     sim: { everSent: false, segments: 0, accumulatedSeconds: 0, recordingStartedAt: null },
     playout: { currentAgendaItemId: null, currentPersonId: null, timeline: [] },
   }
@@ -638,6 +641,17 @@ export const httpClient: Client = {
     async setNameList(id, namelistId) {
       const dto = await api<ServerProject>(`/projects/${id}/namelist`, { method: 'PUT', body: { namelistId } })
       return toProjectFull(dto)
+    },
+    async setMeetingBinding(id, meetingDomain, meetingId) {
+      const dto = await api<ServerProject>(`/projects/${id}/meeting-binding`, {
+        method: 'PUT',
+        body: { meetingDomain, meetingId },
+      })
+      return toProjectFull(dto)
+    },
+    async clearMeetingBinding(id) {
+      await api<void>(`/projects/${id}/meeting-binding`, { method: 'DELETE' })
+      return fetchProject(id)
     },
     async createChannel(id) {
       const project = await api<ServerProject>(`/projects/${id}`)

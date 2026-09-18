@@ -626,6 +626,20 @@ export const mockClient: Client = {
       p.namelistId = namelistId
       return delay(projectSnapshot(p))
     },
+    async setMeetingBinding(id, meetingDomain, meetingId) {
+      const p = findProject(id)
+      p.meetingBindingId ??= `mb-${p.id}`
+      p.meetingDomain = meetingDomain
+      p.meetingId = meetingId
+      return delay(projectSnapshot(p))
+    },
+    async clearMeetingBinding(id) {
+      const p = findProject(id)
+      p.meetingBindingId = undefined
+      p.meetingDomain = undefined
+      p.meetingId = undefined
+      return delay(projectSnapshot(p))
+    },
     async createChannel(id) {
       const p = findProject(id)
       if (p.channel) throw new Error('Projektet har redan en live-resurs.')

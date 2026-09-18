@@ -152,6 +152,16 @@ export function ProjectsView({
         if (!selected) return
         replace(await client.projects.setNameList(selected.id, namelistId))
       }),
+    setMeetingBinding: (meetingDomain, meetingId) =>
+      withErrorToast(async () => {
+        if (!selected) return
+        replace(await client.projects.setMeetingBinding(selected.id, meetingDomain, meetingId))
+      }),
+    clearMeetingBinding: () =>
+      withErrorToast(async () => {
+        if (!selected) return
+        replace(await client.projects.clearMeetingBinding(selected.id))
+      }),
     createChannel: () =>
       withErrorToast(async () => {
         if (!selected) return

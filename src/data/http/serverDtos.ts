@@ -98,6 +98,9 @@ export interface ServerProject {
   agendaId: string | null
   namelistId: string | null
   domainId?: string
+  meetingBindingId?: string
+  meetingDomain?: string
+  meetingId?: string
 }
 
 export interface ServerTimelineEvent {

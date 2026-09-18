@@ -52,6 +52,13 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   const [showIngestInfo, setShowIngestInfo] = useState(false)
   const [trimming, setTrimming] = useState<Recording | null>(null)
   const [confirmReturnToLive, setConfirmReturnToLive] = useState(false)
+  const [meetingDomain, setMeetingDomain] = useState(p.meetingDomain ?? '')
+  const [meetingId, setMeetingId] = useState(p.meetingId ?? '')
+
+  useEffect(() => {
+    setMeetingDomain(p.meetingDomain ?? '')
+    setMeetingId(p.meetingId ?? '')
+  }, [p.meetingDomain, p.meetingId])
 
   // Hälsan upptäcker fasen före projektets recording-ref. Hämta projektet
   // igen både efter stopp och medan asseten verifieras, så trim blir tillgänglig
@@ -400,6 +407,37 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
                 ✕
               </button>
             )}
+          </div>
+        </div>
+      </div>
+
+      <div class="guided-banner">
+        <div class="rowset">
+          <div class="field">
+            <label for="meeting-domain">Meeting-domän</label>
+            <input id="meeting-domain" value={meetingDomain} onInput={(event) => setMeetingDomain((event.target as HTMLInputElement).value)} placeholder="kyrkomotet.se" />
+          </div>
+          <div class="field">
+            <label for="meeting-id">Meeting-ID</label>
+            <input id="meeting-id" value={meetingId} onInput={(event) => setMeetingId((event.target as HTMLInputElement).value)} placeholder="123" />
+          </div>
+          <div class="field">
+            <label>Meeting-koppling</label>
+            <div class="facts">
+              <span>{p.meetingBindingId ? `Vald (${p.meetingId})` : 'Ingen vald'}</span>
+              {p.meetingBindingId && <CopyField value={p.meetingBindingId} monospace />}
+            </div>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <div class="seg">
+              <button type="button" disabled={!meetingDomain.trim() || !meetingId.trim()} onClick={() => actions.setMeetingBinding(meetingDomain.trim(), meetingId.trim())}>
+                Koppla Meeting
+              </button>
+              <button type="button" disabled={!p.meetingBindingId} onClick={() => actions.clearMeetingBinding()}>
+                Rensa
+              </button>
+            </div>
           </div>
         </div>
       </div>
