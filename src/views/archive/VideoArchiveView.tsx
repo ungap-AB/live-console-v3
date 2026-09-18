@@ -7,7 +7,9 @@ import { StatusChip } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
 import { OverflowMenu } from '../../components/OverflowMenu'
 import { ConfirmModal } from '../../components/ConfirmModal'
+import { RenameModal } from '../../components/RenameModal'
 import { Toast } from '../../components/Toast'
+import { EditIcon } from '../../components/icons'
 import { TrimDialog } from './TrimDialog'
 import { formatDateTime, formatGb, formatHms } from '../../app/time'
 import './VideoArchiveView.css'
@@ -41,6 +43,7 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [trimming, setTrimming] = useState<Recording | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<Recording | null>(null)
+  const [renaming, setRenaming] = useState<Recording | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
@@ -98,6 +101,17 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
     }
     setRecordings((prev) => [draft, ...prev])
     setSelectedId(draft.id)
+  }
+
+  // Draften från createRecording (id "local-…") finns bara i lokal state,
+  // aldrig hos client/backend — försök inte spara den dit.
+  async function renameRecording(recording: Recording, name: string) {
+    const updated = recording.id.startsWith('local-')
+      ? { ...recording, name }
+      : await client.recordings.rename(recording.id, name)
+    setRecordings((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+    setDetail((prev) => (prev && prev.recording.id === updated.id ? { ...prev, recording: updated } : prev))
+    setRenaming(null)
   }
 
   async function trash(recording: Recording) {
@@ -177,6 +191,7 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
                     ? setConfirmTrash(selected)
                     : trash(selected)
                 }
+                onRename={() => setRenaming(selected)}
                 onDownload={() => setToast(`Laddar ner ${selected.name}`)}
                 onOpenProject={() => selected.project && onOpenProject(selected.project.id)}
               />
@@ -209,6 +224,15 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
         </ConfirmModal>
       )}
 
+      {renaming && (
+        <RenameModal
+          title="Byt namn på inspelningen"
+          initialValue={renaming.name}
+          onCancel={() => setRenaming(null)}
+          onSave={(name) => renameRecording(renaming, name)}
+        />
+      )}
+
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   )
@@ -219,11 +243,12 @@ interface ArchiveDetailProps {
   chapters: Chapter[]
   onTrim: () => void
   onTrash: () => void
+  onRename: () => void
   onDownload: () => void
   onOpenProject: () => void
 }
 
-function ArchiveDetail({ recording: r, chapters, onTrim, onTrash, onDownload, onOpenProject }: ArchiveDetailProps) {
+function ArchiveDetail({ recording: r, chapters, onTrim, onTrash, onRename, onDownload, onOpenProject }: ArchiveDetailProps) {
   const isOriginal = r.kind === 'original'
   const visibleChapterCount = chapters.filter((c) => isInRange(r, c)).length
 
@@ -232,6 +257,9 @@ function ArchiveDetail({ recording: r, chapters, onTrim, onTrash, onDownload, on
       <div class="head">
         <h2>
           {r.name}
+          <button class="ib" type="button" title="Byt namn på inspelningen" aria-label="Byt namn på inspelningen" onClick={onRename}>
+            <EditIcon />
+          </button>
           {!isOriginal && (
             <>
               <StatusChip tone="accent">Trimmad</StatusChip>

@@ -459,6 +459,10 @@ export const httpClient: Client = {
       const dto = await api<ServerRecording>(`/recordings/${id}/sessions/${sessionId}/select`, { method: 'POST' })
       return fetchRecordingDetail(dto)
     },
+    async rename(id, name) {
+      const dto = await api<ServerRecording>(`/recordings/${id}`, { method: 'PATCH', body: { name } })
+      return fetchRecordingDetail(dto)
+    },
     async trash(id) {
       await api<void>(`/recordings/${id}`, { method: 'DELETE' })
     },
@@ -499,6 +503,11 @@ export const httpClient: Client = {
         body: { name: input.label, projectId: null, type: 'STANDARD', latencyMode: 'LOW', recording: true },
       })
       return toChannel(dto, new Map())
+    },
+    async rename(id, label) {
+      const dto = await api<ServerChannel>(`/channels/${id}`, { method: 'PATCH', body: { label } })
+      const projects = dto.projectId ? await projectRefMap() : new Map<string, ServerProject>()
+      return toChannel(dto, projects)
     },
     async teardown(id) {
       await api<void>(`/channels/${id}`, { method: 'DELETE' })

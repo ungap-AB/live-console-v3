@@ -321,6 +321,12 @@ export const mockClient: Client = {
     async selectSession(id) {
       return delay(clone(recordings.find((r) => r.id === id)))
     },
+    async rename(id, name) {
+      const recording = recordings.find((r) => r.id === id)
+      if (!recording) throw new Error(`Inspelning ${id} finns inte`)
+      recording.name = name
+      return delay(clone(recording))
+    },
     async trash(id) {
       const target = recordings.find((r) => r.id === id)
       if (!target) return delay(undefined)
@@ -397,6 +403,12 @@ export const mockClient: Client = {
         idleDays: 0,
       }
       channels = [channel, ...channels]
+      return delay(clone(channel))
+    },
+    async rename(id, label) {
+      const channel = channels.find((c) => c.id === id)
+      if (!channel) throw new Error(`Resurs ${id} finns inte`)
+      channel.label = label
       return delay(clone(channel))
     },
     async teardown(id) {

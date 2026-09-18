@@ -40,8 +40,13 @@
   padding: 0 22px 0 0;
 }
 
+/* I .three (bara Användare) är barn 1 OCH 2 listpaneler (Domäner,
+   Användare) — båda kant i kant, samma stil. Bara barn 3 (detaljvyn)
+   är den fristående "floating card". I .split finns bara en listpanel
+   (barn 1), så :nth-child(2) där träffar aldrig fel sak. */
 .split > .pane:first-child,
-.three > .pane:first-child {
+.three > .pane:first-child,
+.three > .pane:nth-child(2) {
   height: 100%;
   max-height: 100%;
   border: 0;
@@ -50,7 +55,7 @@
 }
 
 .split > :not(:first-child),
-.three > :not(:first-child) {
+.three > :not(:first-child):not(:nth-child(2)) {
   margin: 22px 0;
   height: auto;
   min-height: 0;

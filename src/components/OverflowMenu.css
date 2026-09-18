@@ -29,7 +29,9 @@
   padding: 8px 10px;
   border-radius: 6px;
   color: var(--ink);
-  font: inherit;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
   cursor: pointer;
 }
 

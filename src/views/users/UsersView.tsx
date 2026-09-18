@@ -7,7 +7,9 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { Modal } from '../../components/Modal'
 import { CopyField } from '../../components/CopyField'
 import { OverflowMenu } from '../../components/OverflowMenu'
+import { RenameModal } from '../../components/RenameModal'
 import { Toast } from '../../components/Toast'
+import { EditIcon } from '../../components/icons'
 import { formatDate, formatDateTime } from '../../app/time'
 import './UsersView.css'
 
@@ -48,6 +50,7 @@ export function UsersView() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [confirmDisable, setConfirmDisable] = useState<UserAccount | null>(null)
+  const [renamingUser, setRenamingUser] = useState<UserAccount | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<UserAccount | null>(null)
   const [creatingDomain, setCreatingDomain] = useState(false)
   const [creatingUser, setCreatingUser] = useState(false)
@@ -115,6 +118,14 @@ export function UsersView() {
     } catch (err) {
       setToast(err instanceof Error ? err.message : 'Något gick fel.')
     }
+  }
+
+  async function renameUser(user: UserAccount, name: string) {
+    await withErrorToast(async () => {
+      const updated = await client.users.update(user.id, { name })
+      replace(updated)
+    })
+    setRenamingUser(null)
   }
 
   async function toggleRole(user: UserAccount, role: Role, checked: boolean) {
@@ -224,7 +235,7 @@ export function UsersView() {
             <div class="top">
               <h2>Domäner</h2>
               <button class="btn btn-sm" type="button" onClick={() => setCreatingDomain(true)}>
-                Ny
+                + Ny
               </button>
             </div>
             <ul>
@@ -299,11 +310,21 @@ export function UsersView() {
                 onInvite={() => setInviting(true)}
                 onResendInvite={() => resendInvite(selectedUser)}
                 onSendPasswordReset={() => sendPasswordReset(selectedUser)}
+                onRename={() => setRenamingUser(selectedUser)}
               />
             )}
           </section>
         </div>
       </div>
+
+      {renamingUser && (
+        <RenameModal
+          title="Byt namn på användaren"
+          initialValue={renamingUser.name}
+          onCancel={() => setRenamingUser(null)}
+          onSave={(name) => renameUser(renamingUser, name)}
+        />
+      )}
 
       {confirmDisable && (
         <ConfirmModal
@@ -711,6 +732,7 @@ interface UserDetailProps {
   onInvite: () => void
   onResendInvite: () => void
   onSendPasswordReset: () => void
+  onRename: () => void
 }
 
 function UserDetail({
@@ -724,6 +746,7 @@ function UserDetail({
   onInvite,
   onResendInvite,
   onSendPasswordReset,
+  onRename,
 }: UserDetailProps) {
   return (
     <>
@@ -731,7 +754,12 @@ function UserDetail({
         <div class="idrow">
           <span class="avatar lg">{initials(u.name)}</span>
           <div>
-            <h2>{u.name}</h2>
+            <h2>
+              {u.name}
+              <button class="ib" type="button" title="Byt namn på användaren" aria-label="Byt namn på användaren" onClick={onRename}>
+                <EditIcon />
+              </button>
+            </h2>
             <div class="mail">{u.email}</div>
           </div>
           <span class="head-actions">

@@ -291,7 +291,7 @@ export function ProjectsView({
           <h1>Projekt</h1>
           <span class="spacer" />
           <button class="btn btn-sm" type="button" onClick={() => onCreatingChange(true)}>
-            Nytt projekt
+            + Nytt
           </button>
         </div>
         <Clock />

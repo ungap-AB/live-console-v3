@@ -71,6 +71,7 @@ export interface Client {
     list(query?: string): Promise<Recording[]>
     get(id: string): Promise<Recording | undefined>
     selectSession(id: string, sessionId: string): Promise<Recording | undefined>
+    rename(id: string, name: string): Promise<Recording>
     trash(id: string): Promise<void>
     trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }): Promise<Recording>
   }
@@ -79,6 +80,7 @@ export interface Client {
     get(id: string): Promise<Channel | undefined>
     quota(): Promise<ChannelQuota>
     create(input: { label: string }): Promise<Channel>
+    rename(id: string, label: string): Promise<Channel>
     teardown(id: string): Promise<void>
     rotateKey(id: string): Promise<Channel>
     health(id: string): Promise<ChannelHealth>

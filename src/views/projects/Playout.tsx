@@ -213,14 +213,16 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
           <StatusChip tone={statusTone} dot>
             {statusLabel}
           </StatusChip>
+          <span class="head-actions">
+            <button class="btn btn-sm" type="button" onClick={onClose}>
+              &lt; Projekt
+            </button>
+          </span>
         </h2>
         <div class="facts">
           <span>{subtitle}</span>
         </div>
         <div class="tools">
-          <button class="btn btn-sm" type="button" onClick={onClose}>
-            &lt; Projekt
-          </button>
           <CopyField value={p.playerUrl} monospace grow />
           <div class="seg">
             <button

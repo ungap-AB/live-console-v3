@@ -9,6 +9,7 @@ import { OverflowMenu } from '../../components/OverflowMenu'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
+import { EditIcon } from '../../components/icons'
 import { formatDateTime } from '../../app/time'
 
 const STALE_DAYS = 30
@@ -37,6 +38,7 @@ export function LiveResourcesView() {
   const [quota, setQuota] = useState<{ used: number; limit: number } | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [renaming, setRenaming] = useState<Channel | null>(null)
   const [confirmRotate, setConfirmRotate] = useState<Channel | null>(null)
   const [confirmTeardown, setConfirmTeardown] = useState<Channel | null>(null)
   const [toast, setToast] = useState<string | null>(null)
@@ -83,6 +85,17 @@ export function LiveResourcesView() {
       return
     }
     setCreating(true)
+  }
+
+  async function renameChannel(channel: Channel, label: string) {
+    try {
+      const updated = await client.channels.rename(channel.id, label)
+      setChannels((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : 'Kunde inte byta namn.')
+    } finally {
+      setRenaming(null)
+    }
   }
 
   async function rotateKey(channel: Channel) {
@@ -155,6 +168,7 @@ export function LiveResourcesView() {
                 onRotateKey={() => (selected.state === 'live' ? setConfirmRotate(selected) : rotateKey(selected))}
                 onOpenProject={() => selected.project && setToast(`Öppnar projektet: ${selected.project.name}`)}
                 onTeardown={() => setConfirmTeardown(selected)}
+                onRename={() => setRenaming(selected)}
               />
             )
           }
@@ -167,6 +181,15 @@ export function LiveResourcesView() {
           initialValue=""
           onCancel={() => setCreating(false)}
           onSave={createChannel}
+        />
+      )}
+
+      {renaming && (
+        <RenameModal
+          title="Byt namn på resursen"
+          initialValue={renaming.label}
+          onCancel={() => setRenaming(null)}
+          onSave={(label) => renameChannel(renaming, label)}
         />
       )}
 
@@ -208,9 +231,10 @@ interface ResourceDetailProps {
   onRotateKey: () => void
   onOpenProject: () => void
   onTeardown: () => void
+  onRename: () => void
 }
 
-function ResourceDetail({ channel: c, health, onRotateKey, onOpenProject, onTeardown }: ResourceDetailProps) {
+function ResourceDetail({ channel: c, health, onRotateKey, onOpenProject, onTeardown, onRename }: ResourceDetailProps) {
   const live = c.state === 'live'
 
   return (
@@ -218,6 +242,9 @@ function ResourceDetail({ channel: c, health, onRotateKey, onOpenProject, onTear
       <div class="head">
         <h2>
           {c.label}
+          <button class="ib" type="button" title="Byt namn på resursen" aria-label="Byt namn på resursen" onClick={onRename}>
+            <EditIcon />
+          </button>
           <StatusChip tone={statusTone(c)} dot>
             {statusLabel(c)}
           </StatusChip>
