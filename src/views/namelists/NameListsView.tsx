@@ -31,6 +31,7 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const [personFilter, setPersonFilter] = useState('')
+  const [creating, setCreating] = useState(false)
   const [renaming, setRenaming] = useState<NameList | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<NameList | null>(null)
 
@@ -73,10 +74,11 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
     )
   }
 
-  async function createNameList() {
-    const created = await client.namelists.create({ name: 'Ny namnlista', description: 'Utkast' })
+  async function createNameList(name: string) {
+    const created = await client.namelists.create({ name, description: 'Utkast' })
     setNamelists((prev) => [created, ...prev])
     setSelectedId(created.id)
+    setCreating(false)
   }
 
   async function confirmRename(name: string) {
@@ -138,7 +140,7 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
         <div class="header-list-zone">
           <h1>Namnlistor</h1>
           <span class="spacer" />
-          <button class="btn btn-sm" type="button" onClick={createNameList}>
+          <button class="btn btn-sm" type="button" onClick={() => setCreating(true)}>
             + Ny
           </button>
         </div>
@@ -257,6 +259,15 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
           }
         />
       </div>
+
+      {creating && (
+        <RenameModal
+          title="Ny namnlista"
+          initialValue=""
+          onCancel={() => setCreating(false)}
+          onSave={createNameList}
+        />
+      )}
 
       {renaming && (
         <RenameModal

@@ -1,9 +1,19 @@
+/* Domäner och Användare är båda listpaneler och ska ligga dikt an mot
+   varandra (som en enda lista i två kolumner, bara en linje emellan) —
+   ingen kolumn-gap där. Gapet mot detaljvyn (kolumn 3) återskapas separat
+   nedan med margin-left, eftersom grid-gap annars gäller alla kolumner
+   lika. row-gap behålls för den smala staplade layouten (<920 px). */
 .three {
   display: grid;
   grid-template-columns: 236px 340px 1fr;
-  gap: 22px;
+  column-gap: 0;
+  row-gap: 22px;
   height: 100%;
   min-height: 0;
+}
+
+.three > :nth-child(3) {
+  margin-left: 22px;
 }
 
 @media (max-width: 1120px) {
@@ -259,11 +269,29 @@ ul.log .t {
   resize: vertical;
 }
 
+/* Bakgrunden (hover/vald) sitter på raden själv, inte på de två knapparna
+   var för sig — annars syns "..."-knappen som en egen, fristående ruta
+   utanför den markerade radens bakgrund istället för en del av samma rad
+   (uppmätt 2026-09-18). */
 .domain-row {
   position: relative;
   display: flex;
   align-items: center;
   gap: 2px;
+  border-radius: 8px;
+}
+
+.domain-row:hover {
+  background: var(--accent-soft);
+}
+
+.domain-row.sel {
+  background: var(--surface-3);
+}
+
+.pane li.domain-row button.user-row.dom,
+.pane li.domain-row button.domain-menu-btn {
+  background: none;
 }
 
 .domain-row .user-row {

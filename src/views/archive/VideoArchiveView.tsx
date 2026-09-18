@@ -43,6 +43,7 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [trimming, setTrimming] = useState<Recording | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<Recording | null>(null)
+  const [creating, setCreating] = useState(false)
   const [renaming, setRenaming] = useState<Recording | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
@@ -84,11 +85,11 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   // existerande IVS-inspelning, m.m.) är inte byggt än — den här vyn är en
   // mock. "+ Ny" skapar därför bara en tom lokal platshållare (aldrig
   // sparad hos client/backend) och visar den, sedan stannar flödet där.
-  function createRecording() {
+  function createRecording(name: string) {
     const draft: Recording = {
       id: `local-${Date.now()}`,
       kind: 'original',
-      name: 'Ny videoresurs',
+      name,
       createdAt: new Date().toISOString(),
       durationSeconds: 0,
       sizeBytes: 0,
@@ -101,6 +102,7 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
     }
     setRecordings((prev) => [draft, ...prev])
     setSelectedId(draft.id)
+    setCreating(false)
   }
 
   // Draften från createRecording (id "local-…") finns bara i lokal state,
@@ -140,7 +142,7 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
         <div class="header-list-zone">
           <h1>Videoarkiv</h1>
           <span class="spacer" />
-          <button class="btn btn-sm" type="button" onClick={createRecording}>
+          <button class="btn btn-sm" type="button" onClick={() => setCreating(true)}>
             + Ny
           </button>
         </div>
@@ -222,6 +224,15 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
             originalet och dess versioner till papperskorgen?
           </p>
         </ConfirmModal>
+      )}
+
+      {creating && (
+        <RenameModal
+          title="Ny videoresurs"
+          initialValue=""
+          onCancel={() => setCreating(false)}
+          onSave={createRecording}
+        />
       )}
 
       {renaming && (

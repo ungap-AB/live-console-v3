@@ -31,6 +31,7 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
     if (initialSelectedId) onInitialSelectionConsumed?.()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  const [creating, setCreating] = useState(false)
   const [renaming, setRenaming] = useState<Agenda | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<Agenda | null>(null)
   const [usedByOpen, setUsedByOpen] = useState(false)
@@ -83,10 +84,11 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
     )
   }
 
-  async function createAgenda() {
-    const created = await client.agendas.create({ name: 'Ny dagordning', description: 'Utkast' })
+  async function createAgenda(name: string) {
+    const created = await client.agendas.create({ name, description: 'Utkast' })
     setAgendas((prev) => [created, ...prev])
     setSelectedId(created.id)
+    setCreating(false)
   }
 
   async function confirmRename(name: string) {
@@ -145,7 +147,7 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
         <div class="header-list-zone">
           <h1>Dagordningar</h1>
           <span class="spacer" />
-          <button class="btn btn-sm" type="button" onClick={createAgenda}>
+          <button class="btn btn-sm" type="button" onClick={() => setCreating(true)}>
             + Ny
           </button>
         </div>
@@ -293,6 +295,15 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
           }
         />
       </div>
+
+      {creating && (
+        <RenameModal
+          title="Ny dagordning"
+          initialValue=""
+          onCancel={() => setCreating(false)}
+          onSave={createAgenda}
+        />
+      )}
 
       {renaming && (
         <RenameModal
