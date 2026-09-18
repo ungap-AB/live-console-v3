@@ -1,11 +1,20 @@
 .status-card {
-  border-radius: 10px;
-  border: 1px solid var(--line);
+  border-radius: 8px;
+  border: 1px solid var(--line-soft);
   padding: 14px 16px;
-  background: var(--surface-2);
+  background: var(--rail);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.status-card-main {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
+  min-width: 0;
 }
 
 .status-card-head {
@@ -37,9 +46,10 @@
 
 .status-card-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 4px;
+  flex: none;
 }
 
 .status-card-neutral .status-card-dot {

@@ -103,6 +103,16 @@ select:focus-visible {
   background: var(--danger-bg-hover);
 }
 
+.btn-danger-ghost {
+  color: var(--danger);
+  border-color: var(--danger-line);
+  background: transparent;
+}
+
+.btn-danger-ghost:hover:not(:disabled) {
+  background: var(--danger-bg-hover);
+}
+
 .view {
   display: flex;
   flex-direction: column;

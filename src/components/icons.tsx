@@ -94,6 +94,15 @@ export function PlayIcon() {
   )
 }
 
+export function SwapIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7">
+      <path d="M4 8h13M13 4l4 4-4 4" />
+      <path d="M20 16H7M11 12l-4 4 4 4" />
+    </svg>
+  )
+}
+
 export function SearchIcon() {
   return (
     <svg

@@ -25,12 +25,21 @@
   overflow: hidden;
 }
 
+.seg.full {
+  display: flex;
+  width: 100%;
+}
+
 .seg button {
   border: 0;
   background: var(--btn-bg);
   padding: 7px 15px;
   color: var(--ink-2);
   font-weight: 500;
+}
+
+.seg.full button {
+  flex: 1;
 }
 
 .seg button + button {
@@ -45,6 +54,12 @@
 .seg button.closed[aria-pressed='true'] {
   background: var(--danger-bg);
   color: var(--danger);
+}
+
+.field-help {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
 }
 
 .tabs {
@@ -134,6 +149,19 @@
   flex-direction: column;
   gap: 9px;
   min-width: 0;
+}
+
+.rowset-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px 20px;
+  min-width: 0;
+}
+
+@media (max-width: 560px) {
+  .rowset-cols {
+    grid-template-columns: 1fr;
+  }
 }
 
 .recording-sessions {

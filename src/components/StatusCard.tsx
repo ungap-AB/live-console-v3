@@ -16,11 +16,13 @@ interface StatusCardProps {
 export function StatusCard({ tone, title, children, actions }: StatusCardProps) {
   return (
     <div class={`status-card status-card-${tone}`}>
-      <div class="status-card-head">
-        <span class="status-card-dot" />
-        <h3>{title}</h3>
+      <div class="status-card-main">
+        <div class="status-card-head">
+          <span class="status-card-dot" />
+          <h3>{title}</h3>
+        </div>
+        {children && <p class="status-card-body">{children}</p>}
       </div>
-      {children && <p class="status-card-body">{children}</p>}
       {actions && <div class="status-card-actions">{actions}</div>}
     </div>
   )

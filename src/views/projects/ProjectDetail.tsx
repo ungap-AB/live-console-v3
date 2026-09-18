@@ -11,7 +11,7 @@ import { VideoLightbox } from '../../components/VideoLightbox'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { RenameModal } from '../../components/RenameModal'
 import { AttachedListPicker } from '../../components/AttachedListPicker'
-import { EditIcon, PlayIcon } from '../../components/icons'
+import { EditIcon, PlayIcon, SwapIcon } from '../../components/icons'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
@@ -261,15 +261,17 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
       <div class="body">
         <div class="panel-head-row">
           <CopyField label="Spelarlänk" value={p.playerUrl} monospace grow />
-          <div class="field-block">
+        </div>
+        <div class="panel-head-row">
+          <div class="field-block grow">
             <div class="field-block-label">Synlighet</div>
-            <div class="seg">
+            <div class="seg full">
               <button
                 type="button"
                 aria-pressed={p.visibility === 'open'}
                 onClick={() => actions.setVisibility('open')}
               >
-                Öppen för publik
+                Öppen
               </button>
               <button
                 type="button"
@@ -277,47 +279,78 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
                 aria-pressed={p.visibility === 'closed'}
                 onClick={() => actions.setVisibility('closed')}
               >
-                Stängd för publik
+                Stängd
               </button>
             </div>
+            <p class="field-help">
+              {p.visibility === 'open' ? 'Vem som helst med spelarlänken kan se projektet.' : 'Projektet är dolt för publik.'}
+            </p>
           </div>
         </div>
         <div class="panel-head-row">
-          <FieldBlock label="Dagordning" grow>
+          <FieldBlock label="Dagordning" grow dashed={!p.agendaId}>
             <span class="field-block-value">{agendaResource.data?.name ?? 'Ingen kopplad'}</span>
-            {p.agendaId && (
-              <button class="btn btn-sm" type="button" onClick={() => onOpenAgenda(p.agendaId!)}>
-                Öppna...
-              </button>
+            {p.agendaId ? (
+              <>
+                <button class="btn btn-sm" type="button" onClick={() => onOpenAgenda(p.agendaId!)}>
+                  Öppna
+                </button>
+                <AttachedListPicker
+                  currentId={p.agendaId}
+                  items={(allAgendasResource.data ?? []).map((a) => ({ id: a.id, name: a.name }))}
+                  pickerTitle="Byt dagordning"
+                  createNewLabel="Ny dagordning"
+                  onPick={(id) => actions.setAgenda(id)}
+                  onCreateNew={createAndAttachAgenda}
+                  buttonClassName="ib"
+                  icon={<SwapIcon />}
+                  ariaLabel="Byt dagordning"
+                />
+              </>
+            ) : (
+              <AttachedListPicker
+                currentId={p.agendaId}
+                items={(allAgendasResource.data ?? []).map((a) => ({ id: a.id, name: a.name }))}
+                pickerTitle="Koppla dagordning"
+                createNewLabel="Ny dagordning"
+                onPick={(id) => actions.setAgenda(id)}
+                onCreateNew={createAndAttachAgenda}
+                buttonLabel="Koppla..."
+              />
             )}
-            <AttachedListPicker
-              currentId={p.agendaId}
-              items={(allAgendasResource.data ?? []).map((a) => ({ id: a.id, name: a.name }))}
-              pickerTitle="Byt dagordning"
-              createNewLabel="Ny dagordning"
-              onPick={(id) => actions.setAgenda(id)}
-              onCreateNew={createAndAttachAgenda}
-              buttonLabel="Byt..."
-            />
           </FieldBlock>
         </div>
         <div class="panel-head-row">
-          <FieldBlock label="Namnlista" grow>
+          <FieldBlock label="Namnlista" grow dashed={!p.namelistId}>
             <span class="field-block-value">{nameListResource.data?.name ?? 'Ingen kopplad'}</span>
-            {p.namelistId && (
-              <button class="btn btn-sm" type="button" onClick={() => onOpenNameList(p.namelistId!)}>
-                Öppna...
-              </button>
+            {p.namelistId ? (
+              <>
+                <button class="btn btn-sm" type="button" onClick={() => onOpenNameList(p.namelistId!)}>
+                  Öppna
+                </button>
+                <AttachedListPicker
+                  currentId={p.namelistId}
+                  items={(allNameListsResource.data ?? []).map((n) => ({ id: n.id, name: n.name }))}
+                  pickerTitle="Byt namnlista"
+                  createNewLabel="Ny namnlista"
+                  onPick={(id) => actions.setNameList(id)}
+                  onCreateNew={createAndAttachNameList}
+                  buttonClassName="ib"
+                  icon={<SwapIcon />}
+                  ariaLabel="Byt namnlista"
+                />
+              </>
+            ) : (
+              <AttachedListPicker
+                currentId={p.namelistId}
+                items={(allNameListsResource.data ?? []).map((n) => ({ id: n.id, name: n.name }))}
+                pickerTitle="Koppla namnlista"
+                createNewLabel="Ny namnlista"
+                onPick={(id) => actions.setNameList(id)}
+                onCreateNew={createAndAttachNameList}
+                buttonLabel="Koppla..."
+              />
             )}
-            <AttachedListPicker
-              currentId={p.namelistId}
-              items={(allNameListsResource.data ?? []).map((n) => ({ id: n.id, name: n.name }))}
-              pickerTitle="Byt namnlista"
-              createNewLabel="Ny namnlista"
-              onPick={(id) => actions.setNameList(id)}
-              onCreateNew={createAndAttachNameList}
-              buttonLabel="Byt..."
-            />
           </FieldBlock>
         </div>
 
@@ -338,13 +371,22 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
             actions={
               <>
                 {!hasIngest && (
-                  <button class="btn" type="button" onClick={() => actions.createChannel().then(refresh)}>
+                  <button class="btn btn-primary" type="button" onClick={() => actions.createChannel().then(refresh)}>
                     Skapa ingest
+                  </button>
+                )}
+                {hasIngest && channel?.playbackUrl && (
+                  <button
+                    class={`btn btn-sm ${live ? 'btn-primary' : ''}`}
+                    type="button"
+                    onClick={() => setShowVideo(true)}
+                  >
+                    Visa livesändning
                   </button>
                 )}
                 {hasIngest && !inUse && (
                   <button
-                    class="btn btn-danger"
+                    class="btn btn-sm btn-danger-ghost"
                     type="button"
                     onClick={() => {
                       // Stoppa pollningen istället för att refresh:a — kanalen är
@@ -358,10 +400,18 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
                     Riv ingest
                   </button>
                 )}
-                {channel?.playbackUrl && (
-                  <button class="btn btn-sm" type="button" onClick={() => setShowVideo(true)}>
-                    Visa livesändning
-                  </button>
+                {hasIngest && inUse && (
+                  <OverflowMenu
+                    items={[
+                      {
+                        label: 'Riv ingest',
+                        danger: true,
+                        disabled: true,
+                        title: 'Går inte att riva medan signal tas emot',
+                        onClick: () => {},
+                      },
+                    ]}
+                  />
                 )}
               </>
             }
@@ -369,7 +419,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
             {liveNote}
           </StatusCard>
           <div class="resource">
-            <div class="rowset">
+            <div class="rowset-cols">
               <CopyField
                 label="Ingest-server"
                 value={channel?.ingestEndpoint ?? null}
@@ -377,6 +427,8 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
                 monospace
               />
               <CopyField label="Stream key" value={streamKey} mask monospace />
+            </div>
+            <div class="rowset">
               <CopyField label="HLS-URL" value={channel?.playbackUrl ?? null} monospace />
             </div>
             <div class="health">

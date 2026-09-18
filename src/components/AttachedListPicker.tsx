@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact'
 import { useState } from 'preact/hooks'
 import { PickerModal } from './PickerModal'
 
@@ -15,6 +16,9 @@ interface AttachedListPickerProps {
   onCreateNew: () => void | Promise<void>
   buttonLabel?: string
   buttonClassName?: string
+  /** Ikon istället för textetikett (t.ex. bytknappen bredvid en redan kopplad lista) — kräver ariaLabel. */
+  icon?: ComponentChildren
+  ariaLabel?: string
 }
 
 // Delad mellan Playout (kopplingsknapp bredvid varje kolumnrubrik) och
@@ -30,13 +34,21 @@ export function AttachedListPicker({
   onCreateNew,
   buttonLabel = 'Byt...',
   buttonClassName = 'btn btn-sm',
+  icon,
+  ariaLabel,
 }: AttachedListPickerProps) {
   const [picking, setPicking] = useState(false)
 
   return (
     <>
-      <button class={buttonClassName} type="button" onClick={() => setPicking(true)}>
-        {buttonLabel}
+      <button
+        class={buttonClassName}
+        type="button"
+        title={icon ? ariaLabel : undefined}
+        aria-label={icon ? ariaLabel : undefined}
+        onClick={() => setPicking(true)}
+      >
+        {icon ?? buttonLabel}
       </button>
       {picking && (
         <PickerModal
