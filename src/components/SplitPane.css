@@ -55,8 +55,20 @@
 }
 
 .split > :not(:first-child),
-.three > :not(:first-child):not(:nth-child(2)) {
+.three > :not(:first-child):not(:nth-child(2)):not(:nth-child(3)) {
   margin: 22px 0;
+  height: auto;
+  min-height: 0;
+}
+
+/* .three:s tredje barn (detaljvyn) har en egen kolumn-gap på 0 mot barn 2
+   (UsersView.css, så Domän-/Användarlistan kan ligga dikt an) — den
+   generiska regeln ovan (margin: 22px 0, dvs 0 i sidled) skulle annars
+   vinna över ett försök att återskapa avståndet med bara margin-left,
+   eftersom den har högre specificitet. Egen fullständig marginalregel
+   istället för att lappa ett enskilt håll. */
+.three > :nth-child(3) {
+  margin: 22px;
   height: auto;
   min-height: 0;
 }
