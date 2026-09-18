@@ -4,7 +4,8 @@ import './OverflowMenu.css'
 
 interface OverflowMenuItem {
   label: string
-  onClick: () => void
+  onClick?: () => void | Promise<void>
+  copyValue?: string
   danger?: boolean
   disabled?: boolean
   title?: string
@@ -63,7 +64,11 @@ export function OverflowMenu({ items, label = 'Fler alternativ' }: OverflowMenuP
               title={item.title}
               onClick={() => {
                 setOpen(false)
-                item.onClick()
+                if (item.copyValue) {
+                  void navigator.clipboard.writeText(item.copyValue)
+                } else {
+                  void item.onClick?.()
+                }
               }}
             >
               {item.label}

@@ -227,6 +227,7 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
                     <span class="head-actions">
                       <OverflowMenu
                         items={[
+                          { label: `Dagordnings-ID: ${selected.id}`, copyValue: selected.id },
                           {
                             label: selected.isTemplate ? 'Ta bort mallstatus' : 'Gör till mall',
                             onClick: () => toggleTemplate(selected),

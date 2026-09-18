@@ -201,6 +201,7 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
                     <span class="head-actions">
                       <OverflowMenu
                         items={[
+                          { label: `Namnlist-ID: ${selected.id}`, copyValue: selected.id },
                           { label: 'Duplicera', onClick: () => duplicate(selected) },
                           {
                             label: 'Flytta till papperskorgen',
