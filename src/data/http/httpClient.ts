@@ -34,6 +34,7 @@ import type {
   ServerNameList,
   ServerNameListSummary,
   ServerPaged,
+  ServerPlayout,
   ServerProject,
   ServerRecording,
   ServerRecordingSession,
@@ -253,11 +254,15 @@ function toTimelineEvent(dto: ServerTimelineEvent): TimelineEvent {
 }
 
 async function fetchPlayout(id: string) {
-  const events = await api<ServerTimelineEvent[]>(`/projects/${id}/timeline`)
-  const timeline = events.map(toTimelineEvent)
-  const currentAgendaItemId = [...timeline].reverse().find((e) => e.kind === 'agendaItem')?.refId ?? null
-  const currentPersonId = [...timeline].reverse().find((e) => e.kind === 'person')?.refId ?? null
-  return { currentAgendaItemId, currentPersonId, timeline }
+  const dto = await api<ServerPlayout>(`/projects/${id}/playout`)
+  const timeline = dto.timeline.map(toTimelineEvent)
+  return {
+    currentAgendaItemId: dto.currentAgendaItem?.refId ?? null,
+    currentPersonId: dto.currentPerson?.refId ?? null,
+    currentAgendaItem: dto.currentAgendaItem ? toTimelineEvent(dto.currentAgendaItem) : null,
+    currentPerson: dto.currentPerson ? toTimelineEvent(dto.currentPerson) : null,
+    timeline,
+  }
 }
 
 // sim finns bara i frontend-typen (se types.ts) — härleds här ur riktiga
@@ -608,6 +613,9 @@ export const httpClient: Client = {
       const dto = await getOrUndefined(api<ServerProject>(`/projects/${id}`))
       return dto ? toProjectFull(dto) : undefined
     },
+    async playout(id) {
+      return fetchPlayout(id)
+    },
     async create(input) {
       const dto = await api<ServerProject>('/projects', { method: 'POST', body: input })
       return toProjectFull(dto)
@@ -687,8 +695,8 @@ export const httpClient: Client = {
       const dto = await api<ServerProject>(`/projects/${id}/return-to-live`, { method: 'POST' })
       return toProjectFull(dto)
     },
-    async cue(id, kind, refId, _label) {
-      const dto = await api<ServerTimelineEvent>(`/projects/${id}/playout/cue`, { method: 'POST', body: { kind, refId } })
+    async cue(id, kind, refId, label) {
+      const dto = await api<ServerTimelineEvent>(`/projects/${id}/playout/cue`, { method: 'POST', body: { kind, refId, label } })
       return toTimelineEvent(dto)
     },
     async clear(id, kind) {

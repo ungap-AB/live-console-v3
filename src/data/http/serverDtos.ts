@@ -109,6 +109,12 @@ export interface ServerTimelineEvent {
   offsetSeconds: number | null
 }
 
+export interface ServerPlayout {
+  currentAgendaItem: ServerTimelineEvent | null
+  currentPerson: ServerTimelineEvent | null
+  timeline: ServerTimelineEvent[]
+}
+
 export interface ServerReviewLink {
   url: string
   token: string

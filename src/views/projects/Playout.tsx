@@ -31,6 +31,19 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   const live = phase === 'live'
   useTick(live)
 
+  useEffect(() => {
+    let cancelled = false
+    const poll = () => {
+      if (!cancelled) void actions.refreshPlayout().catch(() => undefined)
+    }
+    poll()
+    const interval = live ? window.setInterval(poll, 2000) : null
+    return () => {
+      cancelled = true
+      if (interval !== null) window.clearInterval(interval)
+    }
+  }, [p.id, live])
+
   const rec = p.recording?.state ?? 'none'
   const guidedPhase = resolveGuidedPhase(p, phase, rec)
   const canTrim = p.capabilities.trimRecording.status === 'allowed'
@@ -85,8 +98,8 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   const statusTone = status.tone
   const statusLabel = status.label
 
-  const nowItem = agenda?.items.find((it) => it.id === p.playout.currentAgendaItemId)?.title ?? null
-  const nowSpeaker = nameList?.people.find((pe) => pe.id === p.playout.currentPersonId)?.name ?? null
+  const nowItem = p.playout.currentAgendaItem?.label ?? agenda?.items.find((it) => it.id === p.playout.currentAgendaItemId)?.title ?? null
+  const nowSpeaker = p.playout.currentPerson?.label ?? nameList?.people.find((pe) => pe.id === p.playout.currentPersonId)?.name ?? null
 
   function lastPlayedOffset(itemId: string): number | null {
     const events = p.playout.timeline.filter((e) => e.kind === 'agendaItem' && e.refId === itemId)

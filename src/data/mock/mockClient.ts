@@ -578,6 +578,9 @@ export const mockClient: Client = {
       const project = projects.find((p) => p.id === id)
       return delay(project ? projectSnapshot(project) : undefined)
     },
+    async playout(id) {
+      return delay(clone(findProject(id).playout))
+    },
     async create(input) {
       const project: Project = {
         id: `p${nextId++}`,

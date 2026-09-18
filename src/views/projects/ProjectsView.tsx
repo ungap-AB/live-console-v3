@@ -33,7 +33,13 @@ function deriveProjectStatus(p: Project): { tone: ChipTone; label: string } {
 function derivePlayoutState(timeline: TimelineEvent[]): PlayoutState {
   const lastItem = [...timeline].reverse().find((e) => e.kind === 'agendaItem')
   const lastPerson = [...timeline].reverse().find((e) => e.kind === 'person')
-  return { currentAgendaItemId: lastItem?.refId ?? null, currentPersonId: lastPerson?.refId ?? null, timeline }
+  return {
+    currentAgendaItemId: lastItem?.refId ?? null,
+    currentPersonId: lastPerson?.refId ?? null,
+    currentAgendaItem: lastItem?.label === 'Rensat' ? null : lastItem ?? null,
+    currentPerson: lastPerson?.label === 'Rensat' ? null : lastPerson ?? null,
+    timeline,
+  }
 }
 
 interface ProjectsViewProps {
@@ -120,6 +126,11 @@ export function ProjectsView({
       if (!selected) return
       const refreshed = await client.projects.get(selected.id)
       if (refreshed) replace(refreshed)
+    },
+    refreshPlayout: async () => {
+      if (!selected) return
+      const playout = await client.projects.playout(selected.id)
+      setProjects((prev) => prev.map((p) => (p.id === selected.id ? { ...p, playout } : p)))
     },
     rename: (name: string) =>
       withErrorToast(async () => {

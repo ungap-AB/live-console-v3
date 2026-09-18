@@ -150,6 +150,8 @@ export interface PlayoutState {
   currentAgendaItemId: string | null
   currentPersonId: string | null
   timeline: TimelineEvent[]
+  currentAgendaItem?: TimelineEvent | null
+  currentPerson?: TimelineEvent | null
 }
 
 // ---- Live-resurser (IVS-kanaler) ----

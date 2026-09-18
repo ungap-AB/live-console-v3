@@ -113,6 +113,7 @@ export interface Client {
   projects: {
     list(query?: string): Promise<Project[]>
     get(id: string): Promise<Project | undefined>
+    playout(id: string): Promise<Project['playout']>
     create(input: { name: string }): Promise<Project>
     rename(id: string, name: string): Promise<Project>
     trash(id: string): Promise<void>
