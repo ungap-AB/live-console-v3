@@ -38,7 +38,7 @@ export function LoginView({ onLogin }: LoginViewProps) {
       <form class="login-card" onSubmit={submit}>
         <img class="login-logo theme-light-only" src={logoLightUrl} alt="Ungap" />
         <img class="login-logo theme-dark-only" src={logoDarkUrl} alt="Ungap" />
-        <p class="login-sub">Logga in för att fortsätta.</p>
+        <p class="login-sub">Välkommen att logga in</p>
         <label class="login-field">
           E-post
           <input
