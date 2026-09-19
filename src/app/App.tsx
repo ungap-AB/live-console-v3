@@ -74,6 +74,15 @@ export function App() {
     window.location.hash = routeHref('namelists')
   }
 
+  const isAdmin = auth.status === 'authed' && auth.user.roles.includes('admin')
+  const routeAllowed = isAdmin || ['projects', 'agendas', 'namelists', 'trash'].includes(route)
+
+  useEffect(() => {
+    if (auth.status === 'authed' && !routeAllowed) {
+      window.location.hash = routeHref('projects')
+    }
+  }, [auth.status, routeAllowed, route])
+
   if (auth.status === 'loading') return <div class="login-screen">Laddar…</div>
   if (auth.status === 'anon') return <LoginView onLogin={login} />
 
@@ -93,8 +102,9 @@ export function App() {
       projectsNavAction={projectsNavAction}
       onLogout={logout}
       currentUserId={auth.user.id}
+      currentUserRoles={auth.user.roles}
     >
-      {route === 'projects' && (
+      {routeAllowed && route === 'projects' && (
         <ProjectsView
           meetingDomain={auth.user.domain.host}
           selectedId={activeProjectId}
@@ -107,23 +117,23 @@ export function App() {
           onOpenNameList={openNameList}
         />
       )}
-      {route === 'agendas' && (
+      {routeAllowed && route === 'agendas' && (
         <AgendasView
           onOpenProject={openProject}
           initialSelectedId={pendingAgendaId}
           onInitialSelectionConsumed={() => setPendingAgendaId(null)}
         />
       )}
-      {route === 'namelists' && (
+      {routeAllowed && route === 'namelists' && (
         <NameListsView
           initialSelectedId={pendingNameListId}
           onInitialSelectionConsumed={() => setPendingNameListId(null)}
         />
       )}
-      {route === 'live' && <LiveResourcesView />}
-      {route === 'archive' && <VideoArchiveView onOpenProject={openProject} />}
-      {route === 'trash' && <TrashView />}
-      {route === 'users' && (
+      {routeAllowed && route === 'live' && <LiveResourcesView />}
+      {routeAllowed && route === 'archive' && <VideoArchiveView onOpenProject={openProject} />}
+      {routeAllowed && route === 'trash' && <TrashView />}
+      {routeAllowed && route === 'users' && isAdmin && (
         <UsersView currentDomainId={auth.user.domain.id} canManageDomains={auth.user.roles.includes('admin')} />
       )}
     </Shell>

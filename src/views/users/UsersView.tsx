@@ -16,17 +16,9 @@ import './UsersView.css'
 const ROLES: Record<Role, { label: string; description: string }> = {
   admin: { label: 'Administratör', description: 'Hanterar användare, domäner och live-resurser.' },
   operator: { label: 'Operatör', description: 'Skapar projekt, sänder och publicerar ondemand.' },
-  editor: {
-    label: 'Redaktör',
-    description: 'Hanterar dagordningar, namnlistor och videoarkiv utan att sända.',
-  },
-  reviewer: {
-    label: 'Granskare',
-    description: 'Kan bara öppna granskningslänkar och godkänna före publicering.',
-  },
 }
 
-const ROLE_ORDER: Role[] = ['admin', 'operator', 'editor', 'reviewer']
+const ROLE_ORDER: Role[] = ['admin', 'operator']
 
 function initials(name: string): string {
   return name
@@ -140,7 +132,8 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
   }
 
   async function toggleRole(user: UserAccount, role: Role, checked: boolean) {
-    const nextRoles = checked ? [...user.roles, role] : user.roles.filter((r) => r !== role)
+    if (!checked) return
+    const nextRoles = [role]
     await withErrorToast(async () => {
       const updated = await client.users.setRoles(user.id, nextRoles)
       replace(updated)
@@ -857,7 +850,7 @@ function UserDetail({
               return (
                 <label key={role} class={`role ${on ? 'on' : ''}`}>
                   <input
-                    type="checkbox"
+                    type="radio"
                     checked={on}
                     disabled={lock}
                     onChange={(e) => onToggleRole(role, e.currentTarget.checked)}
@@ -894,14 +887,7 @@ function UserDetail({
             Inaktiverade konton kan inte logga in men behålls i historiken — tidigare sändningar och
             ändringar står kvar på användaren.
           </p>
-        ) : (
-          u.roles.length === 1 &&
-          u.roles[0] === 'reviewer' && (
-            <p class="note">
-              Granskare når bara granskningslänkar. De ser varken projektlistan eller videoarkivet.
-            </p>
-          )
-        )}
+        ) : null}
       </div>
     </>
   )

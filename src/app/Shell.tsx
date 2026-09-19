@@ -1,7 +1,7 @@
 import type { ComponentChildren } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../data'
-import type { Domain, UserAccount } from '../data/types'
+import type { Domain, Role, UserAccount } from '../data/types'
 import { Modal } from '../components/Modal'
 import { Icon } from '../components/Icon'
 import { formatDate } from './time'
@@ -54,14 +54,22 @@ interface ShellProps {
   projectsNavAction: { label: string; onClick: () => void } | null
   onLogout: () => void
   currentUserId: string
+  currentUserRoles: Role[]
 }
 
-export function Shell({ active, children, projectsNavAction, onLogout, currentUserId }: ShellProps) {
+export function Shell({ active, children, projectsNavAction, onLogout, currentUserId, currentUserRoles }: ShellProps) {
   const [navOpen, setNavOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null)
   const [currentDomain, setCurrentDomain] = useState<Domain | null>(null)
   const [quota, setQuota] = useState<{ used: number; limit: number } | null>(null)
   const [showAccount, setShowAccount] = useState(false)
+  const isAdmin = currentUserRoles.includes('admin')
+  const visibleGroups = NAV_GROUPS
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => isAdmin || ['projects', 'agendas', 'namelists', 'trash'].includes(item.route)),
+    }))
+    .filter((group) => group.items.length > 0)
 
   useEffect(() => {
     client.users.get(currentUserId).then((u) => u && setCurrentUser(u))
@@ -98,7 +106,7 @@ export function Shell({ active, children, projectsNavAction, onLogout, currentUs
         </div>
 
         <div class="nav-groups">
-          {NAV_GROUPS.map((group) => (
+          {visibleGroups.map((group) => (
             <div class="nav-group" key={group.label}>
               <div class="nav-group-label">{group.label}</div>
               {group.items.map((item) => (

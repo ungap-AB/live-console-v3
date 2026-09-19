@@ -12,6 +12,7 @@ import type {
   NameListPerson,
   Project,
   Recording,
+  Role,
   TimelineEvent,
   UserAccount,
 } from '../types'
@@ -555,7 +556,7 @@ export const mockClient: Client = {
     async setRoles(id, roles) {
       const user = users.find((u) => u.id === id)
       if (!user) throw new Error(`Användare ${id} finns inte`)
-      const nextRoles = roles.length ? roles : ['reviewer' as const]
+      const nextRoles: Role[] = roles.length ? [roles[0]] : ['operator']
       if (isOnlyActiveAdmin(user) && !nextRoles.includes('admin')) {
         throw new Error('Domänen måste ha minst en aktiv administratör.')
       }
