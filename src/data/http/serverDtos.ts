@@ -17,6 +17,15 @@ export interface ServerAgendaItem {
   position: number
   title: string
   reference?: string
+  attachments: ServerAgendaAttachment[]
+}
+
+export interface ServerAgendaAttachment {
+  id: string
+  fileName: string
+  contentType: string
+  sizeBytes: number
+  url: string
 }
 
 export interface ServerAgendaListItem {

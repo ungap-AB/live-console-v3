@@ -9,6 +9,7 @@ import { EditableItemList } from '../../components/EditableItemList'
 import { Modal } from '../../components/Modal'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
+import { PdfAttachments } from '../../components/PdfAttachments'
 import { PlusIcon, EditIcon } from '../../components/icons'
 import './AgendasView.css'
 
@@ -322,6 +323,7 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
                     onAdd={() => addItem(selected)}
                     onRename={(id, title) => renameItem(selected, id, title)}
                     onRemove={(id) => removeItem(selected, id)}
+                    renderExtra={(item) => <PdfAttachments agenda={selected} item={item} onChanged={replaceSelected} />}
                     toolbarExtraAfter={
                       <button class="btn btn-sm btn-primary agenda-import-button" type="button" onClick={() => openImport(selected)}>
                         Importera...

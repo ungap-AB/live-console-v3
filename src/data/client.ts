@@ -25,6 +25,10 @@ export interface AgendaInput {
   description: string
 }
 
+export interface AgendaAttachmentInput {
+  files: File[]
+}
+
 export interface NameListInput {
   name: string
   description: string
@@ -52,6 +56,8 @@ export interface Client {
     addItem(id: string, item: Omit<AgendaItem, 'id' | 'position'>): Promise<Agenda>
     updateItem(id: string, itemId: string, item: Omit<AgendaItem, 'id' | 'position'>): Promise<Agenda>
     removeItem(id: string, itemId: string): Promise<Agenda>
+    addAttachments(id: string, itemId: string, input: AgendaAttachmentInput): Promise<Agenda>
+    removeAttachment(id: string, itemId: string, attachmentId: string): Promise<Agenda>
   }
   meetings: {
     list(domain: string): Promise<MeetingSummary[]>

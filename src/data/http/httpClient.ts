@@ -427,6 +427,14 @@ export const httpClient: Client = {
     async removeItem(id, itemId) {
       return toAgenda(await api<ServerAgenda>(`/agendas/${id}/items/${itemId}`, { method: 'DELETE' }))
     },
+    async addAttachments(id, itemId, input) {
+      const body = new FormData()
+      input.files.forEach((file) => body.append('files', file, file.name))
+      return toAgenda(await api<ServerAgenda>(`/agendas/${id}/items/${itemId}/attachments`, { method: 'POST', body }))
+    },
+    async removeAttachment(id, itemId, attachmentId) {
+      return toAgenda(await api<ServerAgenda>(`/agendas/${id}/items/${itemId}/attachments/${attachmentId}`, { method: 'DELETE' }))
+    },
   },
   meetings: {
     async list(domain): Promise<MeetingSummary[]> {

@@ -232,6 +232,29 @@ export const mockClient: Client = {
       agenda.changedAt = new Date().toISOString()
       return delay(clone(agenda))
     },
+    async addAttachments(id, itemId, input) {
+      const agenda = findAgenda(id)
+      const item = agenda.items.find((candidate) => candidate.id === itemId)
+      if (!item) throw new Error(`Punkt ${itemId} finns inte`)
+      item.attachments = [
+        ...(item.attachments ?? []),
+        ...input.files.map((file) => ({
+          id: `a${nextId++}`,
+          fileName: file.name,
+          contentType: 'application/pdf',
+          sizeBytes: file.size,
+          url: URL.createObjectURL(file),
+        })),
+      ]
+      return delay(clone(agenda))
+    },
+    async removeAttachment(id, itemId, attachmentId) {
+      const agenda = findAgenda(id)
+      const item = agenda.items.find((candidate) => candidate.id === itemId)
+      if (!item) throw new Error(`Punkt ${itemId} finns inte`)
+      item.attachments = (item.attachments ?? []).filter((attachment) => attachment.id !== attachmentId)
+      return delay(clone(agenda))
+    },
   },
   meetings: {
     async list(domain): Promise<MeetingSummary[]> {

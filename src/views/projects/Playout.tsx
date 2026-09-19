@@ -6,6 +6,7 @@ import { StatusChip, type ChipTone } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
 import { AttachedListPicker } from '../../components/AttachedListPicker'
 import { EditableItemList } from '../../components/EditableItemList'
+import { PdfAttachments } from '../../components/PdfAttachments'
 import { VideoLightbox } from '../../components/VideoLightbox'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Modal } from '../../components/Modal'
@@ -550,6 +551,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
                   const done = offset != null
                   return (
                     <>
+                      <PdfAttachments agenda={agenda} item={it} onChanged={setAgenda} />
                       {done && <span class="time">{formatHms(offset)}</span>}
                       <button
                         class={`play ${done ? 'done' : ''}`}

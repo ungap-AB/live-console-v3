@@ -30,6 +30,15 @@ export interface AgendaItem {
   position: number
   title: string
   reference?: string
+  attachments?: AgendaAttachment[]
+}
+
+export interface AgendaAttachment {
+  id: string
+  fileName: string
+  contentType: string
+  sizeBytes: number
+  url: string
 }
 
 export interface Agenda {
