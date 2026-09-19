@@ -585,8 +585,8 @@ export const httpClient: Client = {
     async remove(id) {
       await api<void>(`/domains/${id}`, { method: 'DELETE' })
     },
-    async invite(domainId, input) {
-      const dto = await api<ServerUser>(`/domains/${domainId}/invitations`, { method: 'POST', body: input })
+    async createUser(domainId, input) {
+      const dto = await api<ServerUser>(`/domains/${domainId}/users`, { method: 'POST', body: input })
       return toUserSummary(dto)
     },
   },
@@ -603,8 +603,13 @@ export const httpClient: Client = {
       await api<ServerUser>(`/users/${id}`, { method: 'PATCH', body: input })
       return fetchUserDetail(id)
     },
+    async sendInvitation(id, pin) {
+      const dto = await api<ServerUser>(`/users/${id}/invitations`, { method: 'POST', body: { pin } })
+      return toUserSummary(dto)
+    },
     async resendInvite(id, pin) {
-      await api<void>(`/invitations/${id}/resend`, { method: 'POST', body: { pin } })
+      const dto = await api<ServerUser>(`/invitations/${id}/resend`, { method: 'POST', body: { pin } })
+      return toUserSummary(dto)
     },
     async sendPasswordReset(id) {
       const dto = await api<ServerUser>(`/users/${id}`)

@@ -287,7 +287,7 @@ export interface TrashItem {
 
 // ---- Domäner och användare ----
 
-export type UserStatus = 'active' | 'invited' | 'disabled'
+export type UserStatus = 'notinvited' | 'active' | 'invited' | 'disabled'
 
 export interface UserActivityEntry {
   occurredAt: string

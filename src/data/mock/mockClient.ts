@@ -505,14 +505,14 @@ export const mockClient: Client = {
       if (idx >= 0) domains.splice(idx, 1)
       return delay(undefined)
     },
-    async invite(domainId, input) {
+    async createUser(domainId, input) {
       const user: UserAccount = {
         id: `u${nextId++}`,
         domainId,
         name: input.name,
         email: input.email,
         roles: input.roles,
-        status: 'invited',
+        status: 'notinvited',
         ssoEnabled: false,
         createdAt: new Date().toISOString(),
         lastLoginAt: null,
@@ -540,8 +540,14 @@ export const mockClient: Client = {
       if (input.email !== undefined) user.email = input.email
       return delay(clone(user))
     },
-    async resendInvite(_id, _pin) {
-      return delay(undefined)
+    async sendInvitation(id, _pin) {
+      const user = users.find((u) => u.id === id)
+      if (!user) throw new Error(`Användare ${id} finns inte`)
+      user.status = 'invited'
+      return delay(clone(user))
+    },
+    async resendInvite(id, pin) {
+      return this.sendInvitation(id, pin)
     },
     async sendPasswordReset() {
       return delay(undefined)

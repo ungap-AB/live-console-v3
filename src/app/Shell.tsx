@@ -180,6 +180,7 @@ interface MyAccountDialogProps {
 }
 
 const STATUS_LABEL: Record<UserAccount['status'], string> = {
+  notinvited: 'Ej inbjuden',
   active: 'Aktiv',
   invited: 'Inbjuden',
   disabled: 'Inaktiverad',

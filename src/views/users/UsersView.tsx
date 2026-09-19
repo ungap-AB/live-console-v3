@@ -165,8 +165,11 @@ export function UsersView() {
 
   async function resendInvite(user: UserAccount) {
     const pin = String(Math.floor(100000 + Math.random() * 900000))
-    await client.users.resendInvite(user.id, pin)
-    setToast(`Ny inbjudan skickad till ${user.email}. Ny PIN-kod: ${pin}`)
+    await withErrorToast(async () => {
+      const updated = await client.users.resendInvite(user.id, pin)
+      replace(updated)
+      setToast(`Ny inbjudan skapad för ${user.email}. Ny PIN-kod: ${pin}`)
+    })
   }
 
   async function sendPasswordReset(user: UserAccount) {
@@ -175,10 +178,9 @@ export function UsersView() {
   }
 
   function onInvited(user: UserAccount) {
-    setDomainUsers((prev) => [...prev, user])
-    setDomains((prev) => prev.map((d) => (d.id === user.domainId ? { ...d, userCount: d.userCount + 1 } : d)))
+    replace(user)
     setInviting(false)
-    setToast(`Inbjudan skickad till ${user.email}.`)
+    setToast(`Inbjudan skapad för ${user.email}. Kopiera meddelandet till e-post.`)
   }
 
   function onUserCreated(user: UserAccount) {
@@ -291,6 +293,7 @@ export function UsersView() {
                       <span class="ue">{u.roles.map((r) => ROLES[r].label).join(', ')}</span>
                     </span>
                     {u.status === 'invited' && <StatusChip tone="warn">Inbjuden</StatusChip>}
+                    {u.status === 'notinvited' && <StatusChip tone="neutral">Ej inbjuden</StatusChip>}
                     {u.status === 'disabled' && <StatusChip tone="neutral">Inaktiv</StatusChip>}
                   </button>
                 </li>
@@ -361,8 +364,8 @@ export function UsersView() {
         <CreateDomainModal onCancel={() => setCreatingDomain(false)} onSave={createDomain} />
       )}
 
-      {inviting && selectedDomain && (
-        <InviteDialog domain={selectedDomain} onCancel={() => setInviting(false)} onSent={onInvited} />
+      {inviting && selectedDomain && selectedUser && (
+        <InviteDialog domain={selectedDomain} user={selectedUser} onCancel={() => setInviting(false)} onSent={onInvited} />
       )}
 
       {creatingUser && selectedDomain && (
@@ -474,7 +477,7 @@ function CreateUserDialog({ domain, onCancel, onCreated }: CreateUserDialogProps
     setSaving(true)
     setError(null)
     try {
-      const user = await client.domains.invite(domain.id, { email: email.trim(), name: name.trim(), roles: [role], pin: String(Math.floor(100000 + Math.random() * 900000)) })
+      const user = await client.domains.createUser(domain.id, { email: email.trim(), name: name.trim(), roles: [role] })
       onCreated(user)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kunde inte skapa användaren.')
@@ -531,33 +534,29 @@ function CreateUserDialog({ domain, onCancel, onCreated }: CreateUserDialogProps
 
 interface InviteDialogProps {
   domain: Domain
+  user: UserAccount
   onCancel: () => void
   onSent: (user: UserAccount) => void
 }
 
-function InviteDialog({ domain, onCancel, onSent }: InviteDialogProps) {
-  const [email] = useState('test@ale.se')
-  const [name] = useState('Testanvändare')
-  const [role, setRole] = useState<Role>('operator')
+function InviteDialog({ domain, user, onCancel, onSent }: InviteDialogProps) {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [invite] = useState(() => ({
-    pin: String(Math.floor(100000 + Math.random() * 900000)),
-  }))
+  const [pin] = useState(() => String(Math.floor(100000 + Math.random() * 900000)))
 
-  const canSend = isValidEmail(email) && name.trim().length > 0 && !sending
+  const canSend = !sending
   // Länken är till Ungap Live Console självt (inte en fejkad separat
   // inbjudningssida) — den öppnar bara inloggningen som redan finns.
   const link = `${window.location.origin}${window.location.pathname}`
-  const message = `Hej${name.trim() ? ' ' + name.trim() : ''}!\n\nDu har blivit inbjuden att skapa ett konto på Ungap Live Console för ${domain.org} (${domain.host}).\n\nGå till länken nedan och logga in. Använd PIN-koden ${invite.pin} vid inloggningen:\n${link}\n\nPIN-kod vid inloggning: ${invite.pin}\n\nLänken slutar gälla om 14 dagar. Om du inte förväntade dig det här meddelandet kan du bortse från det.`
+  const message = `Hej${user.name.trim() ? ' ' + user.name.trim() : ''}!\n\nDu har blivit inbjuden att skapa ett konto på Ungap Live Console för ${domain.org} (${domain.host}).\n\nGå till länken nedan och logga in. Använd PIN-koden ${pin} vid inloggningen:\n${link}\n\nPIN-kod vid inloggning: ${pin}\n\nLänken slutar gälla om 14 dagar. Om du inte förväntade dig det här meddelandet kan du bortse från det.`
 
   async function send() {
     if (!canSend) return
     setSending(true)
     setError(null)
     try {
-      const user = await client.domains.invite(domain.id, { email: email.trim(), name: name.trim(), roles: [role], pin: invite.pin })
-      onSent(user)
+      const updated = await client.users.sendInvitation(user.id, pin)
+      onSent(updated)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kunde inte skicka inbjudan.')
       setSending(false)
@@ -574,7 +573,7 @@ function InviteDialog({ domain, onCancel, onSent }: InviteDialogProps) {
               class="rename-input"
               type="email"
               readOnly
-              value={email}
+              value={user.email}
               placeholder="namn@exempel.se"
               autoFocus
             />
@@ -584,27 +583,21 @@ function InviteDialog({ domain, onCancel, onSent }: InviteDialogProps) {
             <input
               class="rename-input"
               readOnly
-              value={name}
+              value={user.name}
               placeholder="För- och efternamn"
             />
           </label>
-          <label>
-            Roll
-            <select class="rename-input" value={role} onChange={(e) => setRole(e.currentTarget.value as Role)}>
-              {ROLE_ORDER.map((r) => (
-                <option key={r} value={r}>
-                  {ROLES[r].label}
-                </option>
-              ))}
-            </select>
-          </label>
+            <label>
+              Behörighet
+              <input class="rename-input" readOnly value={user.roles.map((r) => ROLES[r].label).join(', ')} />
+            </label>
         </div>
 
         <label class="invite-message-label">Meddelande till mottagaren</label>
         <textarea class="invite-message" readOnly rows={7} value={message} />
 
         <CopyField label="Länk" value={link} monospace />
-        <CopyField label="PIN-kod vid inloggning" value={invite.pin} monospace />
+        <CopyField label="PIN-kod vid inloggning" value={pin} monospace />
 
         {error && <p class="note warn">{error}</p>}
       </div>
@@ -791,6 +784,7 @@ function UserDetail({
         </div>
         <div class="facts">
           <span>
+            {u.status === 'notinvited' && 'Ej inbjuden'}
             {u.status === 'active' && 'Aktiv'}
             {u.status === 'invited' && 'Inbjuden – har inte loggat in'}
             {u.status === 'disabled' && 'Inaktiverad'}
@@ -805,7 +799,11 @@ function UserDetail({
           ))}
         </div>
         <div class="tools">
-          {u.status === 'invited' ? (
+          {u.status === 'notinvited' ? (
+            <button class="btn btn-sm btn-primary" type="button" onClick={onInvite}>
+              Bjud in
+            </button>
+          ) : u.status === 'invited' ? (
             <button class="btn btn-sm" type="button" onClick={onResendInvite}>
               Skicka om inbjudan
             </button>
@@ -814,9 +812,6 @@ function UserDetail({
               Återställningslänk
             </button>
           )}
-          <button class="btn btn-sm btn-primary" type="button" onClick={onInvite}>
-            Bjud in
-          </button>
         </div>
       </div>
 
