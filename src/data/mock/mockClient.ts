@@ -599,6 +599,9 @@ export const mockClient: Client = {
     async playout(id) {
       return delay(clone(findProject(id).playout))
     },
+    async touchPlayout(_id) {
+      await delay(undefined)
+    },
     async create(input) {
       const project: Project = {
         id: `p${nextId++}`,

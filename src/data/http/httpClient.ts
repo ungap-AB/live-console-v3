@@ -643,6 +643,9 @@ export const httpClient: Client = {
     async playout(id) {
       return fetchPlayout(id)
     },
+    async touchPlayout(id) {
+      await api<void>(`/projects/${id}/playout/presence`, { method: 'POST' })
+    },
     async create(input) {
       const dto = await api<ServerProject>('/projects', { method: 'POST', body: input })
       return toProjectFull(dto)

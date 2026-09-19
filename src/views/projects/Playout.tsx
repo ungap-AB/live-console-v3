@@ -34,7 +34,10 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   useEffect(() => {
     let cancelled = false
     const poll = () => {
-      if (!cancelled) void actions.refreshPlayout().catch(() => undefined)
+      if (!cancelled) {
+        void client.projects.touchPlayout(p.id).catch(() => undefined)
+        void actions.refreshPlayout().catch(() => undefined)
+      }
     }
     poll()
     const interval = window.setInterval(poll, 2000)
