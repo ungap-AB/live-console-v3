@@ -47,7 +47,11 @@ function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
 }
 
-export function UsersView() {
+function isValidDomain(value: string): boolean {
+  return /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i.test(value.trim())
+}
+
+export function UsersView({ currentDomainId, canManageDomains }: { currentDomainId: string; canManageDomains: boolean }) {
   const domainsResource = useResource(() => client.domains.list(), [])
   const [domains, setDomains] = useState<Domain[]>([])
   const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null)
@@ -67,8 +71,10 @@ export function UsersView() {
   }, [domainsResource.data])
 
   useEffect(() => {
-    if (!selectedDomainId && domains.length > 0) setSelectedDomainId(domains[0].id)
-  }, [domains, selectedDomainId])
+    if (domains.length > 0 && (!selectedDomainId || !domains.some((domain) => domain.id === selectedDomainId))) {
+      setSelectedDomainId(currentDomainId)
+    }
+  }, [currentDomainId, domains, selectedDomainId])
 
   const usersResource = useResource(
     () => (selectedDomainId ? client.users.listByDomain(selectedDomainId) : Promise.resolve([])),
@@ -85,6 +91,7 @@ export function UsersView() {
   }, [domainUsers, selectedUserId])
 
   function selectDomain(id: string) {
+    if (!canManageDomains && id !== currentDomainId) return
     setSelectedDomainId(id)
     setSelectedUserId(null)
   }
@@ -193,6 +200,7 @@ export function UsersView() {
   async function createDomain(host: string, org: string) {
     const created = await client.domains.create({ host, org })
     setDomains((prev) => [...prev, created])
+    setSelectedDomainId(created.id)
     setCreatingDomain(false)
   }
 
@@ -413,35 +421,40 @@ interface CreateDomainModalProps {
 function CreateDomainModal({ onCancel, onSave }: CreateDomainModalProps) {
   const [host, setHost] = useState('')
   const [org, setOrg] = useState('')
-  const canSave = host.trim().length > 0 && org.trim().length > 0
+  const domainIsValid = isValidDomain(host)
+  const organizationIsValid = org.trim().length > 0
+  const canSave = domainIsValid && organizationIsValid
 
   return (
     <Modal title="Ny domän" onClose={onCancel}>
       <div class="domain-form">
-        <label>
-          Domän
-          <input
-            class="rename-input"
-            value={host}
-            placeholder="t.ex. exempel.se"
-            autoFocus
-            onInput={(e) => setHost(e.currentTarget.value)}
-          />
-        </label>
         <label>
           Organisationens namn
           <input
             class="rename-input"
             value={org}
             placeholder="t.ex. Exempel kommun"
+            autoFocus
             onInput={(e) => setOrg(e.currentTarget.value)}
+          />
+        </label>
+        <label>
+          Domän
+          <input
+            class="rename-input"
+            value={host}
+            placeholder="t.ex. exempel.se"
+            onInput={(e) => setHost(e.currentTarget.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && canSave) onSave(host.trim(), org.trim())
             }}
           />
         </label>
+        {host.trim().length > 0 && !domainIsValid && <p class="note warn">Ange ett giltigt domännamn, till exempel exempel.se.</p>}
+        {org.length > 0 && !organizationIsValid && <p class="note warn">Ange organisationens namn.</p>}
       </div>
       <div class="modal-actions">
+        <span class="invite-pin-hint">PIN-koden blir giltig först när inbjudan är skickad</span>
         <button class="btn btn-sm" type="button" onClick={onCancel}>
           Avbryt
         </button>

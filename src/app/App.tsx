@@ -28,11 +28,17 @@ export function App() {
   }, [])
 
   function login(user: CurrentUser) {
+    setActiveProjectId(null)
+    setProjectScreen('detail')
     setAuth({ status: 'authed', user })
   }
 
   function logout() {
-    client.auth.logout().finally(() => setAuth({ status: 'anon' }))
+    client.auth.logout().finally(() => {
+      setActiveProjectId(null)
+      setProjectScreen('detail')
+      setAuth({ status: 'anon' })
+    })
   }
 
   // Lyft upp ur ProjectsView så att vilket projekt/vy som senast visades
@@ -116,7 +122,9 @@ export function App() {
       {route === 'live' && <LiveResourcesView />}
       {route === 'archive' && <VideoArchiveView onOpenProject={openProject} />}
       {route === 'trash' && <TrashView />}
-      {route === 'users' && <UsersView />}
+      {route === 'users' && (
+        <UsersView currentDomainId={auth.user.domain.id} canManageDomains={auth.user.roles.includes('admin')} />
+      )}
     </Shell>
   )
 }

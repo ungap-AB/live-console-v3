@@ -33,6 +33,13 @@
   flex-wrap: nowrap;
 }
 
+.invite-pin-hint {
+  margin-right: auto;
+  color: var(--ink-3);
+  font-size: 12px;
+  text-align: left;
+}
+
 .pane .top h2 {
   margin: 0;
   font-size: 12.5px;
