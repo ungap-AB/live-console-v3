@@ -26,6 +26,10 @@ interface EditableItemListProps<T> {
   toolbarExtraAfter?: ComponentChildren
   /** Visas istället för listan när items är tom av ett annat skäl än att den faktiskt är tom (t.ex. ett aktivt filter utan träffar). */
   emptyMessage?: string
+  /** Playout-specifik radinteraktion utan penn-/papperskorgsknappar. */
+  compactInteractions?: boolean
+  /** Dölj standardknappen för att låta en yttre meny starta samma åtgärd. */
+  hideAddButton?: boolean
 }
 
 // Bruten ut ur AgendasView/NameListsView (de var identiska förutom vilket
@@ -50,11 +54,14 @@ export function EditableItemList<T>({
   toolbarExtra,
   toolbarExtraAfter,
   emptyMessage,
+  compactInteractions = false,
+  hideAddButton = false,
 }: EditableItemListProps<T>) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [pendingEditId, setPendingEditId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const confirmTimeoutRef = useRef<number | undefined>(undefined)
   const inputRef = useRef<HTMLInputElement | null>(null)
   // Håller alltid det senaste draft-värdet tillgängligt synkront (utan att
@@ -64,6 +71,18 @@ export function EditableItemList<T>({
   draftRef.current = draft
 
   useEffect(() => () => window.clearTimeout(confirmTimeoutRef.current), [])
+
+  useEffect(() => {
+    if (!compactInteractions) return
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Backspace' || !selectedId || editingId) return
+      const target = event.target as HTMLElement | null
+      if (target?.isContentEditable || target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.tagName === 'SELECT') return
+      requestRemove(selectedId)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [compactInteractions, editingId, selectedId])
 
   // `autoFocus` är inte alltid pålitligt för ett fält som byts in i en
   // redan monterad rad (inte sidladdning) — sätt fokus imperativt istället
@@ -128,9 +147,11 @@ export function EditableItemList<T>({
     <>
       <div class="addrow">
         {toolbarExtra}
-        <button class="btn btn-sm" type="button" onClick={() => void handleAdd()}>
-          {addLabel}
-        </button>
+        {!hideAddButton && (
+          <button class="btn btn-sm" type="button" onClick={() => void handleAdd()}>
+            {addLabel}
+          </button>
+        )}
         {toolbarExtraAfter}
       </div>
       {items.length === 0 && emptyMessage ? (
@@ -141,7 +162,8 @@ export function EditableItemList<T>({
         getId={getId}
         disabled={disabled}
         onReorder={onReorder}
-        getItemClassName={getItemClassName}
+        getItemClassName={(item) => [getItemClassName?.(item) ?? '', compactInteractions && getId(item) === selectedId ? 'selected' : ''].filter(Boolean).join(' ')}
+        onItemClick={compactInteractions ? (item) => setSelectedId(getId(item)) : undefined}
         renderItem={(item, i) => {
           const id = getId(item)
           return editingId === id ? (
@@ -188,10 +210,10 @@ export function EditableItemList<T>({
             <>
               {numbered && <span class="no">{i + 1}</span>}
               <span class="txt">
-                <b>{getLabel(item)}</b>
+                <b onDblClick={compactInteractions ? () => startEdit(item) : undefined}>{getLabel(item)}</b>
               </span>
               {renderExtra?.(item)}
-              <span class="rowbtns">
+              {!compactInteractions && <span class="rowbtns">
                 <button
                   class="ib"
                   type="button"
@@ -222,7 +244,7 @@ export function EditableItemList<T>({
                     <DeleteIcon />
                   </button>
                 )}
-              </span>
+              </span>}
             </>
           )
         }}

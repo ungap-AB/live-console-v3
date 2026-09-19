@@ -10,6 +10,7 @@ interface SortableListProps<T> {
   disabled?: boolean
   /** Extra klass per rad (t.ex. "active" i Playout-vyn) — utöver dragging/over. */
   getItemClassName?: (item: T) => string
+  onItemClick?: (item: T) => void
 }
 
 export function SortableList<T>({
@@ -19,6 +20,7 @@ export function SortableList<T>({
   renderItem,
   disabled = false,
   getItemClassName,
+  onItemClick,
 }: SortableListProps<T>) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [overIndex, setOverIndex] = useState<number | null>(null)
@@ -52,6 +54,7 @@ export function SortableList<T>({
             .filter(Boolean)
             .join(' ')}
           onDragStart={() => setDragIndex(index)}
+          onClick={() => onItemClick?.(item)}
           onDragOver={(e) => {
             e.preventDefault()
             setOverIndex(index)

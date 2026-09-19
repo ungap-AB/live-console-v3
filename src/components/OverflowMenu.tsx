@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
+import type { ComponentChildren } from 'preact'
 import { Icon } from './Icon'
 import './OverflowMenu.css'
 
@@ -9,6 +10,7 @@ interface OverflowMenuItem {
   danger?: boolean
   disabled?: boolean
   title?: string
+  content?: ComponentChildren
 }
 
 interface OverflowMenuProps {
@@ -55,24 +57,30 @@ export function OverflowMenu({ items, label = 'Fler alternativ' }: OverflowMenuP
       {open && (
         <div class="overflow-menu-list" role="menu">
           {items.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              role="menuitem"
-              class={item.danger ? 'danger' : ''}
-              disabled={item.disabled}
-              title={item.title}
-              onClick={() => {
-                setOpen(false)
-                if (item.copyValue) {
-                  void navigator.clipboard.writeText(item.copyValue)
-                } else {
-                  void item.onClick?.()
-                }
-              }}
-            >
-              {item.label}
-            </button>
+            item.content ? (
+              <div key={item.label} class="overflow-menu-content" role="menuitem">
+                {item.content}
+              </div>
+            ) : (
+              <button
+                key={item.label}
+                type="button"
+                role="menuitem"
+                class={item.danger ? 'danger' : ''}
+                disabled={item.disabled}
+                title={item.title}
+                onClick={() => {
+                  setOpen(false)
+                  if (item.copyValue) {
+                    void navigator.clipboard.writeText(item.copyValue)
+                  } else {
+                    void item.onClick?.()
+                  }
+                }}
+              >
+                {item.label}
+              </button>
+            )
           ))}
         </div>
       )}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Agenda, NameList, Project, Recording } from '../../data/types'
+import type { Agenda, AgendaItem, NameList, NameListPerson, Project, Recording } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { StatusChip, type ChipTone } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
@@ -8,6 +8,8 @@ import { AttachedListPicker } from '../../components/AttachedListPicker'
 import { EditableItemList } from '../../components/EditableItemList'
 import { VideoLightbox } from '../../components/VideoLightbox'
 import { ConfirmModal } from '../../components/ConfirmModal'
+import { Modal } from '../../components/Modal'
+import { OverflowMenu } from '../../components/OverflowMenu'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
@@ -56,6 +58,10 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   const [showIngestInfo, setShowIngestInfo] = useState(false)
   const [trimming, setTrimming] = useState<Recording | null>(null)
   const [confirmReturnToLive, setConfirmReturnToLive] = useState(false)
+  const [importKind, setImportKind] = useState<'agenda' | 'namelist' | null>(null)
+  const [importText, setImportText] = useState('')
+  const [importError, setImportError] = useState<string | null>(null)
+  const [timelineCollapsed, setTimelineCollapsed] = useState(false)
   // Hälsan upptäcker fasen före projektets recording-ref. Hämta projektet
   // igen både efter stopp och medan asseten verifieras, så trim blir tillgänglig
   // när backend faktiskt har markerat inspelningen som klar.
@@ -177,6 +183,71 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
     allNameListsResource.reload()
   }
 
+  function openImport(kind: 'agenda' | 'namelist') {
+    setImportKind(kind)
+    setImportText('')
+    setImportError(null)
+  }
+
+  function parseImport(text: string): string[] {
+    return text.replace(/\r\n?/g, '\n').split('\n').map((line) => line.trim()).filter(Boolean)
+  }
+
+  async function importAgenda(text: string) {
+    let working = agenda
+    if (!working) {
+      working = await client.agendas.create({ name: p.name, description: 'Utkast' })
+      await actions.setAgenda(working.id)
+      allAgendasResource.reload()
+    }
+    const titles = parseImport(text)
+    const items: AgendaItem[] = []
+    for (let index = 0; index < titles.length; index += 1) {
+      const title = titles[index]
+      const existing = working.items[index]
+      if (existing) items.push({ ...existing, position: index + 1, title, reference: undefined })
+      else {
+        working = await client.agendas.addItem(working.id, { title })
+        const added = working.items[working.items.length - 1]
+        items.push({ ...added, position: index + 1, title, reference: undefined })
+      }
+    }
+    const updated = await client.agendas.replaceItems(working.id, items)
+    setAgenda(updated)
+  }
+
+  async function importNameList(text: string) {
+    let working = nameList
+    if (!working) {
+      working = await client.namelists.create({ name: p.name, description: 'Utkast' })
+      await actions.setNameList(working.id)
+      allNameListsResource.reload()
+    }
+    const names = parseImport(text)
+    const existingPeople = working.people.slice()
+    const imported: NameListPerson[] = []
+    for (const name of names) {
+      working = await client.namelists.addPerson(working.id, { name })
+      imported.push(working.people[working.people.length - 1])
+    }
+    const updated = await client.namelists.replacePeople(working.id, [
+      ...existingPeople,
+      ...imported,
+    ].map((person, index) => ({ ...person, position: index + 1 })))
+    setNameList(updated)
+  }
+
+  async function submitImport() {
+    const values = parseImport(importText)
+    if (values.length === 0) {
+      setImportError(importKind === 'agenda' ? 'Klistra in minst en punkt, en punkt per rad.' : 'Klistra in minst ett namn, ett namn per rad.')
+      return
+    }
+    if (importKind === 'agenda') await importAgenda(importText)
+    if (importKind === 'namelist') await importNameList(importText)
+    setImportKind(null)
+  }
+
   async function createIngest() {
     await actions.createChannel()
     await refresh()
@@ -224,11 +295,6 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
     if (p.channel) await teardownIngest()
   }
 
-  let playNote = ''
-  if (frozen) playNote = 'Sändningen är publicerad. Utspelning är avstängd.'
-  else if (!live)
-    playNote = 'Ingen aktiv sändning just nu — utspelning loggas ändå och kan synkas mot filmen senare.'
-
   return (
     <>
       <div class="head">
@@ -249,7 +315,6 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
           <span>{subtitle}</span>
         </div>
         <div class="tools">
-          <CopyField value={p.playerUrl} monospace grow />
           <div class="seg">
             <button
               type="button"
@@ -267,6 +332,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
               Stängd
             </button>
           </div>
+          <CopyField value={p.playerUrl} monospace grow />
           <button class="btn btn-sm" type="button" disabled={!channel} onClick={() => setShowIngestInfo((visible) => !visible)}>
             {showIngestInfo ? 'Dölj ingest-info' : 'Visa ingest-info'}
           </button>
@@ -434,20 +500,32 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         </div>
       </div>
 
-      <div class={`cols ${live ? 'two' : ''} ${guidedPhase === 'published' ? 'published' : ''}`}>
+      <div class={`cols ${live ? 'two' : ''} ${guidedPhase === 'published' ? 'published' : ''} ${!live && guidedPhase !== 'published' && timelineCollapsed ? 'timeline-collapsed' : ''}`}>
         {guidedPhase !== 'published' && (
         <>
         <div class="col">
           <h3>
             Dagordning
-            <AttachedListPicker
-              currentId={p.agendaId}
-              items={(allAgendasResource.data ?? []).map((a) => ({ id: a.id, name: a.name }))}
-              pickerTitle="Byt dagordning"
-              createNewLabel="Ny dagordning"
-              onPick={(id) => actions.setAgenda(id)}
-              onCreateNew={createAndAttachAgenda}
-              buttonLabel="Välj..."
+            <OverflowMenu
+              label="Dagordningsalternativ"
+              items={[
+                { label: 'Lägg till punkt', onClick: addAgendaItem },
+                { label: 'Importera...', onClick: () => openImport('agenda') },
+                {
+                  label: 'Välj...',
+                  content: (
+                    <AttachedListPicker
+                      currentId={p.agendaId}
+                      items={(allAgendasResource.data ?? []).map((a) => ({ id: a.id, name: a.name }))}
+                      pickerTitle="Byt dagordning"
+                      createNewLabel="Ny dagordning"
+                      onPick={(id) => void actions.setAgenda(id)}
+                      onCreateNew={createAndAttachAgenda}
+                      buttonLabel="Välj..."
+                    />
+                  ),
+                },
+              ]}
             />
           </h3>
           <div class="col-body">
@@ -465,6 +543,8 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
                 onAdd={addAgendaItem}
                 onRename={renameAgendaItem}
                 onRemove={removeAgendaItem}
+                compactInteractions
+                hideAddButton
                 renderExtra={(it) => {
                   const offset = lastPlayedOffset(it.id)
                   const done = offset != null
@@ -491,14 +571,26 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         <div class="col">
           <h3>
             Namnlista
-            <AttachedListPicker
-              currentId={p.namelistId}
-              items={(allNameListsResource.data ?? []).map((n) => ({ id: n.id, name: n.name }))}
-              pickerTitle="Byt namnlista"
-              createNewLabel="Ny namnlista"
-              onPick={(id) => actions.setNameList(id)}
-              onCreateNew={createAndAttachNameList}
-              buttonLabel="Välj..."
+            <OverflowMenu
+              label="Namnlistealternativ"
+              items={[
+                { label: 'Lägg till namn', onClick: addPerson },
+                { label: 'Importera...', onClick: () => openImport('namelist') },
+                {
+                  label: 'Välj...',
+                  content: (
+                    <AttachedListPicker
+                      currentId={p.namelistId}
+                      items={(allNameListsResource.data ?? []).map((n) => ({ id: n.id, name: n.name }))}
+                      pickerTitle="Byt namnlista"
+                      createNewLabel="Ny namnlista"
+                      onPick={(id) => void actions.setNameList(id)}
+                      onCreateNew={createAndAttachNameList}
+                      buttonLabel="Välj..."
+                    />
+                  ),
+                },
+              ]}
             />
           </h3>
           <div class="col-body">
@@ -515,6 +607,8 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
                 onAdd={addPerson}
                 onRename={renamePerson}
                 onRemove={removePerson}
+                compactInteractions
+                hideAddButton
                 renderExtra={(person) => (
                   <button
                     class="play"
@@ -534,20 +628,29 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         )}
 
         {!live && (
-          <div class="col">
+          <div class={`col timeline-col ${timelineCollapsed ? 'collapsed' : ''}`}>
             <h3>
-              Tidslinje
-              {frozen && <StatusChip tone="accent">Fryst</StatusChip>}
+              {!timelineCollapsed && <span class="timeline-title">Tidslinje {frozen && <StatusChip tone="accent">Fryst</StatusChip>}</span>}
+              <button
+                class="ib timeline-toggle"
+                type="button"
+                aria-expanded={!timelineCollapsed}
+                aria-label={timelineCollapsed ? 'Visa tidslinje' : 'Dölj tidslinje'}
+                title={timelineCollapsed ? 'Visa tidslinje' : 'Dölj tidslinje'}
+                onClick={() => setTimelineCollapsed((collapsed) => !collapsed)}
+              >
+                {timelineCollapsed ? '⌄' : '⌃'}
+              </button>
             </h3>
-            <div class="col-body">
-              {p.playout.timeline.length === 0 ? (
+            {!timelineCollapsed && <div class="col-body">
+              {p.playout.timeline.filter((event) => event.label !== 'Rensat').length === 0 ? (
                 <p class="muted-empty">Inget utspelat ännu.</p>
               ) : (
                 <ul class="tl">
-                  {p.playout.timeline.map((e) => (
+                  {p.playout.timeline.filter((event) => event.label !== 'Rensat').map((e) => (
                     <li key={e.id}>
-                      <span class="t">{formatHms(e.offsetSeconds ?? 0)}</span>
                       <span class="what">
+                        <span class="t">{formatHms(e.offsetSeconds ?? 0)}</span>
                         {e.label}
                         <em>{e.kind === 'agendaItem' ? 'Ärende' : e.kind === 'person' ? 'Talare' : 'Utrop'}</em>
                       </span>
@@ -560,15 +663,36 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
                   ? 'Kapitellistan är fryst vid publicering och följer inte längre originaldagordningen.'
                   : 'Varje utspelning loggas här. Tidslinjen fryses som kapitellista när sändningen publiceras.'}
               </p>
-            </div>
+            </div>}
           </div>
         )}
       </div>
 
-      {playNote && (
-        <div class="playout-note">
-          <div class="note">{playNote}</div>
-        </div>
+      {importKind && (
+        <Modal
+          title={importKind === 'agenda' ? 'Importera dagordning' : 'Importera namn'}
+          subtitle={importKind === 'agenda' ? 'En punkt per rad. Befintliga punkter ersätts.' : 'Ett namn per rad. Nya namn läggs till efter befintliga.'}
+          onClose={() => setImportKind(null)}
+          footer={
+            <>
+              <button class="btn btn-sm" type="button" onClick={() => setImportKind(null)}>Avbryt</button>
+              <button class="btn btn-sm primary" type="button" onClick={() => void submitImport()}>Importera</button>
+            </>
+          }
+        >
+          <textarea
+            class="playout-import-textarea"
+            rows={12}
+            value={importText}
+            placeholder={importKind === 'agenda' ? 'Kommunfullmäktiges sammanträde\nVal av justerare\nFrågor' : 'Anna Andersson\nBo Berg\nCecilia Carlsson'}
+            onInput={(event) => {
+              setImportText(event.currentTarget.value)
+              setImportError(null)
+            }}
+            autofocus
+          />
+          {importError && <p class="form-error">{importError}</p>}
+        </Modal>
       )}
 
       {showVideo && (
