@@ -20,6 +20,7 @@ import { phaseMeta } from './livePhase'
 import { TrimDialog } from '../archive/TrimDialog'
 import { MeetingBindingModal } from './MeetingBindingModal'
 import { resolveOriginalRecordingForTrim } from './openTrimDialog'
+import { ApiError } from '../../data/http/fetchJson'
 import './ProjectDetail.css'
 
 interface ProjectDetailProps {
@@ -98,6 +99,10 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
     () => (p.namelistId ? client.namelists.get(p.namelistId) : Promise.resolve(undefined)),
     [p.namelistId],
   )
+  const meetingResource = useResource(
+    () => (p.meetingDomain ? client.meetings.list(p.meetingDomain) : Promise.resolve([])),
+    [p.meetingDomain],
+  )
   const allAgendasResource = useResource(() => client.agendas.list(), [])
   const allNameListsResource = useResource(() => client.namelists.list(), [])
 
@@ -163,6 +168,11 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
   const elapsed = recordedSeconds(p)
   const liveElapsed = liveElapsedSeconds(health?.streamStartedAt)
   const status = hasIngest ? phaseMeta(phase) : { label: 'Ingen ingest', tone: 'neutral' as ChipTone }
+  const meetingName = p.meetingId
+    ? meetingResource.data?.find((meeting) => String(meeting.id) === p.meetingId)?.title ?? `Meeting-ID ${p.meetingId}`
+    : null
+  const meetingAvailable = meetingResource.data !== undefined
+    && !(meetingResource.error instanceof ApiError && meetingResource.error.code === 'meeting_domain_not_found')
 
   const subtitle = live
     ? `Projekt (${p.id}) · sänder sedan ${health?.streamStartedAt ? formatDateTime(health.streamStartedAt) : ''}`
@@ -361,10 +371,12 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
         </div>
         <div class="panel-head-row">
           <FieldBlock label="Meeting" grow dashed={!p.meetingBindingId}>
-            <span class="field-block-value">{p.meetingBindingId ? `${p.meetingDomain} · ${p.meetingId}` : 'Ingen kopplad'}</span>
-            <button class="btn btn-sm" type="button" onClick={() => setShowMeetingBinding(true)}>
-              {p.meetingBindingId ? 'Byt Meeting' : 'Koppla...'}
-            </button>
+            <span class="field-block-value">{p.meetingBindingId ? meetingName : 'Ingen kopplad'}</span>
+            {(p.meetingBindingId || meetingAvailable) && (
+              <button class="btn btn-sm" type="button" onClick={() => setShowMeetingBinding(true)}>
+                {p.meetingBindingId ? 'Byt Meeting' : 'Koppla...'}
+              </button>
+            )}
             {p.meetingBindingId && (
               <button
                 class="ib"

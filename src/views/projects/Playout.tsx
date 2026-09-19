@@ -69,6 +69,10 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
     () => (p.namelistId ? client.namelists.get(p.namelistId) : Promise.resolve(undefined)),
     [p.namelistId],
   )
+  const meetingResource = useResource(
+    () => (p.meetingDomain ? client.meetings.list(p.meetingDomain) : Promise.resolve([])),
+    [p.meetingDomain],
+  )
   const allAgendasResource = useResource(() => client.agendas.list(), [])
   const allNameListsResource = useResource(() => client.namelists.list(), [])
 
@@ -84,6 +88,9 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   // Utspelning ska fungera även offline — mötet måste dokumenteras trots
   // enkoderstrul. Tidslinjen kan synkas mot en uppladdad film senare.
   const canPlay = !frozen
+  const meetingName = p.meetingId
+    ? meetingResource.data?.find((meeting) => String(meeting.id) === p.meetingId)?.title ?? `Meeting-ID ${p.meetingId}`
+    : null
 
   const subtitle = live
     ? `Playout · sänder sedan ${health?.streamStartedAt ? formatDateTime(health.streamStartedAt) : ''}`
@@ -226,7 +233,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
           <StatusChip tone={statusTone} dot>
             {statusLabel}
           </StatusChip>
-          {p.meetingEventsEnabled && <StatusChip tone="accent">Meeting-händelser aktiva</StatusChip>}
+          {p.meetingEventsEnabled && <StatusChip tone="accent">Meeting: {meetingName ?? 'okänt möte'}</StatusChip>}
           <span class="head-actions">
             <button class="btn btn-sm" type="button" onClick={onClose}>
               &lt; Projekt
