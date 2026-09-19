@@ -603,8 +603,8 @@ export const httpClient: Client = {
       await api<ServerUser>(`/users/${id}`, { method: 'PATCH', body: input })
       return fetchUserDetail(id)
     },
-    async resendInvite(id) {
-      await api<void>(`/invitations/${id}/resend`, { method: 'POST' })
+    async resendInvite(id, pin) {
+      await api<void>(`/invitations/${id}/resend`, { method: 'POST', body: { pin } })
     },
     async sendPasswordReset(id) {
       const dto = await api<ServerUser>(`/users/${id}`)

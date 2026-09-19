@@ -18,6 +18,10 @@ export function LoginView({ onLogin }: LoginViewProps) {
   async function submit(e: Event) {
     e.preventDefault()
     setError(null)
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError('Ange en giltig e-postadress.')
+      return
+    }
     setLoading(true)
     try {
       const user = await client.auth.login(email, pin)
@@ -38,7 +42,8 @@ export function LoginView({ onLogin }: LoginViewProps) {
         <label class="login-field">
           E-post
           <input
-            type="text"
+            type="email"
+            required
             value={email}
             autoFocus
             onInput={(e) => setEmail(e.currentTarget.value)}
@@ -48,6 +53,7 @@ export function LoginView({ onLogin }: LoginViewProps) {
           PIN-kod
           <input
             type="password"
+            required
             inputMode="numeric"
             value={pin}
             onInput={(e) => setPin(e.currentTarget.value)}

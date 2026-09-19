@@ -103,13 +103,13 @@ export interface Client {
     create(input: { host: string; org: string }): Promise<Domain>
     update(id: string, input: { org: string }): Promise<Domain>
     remove(id: string): Promise<void>
-    invite(domainId: string, input: { email: string; name: string; roles: Role[] }): Promise<UserAccount>
+    invite(domainId: string, input: { email: string; name: string; roles: Role[]; pin: string }): Promise<UserAccount>
   }
   users: {
     listByDomain(domainId: string, query?: string): Promise<UserAccount[]>
     get(id: string): Promise<UserAccount | undefined>
     update(id: string, input: { name?: string; email?: string }): Promise<UserAccount>
-    resendInvite(id: string): Promise<void>
+    resendInvite(id: string, pin: string): Promise<void>
     sendPasswordReset(id: string): Promise<void>
     setRoles(id: string, roles: Role[]): Promise<UserAccount>
     disable(id: string): Promise<UserAccount>

@@ -43,6 +43,10 @@ function isLastActiveAdmin(user: UserAccount, domainUsers: UserAccount[]): boole
   return activeAdmins.length === 1
 }
 
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+}
+
 export function UsersView() {
   const domainsResource = useResource(() => client.domains.list(), [])
   const [domains, setDomains] = useState<Domain[]>([])
@@ -160,8 +164,9 @@ export function UsersView() {
   }
 
   async function resendInvite(user: UserAccount) {
-    await client.users.resendInvite(user.id)
-    setToast(`Inbjudan skickad på nytt till ${user.email}.`)
+    const pin = String(Math.floor(100000 + Math.random() * 900000))
+    await client.users.resendInvite(user.id, pin)
+    setToast(`Ny inbjudan skickad till ${user.email}. Ny PIN-kod: ${pin}`)
   }
 
   async function sendPasswordReset(user: UserAccount) {
@@ -462,14 +467,14 @@ function CreateUserDialog({ domain, onCancel, onCreated }: CreateUserDialogProps
   const [role, setRole] = useState<Role>('operator')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const canSave = email.trim().length > 0 && name.trim().length > 0 && !saving
+  const canSave = isValidEmail(email) && name.trim().length > 0 && !saving
 
   async function save() {
     if (!canSave) return
     setSaving(true)
     setError(null)
     try {
-      const user = await client.domains.invite(domain.id, { email: email.trim(), name: name.trim(), roles: [role] })
+      const user = await client.domains.invite(domain.id, { email: email.trim(), name: name.trim(), roles: [role], pin: String(Math.floor(100000 + Math.random() * 900000)) })
       onCreated(user)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kunde inte skapa användaren.')
@@ -531,8 +536,8 @@ interface InviteDialogProps {
 }
 
 function InviteDialog({ domain, onCancel, onSent }: InviteDialogProps) {
-  const [email, setEmail] = useState('')
-  const [name, setName] = useState('')
+  const [email] = useState('test@ale.se')
+  const [name] = useState('Testanvändare')
   const [role, setRole] = useState<Role>('operator')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -540,18 +545,18 @@ function InviteDialog({ domain, onCancel, onSent }: InviteDialogProps) {
     pin: String(Math.floor(100000 + Math.random() * 900000)),
   }))
 
-  const canSend = email.trim().length > 0 && name.trim().length > 0 && !sending
+  const canSend = isValidEmail(email) && name.trim().length > 0 && !sending
   // Länken är till Ungap Live Console självt (inte en fejkad separat
   // inbjudningssida) — den öppnar bara inloggningen som redan finns.
   const link = `${window.location.origin}${window.location.pathname}`
-  const message = `Hej${name.trim() ? ' ' + name.trim() : ''}!\n\nDu har blivit inbjuden att skapa ett konto på Ungap Live Console för ${domain.org} (${domain.host}).\n\nGå till länken nedan och logga in. Ange PIN-koden nedan om du blir ombedd om den:\n${link}\n\nPIN-kod: ${invite.pin}\n\nLänken slutar gälla om 14 dagar. Om du inte förväntade dig det här meddelandet kan du bortse från det.`
+  const message = `Hej${name.trim() ? ' ' + name.trim() : ''}!\n\nDu har blivit inbjuden att skapa ett konto på Ungap Live Console för ${domain.org} (${domain.host}).\n\nGå till länken nedan och logga in. Använd PIN-koden ${invite.pin} vid inloggningen:\n${link}\n\nPIN-kod vid inloggning: ${invite.pin}\n\nLänken slutar gälla om 14 dagar. Om du inte förväntade dig det här meddelandet kan du bortse från det.`
 
   async function send() {
     if (!canSend) return
     setSending(true)
     setError(null)
     try {
-      const user = await client.domains.invite(domain.id, { email: email.trim(), name: name.trim(), roles: [role] })
+      const user = await client.domains.invite(domain.id, { email: email.trim(), name: name.trim(), roles: [role], pin: invite.pin })
       onSent(user)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kunde inte skicka inbjudan.')
@@ -568,19 +573,19 @@ function InviteDialog({ domain, onCancel, onSent }: InviteDialogProps) {
             <input
               class="rename-input"
               type="email"
+              readOnly
               value={email}
               placeholder="namn@exempel.se"
               autoFocus
-              onInput={(e) => setEmail(e.currentTarget.value)}
             />
           </label>
           <label>
             Namn
             <input
               class="rename-input"
+              readOnly
               value={name}
               placeholder="För- och efternamn"
-              onInput={(e) => setName(e.currentTarget.value)}
             />
           </label>
           <label>
@@ -599,7 +604,7 @@ function InviteDialog({ domain, onCancel, onSent }: InviteDialogProps) {
         <textarea class="invite-message" readOnly rows={7} value={message} />
 
         <CopyField label="Länk" value={link} monospace />
-        <CopyField label="PIN-kod" value={invite.pin} monospace />
+        <CopyField label="PIN-kod vid inloggning" value={invite.pin} monospace />
 
         {error && <p class="note warn">{error}</p>}
       </div>

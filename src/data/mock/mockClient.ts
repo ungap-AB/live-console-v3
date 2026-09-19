@@ -540,7 +540,7 @@ export const mockClient: Client = {
       if (input.email !== undefined) user.email = input.email
       return delay(clone(user))
     },
-    async resendInvite() {
+    async resendInvite(_id, _pin) {
       return delay(undefined)
     },
     async sendPasswordReset() {
