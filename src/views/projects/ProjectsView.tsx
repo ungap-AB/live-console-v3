@@ -12,6 +12,7 @@ import { formatShortDate } from '../../app/time'
 import { ProjectDetail } from './ProjectDetail'
 import { Playout } from './Playout'
 import type { ProjectActions } from './actions'
+import { ApiError } from '../../data/http/fetchJson'
 import './ProjectsView.css'
 
 export type ProjectScreen = 'detail' | 'playout'
@@ -131,8 +132,18 @@ export function ProjectsView({
     },
     refreshPlayout: async () => {
       if (!selected) return
-      const playout = await client.projects.playout(selected.id)
-      setProjects((prev) => prev.map((p) => (p.id === selected.id ? { ...p, playout } : p)))
+      try {
+        const playout = await client.projects.playout(selected.id)
+        setProjects((prev) => prev.map((p) => (p.id === selected.id ? { ...p, playout } : p)))
+      } catch (err) {
+        if (err instanceof ApiError && err.code === 'project_not_found') {
+          setProjects((prev) => prev.filter((p) => p.id !== selected.id))
+          onSelectedIdChange(null)
+          onScreenChange('detail')
+          return
+        }
+        throw err
+      }
     },
     rename: (name: string) =>
       withErrorToast(async () => {
