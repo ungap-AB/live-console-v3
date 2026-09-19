@@ -255,9 +255,6 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
             </button>
             <OverflowMenu
               items={[
-                { label: `Projekt-ID: ${p.id}`, copyValue: p.id },
-                ...(p.agendaId ? [{ label: `Dagordnings-ID: ${p.agendaId}`, copyValue: p.agendaId }] : []),
-                ...(p.namelistId ? [{ label: `Namnlist-ID: ${p.namelistId}`, copyValue: p.namelistId }] : []),
                 {
                   label: 'Flytta till papperskorgen',
                   danger: true,
