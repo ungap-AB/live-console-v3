@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
 const port = Number(process.env.PORT) || 5173
-const certDir = resolve(import.meta.dirname, '../live-server/certs')
+const certDir = resolve(import.meta.dirname, '../live-server-v3/certs')
 const certFile = resolve(certDir, 'local.api.live.ungap.net.pem')
 const keyFile = resolve(certDir, 'local.api.live.ungap.net-key.pem')
 const https = existsSync(certFile) && existsSync(keyFile)
