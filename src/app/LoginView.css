@@ -2,7 +2,21 @@
   height: 100%;
   display: grid;
   place-items: center;
-  background: var(--bg, #f4f5f7);
+  background-color: var(--bg, #f4f5f7);
+  background-image: url('../images/plenisal-bg-light.svg');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .login-screen {
+    background-image: url('../images/plenisal-bg.svg');
+  }
+}
+
+:root[data-theme='dark'] .login-screen {
+  background-image: url('../images/plenisal-bg.svg');
 }
 
 .login-card {
@@ -17,6 +31,20 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
 }
 
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .login-card {
+    background: #fff;
+    border: 1px solid #e1e6ec;
+    box-shadow: 0 1px 2px rgba(27, 32, 39, 0.06), 0 16px 40px rgba(27, 32, 39, 0.1);
+  }
+}
+
+:root[data-theme='light'] .login-card {
+  background: #fff;
+  border: 1px solid #e1e6ec;
+  box-shadow: 0 1px 2px rgba(27, 32, 39, 0.06), 0 16px 40px rgba(27, 32, 39, 0.1);
+}
+
 .login-logo {
   height: auto;
   width: 227px;
@@ -29,12 +57,58 @@
   color: var(--ink-3);
 }
 
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .login-sub {
+    color: #5a6572;
+  }
+}
+
+:root[data-theme='light'] .login-sub {
+  color: #5a6572;
+}
+
 .login-field {
   display: flex;
   flex-direction: column;
   gap: 5px;
   font-size: 13px;
   color: var(--ink-2);
+}
+
+.login-field input {
+  min-height: 44px;
+}
+
+.login-pin {
+  letter-spacing: 0.12em;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .login-field input {
+    background: #f2f4f7;
+    border-color: #b8c1cc;
+  }
+
+  :root:not([data-theme='dark']) .login-field input:focus-visible {
+    background: #fff;
+    border-color: #1f5fd1;
+    box-shadow: none;
+    outline: 2px solid #1f5fd1;
+    outline-offset: 0;
+  }
+}
+
+:root[data-theme='light'] .login-field input {
+  background: #f2f4f7;
+  border-color: #b8c1cc;
+}
+
+:root[data-theme='light'] .login-field input:focus-visible {
+  background: #fff;
+  border-color: #1f5fd1;
+  box-shadow: none;
+  outline: 2px solid #1f5fd1;
+  outline-offset: 0;
 }
 
 .login-error {
@@ -46,4 +120,20 @@
   margin-top: 6px;
   width: 100%;
   justify-content: center;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .login-submit:disabled {
+    background: #e4e8ee;
+    color: #5a6572;
+    border-color: #e4e8ee;
+    opacity: 1;
+  }
+}
+
+:root[data-theme='light'] .login-submit:disabled {
+  background: #e4e8ee;
+  color: #5a6572;
+  border-color: #e4e8ee;
+  opacity: 1;
 }

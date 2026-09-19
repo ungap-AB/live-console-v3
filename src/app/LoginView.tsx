@@ -52,6 +52,7 @@ export function LoginView({ onLogin }: LoginViewProps) {
         <label class="login-field">
           PIN-kod
           <input
+            class="login-pin"
             type="password"
             required
             inputMode="numeric"
