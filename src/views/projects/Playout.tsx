@@ -17,6 +17,7 @@ import { resolveGuidedPhase } from './guidedPhase'
 import { resolveOriginalRecordingForTrim } from './openTrimDialog'
 import { TrimDialog } from '../archive/TrimDialog'
 import { CheckIcon, PlayIcon } from '../../components/icons'
+import { Clock } from '../../components/Clock'
 import './Playout.css'
 
 interface PlayoutProps {
@@ -238,6 +239,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
           </StatusChip>
           {p.meetingEventsEnabled && <StatusChip tone="accent">Meeting: {meetingName ?? 'okänt möte'}</StatusChip>}
           <span class="head-actions">
+            <Clock />
             <button class="btn btn-sm" type="button" onClick={onClose}>
               &lt; Projekt
             </button>

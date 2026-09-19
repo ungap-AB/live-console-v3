@@ -322,7 +322,7 @@ export function ProjectsView({
 
   return (
     <div class="view">
-      <header>
+      <header class={`project-header${screen === 'playout' ? ' collapsed' : ''}`}>
         <div class="header-list-zone">
           <h1>Projekt</h1>
           <span class="spacer" />

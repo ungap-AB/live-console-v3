@@ -2,6 +2,28 @@
    i kant) är nu standard för alla lista+detalj-vyer — se SplitPane.css
    och HANDOVER-ui-iteration-2.md §1. Inget Projekt-specifikt kvar här. */
 
+.project-header {
+  overflow: hidden;
+  max-height: 120px;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    max-height 240ms ease,
+    opacity 180ms ease,
+    padding 240ms ease,
+    border-color 240ms ease,
+    transform 240ms ease;
+}
+
+.project-header.collapsed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  border-color: transparent;
+  transform: translateY(-8px);
+}
+
 .view > header .clock {
   margin-left: auto;
   font-variant-numeric: tabular-nums;
