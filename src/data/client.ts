@@ -9,6 +9,8 @@ import type {
   Domain,
   NameList,
   NameListPerson,
+  MeetingSummary,
+  MeetingTopic,
   Project,
   Recording,
   Role,
@@ -50,6 +52,10 @@ export interface Client {
     addItem(id: string, item: Omit<AgendaItem, 'id' | 'position'>): Promise<Agenda>
     updateItem(id: string, itemId: string, item: Omit<AgendaItem, 'id' | 'position'>): Promise<Agenda>
     removeItem(id: string, itemId: string): Promise<Agenda>
+  }
+  meetings: {
+    list(domain: string): Promise<MeetingSummary[]>
+    getAgenda(domain: string, meetingId: number): Promise<MeetingTopic[]>
   }
   namelists: {
     list(query?: string): Promise<NameList[]>
@@ -120,7 +126,7 @@ export interface Client {
     setVisibility(id: string, visibility: Visibility): Promise<Project>
     setAgenda(id: string, agendaId: string | null): Promise<Project>
     setNameList(id: string, namelistId: string | null): Promise<Project>
-    setMeetingBinding(id: string, meetingDomain: string, meetingId: string): Promise<Project>
+    setMeetingBinding(id: string, meetingDomain: string, meetingId: string, eventsEnabled?: boolean): Promise<Project>
     clearMeetingBinding(id: string): Promise<Project>
     createChannel(id: string): Promise<Project>
     teardownChannel(id: string): Promise<Project>

@@ -18,6 +18,7 @@ import { useTick } from './useTick'
 import { useLiveChannel } from './useLiveChannel'
 import { phaseMeta } from './livePhase'
 import { TrimDialog } from '../archive/TrimDialog'
+import { MeetingBindingModal } from './MeetingBindingModal'
 import { resolveOriginalRecordingForTrim } from './openTrimDialog'
 import './ProjectDetail.css'
 
@@ -85,6 +86,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
   const [sessionVideo, setSessionVideo] = useState<{ name: string; hlsUrl: string } | null>(null)
   const [confirmUnpublish, setConfirmUnpublish] = useState<'toLive' | 'fromAction' | null>(null)
   const [renaming, setRenaming] = useState(false)
+  const [showMeetingBinding, setShowMeetingBinding] = useState(false)
 
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
@@ -99,7 +101,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
 
   async function createAndAttachAgenda() {
     const created = await client.agendas.create({ name: p.name, description: 'Utkast' })
-    actions.setAgenda(created.id)
+    await actions.setAgenda(created.id)
     allAgendasResource.reload()
   }
 
@@ -117,6 +119,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
     setSessionVideo(null)
     setConfirmUnpublish(null)
     setRenaming(false)
+    setShowMeetingBinding(false)
   }, [p.id])
 
   useEffect(() => {
@@ -316,6 +319,14 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
           </FieldBlock>
         </div>
         <div class="panel-head-row">
+          <FieldBlock label="Meeting" grow dashed={!p.meetingBindingId}>
+            <span class="field-block-value">{p.meetingBindingId ? `${p.meetingDomain} · ${p.meetingId}` : 'Ingen kopplad'}</span>
+            <button class="btn btn-sm" type="button" onClick={() => setShowMeetingBinding(true)}>
+              {p.meetingBindingId ? 'Byt Meeting' : 'Koppla...'}
+            </button>
+          </FieldBlock>
+        </div>
+        <div class="panel-head-row">
           <FieldBlock label="Namnlista" grow dashed={!p.namelistId}>
             <span class="field-block-value">{nameListResource.data?.name ?? 'Ingen kopplad'}</span>
             {p.namelistId ? (
@@ -348,6 +359,14 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
             )}
           </FieldBlock>
         </div>
+        {showMeetingBinding && (
+          <MeetingBindingModal
+            projectName={p.name}
+            currentAgendaName={agendaResource.data?.name}
+            actions={actions}
+            onClose={() => setShowMeetingBinding(false)}
+          />
+        )}
 
       <div class="tabs" role="tablist">
         <button role="tab" type="button" aria-selected={tab === 'live'} onClick={() => void selectTab('live')}>

@@ -33,11 +33,13 @@ function deriveProjectStatus(p: Project): { tone: ChipTone; label: string } {
 function derivePlayoutState(timeline: TimelineEvent[]): PlayoutState {
   const lastItem = [...timeline].reverse().find((e) => e.kind === 'agendaItem')
   const lastPerson = [...timeline].reverse().find((e) => e.kind === 'person')
+  const lastExclamation = [...timeline].reverse().find((e) => e.kind === 'exclamation')
   return {
     currentAgendaItemId: lastItem?.refId ?? null,
     currentPersonId: lastPerson?.refId ?? null,
     currentAgendaItem: lastItem?.label === 'Rensat' ? null : lastItem ?? null,
     currentPerson: lastPerson?.label === 'Rensat' ? null : lastPerson ?? null,
+    currentExclamation: lastExclamation?.label === 'Rensat' ? null : lastExclamation ?? null,
     timeline,
   }
 }
@@ -152,10 +154,10 @@ export function ProjectsView({
         if (!selected) return
         replace(await client.projects.setNameList(selected.id, namelistId))
       }),
-    setMeetingBinding: (meetingDomain, meetingId) =>
+    setMeetingBinding: (meetingDomain, meetingId, eventsEnabled) =>
       withErrorToast(async () => {
         if (!selected) return
-        replace(await client.projects.setMeetingBinding(selected.id, meetingDomain, meetingId))
+        replace(await client.projects.setMeetingBinding(selected.id, meetingDomain, meetingId, eventsEnabled))
       }),
     clearMeetingBinding: () =>
       withErrorToast(async () => {

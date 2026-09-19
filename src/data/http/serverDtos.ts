@@ -101,6 +101,7 @@ export interface ServerProject {
   meetingBindingId?: string
   meetingDomain?: string
   meetingId?: string
+  meetingEventsEnabled?: boolean
 }
 
 export interface ServerTimelineEvent {
@@ -115,6 +116,7 @@ export interface ServerTimelineEvent {
 export interface ServerPlayout {
   currentAgendaItem: ServerTimelineEvent | null
   currentPerson: ServerTimelineEvent | null
+  currentExclamation: ServerTimelineEvent | null
   timeline: ServerTimelineEvent[]
 }
 

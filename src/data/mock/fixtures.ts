@@ -1,7 +1,39 @@
-import type { Agenda, Channel, Domain, NameList, Project, Recording, TrashItem, UserAccount } from '../types'
+import type { Agenda, Channel, Domain, MeetingSummary, MeetingTopic, NameList, Project, Recording, TrashItem, UserAccount } from '../types'
 
 // Exempeldata återanvänd rakt av från mockup/3-live-console-agendas.html
 // och mockup/4-live-console-namelist.html, omvandlad till domäntypernas form.
+
+export const meetingFixtures: Record<string, { meetings: MeetingSummary[]; topics: Record<number, MeetingTopic[]> }> = {
+  'ale.se': {
+    meetings: [
+      { id: 85, title: 'Kommunfullmäktige 18 september 2026' },
+      { id: 86, title: 'Kommunstyrelsen 22 september 2026' },
+    ],
+    topics: {
+      85: [
+        { id: 2367, title: '1. Fastställande av föredragningslista', sortOrder: 1 },
+        { id: 2368, title: '2. Val av justerare', sortOrder: 2 },
+        { id: 2369, title: '3. Ekonomisk uppföljning', sortOrder: 3 },
+        { id: 2370, title: '4. Frågor och interpellationer', sortOrder: 4 },
+      ],
+      86: [
+        { id: 2381, title: '1. Mötets öppnande', sortOrder: 1 },
+        { id: 2382, title: '2. Föregående protokoll', sortOrder: 2 },
+        { id: 2383, title: '3. Beslutsärenden', sortOrder: 3 },
+      ],
+    },
+  },
+  'kalmar.se': {
+    meetings: [{ id: 42, title: 'Kommunfullmäktige 24 september 2026' }],
+    topics: {
+      42: [
+        { id: 4101, title: '1. Mötets öppnande', sortOrder: 1 },
+        { id: 4102, title: '2. Allmänhetens frågestund', sortOrder: 2 },
+        { id: 4103, title: '3. Budget 2027', sortOrder: 3 },
+      ],
+    },
+  },
+}
 
 export const agendaFixtures: Agenda[] = [
   {

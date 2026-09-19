@@ -8,6 +8,8 @@ import type {
   CueKind,
   CurrentUser,
   LivePhase,
+  MeetingSummary,
+  MeetingTopic,
   NameList,
   OperationCapability,
   Project,
@@ -261,6 +263,7 @@ async function fetchPlayout(id: string) {
     currentPersonId: dto.currentPerson?.refId ?? null,
     currentAgendaItem: dto.currentAgendaItem ? toTimelineEvent(dto.currentAgendaItem) : null,
     currentPerson: dto.currentPerson ? toTimelineEvent(dto.currentPerson) : null,
+    currentExclamation: dto.currentExclamation ? toTimelineEvent(dto.currentExclamation) : null,
     timeline,
   }
 }
@@ -317,6 +320,7 @@ function toProjectLite(dto: ServerProject): Project {
     meetingBindingId: dto.meetingBindingId,
     meetingDomain: dto.meetingDomain,
     meetingId: dto.meetingId,
+    meetingEventsEnabled: dto.meetingEventsEnabled,
     sim: { everSent: false, segments: 0, accumulatedSeconds: 0, recordingStartedAt: null },
     playout: { currentAgendaItemId: null, currentPersonId: null, timeline: [] },
   }
@@ -369,8 +373,15 @@ export const httpClient: Client = {
       return toCurrentUser(dto.user)
     },
     async me() {
-      const dto = await api<ServerCurrentUser>('/auth/me')
-      return toCurrentUser(dto)
+      try {
+        const dto = await api<ServerCurrentUser>('/auth/me')
+        return toCurrentUser(dto)
+      } catch (error) {
+        if (error instanceof ApiError && ['invalid_token', 'user_not_found', 'domain_not_found'].includes(error.code)) {
+          setAuthToken(null)
+        }
+        throw error
+      }
     },
     async logout() {
       try {
@@ -415,6 +426,14 @@ export const httpClient: Client = {
     },
     async removeItem(id, itemId) {
       return toAgenda(await api<ServerAgenda>(`/agendas/${id}/items/${itemId}`, { method: 'DELETE' }))
+    },
+  },
+  meetings: {
+    async list(domain): Promise<MeetingSummary[]> {
+      return api<MeetingSummary[]>('/meetings', { query: { domain } })
+    },
+    async getAgenda(domain, meetingId): Promise<MeetingTopic[]> {
+      return api<MeetingTopic[]>(`/meetings/${meetingId}/topics`, { query: { domain } })
     },
   },
   namelists: {
@@ -642,10 +661,10 @@ export const httpClient: Client = {
       const dto = await api<ServerProject>(`/projects/${id}/namelist`, { method: 'PUT', body: { namelistId } })
       return toProjectFull(dto)
     },
-    async setMeetingBinding(id, meetingDomain, meetingId) {
+    async setMeetingBinding(id, meetingDomain, meetingId, eventsEnabled = true) {
       const dto = await api<ServerProject>(`/projects/${id}/meeting-binding`, {
         method: 'PUT',
-        body: { meetingDomain, meetingId },
+        body: { meetingDomain, meetingId, meetingEventsEnabled: eventsEnabled },
       })
       return toProjectFull(dto)
     },

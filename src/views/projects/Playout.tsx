@@ -52,14 +52,6 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   const [showIngestInfo, setShowIngestInfo] = useState(false)
   const [trimming, setTrimming] = useState<Recording | null>(null)
   const [confirmReturnToLive, setConfirmReturnToLive] = useState(false)
-  const [meetingDomain, setMeetingDomain] = useState(p.meetingDomain ?? '')
-  const [meetingId, setMeetingId] = useState(p.meetingId ?? '')
-
-  useEffect(() => {
-    setMeetingDomain(p.meetingDomain ?? '')
-    setMeetingId(p.meetingId ?? '')
-  }, [p.meetingDomain, p.meetingId])
-
   // Hälsan upptäcker fasen före projektets recording-ref. Hämta projektet
   // igen både efter stopp och medan asseten verifieras, så trim blir tillgänglig
   // när backend faktiskt har markerat inspelningen som klar.
@@ -107,6 +99,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
 
   const nowItem = p.playout.currentAgendaItem?.label ?? agenda?.items.find((it) => it.id === p.playout.currentAgendaItemId)?.title ?? null
   const nowSpeaker = p.playout.currentPerson?.label ?? nameList?.people.find((pe) => pe.id === p.playout.currentPersonId)?.name ?? null
+  const nowExclamation = p.playout.currentExclamation?.label ?? null
 
   function lastPlayedOffset(itemId: string): number | null {
     const events = p.playout.timeline.filter((e) => e.kind === 'agendaItem' && e.refId === itemId)
@@ -233,6 +226,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
           <StatusChip tone={statusTone} dot>
             {statusLabel}
           </StatusChip>
+          {p.meetingEventsEnabled && <StatusChip tone="accent">Meeting-händelser aktiva</StatusChip>}
           <span class="head-actions">
             <button class="btn btn-sm" type="button" onClick={onClose}>
               &lt; Projekt
@@ -409,35 +403,21 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
             )}
           </div>
         </div>
-      </div>
-
-      <div class="guided-banner">
-        <div class="rowset">
-          <div class="field">
-            <label for="meeting-domain">Meeting-domän</label>
-            <input id="meeting-domain" value={meetingDomain} onInput={(event) => setMeetingDomain((event.target as HTMLInputElement).value)} placeholder="kyrkomotet.se" />
-          </div>
-          <div class="field">
-            <label for="meeting-id">Meeting-ID</label>
-            <input id="meeting-id" value={meetingId} onInput={(event) => setMeetingId((event.target as HTMLInputElement).value)} placeholder="123" />
-          </div>
-          <div class="field">
-            <label>Meeting-koppling</label>
-            <div class="facts">
-              <span>{p.meetingBindingId ? `Vald (${p.meetingId})` : 'Ingen vald'}</span>
-              {p.meetingBindingId && <CopyField value={p.meetingBindingId} monospace />}
-            </div>
-          </div>
-          <div class="field">
-            <label>&nbsp;</label>
-            <div class="seg">
-              <button type="button" disabled={!meetingDomain.trim() || !meetingId.trim()} onClick={() => actions.setMeetingBinding(meetingDomain.trim(), meetingId.trim())}>
-                Koppla Meeting
+        <div class={nowExclamation ? '' : 'now-empty'}>
+          <div class="k">Tillfällig talare</div>
+          <div class="v now-value">
+            <span>{nowExclamation ?? '–'}</span>
+            {nowExclamation && (
+              <button
+                class="ib now-clear"
+                type="button"
+                title="Rensa tillfällig talare"
+                aria-label="Rensa tillfällig talare"
+                onClick={() => actions.clear('exclamation')}
+              >
+                ✕
               </button>
-              <button type="button" disabled={!p.meetingBindingId} onClick={() => actions.clearMeetingBinding()}>
-                Rensa
-              </button>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -557,7 +537,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
                       <span class="t">{formatHms(e.offsetSeconds ?? 0)}</span>
                       <span class="what">
                         {e.label}
-                        <em>{e.kind === 'agendaItem' ? 'Ärende' : 'Talare'}</em>
+                        <em>{e.kind === 'agendaItem' ? 'Ärende' : e.kind === 'person' ? 'Talare' : 'Utrop'}</em>
                       </span>
                     </li>
                   ))}

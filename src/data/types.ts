@@ -44,6 +44,17 @@ export interface Agenda {
   items: AgendaItem[]
 }
 
+export interface MeetingSummary {
+  id: number
+  title: string
+}
+
+export interface MeetingTopic {
+  id: number
+  title: string
+  sortOrder: number
+}
+
 // ---- Namnlistor ----
 
 export interface NameListPerson {
@@ -120,6 +131,7 @@ export interface Project {
   meetingBindingId?: string
   meetingDomain?: string
   meetingId?: string
+  meetingEventsEnabled?: boolean
   /**
    * Mockup-bara fält för att simulera sändningsförloppet utan en riktig
    * IVS-kanal (se mockup/HANDOVER.md §6.5 — panelen som styr detta tas bort
@@ -137,7 +149,7 @@ export interface Project {
 
 // ---- Playout och tidslinje ----
 
-export type CueKind = 'agendaItem' | 'person'
+export type CueKind = 'agendaItem' | 'person' | 'exclamation'
 
 export interface TimelineEvent {
   id: string
@@ -155,6 +167,7 @@ export interface PlayoutState {
   timeline: TimelineEvent[]
   currentAgendaItem?: TimelineEvent | null
   currentPerson?: TimelineEvent | null
+  currentExclamation?: TimelineEvent | null
 }
 
 // ---- Live-resurser (IVS-kanaler) ----

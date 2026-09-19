@@ -15,7 +15,9 @@ import { formatDateTime, formatGb, formatHms } from '../../app/time'
 import './VideoArchiveView.css'
 
 function kindLabel(kind: CueKind): string {
-  return kind === 'agendaItem' ? 'Ärende' : 'Talare'
+  if (kind === 'agendaItem') return 'Ärende'
+  if (kind === 'person') return 'Talare'
+  return 'Utrop'
 }
 
 function isInRange(recording: Recording, chapter: Chapter): boolean {

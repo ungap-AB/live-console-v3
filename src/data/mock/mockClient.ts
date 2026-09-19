@@ -6,6 +6,8 @@ import type {
   ChannelState,
   CurrentUser,
   Domain,
+  MeetingSummary,
+  MeetingTopic,
   NameList,
   NameListPerson,
   Project,
@@ -22,6 +24,7 @@ import {
   recordingFixtures,
   trashFixtures,
   userFixtures,
+  meetingFixtures,
 } from './fixtures'
 
 const CHANNEL_QUOTA_LIMIT = 20
@@ -227,6 +230,15 @@ export const mockClient: Client = {
       agenda.itemCount = agenda.items.length
       agenda.changedAt = new Date().toISOString()
       return delay(clone(agenda))
+    },
+  },
+  meetings: {
+    async list(domain): Promise<MeetingSummary[]> {
+      return delay(clone(meetingFixtures[domain.trim().toLowerCase()]?.meetings ?? []))
+    },
+    async getAgenda(domain, meetingId): Promise<MeetingTopic[]> {
+      const topics = meetingFixtures[domain.trim().toLowerCase()]?.topics[meetingId] ?? []
+      return delay(clone(topics).sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id))
     },
   },
   namelists: {
@@ -626,11 +638,12 @@ export const mockClient: Client = {
       p.namelistId = namelistId
       return delay(projectSnapshot(p))
     },
-    async setMeetingBinding(id, meetingDomain, meetingId) {
+    async setMeetingBinding(id, meetingDomain, meetingId, eventsEnabled = true) {
       const p = findProject(id)
       p.meetingBindingId ??= `mb-${p.id}`
       p.meetingDomain = meetingDomain
       p.meetingId = meetingId
+      p.meetingEventsEnabled = eventsEnabled
       return delay(projectSnapshot(p))
     },
     async clearMeetingBinding(id) {

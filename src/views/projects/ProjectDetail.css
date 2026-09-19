@@ -55,6 +55,63 @@
   color: var(--ink-3);
 }
 
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.form-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 9px 10px;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.form-error {
+  margin: 10px 0 0;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.meeting-picker-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.meeting-picker-list button {
+  display: grid;
+  width: 100%;
+  gap: 3px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: var(--btn-bg);
+  color: var(--ink);
+}
+
+.meeting-picker-list button.selected {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.meeting-picker-list span {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
+.empty-state {
+  color: var(--ink-3);
+}
+
 .tabs {
   display: flex;
   gap: 24px;

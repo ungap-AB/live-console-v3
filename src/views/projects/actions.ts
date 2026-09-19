@@ -6,9 +6,9 @@ export interface ProjectActions {
   refreshPlayout: () => Promise<void>
   rename: (name: string) => Promise<void>
   setVisibility: (visibility: Visibility) => void
-  setAgenda: (agendaId: string | null) => void
+  setAgenda: (agendaId: string | null) => Promise<void>
   setNameList: (namelistId: string | null) => void
-  setMeetingBinding: (meetingDomain: string, meetingId: string) => Promise<void>
+  setMeetingBinding: (meetingDomain: string, meetingId: string, eventsEnabled?: boolean) => Promise<void>
   clearMeetingBinding: () => Promise<void>
   createChannel: () => Promise<void>
   teardownChannel: () => Promise<void>
