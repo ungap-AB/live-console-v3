@@ -96,6 +96,7 @@ export function App() {
     >
       {route === 'projects' && (
         <ProjectsView
+          meetingDomain={auth.user.domain.host}
           selectedId={activeProjectId}
           onSelectedIdChange={setActiveProjectId}
           screen={projectScreen}

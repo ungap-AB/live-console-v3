@@ -11,7 +11,7 @@ import { VideoLightbox } from '../../components/VideoLightbox'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { RenameModal } from '../../components/RenameModal'
 import { AttachedListPicker } from '../../components/AttachedListPicker'
-import { EditIcon, PlayIcon, SwapIcon } from '../../components/icons'
+import { EditIcon, PlayIcon, SwapIcon, UnlinkIcon } from '../../components/icons'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
@@ -24,6 +24,7 @@ import './ProjectDetail.css'
 
 interface ProjectDetailProps {
   project: Project
+  meetingDomain: string
   onDelete: () => void
   onDeleteBlocked: (reason: string) => void
   actions: ProjectActions
@@ -70,7 +71,7 @@ function initialTab(project: Project): 'live' | 'odm' {
     : 'live'
 }
 
-export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, onOpenAgenda, onOpenNameList, onOpenPlayout }: ProjectDetailProps) {
+export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlocked, actions, onOpenAgenda, onOpenNameList, onOpenPlayout }: ProjectDetailProps) {
   const { channel, health, streamKey, refresh, stopPolling } = useLiveChannel(p.channel?.id ?? null)
   const phase = health?.livePhase
   const live = phase === 'live'
@@ -85,6 +86,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
   const [sourceRecording, setSourceRecording] = useState<Recording | null>(null)
   const [sessionVideo, setSessionVideo] = useState<{ name: string; hlsUrl: string } | null>(null)
   const [confirmUnpublish, setConfirmUnpublish] = useState<'toLive' | 'fromAction' | null>(null)
+  const [disconnectingMeeting, setDisconnectingMeeting] = useState(false)
   const [renaming, setRenaming] = useState(false)
   const [showMeetingBinding, setShowMeetingBinding] = useState(false)
 
@@ -118,6 +120,7 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
     setSourceRecording(null)
     setSessionVideo(null)
     setConfirmUnpublish(null)
+    setDisconnectingMeeting(false)
     setRenaming(false)
     setShowMeetingBinding(false)
   }, [p.id])
@@ -215,6 +218,11 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
       await refresh()
       setTrimming(null)
     }
+  }
+
+  async function disconnectMeeting() {
+    await actions.clearMeetingBinding()
+    setDisconnectingMeeting(false)
   }
 
   return (
@@ -319,14 +327,6 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
           </FieldBlock>
         </div>
         <div class="panel-head-row">
-          <FieldBlock label="Meeting" grow dashed={!p.meetingBindingId}>
-            <span class="field-block-value">{p.meetingBindingId ? `${p.meetingDomain} · ${p.meetingId}` : 'Ingen kopplad'}</span>
-            <button class="btn btn-sm" type="button" onClick={() => setShowMeetingBinding(true)}>
-              {p.meetingBindingId ? 'Byt Meeting' : 'Koppla...'}
-            </button>
-          </FieldBlock>
-        </div>
-        <div class="panel-head-row">
           <FieldBlock label="Namnlista" grow dashed={!p.namelistId}>
             <span class="field-block-value">{nameListResource.data?.name ?? 'Ingen kopplad'}</span>
             {p.namelistId ? (
@@ -359,13 +359,44 @@ export function ProjectDetail({ project: p, onDelete, onDeleteBlocked, actions, 
             )}
           </FieldBlock>
         </div>
+        <div class="panel-head-row">
+          <FieldBlock label="Meeting" grow dashed={!p.meetingBindingId}>
+            <span class="field-block-value">{p.meetingBindingId ? `${p.meetingDomain} · ${p.meetingId}` : 'Ingen kopplad'}</span>
+            <button class="btn btn-sm" type="button" onClick={() => setShowMeetingBinding(true)}>
+              {p.meetingBindingId ? 'Byt Meeting' : 'Koppla...'}
+            </button>
+            {p.meetingBindingId && (
+              <button
+                class="ib"
+                type="button"
+                title="Koppla från Meeting"
+                aria-label="Koppla från Meeting"
+                onClick={() => setDisconnectingMeeting(true)}
+              >
+                <UnlinkIcon />
+              </button>
+            )}
+          </FieldBlock>
+        </div>
         {showMeetingBinding && (
           <MeetingBindingModal
             projectName={p.name}
+            meetingDomain={meetingDomain}
             currentAgendaName={agendaResource.data?.name}
             actions={actions}
             onClose={() => setShowMeetingBinding(false)}
           />
+        )}
+        {disconnectingMeeting && (
+          <ConfirmModal
+            title="Koppla från Meeting?"
+            confirmLabel="Koppla från"
+            danger
+            onCancel={() => setDisconnectingMeeting(false)}
+            onConfirm={() => void disconnectMeeting()}
+          >
+            <p>Meeting-kopplingen tas bort från projektet. Kopplad dagordning och namnlista påverkas inte.</p>
+          </ConfirmModal>
         )}
 
       <div class="tabs" role="tablist">

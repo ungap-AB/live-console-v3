@@ -46,6 +46,7 @@ function derivePlayoutState(timeline: TimelineEvent[]): PlayoutState {
 }
 
 interface ProjectsViewProps {
+  meetingDomain: string
   selectedId: string | null
   onSelectedIdChange: (id: string | null) => void
   screen: ProjectScreen
@@ -58,6 +59,7 @@ interface ProjectsViewProps {
 }
 
 export function ProjectsView({
+  meetingDomain,
   selectedId,
   onSelectedIdChange,
   screen,
@@ -379,6 +381,7 @@ export function ProjectsView({
             ) : (
               <ProjectDetail
                 project={selected}
+                meetingDomain={meetingDomain}
                 onDelete={() => setConfirmDelete(selected)}
                 onDeleteBlocked={setToast}
                 actions={actions}

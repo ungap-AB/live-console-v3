@@ -4,20 +4,18 @@ import type { MeetingSummary, MeetingTopic } from '../../data/types'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 
-const DOMAIN_STORAGE_KEY = 'ungap.meeting.domain'
-
 type Step = 'domain' | 'meetings' | 'events' | 'done'
 
 interface MeetingBindingModalProps {
   projectName: string
+  meetingDomain: string
   currentAgendaName?: string
   actions: ProjectActions
   onClose: () => void
 }
 
-export function MeetingBindingModal({ projectName, currentAgendaName, actions, onClose }: MeetingBindingModalProps) {
+export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaName, actions, onClose }: MeetingBindingModalProps) {
   const [step, setStep] = useState<Step>('domain')
-  const [domain, setDomain] = useState(() => localStorage.getItem(DOMAIN_STORAGE_KEY) ?? '')
   const [meetings, setMeetings] = useState<MeetingSummary[]>([])
   const [selectedMeeting, setSelectedMeeting] = useState<MeetingSummary | null>(null)
   const [topics, setTopics] = useState<MeetingTopic[]>([])
@@ -30,16 +28,15 @@ export function MeetingBindingModal({ projectName, currentAgendaName, actions, o
   }, [step])
 
   async function findMeetings() {
-    const normalizedDomain = domain.trim().toLowerCase()
+    const normalizedDomain = meetingDomain.trim().toLowerCase()
     if (!normalizedDomain) {
-      setError('Ange en Meeting-domän.')
+      setError('Din användare saknar en domän.')
       return
     }
     setLoading(true)
     setError(null)
     try {
       const found = await client.meetings.list(normalizedDomain)
-      localStorage.setItem(DOMAIN_STORAGE_KEY, normalizedDomain)
       setMeetings(found)
       setSelectedMeeting(null)
       setStep('meetings')
@@ -56,7 +53,7 @@ export function MeetingBindingModal({ projectName, currentAgendaName, actions, o
     setLoading(true)
     setError(null)
     try {
-      const agendaTopics = await client.meetings.getAgenda(domain.trim().toLowerCase(), selectedMeeting.id)
+      const agendaTopics = await client.meetings.getAgenda(meetingDomain.trim().toLowerCase(), selectedMeeting.id)
       setTopics(agendaTopics)
       setStep('events')
     } catch (cause) {
@@ -71,7 +68,7 @@ export function MeetingBindingModal({ projectName, currentAgendaName, actions, o
     setLoading(true)
     setError(null)
     try {
-      await actions.setMeetingBinding(domain.trim().toLowerCase(), String(selectedMeeting.id), eventsEnabled)
+      await actions.setMeetingBinding(meetingDomain.trim().toLowerCase(), String(selectedMeeting.id), eventsEnabled)
       const created = await client.agendas.create({
         name: `${selectedMeeting.title} — Meeting`,
         description: `Importerad från Meeting ${selectedMeeting.id}`,
@@ -97,9 +94,10 @@ export function MeetingBindingModal({ projectName, currentAgendaName, actions, o
         <input
           id="meeting-domain"
           class="form-input"
-          value={domain}
+          value={meetingDomain}
           placeholder="ale.se"
-          onInput={(event) => setDomain(event.currentTarget.value)}
+          readOnly
+          aria-readonly="true"
           onKeyDown={(event) => {
             if (event.key === 'Enter') void findMeetings()
           }}
@@ -118,7 +116,19 @@ export function MeetingBindingModal({ projectName, currentAgendaName, actions, o
 
   if (step === 'meetings') {
     return (
-      <Modal title="Välj möte" subtitle={`Meeting-domän: ${domain}`} onClose={onClose}>
+      <Modal
+        title="Välj möte"
+        subtitle={`Meeting-domän: ${meetingDomain}`}
+        onClose={onClose}
+        footer={
+          <>
+            <button class="btn btn-sm" type="button" onClick={() => setStep('domain')}>Tillbaka</button>
+            <button class="btn btn-sm btn-primary" type="button" disabled={!selectedMeeting || loading} onClick={() => void loadMeetingAgenda()}>
+              {loading ? 'Hämtar agenda...' : 'Koppla'}
+            </button>
+          </>
+        }
+      >
         {meetings.length > 0 ? (
           <ul class="meeting-picker-list">
             {meetings.map((meeting) => (
@@ -138,12 +148,6 @@ export function MeetingBindingModal({ projectName, currentAgendaName, actions, o
           <p class="empty-state">{error ?? 'Inga möten hittades för domänen.'}</p>
         )}
         {error && meetings.length > 0 && <p class="form-error">{error}</p>}
-        <div class="modal-actions">
-          <button class="btn btn-sm" type="button" onClick={() => setStep('domain')}>Tillbaka</button>
-          <button class="btn btn-sm btn-primary" type="button" disabled={!selectedMeeting || loading} onClick={() => void loadMeetingAgenda()}>
-            {loading ? 'Hämtar agenda...' : 'Koppla'}
-          </button>
-        </div>
       </Modal>
     )
   }

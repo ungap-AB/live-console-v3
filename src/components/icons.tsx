@@ -103,6 +103,16 @@ export function SwapIcon() {
   )
 }
 
+export function UnlinkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7">
+      <path d="m9.5 14.5-1.8 1.8a3.5 3.5 0 0 1-5-5l2.8-2.8a3.5 3.5 0 0 1 5 0" />
+      <path d="m14.5 9.5 1.8-1.8a3.5 3.5 0 0 1 5 5l-2.8 2.8a3.5 3.5 0 0 1-5 0" />
+      <path d="m8 16 8-8" />
+    </svg>
+  )
+}
+
 export function SearchIcon() {
   return (
     <svg

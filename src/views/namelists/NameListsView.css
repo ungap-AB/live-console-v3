@@ -5,3 +5,17 @@
   flex: 1;
   min-width: 160px;
 }
+
+.namelist-import-textarea {
+  display: block;
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.form-error {
+  margin: 10px 0 0;
+  color: var(--danger, #a33a3a);
+  font-size: 13px;
+}
