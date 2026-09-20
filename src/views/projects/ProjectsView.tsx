@@ -79,8 +79,12 @@ export function ProjectsView({
     if (resource.data) setProjects(resource.data)
   }, [resource.data])
 
+  const sortedProjects = [...projects].sort(
+    (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+  )
+
   useEffect(() => {
-    if (projects.length > 0 && (!selectedId || !projects.some((project) => project.id === selectedId))) onSelectedIdChange(projects[0].id)
+    if (sortedProjects.length > 0 && (!selectedId || !projects.some((project) => project.id === selectedId))) onSelectedIdChange(sortedProjects[0].id)
   }, [projects, selectedId])
 
   useEffect(() => {
@@ -88,9 +92,6 @@ export function ProjectsView({
   }, [selectedId])
 
   const selected = projects.find((p) => p.id === selectedId) ?? null
-  const sortedProjects = [...projects].sort(
-    (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
-  )
 
   function replace(next: Project) {
     setProjects((prev) => prev.map((p) => (p.id === next.id ? next : p)))

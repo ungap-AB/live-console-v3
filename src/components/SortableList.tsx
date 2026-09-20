@@ -45,10 +45,11 @@ export function SortableList<T>({
       {items.map((item, index) => (
         <li
           key={getId(item)}
-          draggable={!disabled}
           class={[
             dragIndex === index ? 'dragging' : '',
             overIndex === index && dragIndex !== index ? 'over' : '',
+            overIndex === index && dragIndex !== null && dragIndex > index ? 'drop-before' : '',
+            overIndex === index && dragIndex !== null && dragIndex < index ? 'drop-after' : '',
             getItemClassName?.(item) ?? '',
           ]
             .filter(Boolean)
@@ -66,7 +67,12 @@ export function SortableList<T>({
           }}
         >
           {!disabled && (
-            <span class="grip" aria-hidden="true">
+            <span
+              class="grip"
+              draggable
+              aria-hidden="true"
+              onDragStart={() => setDragIndex(index)}
+            >
               ⠿
             </span>
           )}

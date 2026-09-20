@@ -101,6 +101,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   useEffect(() => setNameList(nameListResource.data ?? null), [nameListResource.data])
 
   const frozen = p.publication.state === 'published'
+  const showTimeline = guidedPhase === 'published'
   // Utspelning ska fungera även offline — mötet måste dokumenteras trots
   // enkoderstrul. Tidslinjen kan synkas mot en uppladdad film senare.
   const canPlay = !frozen
@@ -364,7 +365,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
           <StatusChip tone={statusTone} dot>
             {statusLabel}
           </StatusChip>
-          {p.meetingEventsEnabled && <StatusChip tone="accent">Meeting: {meetingName ?? 'okänt möte'}</StatusChip>}
+          {p.meetingBindingId && p.meetingEventsEnabled && <StatusChip tone="accent">Meeting: {meetingName ?? 'okänt möte'}</StatusChip>}
           <span class="head-actions">
             <Clock />
           </span>
@@ -572,7 +573,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         ))}
       </div>
 
-      <div class={`cols ${live ? 'two' : ''} ${guidedPhase === 'published' ? 'published' : ''} ${!live && guidedPhase !== 'published' && timelineCollapsed ? 'timeline-collapsed' : ''}`}>
+      <div class={`cols ${!showTimeline ? 'two' : ''} ${guidedPhase === 'published' ? 'published' : ''} ${showTimeline && timelineCollapsed ? 'timeline-collapsed' : ''}`}>
         {guidedPhase !== 'published' && (
         <>
         <div class="col">
@@ -737,7 +738,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         </>
         )}
 
-        {!live && (
+        {showTimeline && (
           <div class={`col timeline-col ${timelineCollapsed ? 'collapsed' : ''}`}>
             <h3>
               {!timelineCollapsed && <span class="timeline-title">Tidslinje {frozen && <StatusChip tone="accent">Fryst</StatusChip>}</span>}
