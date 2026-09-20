@@ -63,6 +63,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   const [importText, setImportText] = useState('')
   const [importError, setImportError] = useState<string | null>(null)
   const [timelineCollapsed, setTimelineCollapsed] = useState(false)
+  const [personSort, setPersonSort] = useState<'name' | 'playCount'>('name')
   // Hälsan upptäcker fasen före projektets recording-ref. Hämta projektet
   // igen både efter stopp och medan asseten verifieras, så trim blir tillgänglig
   // när backend faktiskt har markerat inspelningen som klar.
@@ -125,6 +126,10 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
     return events[events.length - 1].offsetSeconds
   }
 
+  function speakerPlayCount(personId: string): number {
+    return p.playout.timeline.filter((event) => event.kind === 'person' && event.refId === personId).length
+  }
+
   // Samma redigeringsanrop som AgendasView/NameListsView gör mot samma
   // klient-API — bara mot den dagordning/namnlista som råkar vara kopplad
   // till det här projektet, och med en lokal setter istället för replaceSelected.
@@ -170,6 +175,27 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
     const renumbered = nextPeople.map((pe, i) => ({ ...pe, position: i + 1 }))
     const updated = await client.namelists.replacePeople(nameList!.id, renumbered)
     setNameList(updated)
+  }
+
+  async function sortPeopleByPlayCount() {
+    if (!nameList) return
+    const sorted = [...nameList.people].sort((left, right) => {
+      const countDifference = speakerPlayCount(right.id) - speakerPlayCount(left.id)
+      return countDifference || left.name.localeCompare(right.name, 'sv')
+    })
+    await reorderPeople(sorted)
+  }
+
+  async function sortPeopleByName() {
+    if (!nameList) return
+    const sorted = [...nameList.people].sort((left, right) => left.name.localeCompare(right.name, 'sv'))
+    await reorderPeople(sorted)
+  }
+
+  async function changePersonSort(value: 'name' | 'playCount') {
+    setPersonSort(value)
+    if (value === 'name') await sortPeopleByName()
+    else await sortPeopleByPlayCount()
   }
 
   async function createAndAttachAgenda() {
@@ -609,18 +635,34 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
                 onAdd={addPerson}
                 onRename={renamePerson}
                 onRemove={removePerson}
+                toolbarExtra={
+                  <select
+                    class="sort-select"
+                    aria-label="Sortera namnlista"
+                    value={personSort}
+                    onChange={(event) => void changePersonSort(event.currentTarget.value as 'name' | 'playCount')}
+                  >
+                    <option value="name">Namn A–Ö</option>
+                    <option value="playCount">Mest utspelade</option>
+                  </select>
+                }
                 compactInteractions
                 hideAddButton
                 renderExtra={(person) => (
-                  <button
-                    class="play"
-                    type="button"
-                    disabled={!canPlay}
-                    title="Spela ut"
-                    onClick={() => actions.cue('person', person.id, person.name)}
-                  >
-                    <PlayIcon />
-                  </button>
+                  <>
+                    <span class="play-count" title={`${speakerPlayCount(person.id)} utspelningar`}>
+                      {speakerPlayCount(person.id)}
+                    </span>
+                    <button
+                      class="play"
+                      type="button"
+                      disabled={!canPlay}
+                      title="Spela ut"
+                      onClick={() => actions.cue('person', person.id, person.name)}
+                    >
+                      <PlayIcon />
+                    </button>
+                  </>
                 )}
               />
             )}
