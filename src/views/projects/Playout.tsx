@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Agenda, AgendaItem, NameList, NameListPerson, Project, Recording } from '../../data/types'
 import { useResource } from '../../app/useResource'
@@ -64,6 +64,9 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   const [importError, setImportError] = useState<string | null>(null)
   const [timelineCollapsed, setTimelineCollapsed] = useState(false)
   const [personSort, setPersonSort] = useState<'name' | 'playCount'>('name')
+  const nowRef = useRef<HTMLDivElement>(null)
+  const nowItemMeasureRef = useRef<HTMLDivElement>(null)
+  const [nowItemHeight, setNowItemHeight] = useState<number | null>(null)
   // Hälsan upptäcker fasen före projektets recording-ref. Hämta projektet
   // igen både efter stopp och medan asseten verifieras, så trim blir tillgänglig
   // när backend faktiskt har markerat inspelningen som klar.
@@ -119,6 +122,31 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   const nowItem = p.playout.currentAgendaItem?.label ?? agenda?.items.find((it) => it.id === p.playout.currentAgendaItemId)?.title ?? null
   const nowSpeaker = p.playout.currentPerson?.label ?? nameList?.people.find((pe) => pe.id === p.playout.currentPersonId)?.name ?? null
   const nowExclamation = p.playout.currentExclamation?.label ?? null
+  const agendaTitles = agenda?.items.map((item) => item.title).join('\u0000') ?? ''
+
+  useEffect(() => {
+    const nowElement = nowRef.current
+    const measureElement = nowItemMeasureRef.current
+    if (!nowElement || !measureElement || !agenda?.items.length) {
+      setNowItemHeight(null)
+      return
+    }
+
+    const measure = () => {
+      const itemPanel = nowElement.querySelector<HTMLElement>('[data-now-item-panel]')
+      if (!itemPanel) return
+
+      measureElement.style.width = `${itemPanel.getBoundingClientRect().width}px`
+      const heights = Array.from(measureElement.children).map((child) => child.getBoundingClientRect().height)
+      const nextHeight = Math.max(...heights)
+      setNowItemHeight((currentHeight) => (currentHeight === nextHeight ? currentHeight : nextHeight))
+    }
+
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(nowElement)
+    return () => observer.disconnect()
+  }, [agendaTitles, p.meetingBindingId])
 
   function lastPlayedOffset(itemId: string): number | null {
     const events = p.playout.timeline.filter((e) => e.kind === 'agendaItem' && e.refId === itemId)
@@ -326,6 +354,11 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
     <>
       <div class="head">
         <h2>
+          <span class="project-header-nav">
+            <button class="btn btn-sm" type="button" onClick={onClose}>
+              &lt; Projekt
+            </button>
+          </span>
           {p.name}
           <StatusChip tone={statusTone} dot>
             {statusLabel}
@@ -333,9 +366,6 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
           {p.meetingEventsEnabled && <StatusChip tone="accent">Meeting: {meetingName ?? 'okänt möte'}</StatusChip>}
           <span class="head-actions">
             <Clock />
-            <button class="btn btn-sm" type="button" onClick={onClose}>
-              &lt; Projekt
-            </button>
           </span>
         </h2>
         <div class="facts">
@@ -473,8 +503,12 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
         </div>
       )}
 
-      <div class="now">
-        <div class={nowItem ? '' : 'now-empty'}>
+      <div ref={nowRef} class={`now ${p.meetingBindingId ? '' : 'two'}`}>
+        <div
+          data-now-item-panel
+          class={nowItem ? '' : 'now-empty'}
+          style={nowItemHeight === null ? undefined : { height: `${nowItemHeight}px` }}
+        >
           <div class="k">Ärende i bild</div>
           <div class="v now-value">
             <span>{nowItem ?? '–'}</span>
@@ -508,23 +542,33 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
             )}
           </div>
         </div>
-        <div class={nowExclamation ? '' : 'now-empty'}>
-          <div class="k">Tillfällig talare</div>
-          <div class="v now-value">
-            <span>{nowExclamation ?? '–'}</span>
-            {nowExclamation && (
-              <button
-                class="ib now-clear"
-                type="button"
-                title="Rensa tillfällig talare"
-                aria-label="Rensa tillfällig talare"
-                onClick={() => actions.clear('exclamation')}
-              >
-                ✕
-              </button>
-            )}
+        {p.meetingBindingId && (
+          <div class={nowExclamation ? '' : 'now-empty'}>
+            <div class="k">Tillfällig talare</div>
+            <div class="v now-value">
+              <span>{nowExclamation ?? '–'}</span>
+              {nowExclamation && (
+                <button
+                  class="ib now-clear"
+                  type="button"
+                  title="Rensa tillfällig talare"
+                  aria-label="Rensa tillfällig talare"
+                  onClick={() => actions.clear('exclamation')}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+      </div>
+      <div ref={nowItemMeasureRef} class="now-item-measure" aria-hidden="true">
+        {agenda?.items.map((item) => (
+          <div class="now-item-measure-row" key={item.id}>
+            <div class="k">Ärende i bild</div>
+            <div class="v">{item.title}</div>
+          </div>
+        ))}
       </div>
 
       <div class={`cols ${live ? 'two' : ''} ${guidedPhase === 'published' ? 'published' : ''} ${!live && guidedPhase !== 'published' && timelineCollapsed ? 'timeline-collapsed' : ''}`}>

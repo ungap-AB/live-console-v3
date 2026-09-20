@@ -3,6 +3,17 @@
   min-height: 0;
 }
 
+.pdf-row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: auto;
+  min-width: 26px;
+  padding: 0 4px;
+  margin-right: 5px;
+}
+
 .templates-heading {
   flex: none;
   padding: 8px 12px 4px;

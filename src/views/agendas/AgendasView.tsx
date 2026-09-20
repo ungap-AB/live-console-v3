@@ -9,8 +9,9 @@ import { EditableItemList } from '../../components/EditableItemList'
 import { Modal } from '../../components/Modal'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
-import { PdfAttachments } from '../../components/PdfAttachments'
+import { PdfAttachmentsModal } from '../../components/PdfAttachmentsModal'
 import { PlusIcon, EditIcon } from '../../components/icons'
+import { PdfIcon } from '../../components/icons'
 import './AgendasView.css'
 
 function formatDate(iso: string): string {
@@ -40,6 +41,7 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
   const [importText, setImportText] = useState('')
   const [importError, setImportError] = useState<string | null>(null)
   const [usedByOpen, setUsedByOpen] = useState(false)
+  const [pdfItem, setPdfItem] = useState<AgendaItem | null>(null)
 
   const projectsResource = useResource(() => client.projects.list(), [])
   const projects: Project[] = projectsResource.data ?? []
@@ -63,6 +65,7 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
   useEffect(() => {
     setSelected(detailResource.data ?? null)
     setUsedByOpen(false)
+    setPdfItem(null)
   }, [detailResource.data])
 
   const visible = agendas.filter((a) => !a.isTemplate)
@@ -323,7 +326,18 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
                     onAdd={() => addItem(selected)}
                     onRename={(id, title) => renameItem(selected, id, title)}
                     onRemove={(id) => removeItem(selected, id)}
-                    renderExtra={(item) => <PdfAttachments agenda={selected} item={item} onChanged={replaceSelected} />}
+                    renderRowAction={(item) => (
+                      <button
+                        class="ib pdf-row-action"
+                        type="button"
+                        title={`PDF-dokument${item.attachments?.length ? ` (${item.attachments.length})` : ''}`}
+                        aria-label={`Öppna PDF-dokument för ${item.title}`}
+                        onClick={() => setPdfItem(item)}
+                      >
+                        <PdfIcon />
+                        <span class="pdf-count" aria-hidden="true">{item.attachments?.length ?? 0}</span>
+                      </button>
+                    )}
                     toolbarExtraAfter={
                       <button class="btn btn-sm btn-primary agenda-import-button" type="button" onClick={() => openImport(selected)}>
                         Importera...
@@ -403,6 +417,18 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
           />
           {importError && <p class="form-error">{importError}</p>}
         </Modal>
+      )}
+
+      {pdfItem && selected && (
+        <PdfAttachmentsModal
+          agenda={selected}
+          item={pdfItem}
+          onChanged={(next) => {
+            replaceSelected(next)
+            setPdfItem(next.items.find((item) => item.id === pdfItem.id) ?? null)
+          }}
+          onClose={() => setPdfItem(null)}
+        />
       )}
     </div>
   )

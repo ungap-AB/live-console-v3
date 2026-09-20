@@ -83,6 +83,9 @@ export function ProjectsView({
   }, [projects, selectedId])
 
   const selected = projects.find((p) => p.id === selectedId) ?? null
+  const sortedProjects = [...projects].sort(
+    (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+  )
 
   function replace(next: Project) {
     setProjects((prev) => prev.map((p) => (p.id === next.id ? next : p)))
@@ -347,7 +350,7 @@ export function ProjectsView({
               <ul>
                 {resource.loading && projects.length === 0 && <li class="none">Laddar…</li>}
                 {!resource.loading && projects.length === 0 && <li class="none">Inga projekt ännu.</li>}
-                {projects.map((p) => {
+                {sortedProjects.map((p) => {
                   const status = deriveProjectStatus(p)
                   return (
                     <li key={p.id} class={p.id === selectedId ? 'sel' : ''}>

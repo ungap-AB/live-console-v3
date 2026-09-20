@@ -11,9 +11,14 @@ interface ModalProps {
   wide?: boolean
   /** Extra klass på .mbody, för vyer som behöver egen flex-layout (t.ex. TrimDialog). */
   bodyClassName?: string
+  className?: string
+  onDragEnter?: (event: DragEvent) => void
+  onDragOver?: (event: DragEvent) => void
+  onDragLeave?: (event: DragEvent) => void
+  onDrop?: (event: DragEvent) => void
 }
 
-export function Modal({ title, subtitle, onClose, children, footer, wide = false, bodyClassName }: ModalProps) {
+export function Modal({ title, subtitle, onClose, children, footer, wide = false, bodyClassName, className, onDragEnter, onDragOver, onDragLeave, onDrop }: ModalProps) {
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -25,11 +30,15 @@ export function Modal({ title, subtitle, onClose, children, footer, wide = false
   return (
     <div class="scrim" onClick={onClose}>
       <div
-        class={`modal ${wide ? 'wide' : ''}`}
+        class={`modal ${wide ? 'wide' : ''} ${className ?? ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
+        onDragEnter={onDragEnter}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
       >
         <div class="mhead">
           <div>

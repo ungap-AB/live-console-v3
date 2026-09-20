@@ -239,6 +239,11 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
     <>
       <div class="head">
         <h2>
+          <span class="project-header-nav">
+            <button class="btn btn-sm" type="button" onClick={onOpenPlayout}>
+              <PlayIcon /> Playout
+            </button>
+          </span>
           {p.name}
           <button
             class="ib"
@@ -250,9 +255,6 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
             <EditIcon />
           </button>
           <span class="head-actions">
-            <button class="btn btn-sm" type="button" onClick={onOpenPlayout}>
-              <PlayIcon /> Playout
-            </button>
             <OverflowMenu
               items={[
                 {

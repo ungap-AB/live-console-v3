@@ -18,6 +18,8 @@ interface EditableItemListProps<T> {
   numbered?: boolean
   /** Extra innehåll per rad, t.ex. Playout-vyns spela ut-knapp. Visas bara i läsläge. */
   renderExtra?: (item: T) => ComponentChildren
+  /** Extra ikonåtgärd inne i radens knappgrupp, före redigera/ta bort. */
+  renderRowAction?: (item: T) => ComponentChildren
   getItemClassName?: (item: T) => string
   hint?: string
   /** Extra kontroller (t.ex. filtrera/sortera) i samma rad som "Lägg till"-knappen, till vänster om den. */
@@ -49,6 +51,7 @@ export function EditableItemList<T>({
   disabled = false,
   numbered = false,
   renderExtra,
+  renderRowAction,
   getItemClassName,
   hint,
   toolbarExtra,
@@ -214,6 +217,7 @@ export function EditableItemList<T>({
               </span>
               {renderExtra?.(item)}
               {!compactInteractions && <span class="rowbtns">
+                {renderRowAction?.(item)}
                 <button
                   class="ib"
                   type="button"

@@ -219,6 +219,12 @@
   height: 22px;
 }
 
+.project-header-nav {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+
 /* "..."-menyn (och ev. en Playout-genväg) hör hemma i rubrikraden, uppe
    till höger — inte i en egen tools-rad längre ner. Används både inuti
    .doc h2 och (Användare) i .idrow, som har samma flex-rad-form. */

@@ -17,6 +17,15 @@ export function DeleteIcon() {
   )
 }
 
+export function PdfIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7">
+      <path d="M6 3h8l4 4v14H6z" />
+      <path d="M14 3v5h5M8.5 16h2a1.8 1.8 0 0 0 0-3.6h-2V18M13.5 18v-5.6h1.2a2.8 2.8 0 0 1 0 5.6z" />
+    </svg>
+  )
+}
+
 export function CheckIcon() {
   return (
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7">
