@@ -11,6 +11,7 @@ import { LiveResourcesView } from '../views/resources/LiveResourcesView'
 import { VideoArchiveView } from '../views/archive/VideoArchiveView'
 import { TrashView } from '../views/trash/TrashView'
 import { UsersView } from '../views/users/UsersView'
+import { readStoredSelection, storeSelection } from './selectionStorage'
 
 type AuthState = { status: 'loading' } | { status: 'anon' } | { status: 'authed'; user: CurrentUser }
 
@@ -44,11 +45,19 @@ export function App() {
   // Lyft upp ur ProjectsView så att vilket projekt/vy som senast visades
   // överlever att man navigerar bort och tillbaka — det är vad som gör
   // Playout-genvägen i sidomenyn meningsfull.
-  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
-  const [projectScreen, setProjectScreen] = useState<ProjectScreen>('detail')
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(() => readStoredSelection('project'))
+  const [projectScreen, setProjectScreen] = useState<ProjectScreen>(() => readStoredSelection('project-screen') === 'playout' ? 'playout' : 'detail')
   // Lyft hit av samma skäl som projectScreen — navmenyns "+ Ny"-knapp (bild 1)
   // måste kunna öppna ProjectsViews skapa-dialog utifrån, inte bara inifrån.
   const [creatingProject, setCreatingProject] = useState(false)
+
+  useEffect(() => {
+    storeSelection('project', activeProjectId)
+  }, [activeProjectId])
+
+  useEffect(() => {
+    storeSelection('project-screen', projectScreen)
+  }, [projectScreen])
 
   // Delad av Dagordningar/Videoarkiv för "gå till projekt"-snabblänkar.
   function openProject(id: string) {
@@ -103,6 +112,7 @@ export function App() {
       onLogout={logout}
       currentUserId={auth.user.id}
       currentUserRoles={auth.user.roles}
+      contentLocked={route === 'projects' && projectScreen === 'playout'}
     >
       {routeAllowed && route === 'projects' && (
         <ProjectsView

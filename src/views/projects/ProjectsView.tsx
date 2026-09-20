@@ -13,6 +13,7 @@ import { ProjectDetail } from './ProjectDetail'
 import { Playout } from './Playout'
 import type { ProjectActions } from './actions'
 import { ApiError } from '../../data/http/fetchJson'
+import { storeSelection } from '../../app/selectionStorage'
 import './ProjectsView.css'
 
 export type ProjectScreen = 'detail' | 'playout'
@@ -79,8 +80,12 @@ export function ProjectsView({
   }, [resource.data])
 
   useEffect(() => {
-    if (!selectedId && projects.length > 0) onSelectedIdChange(projects[0].id)
+    if (projects.length > 0 && (!selectedId || !projects.some((project) => project.id === selectedId))) onSelectedIdChange(projects[0].id)
   }, [projects, selectedId])
+
+  useEffect(() => {
+    storeSelection('project', selectedId)
+  }, [selectedId])
 
   const selected = projects.find((p) => p.id === selectedId) ?? null
   const sortedProjects = [...projects].sort(
@@ -324,7 +329,7 @@ export function ProjectsView({
   }
 
   return (
-    <div class="view">
+    <div class={`view${screen === 'playout' ? ' playout-active' : ''}`}>
       <header class={`project-header${screen === 'playout' ? ' collapsed' : ''}`}>
         <div class="header-list-zone">
           <h1>Projekt</h1>

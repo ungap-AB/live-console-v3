@@ -55,9 +55,10 @@ interface ShellProps {
   onLogout: () => void
   currentUserId: string
   currentUserRoles: Role[]
+  contentLocked?: boolean
 }
 
-export function Shell({ active, children, projectsNavAction, onLogout, currentUserId, currentUserRoles }: ShellProps) {
+export function Shell({ active, children, projectsNavAction, onLogout, currentUserId, currentUserRoles, contentLocked = false }: ShellProps) {
   const [navOpen, setNavOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null)
   const [currentDomain, setCurrentDomain] = useState<Domain | null>(null)
@@ -174,7 +175,7 @@ export function Shell({ active, children, projectsNavAction, onLogout, currentUs
         />
       )}
 
-      <main class="outlet">{children}</main>
+      <main class={`outlet${contentLocked ? ' content-locked' : ''}`}>{children}</main>
     </div>
   )
 }

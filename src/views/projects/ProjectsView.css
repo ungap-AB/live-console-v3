@@ -41,3 +41,7 @@
   min-height: 0;
   height: 100%;
 }
+
+.view.playout-active > .content {
+  overflow: hidden;
+}

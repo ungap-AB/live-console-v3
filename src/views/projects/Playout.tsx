@@ -6,7 +6,7 @@ import { StatusChip, type ChipTone } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
 import { AttachedListPicker } from '../../components/AttachedListPicker'
 import { EditableItemList } from '../../components/EditableItemList'
-import { PdfAttachments } from '../../components/PdfAttachments'
+import { PdfAttachmentsModal } from '../../components/PdfAttachmentsModal'
 import { VideoLightbox } from '../../components/VideoLightbox'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Modal } from '../../components/Modal'
@@ -19,7 +19,7 @@ import { phaseMeta } from './livePhase'
 import { resolveGuidedPhase } from './guidedPhase'
 import { resolveOriginalRecordingForTrim } from './openTrimDialog'
 import { TrimDialog } from '../archive/TrimDialog'
-import { CheckIcon, PlayIcon } from '../../components/icons'
+import { CheckIcon, PdfIcon, PlayIcon } from '../../components/icons'
 import { Clock } from '../../components/Clock'
 import './Playout.css'
 
@@ -64,6 +64,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
   const [importError, setImportError] = useState<string | null>(null)
   const [timelineCollapsed, setTimelineCollapsed] = useState(false)
   const [personSort, setPersonSort] = useState<'name' | 'playCount'>('name')
+  const [pdfItem, setPdfItem] = useState<AgendaItem | null>(null)
   const nowRef = useRef<HTMLDivElement>(null)
   const nowItemMeasureRef = useRef<HTMLDivElement>(null)
   const [nowItemHeight, setNowItemHeight] = useState<number | null>(null)
@@ -621,7 +622,16 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
                   const done = offset != null
                   return (
                     <>
-                      <PdfAttachments agenda={agenda} item={it} onChanged={setAgenda} />
+                      <button
+                        class="ib pdf-row-action"
+                        type="button"
+                        title={`PDF-dokument${it.attachments?.length ? ` (${it.attachments.length})` : ''}`}
+                        aria-label={`Öppna PDF-dokument för ${it.title}`}
+                        onClick={() => setPdfItem(it)}
+                      >
+                        <PdfIcon />
+                        <span class="pdf-count" aria-hidden="true">{it.attachments?.length ?? 0}</span>
+                      </button>
                       {done && <span class="time">{formatHms(offset)}</span>}
                       <button
                         class={`play ${done ? 'done' : ''}`}
@@ -638,6 +648,18 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
               />
             )}
           </div>
+
+          {pdfItem && agenda && (
+            <PdfAttachmentsModal
+              agenda={agenda}
+              item={pdfItem}
+              onChanged={(next) => {
+                setAgenda(next)
+                setPdfItem(next.items.find((item) => item.id === pdfItem.id) ?? null)
+              }}
+              onClose={() => setPdfItem(null)}
+            />
+          )}
         </div>
 
         <div class="col">

@@ -10,6 +10,7 @@ import { Modal } from '../../components/Modal'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { SearchIcon, EditIcon } from '../../components/icons'
+import { readStoredSelection, storeSelection } from '../../app/selectionStorage'
 import './NameListsView.css'
 
 function formatDate(iso: string): string {
@@ -25,7 +26,7 @@ interface NameListsViewProps {
 export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }: NameListsViewProps = {}) {
   const listsResource = useResource(() => client.namelists.list(), [])
   const [namelists, setNamelists] = useState<NameList[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null)
+  const [selectedId, setSelectedId] = useState<string | null>(() => initialSelectedId ?? readStoredSelection('namelist'))
 
   useEffect(() => {
     if (initialSelectedId) onInitialSelectionConsumed?.()
@@ -44,8 +45,12 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
   }, [listsResource.data])
 
   useEffect(() => {
-    if (!selectedId && namelists.length > 0) setSelectedId(namelists[0].id)
+    if (namelists.length > 0 && (!selectedId || !namelists.some((namelist) => namelist.id === selectedId))) setSelectedId(namelists[0].id)
   }, [namelists, selectedId])
+
+  useEffect(() => {
+    storeSelection('namelist', selectedId)
+  }, [selectedId])
 
   // Listan är medvetet lätt (personCount, inga personer) — full detalj hämtas
   // separat när något väljs, se PLAN-live-server-v3.md Steg 2.

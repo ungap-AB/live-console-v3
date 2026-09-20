@@ -12,6 +12,7 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { PdfAttachmentsModal } from '../../components/PdfAttachmentsModal'
 import { PlusIcon, EditIcon } from '../../components/icons'
 import { PdfIcon } from '../../components/icons'
+import { readStoredSelection, storeSelection } from '../../app/selectionStorage'
 import './AgendasView.css'
 
 function formatDate(iso: string): string {
@@ -28,7 +29,7 @@ interface AgendasViewProps {
 export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelectionConsumed }: AgendasViewProps) {
   const agendasResource = useResource(() => client.agendas.list(), [])
   const [agendas, setAgendas] = useState<Agenda[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null)
+  const [selectedId, setSelectedId] = useState<string | null>(() => initialSelectedId ?? readStoredSelection('agenda'))
 
   useEffect(() => {
     if (initialSelectedId) onInitialSelectionConsumed?.()
@@ -51,8 +52,12 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
   }, [agendasResource.data])
 
   useEffect(() => {
-    if (!selectedId && agendas.length > 0) setSelectedId(agendas[0].id)
+    if (agendas.length > 0 && (!selectedId || !agendas.some((agenda) => agenda.id === selectedId))) setSelectedId(agendas[0].id)
   }, [agendas, selectedId])
+
+  useEffect(() => {
+    storeSelection('agenda', selectedId)
+  }, [selectedId])
 
   // Listan är medvetet lätt (itemCount, inga punkter) — full detalj hämtas
   // separat när något väljs, se PLAN-live-server-v3.md Steg 2.

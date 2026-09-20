@@ -197,6 +197,10 @@
   overflow: auto;
 }
 
+.outlet.content-locked {
+  overflow: hidden;
+}
+
 @media (max-width: 820px) {
   .nav-toggle {
     display: block;
