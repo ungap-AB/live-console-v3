@@ -12,7 +12,7 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { Modal } from '../../components/Modal'
 import { RenameModal } from '../../components/RenameModal'
 import { AttachedListPicker } from '../../components/AttachedListPicker'
-import { EditIcon, PlayIcon, SwapIcon, UnlinkIcon } from '../../components/icons'
+import { EditIcon, GearIcon, PlayIcon, SwapIcon, UnlinkIcon } from '../../components/icons'
 import type { ProjectActions } from './actions'
 import { formatDateTime, formatHms } from '../../app/time'
 import { useTick } from './useTick'
@@ -91,6 +91,7 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
   const [disconnectingMeeting, setDisconnectingMeeting] = useState(false)
   const [renaming, setRenaming] = useState(false)
   const [editingPublicTexts, setEditingPublicTexts] = useState(false)
+  const [showProjectSettings, setShowProjectSettings] = useState(false)
   const [publicTextDraft, setPublicTextDraft] = useState({
     beforeText: p.beforeText,
     liveText: p.liveText,
@@ -137,6 +138,7 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
     setDisconnectingMeeting(false)
     setRenaming(false)
     setEditingPublicTexts(false)
+    setShowProjectSettings(false)
     setShowMeetingBinding(false)
   }, [p.id])
 
@@ -315,6 +317,15 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
             onClick={() => setRenaming(true)}
           >
             <EditIcon />
+          </button>
+          <button
+            class="ib"
+            type="button"
+            title="Projektinställningar"
+            aria-label="Projektinställningar"
+            onClick={() => setShowProjectSettings(true)}
+          >
+            <GearIcon />
           </button>
           <button
             class="ib"
@@ -803,6 +814,22 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
               Spara
             </button>
           </div>
+        </Modal>
+      )}
+
+      {showProjectSettings && (
+        <Modal title="Projektinställningar" onClose={() => setShowProjectSettings(false)}>
+          <dl class="project-settings-list">
+            <dt>Projekt-ID</dt>
+            <dd>{p.id}</dd>
+            <dt>Domän</dt>
+            <dd>{p.domainId ?? 'Ingen domän'}</dd>
+            <dt>Meeting</dt>
+            <dd>{p.meetingBindingId ? meetingName ?? `Meeting-ID ${p.meetingBindingId}` : 'Ingen koppling'}</dd>
+            <dt>Spelarlänk</dt>
+            <dd class="project-settings-url">{p.playerUrl}</dd>
+          </dl>
+          <p class="field-help">Fler projektinställningar kan läggas till här utan att ändra arbetsvyerna.</p>
         </Modal>
       )}
 

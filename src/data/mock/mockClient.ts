@@ -66,6 +66,7 @@ function delay<T>(value: T): Promise<T> {
 }
 
 function clone<T>(value: T): T {
+  if (value === undefined || value === null) return value
   return JSON.parse(JSON.stringify(value))
 }
 

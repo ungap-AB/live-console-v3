@@ -79,6 +79,28 @@
   font: inherit;
 }
 
+.project-settings-list {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 8px 18px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.project-settings-list dt {
+  color: var(--ink-3);
+}
+
+.project-settings-list dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.project-settings-url {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 .form-error {
   margin: 10px 0 0;
   color: var(--danger);
