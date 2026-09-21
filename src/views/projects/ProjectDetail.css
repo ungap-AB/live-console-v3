@@ -145,6 +145,26 @@
   padding-top: 18px;
 }
 
+.mode-context {
+  max-width: 660px;
+  margin-bottom: 18px;
+  padding: 13px 15px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-bg);
+}
+
+.mode-context-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.mode-context p {
+  margin: 4px 0 0;
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .actions {
   display: flex;
   align-items: center;

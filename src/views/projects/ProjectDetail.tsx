@@ -195,6 +195,7 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
       : p.publicMode === 'after'
         ? (p.afterText || 'Ingen text satt för After.')
         : (p.ondemandText || 'Ingen text satt för Ondemand.')
+  const isBeforeMode = p.publicMode === 'before'
   const meetingName = p.meetingId
     ? meetingResource.data?.find((meeting) => String(meeting.id) === p.meetingId)?.title ?? `Meeting-ID ${p.meetingId}`
     : null
@@ -410,6 +411,8 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
             </div>
           </div>
         </div>
+        {isBeforeMode && (
+          <>
         <div class="panel-head-row">
           <FieldBlock label="Dagordning" grow dashed={!p.agendaId}>
             <span class="field-block-value">{agendaResource.data?.name ?? 'Ingen kopplad'}</span>
@@ -497,6 +500,8 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
             )}
           </FieldBlock>
         </div>
+          </>
+        )}
         {showMeetingBinding && (
           <MeetingBindingModal
             projectName={p.name}
@@ -654,6 +659,14 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
 
       {tab === 'odm' && (
         <div class="tabpanel">
+          <div class="mode-context">
+            <div class="mode-context-title">{p.publicMode === 'after' ? 'Efterarbete' : 'Publicerad ondemand'}</div>
+            <p>
+              {p.publicMode === 'after'
+                ? 'Granska inspelningen, trimma vid behov och publicera när materialet är klart. Projektet visar fortfarande After för publiken.'
+                : 'Den publicerade inspelningen är publik. Små ändringar kan göras löpande; större korrigeringar börjar med avpublicering.'}
+            </p>
+          </div>
           <div class="actions">
             <StatusChip tone={ODM_META[rec].tone} dot>
               {rec === 'recording' ? 'Spelas in' : ODM_META[rec].label}
