@@ -88,6 +88,19 @@ export interface ServerProjectTechnicalHealth {
   recordingState: string | null
 }
 
+export interface ServerPublicationHistory {
+  id: string
+  action: string
+  actorName: string
+  occurredAt: string
+  recordingId: string | null
+  manifestId: string | null
+  fromState: string | null
+  toState: string | null
+  reason: string | null
+  metadataJson: string | null
+}
+
 export interface ServerProject {
   id: string
   name: string
@@ -95,11 +108,13 @@ export interface ServerProject {
   visibility: string
   publicMode: string
   afterReason: string | null
+  recordingReadiness: string
   playerUrl: string
   channel: ServerChannelRef | null
   technicalHealth: ServerProjectTechnicalHealth
   recording: ServerRecordingRef | null
   publication: { state: string }
+  publicationHistory: ServerPublicationHistory[]
   capabilities: {
     trimRecording: { status: string; reasonCode?: string }
     publishVod: { status: string; reasonCode?: string }

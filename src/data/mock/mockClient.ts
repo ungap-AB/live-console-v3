@@ -639,6 +639,8 @@ export const mockClient: Client = {
         visibility: 'closed',
         publicMode: 'before',
         afterReason: null,
+        recordingReadiness: 'unknown',
+        publicationHistory: [],
         playerUrl: `https://play.ungap.se/p/${input.name.trim().toLowerCase().replace(/\s+/g, '-')}`,
         channel: null,
         technicalHealth: defaultTechnicalHealth(),
@@ -830,6 +832,19 @@ export const mockClient: Client = {
       p.publication.state = 'published'
       p.publicMode = 'ondemand'
       p.afterReason = null
+      p.recordingReadiness = 'published'
+      p.publicationHistory.push({
+        id: `ph${nextId++}`,
+        action: 'publish',
+        actorName: 'Mockoperatör',
+        occurredAt: new Date().toISOString(),
+        recordingId: p.recording.id,
+        manifestId: null,
+        fromState: 'none',
+        toState: 'published',
+        reason: null,
+        metadataJson: null,
+      })
       p.onDemandLocked = true
       return delay(projectSnapshot(p))
     },
@@ -839,6 +854,19 @@ export const mockClient: Client = {
       p.publication.state = 'none'
       p.publicMode = 'after'
       p.afterReason = 'ondemandUnpublished'
+      p.recordingReadiness = 'ready'
+      p.publicationHistory.push({
+        id: `ph${nextId++}`,
+        action: 'unpublish',
+        actorName: 'Mockoperatör',
+        occurredAt: new Date().toISOString(),
+        recordingId: p.recording?.id ?? null,
+        manifestId: null,
+        fromState: 'published',
+        toState: 'none',
+        reason: 'ondemandUnpublished',
+        metadataJson: null,
+      })
       p.onDemandLocked = false
       return delay(projectSnapshot(p))
     },

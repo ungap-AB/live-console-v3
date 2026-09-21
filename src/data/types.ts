@@ -90,6 +90,7 @@ export interface NameList {
 export type Visibility = 'open' | 'closed'
 export type PublicMode = 'before' | 'live' | 'after' | 'ondemand'
 export type AfterReason = 'liveFinished' | 'ondemandUnpublished'
+export type RecordingReadiness = 'unknown' | 'recording' | 'processing' | 'ready' | 'published'
 export type ChannelState = 'none' | 'idle' | 'live'
 export type RecordingState = 'none' | 'recording' | 'processing' | 'recorded' | 'trimmed' | 'published'
 
@@ -131,11 +132,13 @@ export interface Project {
   visibility: Visibility
   publicMode: PublicMode
   afterReason: AfterReason | null
+  recordingReadiness: RecordingReadiness
   playerUrl: string
   channel: { id: string; state: ChannelState } | null
   technicalHealth: ProjectTechnicalHealth
   recording: { id: string; state: RecordingState; hlsUrl?: string } | null
   publication: { state: PublicationState }
+  publicationHistory: PublicationHistory[]
   capabilities: ProjectCapabilities
   onDemandLocked: boolean
   agendaId: string | null
@@ -158,6 +161,19 @@ export interface Project {
     recordingStartedAt: string | null
   }
   playout: PlayoutState
+}
+
+export interface PublicationHistory {
+  id: string
+  action: string
+  actorName: string
+  occurredAt: string
+  recordingId: string | null
+  manifestId: string | null
+  fromState: string | null
+  toState: string | null
+  reason: string | null
+  metadataJson: string | null
 }
 
 // ---- Playout och tidslinje ----
