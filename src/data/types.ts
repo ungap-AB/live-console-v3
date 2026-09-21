@@ -1,7 +1,7 @@
 // Domäntyper, formade efter mockup/API-ENDPOINTS.md — det tilltänkta API-kontraktet.
 // Fältnamnen ska kunna mappas direkt mot en framtida fetch-baserad klient.
 
-export type Role = 'admin' | 'operator'
+export type Role = 'rootAdmin' | 'domainAdmin' | 'operator'
 
 export interface DomainRef {
   id: string

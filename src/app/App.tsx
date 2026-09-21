@@ -87,8 +87,8 @@ export function App() {
     window.location.hash = routeHref('namelists')
   }
 
-  const isAdmin = auth.status === 'authed' && auth.user.roles.includes('admin')
-  const routeAllowed = isAdmin || ['projects', 'agendas', 'namelists', 'trash'].includes(route)
+  const isRootAdmin = auth.status === 'authed' && auth.user.roles.includes('rootAdmin')
+  const routeAllowed = isRootAdmin || ['projects', 'agendas', 'namelists', 'trash'].includes(route)
 
   useEffect(() => {
     if (auth.status === 'authed' && !routeAllowed) {
@@ -150,8 +150,8 @@ export function App() {
       {routeAllowed && route === 'live' && <LiveResourcesView />}
       {routeAllowed && route === 'archive' && <VideoArchiveView onOpenProject={openProject} />}
       {routeAllowed && route === 'trash' && <TrashView />}
-      {routeAllowed && route === 'users' && isAdmin && (
-        <UsersView currentDomainId={auth.user.domain.id} canManageDomains={auth.user.roles.includes('admin')} />
+      {routeAllowed && route === 'users' && isRootAdmin && (
+        <UsersView currentDomainId={auth.user.domain.id} canManageDomains={isRootAdmin} />
       )}
     </Shell>
   )

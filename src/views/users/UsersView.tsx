@@ -14,11 +14,12 @@ import { formatDate, formatDateTime } from '../../app/time'
 import './UsersView.css'
 
 const ROLES: Record<Role, { label: string; description: string }> = {
-  admin: { label: 'Administratör', description: 'Hanterar användare, domäner och live-resurser.' },
+  rootAdmin: { label: 'Root-administratör', description: 'Hanterar hela installationen och alla domäner.' },
+  domainAdmin: { label: 'Domänadministratör', description: 'Arbetar operativt inom sin domän.' },
   operator: { label: 'Operatör', description: 'Skapar projekt, sänder och publicerar ondemand.' },
 }
 
-const ROLE_ORDER: Role[] = ['admin', 'operator']
+const ROLE_ORDER: Role[] = ['domainAdmin', 'operator']
 
 function initials(name: string): string {
   return name
@@ -30,8 +31,8 @@ function initials(name: string): string {
 }
 
 function isLastActiveAdmin(user: UserAccount, domainUsers: UserAccount[]): boolean {
-  if (!user.roles.includes('admin') || user.status !== 'active') return false
-  const activeAdmins = domainUsers.filter((u) => u.roles.includes('admin') && u.status === 'active')
+  if (!user.roles.includes('domainAdmin') || user.status !== 'active') return false
+  const activeAdmins = domainUsers.filter((u) => u.roles.includes('domainAdmin') && u.status === 'active')
   return activeAdmins.length === 1
 }
 
@@ -799,7 +800,7 @@ function UserDetail({
         </div>
         <div class="badges">
           {u.roles.map((r) => (
-            <StatusChip key={r} tone={r === 'admin' ? 'accent' : 'neutral'}>
+              <StatusChip key={r} tone={r === 'domainAdmin' ? 'accent' : 'neutral'}>
               {ROLES[r].label}
             </StatusChip>
           ))}
@@ -846,7 +847,7 @@ function UserDetail({
           <div class="roles">
             {ROLE_ORDER.map((role) => {
               const on = u.roles.includes(role)
-              const lock = role === 'admin' && lastAdmin
+              const lock = role === 'domainAdmin' && lastAdmin
               return (
                 <label key={role} class={`role ${on ? 'on' : ''}`}>
                   <input

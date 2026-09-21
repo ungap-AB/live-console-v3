@@ -580,7 +580,7 @@ export const mockClient: Client = {
       const user = users.find((u) => u.id === id)
       if (!user) throw new Error(`Användare ${id} finns inte`)
       const nextRoles: Role[] = roles.length ? [roles[0]] : ['operator']
-      if (isOnlyActiveAdmin(user) && !nextRoles.includes('admin')) {
+      if (isOnlyActiveDomainAdmin(user) && !nextRoles.includes('domainAdmin')) {
         throw new Error('Domänen måste ha minst en aktiv administratör.')
       }
       user.roles = nextRoles
@@ -589,7 +589,7 @@ export const mockClient: Client = {
     async disable(id) {
       const user = users.find((u) => u.id === id)
       if (!user) throw new Error(`Användare ${id} finns inte`)
-      if (isOnlyActiveAdmin(user)) {
+      if (isOnlyActiveDomainAdmin(user)) {
         throw new Error('Domänen måste ha minst en aktiv administratör.')
       }
       user.status = 'disabled'
@@ -603,7 +603,7 @@ export const mockClient: Client = {
     },
     async remove(id) {
       const user = users.find((u) => u.id === id)
-      if (user && isOnlyActiveAdmin(user)) {
+      if (user && isOnlyActiveDomainAdmin(user)) {
         throw new Error('Domänen måste ha minst en aktiv administratör.')
       }
       users = users.filter((u) => u.id !== id)
@@ -890,10 +890,10 @@ function findProject(id: string): Project {
   return project
 }
 
-function isOnlyActiveAdmin(user: UserAccount): boolean {
-  if (!user.roles.includes('admin') || user.status !== 'active') return false
+function isOnlyActiveDomainAdmin(user: UserAccount): boolean {
+  if (!user.roles.includes('domainAdmin') || user.status !== 'active') return false
   const activeAdmins = users.filter(
-    (u) => u.domainId === user.domainId && u.roles.includes('admin') && u.status === 'active',
+    (u) => u.domainId === user.domainId && u.roles.includes('domainAdmin') && u.status === 'active',
   )
   return activeAdmins.length === 1
 }

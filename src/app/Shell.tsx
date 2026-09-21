@@ -64,11 +64,11 @@ export function Shell({ active, children, projectsNavAction, onLogout, currentUs
   const [currentDomain, setCurrentDomain] = useState<Domain | null>(null)
   const [quota, setQuota] = useState<{ used: number; limit: number } | null>(null)
   const [showAccount, setShowAccount] = useState(false)
-  const isAdmin = currentUserRoles.includes('admin')
+  const isRootAdmin = currentUserRoles.includes('rootAdmin')
   const visibleGroups = NAV_GROUPS
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => isAdmin || ['projects', 'agendas', 'namelists', 'trash'].includes(item.route)),
+      items: group.items.filter((item) => isRootAdmin || ['projects', 'agendas', 'namelists', 'trash'].includes(item.route)),
     }))
     .filter((group) => group.items.length > 0)
 
