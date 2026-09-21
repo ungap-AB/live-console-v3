@@ -105,6 +105,10 @@ export interface ServerProject {
   id: string
   name: string
   createdAt: string
+  beforeText: string
+  liveText: string
+  afterText: string
+  ondemandText: string
   visibility: string
   publicMode: string
   afterReason: string | null

@@ -129,6 +129,10 @@ export interface Project {
   id: string
   name: string
   createdAt: string
+  beforeText: string
+  liveText: string
+  afterText: string
+  ondemandText: string
   visibility: Visibility
   publicMode: PublicMode
   afterReason: AfterReason | null

@@ -158,10 +158,10 @@ export function ProjectsView({
         throw err
       }
     },
-    rename: (name: string) =>
+    rename: (name: string, texts) =>
       withErrorToast(async () => {
         if (!selected) return
-        replace(await client.projects.rename(selected.id, name))
+        replace(await client.projects.rename(selected.id, name, texts))
       }),
     setVisibility: (visibility: Visibility) =>
       withErrorToast(async () => {

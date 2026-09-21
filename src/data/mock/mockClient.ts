@@ -636,6 +636,10 @@ export const mockClient: Client = {
         id: `p${nextId++}`,
         name: input.name,
         createdAt: new Date().toISOString(),
+        beforeText: '',
+        liveText: '',
+        afterText: '',
+        ondemandText: '',
         visibility: 'closed',
         publicMode: 'before',
         afterReason: null,
@@ -656,9 +660,10 @@ export const mockClient: Client = {
       projects = [project, ...projects]
       return delay(projectSnapshot(project))
     },
-    async rename(id, name) {
+    async rename(id, name, texts) {
       const p = findProject(id)
       p.name = name
+      if (texts) Object.assign(p, texts)
       return delay(projectSnapshot(p))
     },
     async trash(id) {

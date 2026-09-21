@@ -72,6 +72,13 @@
   color: var(--ink);
 }
 
+.public-textarea {
+  display: block;
+  resize: vertical;
+  margin-bottom: 12px;
+  font: inherit;
+}
+
 .form-error {
   margin: 10px 0 0;
   color: var(--danger);

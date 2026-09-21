@@ -131,7 +131,7 @@ export interface Client {
     playout(id: string): Promise<Project['playout']>
     touchPlayout(id: string): Promise<void>
     create(input: { name: string }): Promise<Project>
-    rename(id: string, name: string): Promise<Project>
+    rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText'>>): Promise<Project>
     trash(id: string): Promise<void>
     setVisibility(id: string, visibility: Visibility): Promise<Project>
     setPublicMode(id: string, publicMode: PublicMode, afterReason?: AfterReason): Promise<Project>

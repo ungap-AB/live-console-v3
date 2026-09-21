@@ -1,10 +1,10 @@
-import type { AfterReason, CueKind, PublicMode, Visibility } from '../../data/types'
+import type { AfterReason, CueKind, Project, PublicMode, Visibility } from '../../data/types'
 
 // Delas mellan ProjectDetail och Playout.
 export interface ProjectActions {
   refreshProject: () => Promise<void>
   refreshPlayout: () => Promise<void>
-  rename: (name: string) => Promise<void>
+  rename: (name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText'>>) => Promise<void>
   setVisibility: (visibility: Visibility) => void
   setPublicMode: (publicMode: PublicMode, afterReason?: AfterReason) => Promise<void>
   setAgenda: (agendaId: string | null) => Promise<void>

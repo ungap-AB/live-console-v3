@@ -301,6 +301,10 @@ function toProjectLite(dto: ServerProject): Project {
     id: dto.id,
     name: dto.name,
     createdAt: dto.createdAt,
+    beforeText: dto.beforeText ?? '',
+    liveText: dto.liveText ?? '',
+    afterText: dto.afterText ?? '',
+    ondemandText: dto.ondemandText ?? '',
     visibility: dto.visibility as Visibility,
     publicMode: dto.publicMode as PublicMode,
     afterReason: dto.afterReason as AfterReason | null,
@@ -677,8 +681,8 @@ export const httpClient: Client = {
       const dto = await api<ServerProject>('/projects', { method: 'POST', body: input })
       return toProjectFull(dto)
     },
-    async rename(id, name) {
-      const dto = await api<ServerProject>(`/projects/${id}`, { method: 'PATCH', body: { name } })
+    async rename(id, name, texts) {
+      const dto = await api<ServerProject>(`/projects/${id}`, { method: 'PATCH', body: { name, ...texts } })
       return toProjectFull(dto)
     },
     async trash(id) {

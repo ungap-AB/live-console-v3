@@ -9,6 +9,7 @@ import { OverflowMenu } from '../../components/OverflowMenu'
 import { StatusCard } from '../../components/StatusCard'
 import { VideoLightbox } from '../../components/VideoLightbox'
 import { ConfirmModal } from '../../components/ConfirmModal'
+import { Modal } from '../../components/Modal'
 import { RenameModal } from '../../components/RenameModal'
 import { AttachedListPicker } from '../../components/AttachedListPicker'
 import { EditIcon, PlayIcon, SwapIcon, UnlinkIcon } from '../../components/icons'
@@ -87,8 +88,17 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
   const [sourceRecording, setSourceRecording] = useState<Recording | null>(null)
   const [sessionVideo, setSessionVideo] = useState<{ name: string; hlsUrl: string } | null>(null)
   const [confirmUnpublish, setConfirmUnpublish] = useState<'toLive' | 'fromAction' | null>(null)
+  const [pendingPublicMode, setPendingPublicMode] = useState<PublicMode | null>(null)
+  const [askIngestTeardown, setAskIngestTeardown] = useState(false)
   const [disconnectingMeeting, setDisconnectingMeeting] = useState(false)
   const [renaming, setRenaming] = useState(false)
+  const [editingPublicTexts, setEditingPublicTexts] = useState(false)
+  const [publicTextDraft, setPublicTextDraft] = useState({
+    beforeText: p.beforeText,
+    liveText: p.liveText,
+    afterText: p.afterText,
+    ondemandText: p.ondemandText,
+  })
   const [showMeetingBinding, setShowMeetingBinding] = useState(false)
 
   const agendaResource = useResource(
@@ -125,8 +135,10 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
     setSourceRecording(null)
     setSessionVideo(null)
     setConfirmUnpublish(null)
+    setPendingPublicMode(null)
     setDisconnectingMeeting(false)
     setRenaming(false)
+    setEditingPublicTexts(false)
     setShowMeetingBinding(false)
   }, [p.id])
 
@@ -216,9 +228,38 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
     setTab('live')
   }
 
-  async function setPublicMode(publicMode: PublicMode) {
+  function requiresPublicModeConfirmation(publicMode: PublicMode): boolean {
+    return (p.publicMode === 'live' && publicMode === 'after')
+      || (p.publicMode === 'live' && publicMode === 'before')
+      || (p.publicMode === 'after' && publicMode === 'live')
+      || (p.publicMode === 'ondemand' && publicMode === 'after')
+  }
+
+  async function applyPublicMode(publicMode: PublicMode) {
     await actions.setPublicMode(publicMode, publicMode === 'after' ? 'liveFinished' : undefined)
     setTab(publicMode === 'after' || publicMode === 'ondemand' ? 'odm' : 'live')
+    if (publicMode === 'after' && p.channel) setAskIngestTeardown(true)
+  }
+
+  function setPublicMode(publicMode: PublicMode) {
+    if (publicMode === p.publicMode) return
+    if (requiresPublicModeConfirmation(publicMode)) {
+      setPendingPublicMode(publicMode)
+      return
+    }
+    void applyPublicMode(publicMode)
+  }
+
+  async function confirmPublicMode() {
+    if (!pendingPublicMode) return
+    const next = pendingPublicMode
+    setPendingPublicMode(null)
+    await applyPublicMode(next)
+  }
+
+  async function teardownAfterLive() {
+    await actions.teardownChannel()
+    setAskIngestTeardown(false)
   }
 
   async function openTrimDialog() {
@@ -258,6 +299,18 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
             onClick={() => setRenaming(true)}
           >
             <EditIcon />
+          </button>
+          <button
+            class="ib"
+            type="button"
+            title="Redigera publiktexter"
+            aria-label="Redigera publiktexter"
+            onClick={() => {
+              setPublicTextDraft({ beforeText: p.beforeText, liveText: p.liveText, afterText: p.afterText, ondemandText: p.ondemandText })
+              setEditingPublicTexts(true)
+            }}
+          >
+            T
           </button>
           <span class="head-actions">
             <OverflowMenu
@@ -673,6 +726,41 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
         />
       )}
 
+      {editingPublicTexts && (
+        <Modal title="Publiktexter" onClose={() => setEditingPublicTexts(false)}>
+          <p class="field-help">Texterna visas när projektets publikläge är Before, Live, After eller Ondemand.</p>
+          {([
+            ['beforeText', 'Before-text'],
+            ['liveText', 'Live-text'],
+            ['afterText', 'After-text'],
+            ['ondemandText', 'Ondemand-text'],
+          ] as const).map(([key, label]) => (
+            <label class="form-label" key={key}>
+              {label}
+              <textarea
+                class="form-input public-textarea"
+                rows={3}
+                value={publicTextDraft[key]}
+                onInput={(event) => setPublicTextDraft((draft) => ({ ...draft, [key]: event.currentTarget.value }))}
+              />
+            </label>
+          ))}
+          <div class="modal-actions">
+            <button class="btn btn-sm" type="button" onClick={() => setEditingPublicTexts(false)}>Avbryt</button>
+            <button
+              class="btn btn-sm btn-primary"
+              type="button"
+              onClick={async () => {
+                await actions.rename(p.name, publicTextDraft)
+                setEditingPublicTexts(false)
+              }}
+            >
+              Spara
+            </button>
+          </div>
+        </Modal>
+      )}
+
       {showVideo && (
         <VideoLightbox
           title={p.name}
@@ -714,6 +802,43 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
             </p>
           )}
         </ConfirmModal>
+      )}
+
+      {pendingPublicMode && (
+        <ConfirmModal
+          title={`Byt publikläge till ${pendingPublicMode}?`}
+          confirmLabel="Byt läge"
+          danger={pendingPublicMode === 'after' || pendingPublicMode === 'before'}
+          onCancel={() => setPendingPublicMode(null)}
+          onConfirm={() => void confirmPublicMode()}
+        >
+          {pendingPublicMode === 'after' && p.publicMode === 'live' ? (
+            <p>Livevisningen lämnas för publiken och projektet visar After-meddelandet. Encoder och ingest påverkas inte ännu.</p>
+          ) : pendingPublicMode === 'before' && p.publicMode === 'live' ? (
+            <p>Den pågående livesändningen tas bort från publiken och projektet visar Before-meddelandet.</p>
+          ) : pendingPublicMode === 'live' && p.publicMode === 'after' ? (
+            <p>Projektet går tillbaka till Livesändning. En ny ingest kan behöva skapas och enkodern kan behöva en ny stream key.</p>
+          ) : (
+            <p>Ondemand tas bort från publiken och projektet visar After-meddelandet.</p>
+          )}
+        </ConfirmModal>
+      )}
+
+      {askIngestTeardown && (
+        <Modal title="Vad ska hända med ingest?" onClose={() => setAskIngestTeardown(false)}>
+          <p>
+            Projektet ligger nu i After. Enkodern och ingest-resursen kan ligga kvar om du vill kunna fortsätta
+            tekniskt, eller rivas för att frigöra resursen.
+          </p>
+          <div class="modal-actions">
+            <button class="btn btn-sm" type="button" onClick={() => setAskIngestTeardown(false)}>
+              Behåll ingest
+            </button>
+            <button class="btn btn-sm btn-danger" type="button" onClick={() => void teardownAfterLive()}>
+              Riv ingest
+            </button>
+          </div>
+        </Modal>
       )}
     </>
   )
