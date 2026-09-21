@@ -3,24 +3,20 @@
 
 const BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/+$/, '')
 
-const TOKEN_KEY = 'ungap-live-jwt'
+let authToken: string | null = null
 
-let authToken: string | null = (() => {
+function clearLegacyAuthToken() {
   try {
-    return localStorage.getItem(TOKEN_KEY)
+    localStorage.removeItem('ungap-live-jwt')
   } catch {
-    return null
+    // localStorage kan vara blockerat.
   }
-})()
+}
+
+clearLegacyAuthToken()
 
 export function setAuthToken(token: string | null) {
   authToken = token
-  try {
-    if (token) localStorage.setItem(TOKEN_KEY, token)
-    else localStorage.removeItem(TOKEN_KEY)
-  } catch {
-    // localStorage otillgängligt — token håller ändå för sessionen.
-  }
 }
 
 export function getAuthToken(): string | null {

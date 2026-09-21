@@ -1,7 +1,7 @@
 {
-  "name": "Ungap Live Console",
-  "short_name": "Live Console",
-  "description": "Ungap Live sändningskonsol",
+  "name": "ungap Presenter",
+  "short_name": "ungap Presenter",
+  "description": "Dokumentera mötet i direktsändning",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

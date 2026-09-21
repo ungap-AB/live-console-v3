@@ -18,15 +18,16 @@ function formatDate(iso: string): string {
 }
 
 interface NameListsViewProps {
+  selectionScope: string
   /** Sätts av App.tsx när man kommer hit via "Öppna..." i ProjektDetail — konsumeras en gång vid montering (vyn avmonteras/monteras om varje gång man navigerar hit, se App.tsx). */
   initialSelectedId?: string | null
   onInitialSelectionConsumed?: () => void
 }
 
-export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }: NameListsViewProps = {}) {
+export function NameListsView({ selectionScope, initialSelectedId, onInitialSelectionConsumed }: NameListsViewProps) {
   const listsResource = useResource(() => client.namelists.list(), [])
   const [namelists, setNamelists] = useState<NameList[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(() => initialSelectedId ?? readStoredSelection('namelist'))
+  const [selectedId, setSelectedId] = useState<string | null>(() => initialSelectedId ?? readStoredSelection('namelist', selectionScope))
 
   useEffect(() => {
     if (initialSelectedId) onInitialSelectionConsumed?.()
@@ -49,8 +50,8 @@ export function NameListsView({ initialSelectedId, onInitialSelectionConsumed }:
   }, [namelists, selectedId])
 
   useEffect(() => {
-    storeSelection('namelist', selectedId)
-  }, [selectedId])
+    storeSelection('namelist', selectedId, selectionScope)
+  }, [selectedId, selectionScope])
 
   // Listan är medvetet lätt (personCount, inga personer) — full detalj hämtas
   // separat när något väljs, se PLAN-live-server-v3.md Steg 2.

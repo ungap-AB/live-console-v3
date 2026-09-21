@@ -48,6 +48,7 @@ function derivePlayoutState(timeline: TimelineEvent[]): PlayoutState {
 
 interface ProjectsViewProps {
   meetingDomain: string
+  selectionScope: string
   selectedId: string | null
   onSelectedIdChange: (id: string | null) => void
   screen: ProjectScreen
@@ -61,6 +62,7 @@ interface ProjectsViewProps {
 
 export function ProjectsView({
   meetingDomain,
+  selectionScope,
   selectedId,
   onSelectedIdChange,
   screen,
@@ -88,8 +90,8 @@ export function ProjectsView({
   }, [projects, selectedId])
 
   useEffect(() => {
-    storeSelection('project', selectedId)
-  }, [selectedId])
+    storeSelection('project', selectedId, selectionScope)
+  }, [selectedId, selectionScope])
 
   const selected = projects.find((p) => p.id === selectedId) ?? null
 

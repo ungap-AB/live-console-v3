@@ -19,18 +19,22 @@ export function App() {
   const route = useRoute()
   const [auth, setAuth] = useState<AuthState>({ status: 'loading' })
 
-  // Försök återuppta en tidigare session (token sparad i localStorage av
-  // httpClient) — misslyckas tyst till anon om ingen finns eller den gått ut.
+  // Försök återuppta en aktiv session — misslyckas tyst till anon om ingen
+  // giltig token finns i minnet eller sessionen gått ut.
   useEffect(() => {
     client.auth.me().then(
-      (user) => setAuth({ status: 'authed', user }),
+      (user) => {
+        setActiveProjectId(readStoredSelection('project', user.domain.id))
+        setProjectScreen(readStoredSelection('project-screen', user.domain.id) === 'playout' ? 'playout' : 'detail')
+        setAuth({ status: 'authed', user })
+      },
       () => setAuth({ status: 'anon' }),
     )
   }, [])
 
   function login(user: CurrentUser) {
-    setActiveProjectId(null)
-    setProjectScreen('detail')
+    setActiveProjectId(readStoredSelection('project', user.domain.id))
+    setProjectScreen(readStoredSelection('project-screen', user.domain.id) === 'playout' ? 'playout' : 'detail')
     setAuth({ status: 'authed', user })
   }
 
@@ -45,19 +49,19 @@ export function App() {
   // Lyft upp ur ProjectsView så att vilket projekt/vy som senast visades
   // överlever att man navigerar bort och tillbaka — det är vad som gör
   // Playout-genvägen i sidomenyn meningsfull.
-  const [activeProjectId, setActiveProjectId] = useState<string | null>(() => readStoredSelection('project'))
-  const [projectScreen, setProjectScreen] = useState<ProjectScreen>(() => readStoredSelection('project-screen') === 'playout' ? 'playout' : 'detail')
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
+  const [projectScreen, setProjectScreen] = useState<ProjectScreen>('detail')
   // Lyft hit av samma skäl som projectScreen — navmenyns "+ Ny"-knapp (bild 1)
   // måste kunna öppna ProjectsViews skapa-dialog utifrån, inte bara inifrån.
   const [creatingProject, setCreatingProject] = useState(false)
 
   useEffect(() => {
-    storeSelection('project', activeProjectId)
-  }, [activeProjectId])
+    if (auth.status === 'authed') storeSelection('project', activeProjectId, auth.user.domain.id)
+  }, [activeProjectId, auth])
 
   useEffect(() => {
-    storeSelection('project-screen', projectScreen)
-  }, [projectScreen])
+    if (auth.status === 'authed') storeSelection('project-screen', projectScreen, auth.user.domain.id)
+  }, [projectScreen, auth])
 
   // Delad av Dagordningar/Videoarkiv för "gå till projekt"-snabblänkar.
   function openProject(id: string) {
@@ -117,6 +121,7 @@ export function App() {
       {routeAllowed && route === 'projects' && (
         <ProjectsView
           meetingDomain={auth.user.domain.host}
+          selectionScope={auth.user.domain.id}
           selectedId={activeProjectId}
           onSelectedIdChange={setActiveProjectId}
           screen={projectScreen}
@@ -130,12 +135,14 @@ export function App() {
       {routeAllowed && route === 'agendas' && (
         <AgendasView
           onOpenProject={openProject}
+          selectionScope={auth.user.domain.id}
           initialSelectedId={pendingAgendaId}
           onInitialSelectionConsumed={() => setPendingAgendaId(null)}
         />
       )}
       {routeAllowed && route === 'namelists' && (
         <NameListsView
+          selectionScope={auth.user.domain.id}
           initialSelectedId={pendingNameListId}
           onInitialSelectionConsumed={() => setPendingNameListId(null)}
         />

@@ -21,15 +21,16 @@ function formatDate(iso: string): string {
 
 interface AgendasViewProps {
   onOpenProject: (id: string) => void
+  selectionScope: string
   /** Sätts av App.tsx när man kommer hit via "Öppna..." i ProjektDetail — konsumeras en gång vid montering (vyn avmonteras/monteras om varje gång man navigerar hit, se App.tsx). */
   initialSelectedId?: string | null
   onInitialSelectionConsumed?: () => void
 }
 
-export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelectionConsumed }: AgendasViewProps) {
+export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, onInitialSelectionConsumed }: AgendasViewProps) {
   const agendasResource = useResource(() => client.agendas.list(), [])
   const [agendas, setAgendas] = useState<Agenda[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(() => initialSelectedId ?? readStoredSelection('agenda'))
+  const [selectedId, setSelectedId] = useState<string | null>(() => initialSelectedId ?? readStoredSelection('agenda', selectionScope))
 
   useEffect(() => {
     if (initialSelectedId) onInitialSelectionConsumed?.()
@@ -56,8 +57,8 @@ export function AgendasView({ onOpenProject, initialSelectedId, onInitialSelecti
   }, [agendas, selectedId])
 
   useEffect(() => {
-    storeSelection('agenda', selectedId)
-  }, [selectedId])
+    storeSelection('agenda', selectedId, selectionScope)
+  }, [selectedId, selectionScope])
 
   // Listan är medvetet lätt (itemCount, inga punkter) — full detalj hämtas
   // separat när något väljs, se PLAN-live-server-v3.md Steg 2.
