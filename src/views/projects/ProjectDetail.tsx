@@ -180,6 +180,19 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
   const elapsed = recordedSeconds(p)
   const liveElapsed = liveElapsedSeconds(health?.streamStartedAt)
   const status = hasIngest ? phaseMeta(phase) : { label: 'Ingen ingest', tone: 'neutral' as ChipTone }
+  const publicModeLabel: Record<PublicMode, string> = {
+    before: 'Before',
+    live: 'Live',
+    after: 'After',
+    ondemand: 'Ondemand',
+  }
+  const currentPublicText = p.publicMode === 'before'
+    ? (p.beforeText || 'Ingen text satt för Before.')
+    : p.publicMode === 'live'
+      ? (p.liveText || 'Ingen text satt för Live.')
+      : p.publicMode === 'after'
+        ? (p.afterText || 'Ingen text satt för After.')
+        : (p.ondemandText || 'Ingen text satt för Ondemand.')
   const meetingName = p.meetingId
     ? meetingResource.data?.find((meeting) => String(meeting.id) === p.meetingId)?.title ?? `Meeting-ID ${p.meetingId}`
     : null
@@ -310,7 +323,7 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
               setEditingPublicTexts(true)
             }}
           >
-            T
+            <EditIcon />
           </button>
           <span class="head-actions">
             <OverflowMenu
@@ -376,6 +389,23 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
             <p class="field-help">
               {p.afterReason === 'ondemandUnpublished' ? 'Ondemand är avpublicerad.' : 'Publikläget ändras separat från synlighet.'}
             </p>
+          </div>
+          <div class="field-block grow">
+            <div class="field-block-label">Publikmeddelande</div>
+            <div class="public-message-box">
+              <div class="public-message-title">Aktuell text · {publicModeLabel[p.publicMode]}</div>
+              <div class="public-message-body">{currentPublicText}</div>
+              <button
+                class="btn btn-sm btn-primary"
+                type="button"
+                onClick={() => {
+                  setPublicTextDraft({ beforeText: p.beforeText, liveText: p.liveText, afterText: p.afterText, ondemandText: p.ondemandText })
+                  setEditingPublicTexts(true)
+                }}
+              >
+                Redigera texter
+              </button>
+            </div>
           </div>
         </div>
         <div class="panel-head-row">
