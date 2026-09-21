@@ -344,9 +344,22 @@ export function ProjectsView({
       }),
   }
 
+    const selectedProjectDetail = selected ? (
+      <ProjectDetail
+        project={selected}
+        meetingDomain={meetingDomain}
+        onDelete={() => setConfirmDelete(selected)}
+        onDeleteBlocked={setToast}
+        actions={actions}
+        onOpenAgenda={onOpenAgenda}
+        onOpenNameList={onOpenNameList}
+        onOpenPlayout={() => onScreenChange('playout')}
+      />
+    ) : null
+
   return (
     <div class={`view${screen === 'playout' ? ' playout-active' : ''}`}>
-      <header class={`project-header${screen === 'playout' ? ' collapsed' : ''}`}>
+      <header class={`project-header${screen === 'playout' || selected ? ' collapsed' : ''}`}>
         <div class="header-list-zone">
           <h1>Projekt</h1>
           <span class="spacer" />
@@ -361,6 +374,15 @@ export function ProjectsView({
         {selected && screen === 'playout' ? (
           <div class="playout-frame doc">
             <Playout project={selected} onClose={() => onScreenChange('detail')} actions={actions} />
+          </div>
+        ) : selected ? (
+          <div class="project-workspace doc">
+            <div class="project-workspace-nav">
+              <button class="btn btn-sm" type="button" onClick={() => onSelectedIdChange(null)}>
+                ← Projekt
+              </button>
+            </div>
+            {selectedProjectDetail}
           </div>
         ) : (
         <SplitPane
@@ -402,20 +424,7 @@ export function ProjectsView({
             </>
           }
           detail={
-            !selected ? (
-              <div class="docnone">Välj ett projekt i listan.</div>
-            ) : (
-              <ProjectDetail
-                project={selected}
-                meetingDomain={meetingDomain}
-                onDelete={() => setConfirmDelete(selected)}
-                onDeleteBlocked={setToast}
-                actions={actions}
-                onOpenAgenda={onOpenAgenda}
-                onOpenNameList={onOpenNameList}
-                onOpenPlayout={() => onScreenChange('playout')}
-              />
-            )
+            <div class="docnone">Välj ett projekt i listan.</div>
           }
         />
         )}
