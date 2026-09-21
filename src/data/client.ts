@@ -107,7 +107,7 @@ export interface Client {
   domains: {
     list(): Promise<Domain[]>
     create(input: { host: string; org: string }): Promise<Domain>
-    update(id: string, input: { org: string }): Promise<Domain>
+    update(id: string, input: { org: string; contractStart?: string; contractEnd?: string }): Promise<Domain>
     remove(id: string): Promise<void>
     createUser(domainId: string, input: { email: string; name: string; roles: Role[] }): Promise<UserAccount>
   }

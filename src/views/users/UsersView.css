@@ -173,6 +173,10 @@
   background: var(--odm-bg);
 }
 
+.role.locked {
+  cursor: default;
+}
+
 .role input {
   margin: 3px 0 0;
 }

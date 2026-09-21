@@ -56,6 +56,7 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
   const [creatingDomain, setCreatingDomain] = useState(false)
   const [creatingUser, setCreatingUser] = useState(false)
   const [inviting, setInviting] = useState(false)
+  const [resendingInvite, setResendingInvite] = useState(false)
   const [viewingDomain, setViewingDomain] = useState<Domain | null>(null)
   const [confirmDeleteDomain, setConfirmDeleteDomain] = useState<Domain | null>(null)
 
@@ -79,10 +80,6 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
     setDomainUsers(usersResource.data ?? [])
   }, [usersResource.data])
 
-  useEffect(() => {
-    if (!selectedUserId && domainUsers.length > 0) setSelectedUserId(domainUsers[0].id)
-  }, [domainUsers, selectedUserId])
-
   function selectDomain(id: string) {
     if (!canManageDomains && id !== currentDomainId) return
     setSelectedDomainId(id)
@@ -102,8 +99,8 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
   const [selectedUserDetail, setSelectedUserDetail] = useState<UserAccount | null>(null)
 
   useEffect(() => {
-    setSelectedUserDetail(userDetailResource.data ?? null)
-  }, [userDetailResource.data])
+    setSelectedUserDetail(selectedUserId ? userDetailResource.data ?? null : null)
+  }, [selectedUserId, userDetailResource.data])
 
   function replace(next: UserAccount) {
     setSelectedUserDetail(next)
@@ -133,7 +130,7 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
   }
 
   async function toggleRole(user: UserAccount, role: Role, checked: boolean) {
-    if (!checked) return
+    if (!checked || user.roles.includes('rootAdmin')) return
     const nextRoles = [role]
     await withErrorToast(async () => {
       const updated = await client.users.setRoles(user.id, nextRoles)
@@ -164,15 +161,6 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
     setConfirmRemove(null)
   }
 
-  async function resendInvite(user: UserAccount) {
-    const pin = String(Math.floor(100000 + Math.random() * 900000))
-    await withErrorToast(async () => {
-      const updated = await client.users.resendInvite(user.id, pin)
-      replace(updated)
-      setToast(`Ny inbjudan skapad för ${user.email}. Ny PIN-kod: ${pin}`)
-    })
-  }
-
   async function sendPasswordReset(user: UserAccount) {
     await client.users.sendPasswordReset(user.id)
     setToast(`Återställningslänk skickad till ${user.email}. Länken hanteras utanför Ungap Live.`)
@@ -181,7 +169,7 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
   function onInvited(user: UserAccount) {
     replace(user)
     setInviting(false)
-    setToast(`Inbjudan skapad för ${user.email}. Kopiera meddelandet till e-post.`)
+    setToast(`Inbjudan skickad till ${user.email}. Texten är kopierad.`)
   }
 
   function onUserCreated(user: UserAccount) {
@@ -198,9 +186,13 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
     setCreatingDomain(false)
   }
 
-  async function saveDomain(org: string) {
+  async function saveDomain(org: string, contractStart: string, contractEnd: string) {
     if (!viewingDomain) return
-    const updated = await client.domains.update(viewingDomain.id, { org })
+    const updated = await client.domains.update(viewingDomain.id, {
+      org,
+      contractStart,
+      contractEnd,
+    })
     setDomains((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
     setViewingDomain(updated)
     setToast('Domän uppdaterad.')
@@ -317,8 +309,14 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
                 onDisable={() => setConfirmDisable(selectedUser)}
                 onEnable={() => enable(selectedUser)}
                 onRemove={() => setConfirmRemove(selectedUser)}
-                onInvite={() => setInviting(true)}
-                onResendInvite={() => resendInvite(selectedUser)}
+                onInvite={() => {
+                  setResendingInvite(false)
+                  setInviting(true)
+                }}
+                onResendInvite={() => {
+                  setResendingInvite(true)
+                  setInviting(true)
+                }}
                 onSendPasswordReset={() => sendPasswordReset(selectedUser)}
                 onRename={() => setRenamingUser(selectedUser)}
               />
@@ -367,7 +365,13 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
       )}
 
       {inviting && selectedDomain && selectedUser && (
-        <InviteDialog domain={selectedDomain} user={selectedUser} onCancel={() => setInviting(false)} onSent={onInvited} />
+        <InviteDialog
+          domain={selectedDomain}
+          user={selectedUser}
+          resend={resendingInvite}
+          onCancel={() => setInviting(false)}
+          onSent={onInvited}
+        />
       )}
 
       {creatingUser && selectedDomain && (
@@ -542,27 +546,62 @@ function CreateUserDialog({ domain, onCancel, onCreated }: CreateUserDialogProps
 interface InviteDialogProps {
   domain: Domain
   user: UserAccount
+  resend: boolean
   onCancel: () => void
   onSent: (user: UserAccount) => void
 }
 
-function InviteDialog({ domain, user, onCancel, onSent }: InviteDialogProps) {
+function InviteDialog({ domain, user, resend, onCancel, onSent }: InviteDialogProps) {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pin] = useState(() => String(Math.floor(100000 + Math.random() * 900000)))
 
   const canSend = !sending
-  // Länken är till Ungap Live Console självt (inte en fejkad separat
+  // Länken är till ungap Presenter självt (inte en fejkad separat
   // inbjudningssida) — den öppnar bara inloggningen som redan finns.
   const link = `${window.location.origin}${window.location.pathname}`
-  const message = `Hej${user.name.trim() ? ' ' + user.name.trim() : ''}!\n\nDu har blivit inbjuden att skapa ett konto på Ungap Live Console för ${domain.org} (${domain.host}).\n\nGå till länken nedan och logga in. Använd PIN-koden ${pin} vid inloggningen:\n${link}\n\nPIN-kod vid inloggning: ${pin}\n\nLänken slutar gälla om 14 dagar. Om du inte förväntade dig det här meddelandet kan du bortse från det.`
+  const message = `Hej${user.name.trim() ? ' ' + user.name.trim() : ''}!\n\nDu har blivit inbjuden att skapa ett konto på ungap Presenter för ${domain.org} (${domain.host}).\n\nGå till länken nedan och logga in. Använd uppgifterna nedan vid inloggningen:\n${link}\n\nE-post: ${user.email}\nPIN-kod vid inloggning: ${pin}\n\nLänken slutar gälla om 14 dagar. Om du inte förväntade dig det här meddelandet kan du bortse från det.`
+
+  async function copyMessage(value: string): Promise<boolean> {
+    const fallbackCopy = () => {
+      const field = document.createElement('textarea')
+      field.value = value
+      field.setAttribute('readonly', '')
+      field.style.position = 'fixed'
+      field.style.left = '-9999px'
+      document.body.appendChild(field)
+      field.select()
+      const copied = document.execCommand('copy')
+      document.body.removeChild(field)
+      return copied
+    }
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value)
+        return true
+      }
+      return fallbackCopy()
+    } catch {
+      return fallbackCopy()
+    }
+  }
 
   async function send() {
     if (!canSend) return
     setSending(true)
     setError(null)
     try {
-      const updated = await client.users.sendInvitation(user.id, pin)
+      const copyPromise = copyMessage(message)
+      const [updated, copied] = await Promise.all([
+        resend ? client.users.resendInvite(user.id, pin) : client.users.sendInvitation(user.id, pin),
+        copyPromise,
+      ])
+      if (!copied) {
+        setError('Inbjudan skickades, men texten kunde inte kopieras.')
+        setSending(false)
+        return
+      }
       onSent(updated)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kunde inte skicka inbjudan.')
@@ -623,20 +662,26 @@ function InviteDialog({ domain, user, onCancel, onSent }: InviteDialogProps) {
 interface DomainDetailsDialogProps {
   domain: Domain
   onClose: () => void
-  onSave: (org: string) => Promise<void>
+  onSave: (org: string, contractStart: string, contractEnd: string) => Promise<void>
   onRequestDelete: () => void
 }
 
 function DomainDetailsDialog({ domain, onClose, onSave, onRequestDelete }: DomainDetailsDialogProps) {
   const [org, setOrg] = useState(domain.org)
+  const [contractStart, setContractStart] = useState(domain.contractStart?.slice(0, 10) ?? '')
+  const [contractEnd, setContractEnd] = useState(domain.contractEnd?.slice(0, 10) ?? '')
   const [saving, setSaving] = useState(false)
-  const dirty = org.trim().length > 0 && org.trim() !== domain.org
+  const dirty = org.trim().length > 0 && (
+    org.trim() !== domain.org ||
+    contractStart !== (domain.contractStart?.slice(0, 10) ?? '') ||
+    contractEnd !== (domain.contractEnd?.slice(0, 10) ?? '')
+  )
 
   async function save() {
-    if (!dirty) return
+    if (!dirty || !contractStart || !contractEnd || contractEnd < contractStart) return
     setSaving(true)
     try {
-      await onSave(org.trim())
+      await onSave(org.trim(), `${contractStart}T00:00:00.000Z`, `${contractEnd}T00:00:00.000Z`)
     } finally {
       setSaving(false)
     }
@@ -690,6 +735,17 @@ function DomainDetailsDialog({ domain, onClose, onSave, onRequestDelete }: Domai
         Organisationens namn
         <input class="rename-input" value={org} onInput={(e) => setOrg(e.currentTarget.value)} />
       </label>
+      <div class="domain-form">
+        <label>
+          Avtalsperiod från
+          <input class="rename-input" type="date" value={contractStart} onInput={(e) => setContractStart(e.currentTarget.value)} />
+        </label>
+        <label>
+          Avtalsperiod till
+          <input class="rename-input" type="date" value={contractEnd} onInput={(e) => setContractEnd(e.currentTarget.value)} />
+        </label>
+      </div>
+      {contractStart && contractEnd && contractEnd < contractStart && <p class="note warn">Slutdatum måste vara efter startdatum.</p>}
       <div class="grid">
         <div>
           <div class="k">Användare</div>
@@ -845,24 +901,33 @@ function UserDetail({
         <div class="block">
           <h3>Behörigheter</h3>
           <div class="roles">
-            {ROLE_ORDER.map((role) => {
-              const on = u.roles.includes(role)
-              const lock = role === 'domainAdmin' && lastAdmin
-              return (
-                <label key={role} class={`role ${on ? 'on' : ''}`}>
-                  <input
-                    type="radio"
-                    checked={on}
-                    disabled={lock}
-                    onChange={(e) => onToggleRole(role, e.currentTarget.checked)}
-                  />
-                  <span class="rt">
-                    <b>{ROLES[role].label}</b>
-                    <span>{ROLES[role].description}</span>
-                  </span>
-                </label>
-              )
-            })}
+            {u.roles.includes('rootAdmin') ? (
+              <div class="role on locked" aria-label="Root-administratör, låst">
+                <span class="rt">
+                  <b>{ROLES.rootAdmin.label}</b>
+                  <span>{ROLES.rootAdmin.description} Rollen kan inte ändras här.</span>
+                </span>
+              </div>
+            ) : (
+              ROLE_ORDER.map((role) => {
+                const on = u.roles.includes(role)
+                const lock = role === 'domainAdmin' && lastAdmin
+                return (
+                  <label key={role} class={`role ${on ? 'on' : ''}`}>
+                    <input
+                      type="radio"
+                      checked={on}
+                      disabled={lock}
+                      onChange={(e) => onToggleRole(role, e.currentTarget.checked)}
+                    />
+                    <span class="rt">
+                      <b>{ROLES[role].label}</b>
+                      <span>{ROLES[role].description}</span>
+                    </span>
+                  </label>
+                )
+              })
+            )}
           </div>
           {lastAdmin && domain && (
             <p class="note warn" style={{ marginTop: '10px' }}>

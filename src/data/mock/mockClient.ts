@@ -519,6 +519,11 @@ export const mockClient: Client = {
       const domain = domains.find((d) => d.id === id)
       if (!domain) throw new Error(`Domänen ${id} finns inte.`)
       domain.org = input.org
+      if (input.contractStart !== undefined) domain.contractStart = input.contractStart
+      if (input.contractEnd !== undefined) domain.contractEnd = input.contractEnd
+      if (domain.contractStart && domain.contractEnd && domain.contractEnd < domain.contractStart) {
+        throw new Error('Avtalets slutdatum måste vara efter startdatumet.')
+      }
       return delay(clone(domain))
     },
     async remove(id) {
