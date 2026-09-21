@@ -11,6 +11,7 @@ import { formatShortDate } from '../../app/time'
 import { ProjectDetail } from './ProjectDetail'
 import { Playout } from './Playout'
 import { ModePlaceholder } from './ModePlaceholder'
+import { Livesandning } from './Livesandning'
 import { MODE_LABEL } from './projectMode'
 import type { ProjectActions } from './actions'
 import { ApiError } from '../../data/http/fetchJson'
@@ -390,10 +391,18 @@ export function ProjectsView({
           <div class="playout-frame doc">
             <Playout project={selected} onClose={() => onScreenChange('detail')} actions={actions} />
           </div>
-        ) : selected && (screen === 'livesandning' || screen === 'ondemand') ? (
+        ) : selected && screen === 'livesandning' ? (
+          <Livesandning
+            project={selected}
+            actions={actions}
+            onBack={() => onSelectedIdChange(null)}
+            onModeChanged={(mode) => onScreenChange(screenForMode(mode))}
+            onOpenLegacy={onScreenChange}
+          />
+        ) : selected && screen === 'ondemand' ? (
           <ModePlaceholder
             project={selected}
-            kind={screen}
+            kind="ondemand"
             actions={actions}
             onBack={() => onSelectedIdChange(null)}
             onModeChanged={(mode) => onScreenChange(screenForMode(mode))}

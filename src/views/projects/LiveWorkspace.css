@@ -1,0 +1,111 @@
+.lw {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 20px 24px;
+}
+
+.lw-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lw-badge {
+  background: var(--mode-live-bg);
+  color: var(--mode-live-fg);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+
+.lw-signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+}
+
+.lw-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+
+.lw-signal.is-ok .lw-dot {
+  background: var(--live);
+}
+
+.lw-clock {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.lw-interrupt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+  border-radius: 8px;
+}
+
+.lw-interrupt p {
+  flex: 1 1 260px;
+  margin: 0;
+  font-size: 14px;
+  color: var(--warn);
+}
+
+.lw-now {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lw-now-panel {
+  flex: 1 1 240px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.lw-now-panel.is-active {
+  background: var(--danger-bg);
+  border-color: var(--mode-live-bg);
+}
+
+.lw-now-label {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.lw-now-panel.is-active .lw-now-label {
+  color: var(--danger);
+}
+
+.lw-now-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.lw-now-panel:not(.is-active) .lw-now-value {
+  font-weight: 400;
+  color: var(--ink-3);
+}
