@@ -67,10 +67,6 @@ const ODM_META: Record<RecordingState, { label: string; tone: ChipTone }> = {
   published: { label: 'Publicerad', tone: 'accent' },
 }
 
-function initialTab(project: Project): 'live' | 'odm' {
-  return project.publicMode === 'after' || project.publicMode === 'ondemand' ? 'odm' : 'live'
-}
-
 function publicModeTab(publicMode: Project['publicMode']): 'live' | 'odm' {
   return publicMode === 'after' || publicMode === 'ondemand' ? 'odm' : 'live'
 }
@@ -84,7 +80,7 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
   // Riv resurs och bara få ett felmeddelande tillbaka.
   const inUse = live || phase === 'signalInterrupted'
   useTick(live)
-  const [tab, setTab] = useState<'live' | 'odm'>(() => initialTab(p))
+  const [tab, setTab] = useState<'live' | 'odm'>(() => publicModeTab(p.publicMode))
   const [showVideo, setShowVideo] = useState(false)
   const [trimming, setTrimming] = useState<Recording | null>(null)
   const [sourceRecording, setSourceRecording] = useState<Recording | null>(null)
@@ -143,6 +139,10 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
     setEditingPublicTexts(false)
     setShowMeetingBinding(false)
   }, [p.id])
+
+  useEffect(() => {
+    setTab(publicModeTab(p.publicMode))
+  }, [p.publicMode])
 
   useEffect(() => {
     let cancelled = false
@@ -520,7 +520,7 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
 
       <div class="tabs" role="tablist">
         <button role="tab" type="button" aria-selected={tab === 'live'} onClick={() => void selectTab('live')}>
-          Live
+          Livesändning
         </button>
         <button role="tab" type="button" aria-selected={tab === 'odm'} onClick={() => void selectTab('odm')}>
           Ondemand
