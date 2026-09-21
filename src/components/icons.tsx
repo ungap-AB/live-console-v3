@@ -103,6 +103,14 @@ export function PlayIcon() {
   )
 }
 
+export function StopIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor">
+      <rect x="3" y="3" width="10" height="10" rx="1" />
+    </svg>
+  )
+}
+
 export function SwapIcon() {
   return (
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7">

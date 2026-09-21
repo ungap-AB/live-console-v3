@@ -19,7 +19,7 @@ import { phaseMeta } from './livePhase'
 import { resolveGuidedPhase } from './guidedPhase'
 import { resolveOriginalRecordingForTrim } from './openTrimDialog'
 import { TrimDialog } from '../archive/TrimDialog'
-import { CheckIcon, PdfIcon, PlayIcon } from '../../components/icons'
+import { PdfIcon, PlayIcon, StopIcon } from '../../components/icons'
 import { Clock } from '../../components/Clock'
 import './Playout.css'
 
@@ -620,7 +620,7 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
                 hideAddButton
                 renderExtra={(it) => {
                   const offset = lastPlayedOffset(it.id)
-                  const done = offset != null
+                  const active = p.playout.currentAgendaItemId === it.id
                   return (
                     <>
                       <button
@@ -633,15 +633,16 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
                         <PdfIcon />
                         <span class="pdf-count" aria-hidden="true">{it.attachments?.length ?? 0}</span>
                       </button>
-                      {done && <span class="time">{formatHms(offset)}</span>}
+                      {offset != null && <span class="time">{formatHms(offset)}</span>}
                       <button
-                        class={`play ${done ? 'done' : ''}`}
+                        class="play"
                         type="button"
                         disabled={!canPlay}
-                        title={done ? 'Spela ut igen' : 'Spela ut'}
-                        onClick={() => actions.cue('agendaItem', it.id, it.title)}
+                        title={active ? 'Rensa punkt i bild' : 'Spela ut'}
+                        aria-label={active ? `Rensa ${it.title} i bild` : `Spela ut ${it.title}`}
+                        onClick={() => (active ? actions.clear('agendaItem') : actions.cue('agendaItem', it.id, it.title))}
                       >
-                        {done ? <CheckIcon /> : <PlayIcon />}
+                        {active ? <StopIcon /> : <PlayIcon />}
                       </button>
                     </>
                   )
@@ -665,7 +666,18 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
 
         <div class="col">
           <h3>
-            Namnlista
+            <span class="heading-controls">
+              <span>Namnlista</span>
+              <select
+                class="sort-select"
+                aria-label="Sortera namnlista"
+                value={personSort}
+                onChange={(event) => void changePersonSort(event.currentTarget.value as 'name' | 'playCount')}
+              >
+                <option value="name">Namn A–Ö</option>
+                <option value="playCount">Mest utspelade</option>
+              </select>
+            </span>
             <OverflowMenu
               label="Namnlistealternativ"
               items={[
@@ -702,35 +714,28 @@ export function Playout({ project: p, onClose, actions }: PlayoutProps) {
                 onAdd={addPerson}
                 onRename={renamePerson}
                 onRemove={removePerson}
-                toolbarExtra={
-                  <select
-                    class="sort-select"
-                    aria-label="Sortera namnlista"
-                    value={personSort}
-                    onChange={(event) => void changePersonSort(event.currentTarget.value as 'name' | 'playCount')}
-                  >
-                    <option value="name">Namn A–Ö</option>
-                    <option value="playCount">Mest utspelade</option>
-                  </select>
-                }
                 compactInteractions
                 hideAddButton
-                renderExtra={(person) => (
-                  <>
-                    <span class="play-count" title={`${speakerPlayCount(person.id)} utspelningar`}>
-                      {speakerPlayCount(person.id)}
-                    </span>
-                    <button
-                      class="play"
-                      type="button"
-                      disabled={!canPlay}
-                      title="Spela ut"
-                      onClick={() => actions.cue('person', person.id, person.name)}
-                    >
-                      <PlayIcon />
-                    </button>
-                  </>
-                )}
+                renderExtra={(person) => {
+                  const active = p.playout.currentPersonId === person.id
+                  return (
+                    <>
+                      <span class="play-count" title={`${speakerPlayCount(person.id)} utspelningar`}>
+                        {speakerPlayCount(person.id)}
+                      </span>
+                      <button
+                        class="play"
+                        type="button"
+                        disabled={!canPlay}
+                        title={active ? 'Rensa namn i bild' : 'Spela ut'}
+                        aria-label={active ? `Rensa ${person.name} i bild` : `Spela ut ${person.name}`}
+                        onClick={() => (active ? actions.clear('person') : actions.cue('person', person.id, person.name))}
+                      >
+                        {active ? <StopIcon /> : <PlayIcon />}
+                      </button>
+                    </>
+                  )
+                }}
               />
             )}
           </div>
