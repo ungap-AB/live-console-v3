@@ -68,9 +68,11 @@ const ODM_META: Record<RecordingState, { label: string; tone: ChipTone }> = {
 }
 
 function initialTab(project: Project): 'live' | 'odm' {
-  return project.onDemandLocked || project.publication.state !== 'none' || project.recording?.state === 'trimmed' || project.recording?.state === 'published'
-    ? 'odm'
-    : 'live'
+  return project.publicMode === 'after' || project.publicMode === 'ondemand' ? 'odm' : 'live'
+}
+
+function publicModeTab(publicMode: Project['publicMode']): 'live' | 'odm' {
+  return publicMode === 'after' || publicMode === 'ondemand' ? 'odm' : 'live'
 }
 
 export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlocked, actions, onOpenAgenda, onOpenNameList, onOpenPlayout }: ProjectDetailProps) {
@@ -129,7 +131,7 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
   }
 
   useEffect(() => {
-    setTab(initialTab(p))
+    setTab(publicModeTab(p.publicMode))
     setShowVideo(false)
     setTrimming(null)
     setSourceRecording(null)
@@ -250,7 +252,7 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
 
   async function applyPublicMode(publicMode: PublicMode) {
     await actions.setPublicMode(publicMode, publicMode === 'after' ? 'liveFinished' : undefined)
-    setTab(publicMode === 'after' || publicMode === 'ondemand' ? 'odm' : 'live')
+    setTab(publicModeTab(publicMode))
     if (publicMode === 'after' && p.channel) setAskIngestTeardown(true)
   }
 
