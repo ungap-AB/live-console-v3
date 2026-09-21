@@ -28,6 +28,14 @@ function deriveProjectStatus(p: Project): { tone: ChipTone; label: string } {
   return p.visibility === 'open' ? { tone: 'neutral', label: 'Öppen' } : { tone: 'warn', label: 'Stängd' }
 }
 
+function derivePublicModeLabel(mode: Project['publicMode']): string {
+  return mode === 'before' ? 'Before' : mode === 'live' ? 'Live' : mode === 'after' ? 'After' : 'Ondemand'
+}
+
+function deriveVisibilityLabel(visibility: Project['visibility']): string {
+  return visibility === 'open' ? 'Öppen' : 'Stängd'
+}
+
 // currentAgendaItemId/currentPersonId härleds alltid ur tidslinjen (senaste
 // händelsen av respektive typ) — en enda källa till sanning, så optimistiska
 // uppdateringar och borttagning av en felklickad utspelning aldrig kan hamna
@@ -382,6 +390,8 @@ export function ProjectsView({
                           <StatusChip tone={status.tone} dot={status.tone === 'live'}>
                             {status.label}
                           </StatusChip>
+                          <span class="row-mode">{derivePublicModeLabel(p.publicMode)}</span>
+                          <span class="row-visibility">{deriveVisibilityLabel(p.visibility)}</span>
                           <span class="row-date">{formatShortDate(p.createdAt)}</span>
                         </span>
                       </button>
