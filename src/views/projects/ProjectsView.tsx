@@ -1,39 +1,53 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { CueKind, PlayoutState, Project, TimelineEvent, Visibility } from '../../data/types'
+import type { CueKind, PlayoutState, Project, PublicMode, TimelineEvent, Visibility } from '../../data/types'
 import { useResource } from '../../app/useResource'
-import { SplitPane } from '../../components/SplitPane'
-import { StatusChip, type ChipTone } from '../../components/StatusChip'
+import { OverflowMenu } from '../../components/OverflowMenu'
+import { Icon } from '../../components/Icon'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
-import { Clock } from '../../components/Clock'
 import { formatShortDate } from '../../app/time'
 import { ProjectDetail } from './ProjectDetail'
 import { Playout } from './Playout'
+import { ModePlaceholder } from './ModePlaceholder'
+import { MODE_LABEL } from './projectMode'
 import type { ProjectActions } from './actions'
 import { ApiError } from '../../data/http/fetchJson'
 import { storeSelection } from '../../app/selectionStorage'
 import './ProjectsView.css'
 
-export type ProjectScreen = 'detail' | 'playout'
+// 'livesandning' och 'ondemand' är tillfälliga mockup-skal tills de riktiga
+// vyerna byggs (docs/HANDOVER-projektfloede.md). 'detail' och 'playout' är
+// dagens vyer och tas bort/byts ut i senare steg.
+export type ProjectScreen = 'detail' | 'playout' | 'livesandning' | 'ondemand'
 
-// En enda status per listrad istället för upp till tre samtidiga chips —
-// återanvänder samma backend-härledda fält (technicalHealth/publication)
-// som redan finns, bara i en fast prioritetsordning på ETT ställe. Se
-// granskningen 2026-09-17 (Live Console Dark Mode - take 2).
-function deriveProjectStatus(p: Project): { tone: ChipTone; label: string } {
-  if (p.technicalHealth.channelState === 'live') return { tone: 'live', label: 'Sänder' }
-  if (p.publication.state === 'published') return { tone: 'accent', label: 'Publicerad' }
-  return p.visibility === 'open' ? { tone: 'neutral', label: 'Öppen' } : { tone: 'warn', label: 'Stängd' }
+const PROJECT_SCREENS: ProjectScreen[] = ['detail', 'playout', 'livesandning', 'ondemand']
+
+export function parseProjectScreen(value: string | null): ProjectScreen {
+  return (PROJECT_SCREENS as string[]).includes(value ?? '') ? (value as ProjectScreen) : 'detail'
 }
 
-function derivePublicModeLabel(mode: Project['publicMode']): string {
-  return mode === 'before' ? 'Before' : mode === 'live' ? 'Live' : mode === 'after' ? 'After' : 'Ondemand'
+// Läget avgör vilken vy ett projekt öppnas i: Before och Live i Livesändning,
+// After och Ondemand i Ondemand.
+export function screenForMode(mode: PublicMode): ProjectScreen {
+  return mode === 'before' || mode === 'live' ? 'livesandning' : 'ondemand'
 }
 
-function deriveVisibilityLabel(visibility: Project['visibility']): string {
-  return visibility === 'open' ? 'Öppen' : 'Stängd'
+// Rött är reserverat för Live, grönt för Ondemand/Öppen.
+const MODE_TONE: Record<PublicMode, string> = {
+  before: 'neutral',
+  live: 'live',
+  after: 'after',
+  ondemand: 'ondemand',
+}
+
+// Samma spärrar som ProjectDetail tillämpar på "Radera projekt".
+function deleteBlockedReason(p: Project): string | null {
+  if (p.visibility === 'open') return 'Stäng projektet innan det raderas'
+  if (p.technicalHealth.channelState === 'live') return 'Går inte att radera medan signal tas emot'
+  if (p.capabilities.teardownChannel.status !== 'allowed') return 'Projektet går inte att radera just nu'
+  return null
 }
 
 // currentAgendaItemId/currentPersonId härleds alltid ur tidslinjen (senaste
@@ -84,6 +98,7 @@ export function ProjectsView({
   const [projects, setProjects] = useState<Project[]>([])
   const [toast, setToast] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Project | null>(null)
+  const [renaming, setRenaming] = useState<Project | null>(null)
 
   useEffect(() => {
     if (resource.data) setProjects(resource.data)
@@ -93,9 +108,10 @@ export function ProjectsView({
     (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
   )
 
+  // Ett borttaget/okänt sparat val ska landa på listan, inte på en tom vy.
   useEffect(() => {
-    if (sortedProjects.length > 0 && (!selectedId || !projects.some((project) => project.id === selectedId))) onSelectedIdChange(sortedProjects[0].id)
-  }, [projects, selectedId])
+    if (selectedId && resource.data && !projects.some((project) => project.id === selectedId)) onSelectedIdChange(null)
+  }, [projects, selectedId, resource.data])
 
   useEffect(() => {
     storeSelection('project', selectedId, selectionScope)
@@ -133,7 +149,7 @@ export function ProjectsView({
     const created = await client.projects.create({ name })
     setProjects((prev) => [created, ...prev])
     onSelectedIdChange(created.id)
-    onScreenChange('detail')
+    onScreenChange(screenForMode(created.publicMode))
     onCreatingChange(false)
   }
 
@@ -359,15 +375,14 @@ export function ProjectsView({
 
   return (
     <div class={`view${screen === 'playout' ? ' playout-active' : ''}`}>
-      <header class={`project-header${screen === 'playout' || selected ? ' collapsed' : ''}`}>
+      <header class={`project-header${selected ? ' collapsed' : ''}`}>
         <div class="header-list-zone">
           <h1>Projekt</h1>
           <span class="spacer" />
-          <button class="btn btn-sm" type="button" onClick={() => onCreatingChange(true)}>
-            + Nytt
+          <button class="btn btn-sm btn-primary" type="button" onClick={() => onCreatingChange(true)}>
+            + Nytt projekt
           </button>
         </div>
-        <Clock />
       </header>
 
       <div class="content">
@@ -375,6 +390,15 @@ export function ProjectsView({
           <div class="playout-frame doc">
             <Playout project={selected} onClose={() => onScreenChange('detail')} actions={actions} />
           </div>
+        ) : selected && (screen === 'livesandning' || screen === 'ondemand') ? (
+          <ModePlaceholder
+            project={selected}
+            kind={screen}
+            actions={actions}
+            onBack={() => onSelectedIdChange(null)}
+            onModeChanged={(mode) => onScreenChange(screenForMode(mode))}
+            onOpenLegacy={onScreenChange}
+          />
         ) : selected ? (
           <div class="project-workspace doc">
             <div class="project-workspace-nav">
@@ -385,48 +409,78 @@ export function ProjectsView({
             {selectedProjectDetail}
           </div>
         ) : (
-        <SplitPane
-          listLabel="Projekt"
-          detailLabel="Valt projekt"
-          list={
-            <>
-              <ul>
-                {resource.loading && projects.length === 0 && <li class="none">Laddar…</li>}
-                {!resource.loading && projects.length === 0 && <li class="none">Inga projekt ännu.</li>}
-                {sortedProjects.map((p) => {
-                  const status = deriveProjectStatus(p)
-                  return (
-                    <li key={p.id} class={p.id === selectedId ? 'sel' : ''}>
+          <div class="project-list">
+            {resource.loading && projects.length === 0 && <p class="project-list-empty">Laddar…</p>}
+            {!resource.loading && projects.length === 0 && <p class="project-list-empty">Inga projekt ännu.</p>}
+            {sortedProjects.length > 0 && (
+              <>
+                <div class="project-list-head" aria-hidden="true">
+                  <span class="col-name">Projekt</span>
+                  <span class="col-date">Datum</span>
+                  <span class="col-mode">Läge</span>
+                  <span class="col-visibility">Synlighet</span>
+                  <span class="col-actions" />
+                </div>
+                <ul class="project-list-rows">
+                  {sortedProjects.map((p) => (
+                    <li key={p.id} class="project-row">
                       <button
-                        class="row"
+                        class="project-row-name"
                         type="button"
                         onClick={() => {
                           onSelectedIdChange(p.id)
-                          onScreenChange('detail')
+                          onScreenChange(screenForMode(p.publicMode))
                         }}
                       >
-                        <span class="rowtop">
-                          <span class="nm">{p.name}</span>
-                        </span>
-                        <span class="meta-row">
-                          <StatusChip tone={status.tone} dot={status.tone === 'live'}>
-                            {status.label}
-                          </StatusChip>
-                          <span class="row-mode">{derivePublicModeLabel(p.publicMode)}</span>
-                          <span class="row-visibility">{deriveVisibilityLabel(p.visibility)}</span>
-                          <span class="row-date">{formatShortDate(p.createdAt)}</span>
-                        </span>
+                        {p.name}
                       </button>
+                      <span class="col-date">{formatShortDate(p.createdAt)}</span>
+                      <span class="col-mode">
+                        <span class={`mode-chip mode-${MODE_TONE[p.publicMode]}`}>{MODE_LABEL[p.publicMode]}</span>
+                      </span>
+                      <span class={`col-visibility vis-${p.visibility}`}>
+                        <Icon name={p.visibility === 'open' ? 'visibility' : 'visibility_off'} size={16} />
+                        {p.visibility === 'open' ? 'Öppen' : 'Stängd'}
+                      </span>
+                      <span class="col-actions">
+                        <button
+                          class="btn btn-sm btn-ghost"
+                          type="button"
+                          disabled={!p.playerUrl}
+                          onClick={() =>
+                            void navigator.clipboard.writeText(p.playerUrl).then(
+                              () => setToast('Spelarlänken kopierades.'),
+                              () => setToast('Det gick inte att kopiera länken.'),
+                            )
+                          }
+                        >
+                          <Icon name="content_copy" size={16} />
+                          <span class="copy-label">Kopiera länk</span>
+                        </button>
+                        <OverflowMenu
+                          label={`Fler åtgärder för ${p.name}`}
+                          items={[
+                            { label: 'Byt namn', onClick: () => setRenaming(p) },
+                            {
+                              label: 'Flytta till papperskorgen',
+                              danger: true,
+                              title: deleteBlockedReason(p) ?? undefined,
+                              onClick: () => {
+                                const reason = deleteBlockedReason(p)
+                                if (reason) setToast(reason)
+                                else setConfirmDelete(p)
+                              },
+                            },
+                          ]}
+                        />
+                      </span>
                     </li>
-                  )
-                })}
-              </ul>
-            </>
-          }
-          detail={
-            <div class="docnone">Välj ett projekt i listan.</div>
-          }
-        />
+                  ))}
+                </ul>
+                <p class="project-list-hint">Before och Live öppnar Livesändning. After och Ondemand öppnar Ondemand.</p>
+              </>
+            )}
+          </div>
         )}
       </div>
 
@@ -443,6 +497,19 @@ export function ProjectsView({
             gallringstiden löper ut.
           </p>
         </ConfirmModal>
+      )}
+
+      {renaming && (
+        <RenameModal
+          initialValue={renaming.name}
+          onCancel={() => setRenaming(null)}
+          onSave={(name) =>
+            withErrorToast(async () => {
+              replace(await client.projects.rename(renaming.id, name))
+              setRenaming(null)
+            })
+          }
+        />
       )}
 
       {creating && (

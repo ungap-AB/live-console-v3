@@ -1,0 +1,206 @@
+.pv-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.pv-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pv-row .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pv-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pv-title-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pv-title-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.pv-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.pv-icon-btn:hover {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.pv-controls {
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.pv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pv-label {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.pv-seg {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--rail);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.pv-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.pv-seg-btn:hover:not([aria-pressed='true']) {
+  background: var(--accent-soft);
+}
+
+.pv-seg-btn[aria-pressed='true'] {
+  background: var(--surface-3);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Rött är reserverat för Live, grönt för Öppen. */
+.pv-seg-btn.is-live[aria-pressed='true'] {
+  background: var(--mode-live-bg);
+  color: var(--mode-live-fg);
+}
+
+.pv-seg-btn.is-open[aria-pressed='true'] {
+  background: var(--open-bg);
+  color: var(--open-fg);
+}
+
+.pv-link-field {
+  flex: 1 1 240px;
+}
+
+.pv-link {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  box-sizing: border-box;
+  padding: 0 4px 0 12px;
+  background: var(--rail);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.pv-link-url {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.pv-audience {
+  width: 190px;
+}
+
+.pv-audience-text {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.mode-dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.mode-dialog-field label {
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.mode-dialog-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.pv-settings {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.pv-settings dt {
+  color: var(--ink-3);
+}
+
+.pv-settings dd {
+  margin: 0;
+  font-family: var(--mono);
+}
+
+.pv-settings-note {
+  margin: 16px 0 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}

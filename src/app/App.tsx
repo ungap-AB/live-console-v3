@@ -4,7 +4,7 @@ import type { CurrentUser } from '../data/types'
 import { routeHref, useRoute } from './router'
 import { Shell } from './Shell'
 import { LoginView } from './LoginView'
-import { ProjectsView, type ProjectScreen } from '../views/projects/ProjectsView'
+import { ProjectsView, parseProjectScreen, type ProjectScreen } from '../views/projects/ProjectsView'
 import { AgendasView } from '../views/agendas/AgendasView'
 import { NameListsView } from '../views/namelists/NameListsView'
 import { LiveResourcesView } from '../views/resources/LiveResourcesView'
@@ -25,7 +25,7 @@ export function App() {
     client.auth.me().then(
       (user) => {
         setActiveProjectId(readStoredSelection('project', user.domain.id))
-        setProjectScreen(readStoredSelection('project-screen', user.domain.id) === 'playout' ? 'playout' : 'detail')
+        setProjectScreen(parseProjectScreen(readStoredSelection('project-screen', user.domain.id)))
         setAuth({ status: 'authed', user })
       },
       () => setAuth({ status: 'anon' }),
@@ -34,7 +34,7 @@ export function App() {
 
   function login(user: CurrentUser) {
     setActiveProjectId(readStoredSelection('project', user.domain.id))
-    setProjectScreen(readStoredSelection('project-screen', user.domain.id) === 'playout' ? 'playout' : 'detail')
+    setProjectScreen(parseProjectScreen(readStoredSelection('project-screen', user.domain.id)))
     setAuth({ status: 'authed', user })
   }
 

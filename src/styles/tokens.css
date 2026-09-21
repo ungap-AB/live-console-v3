@@ -34,6 +34,12 @@
   --live-line: #bfe4cb;
   --odm-line: #c6d8f0;
 
+  /* fyllda lägesknappar: Live är den enda röda, Öppen är grön */
+  --mode-live-bg: #d13438;
+  --mode-live-fg: #fff;
+  --open-bg: #0a8f3c;
+  --open-fg: #fff;
+
   /* ytor/fält/knappar — centraliserar det som tidigare var utspridda
      hårdkodade hexvärden per komponent (.btn, input, .project, .note osv.) */
   --field-bg: #fbfcfd;
@@ -101,6 +107,11 @@
     --live-line: #1e5c38;
     --odm-line: #2a4a72;
 
+    --mode-live-bg: #d13438;
+    --mode-live-fg: #fff;
+    --open-bg: #3fbf85;
+    --open-fg: #06140d;
+
     --field-bg: #10131a;
     --field-fg: var(--ink);
     --placeholder: #7f899a;
@@ -156,6 +167,11 @@
   --warn-line: #5c4514;
   --live-line: #1e5c38;
   --odm-line: #2a4a72;
+
+  --mode-live-bg: #d13438;
+  --mode-live-fg: #fff;
+  --open-bg: #3fbf85;
+  --open-fg: #06140d;
 
   --field-bg: #10131a;
   --field-fg: var(--ink);
