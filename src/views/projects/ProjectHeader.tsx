@@ -1,19 +1,17 @@
 import { useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
-import type { Project, PublicMode, Visibility } from '../../data/types'
+import type { Project, Visibility } from '../../data/types'
 import { formatDate } from '../../app/time'
 import type { ProjectActions } from './actions'
-import { ModeChangeDialog } from './ModeChangeDialog'
-import { MODES, MODE_LABEL, afterReasonFor, audienceSees, requiresConfirmation } from './projectMode'
+import { useModeChange } from './useModeChange'
+import { MODES, MODE_LABEL, audienceSees } from './projectMode'
 import './ProjectHeader.css'
 
 interface ProjectHeaderProps {
   project: Project
   actions: ProjectActions
   onBack: () => void
-  /** Anropas när ett lägesbyte gått igenom, så att vyn kan följa med över Livesändning/Ondemand-gränsen. */
-  onModeChanged: (mode: PublicMode) => void
 }
 
 const VISIBILITIES: { value: Visibility; label: string; icon: string }[] = [
@@ -27,10 +25,10 @@ function displayUrl(url: string): string {
 }
 
 // Gemensam för Livesändning och Ondemand. Ingest, signal och klocka hör inte hemma här.
-export function ProjectHeader({ project: p, actions, onBack, onModeChanged }: ProjectHeaderProps) {
+export function ProjectHeader({ project: p, actions, onBack }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
-  const [pendingMode, setPendingMode] = useState<PublicMode | null>(null)
+  const { selectMode, dialog: modeDialog } = useModeChange(p, actions)
   const [showSettings, setShowSettings] = useState(false)
   const [copied, setCopied] = useState(false)
   const settingsButton = useRef<HTMLButtonElement>(null)
@@ -39,19 +37,6 @@ export function ProjectHeader({ project: p, actions, onBack, onModeChanged }: Pr
     const name = titleDraft.trim()
     setEditingTitle(false)
     if (name && name !== p.name) await actions.rename(name)
-  }
-
-  async function applyMode(to: PublicMode, afterText?: string) {
-    const from = p.publicMode
-    if (afterText !== undefined && afterText !== p.afterText) await actions.rename(p.name, { afterText })
-    await actions.setPublicMode(to, afterReasonFor(from, to))
-    onModeChanged(to)
-  }
-
-  function selectMode(to: PublicMode) {
-    if (to === p.publicMode) return
-    if (requiresConfirmation(p.publicMode, to)) setPendingMode(to)
-    else void applyMode(to)
   }
 
   async function copyLink() {
@@ -191,19 +176,7 @@ export function ProjectHeader({ project: p, actions, onBack, onModeChanged }: Pr
         </div>
       </div>
 
-      {pendingMode && (
-        <ModeChangeDialog
-          from={p.publicMode}
-          to={pendingMode}
-          afterText={p.afterText}
-          onCancel={() => setPendingMode(null)}
-          onConfirm={(afterText) => {
-            const to = pendingMode
-            setPendingMode(null)
-            void applyMode(to, afterText)
-          }}
-        />
-      )}
+      {modeDialog}
 
       {showSettings && (
         <Modal title="Projektinställningar" onClose={() => setShowSettings(false)}>

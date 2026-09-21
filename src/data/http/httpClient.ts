@@ -770,6 +770,10 @@ export const httpClient: Client = {
       await api<void>(`/projects/${id}/publish`, { method: 'POST' })
       return fetchProject(id)
     },
+    async unpublish(id) {
+      const dto = await api<ServerProject>(`/projects/${id}/unpublish`, { method: 'POST' })
+      return toProjectFull(dto)
+    },
     async returnToLive(id) {
       const dto = await api<ServerProject>(`/projects/${id}/return-to-live`, { method: 'POST' })
       return toProjectFull(dto)

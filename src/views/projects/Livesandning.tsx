@@ -1,25 +1,21 @@
 import { useEffect } from 'preact/hooks'
 import { client } from '../../data'
-import type { Project, PublicMode } from '../../data/types'
+import type { Project } from '../../data/types'
 import type { ProjectActions } from './actions'
 import { BeforeWorkspace } from './BeforeWorkspace'
 import { LiveWorkspace } from './LiveWorkspace'
-import { ModePlaceholder } from './ModePlaceholder'
 import { ProjectHeader } from './ProjectHeader'
-import type { ProjectScreen } from './ProjectsView'
 import { useLiveChannel } from './useLiveChannel'
 
 interface LivesandningProps {
   project: Project
   actions: ProjectActions
   onBack: () => void
-  onModeChanged: (mode: PublicMode) => void
-  onOpenLegacy: (screen: ProjectScreen) => void
 }
 
 // Livesändning: gemensam header överst, innehållet beror på läget.
 // Before är förberedelser, Live är ren sändningskontroll.
-export function Livesandning({ project: p, actions, onBack, onModeChanged, onOpenLegacy }: LivesandningProps) {
+export function Livesandning({ project: p, actions, onBack }: LivesandningProps) {
   const live = useLiveChannel(p.channel?.id ?? null)
 
   // Samma pollning som Playout: håller utspelningsläget i synk mellan operatörer.
@@ -38,24 +34,12 @@ export function Livesandning({ project: p, actions, onBack, onModeChanged, onOpe
     }
   }, [p.id])
 
-  // After/Ondemand hör till Ondemand-vyn; det här är bara en övergångsrendering
-  // medan vyn byts efter ett lägesbyte.
-  if (p.publicMode !== 'before' && p.publicMode !== 'live') {
-    return (
-      <ModePlaceholder
-        project={p}
-        kind="livesandning"
-        actions={actions}
-        onBack={onBack}
-        onModeChanged={onModeChanged}
-        onOpenLegacy={onOpenLegacy}
-      />
-    )
-  }
+  // After/Ondemand hör till Ondemand-vyn; vyn byts av ProjectsView när läget ändrats.
+  if (p.publicMode !== 'before' && p.publicMode !== 'live') return null
 
   return (
     <div class="project-workspace doc">
-      <ProjectHeader project={p} actions={actions} onBack={onBack} onModeChanged={onModeChanged} />
+      <ProjectHeader project={p} actions={actions} onBack={onBack} />
       {p.publicMode === 'before' ? (
         <BeforeWorkspace
           project={p}

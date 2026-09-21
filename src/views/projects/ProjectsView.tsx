@@ -8,25 +8,19 @@ import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
 import { formatShortDate } from '../../app/time'
-import { ProjectDetail } from './ProjectDetail'
-import { Playout } from './Playout'
-import { ModePlaceholder } from './ModePlaceholder'
 import { Livesandning } from './Livesandning'
+import { OndemandView } from './OndemandView'
 import { MODE_LABEL } from './projectMode'
 import type { ProjectActions } from './actions'
 import { ApiError } from '../../data/http/fetchJson'
 import { storeSelection } from '../../app/selectionStorage'
 import './ProjectsView.css'
 
-// 'livesandning' och 'ondemand' är tillfälliga mockup-skal tills de riktiga
-// vyerna byggs (docs/HANDOVER-projektfloede.md). 'detail' och 'playout' är
-// dagens vyer och tas bort/byts ut i senare steg.
-export type ProjectScreen = 'detail' | 'playout' | 'livesandning' | 'ondemand'
-
-const PROJECT_SCREENS: ProjectScreen[] = ['detail', 'playout', 'livesandning', 'ondemand']
+// Ett projekt öppnas i Livesändning (Before, Live) eller Ondemand (After, Ondemand).
+export type ProjectScreen = 'livesandning' | 'ondemand'
 
 export function parseProjectScreen(value: string | null): ProjectScreen {
-  return (PROJECT_SCREENS as string[]).includes(value ?? '') ? (value as ProjectScreen) : 'detail'
+  return value === 'ondemand' ? 'ondemand' : 'livesandning'
 }
 
 // Läget avgör vilken vy ett projekt öppnas i: Before och Live i Livesändning,
@@ -79,12 +73,9 @@ interface ProjectsViewProps {
   /** Lyft till App.tsx så navmenyns "+ Ny"-knapp (bild 1) kan öppna dialogen utifrån. */
   creating: boolean
   onCreatingChange: (creating: boolean) => void
-  onOpenAgenda: (id: string) => void
-  onOpenNameList: (id: string) => void
 }
 
 export function ProjectsView({
-  meetingDomain,
   selectionScope,
   selectedId,
   onSelectedIdChange,
@@ -92,8 +83,6 @@ export function ProjectsView({
   onScreenChange,
   creating,
   onCreatingChange,
-  onOpenAgenda,
-  onOpenNameList,
 }: ProjectsViewProps) {
   const resource = useResource(() => client.projects.list(), [])
   const [projects, setProjects] = useState<Project[]>([])
@@ -120,6 +109,15 @@ export function ProjectsView({
 
   const selected = projects.find((p) => p.id === selectedId) ?? null
 
+  // Vyn följer läget: byts läget över gränsen mellan Livesändning och Ondemand
+  // (till exempel Live → After) byter vyn med.
+  const selectedMode = selected?.publicMode
+  useEffect(() => {
+    if (!selectedMode || (screen !== 'livesandning' && screen !== 'ondemand')) return
+    const target = screenForMode(selectedMode)
+    if (target !== screen) onScreenChange(target)
+  }, [selectedMode, screen])
+
   function replace(next: Project) {
     setProjects((prev) => prev.map((p) => (p.id === next.id ? next : p)))
   }
@@ -138,12 +136,20 @@ export function ProjectsView({
     }
   }, [selectedId])
 
-  async function withErrorToast(fn: () => Promise<void>) {
+  // Som withErrorToast, men berättar om anropet lyckades — lägesbyten med flera
+  // steg måste kunna avbryta om ett steg misslyckas.
+  async function attempt(fn: () => Promise<void>): Promise<boolean> {
     try {
       await fn()
+      return true
     } catch (err) {
       setToast(err instanceof Error ? err.message : 'Något gick fel.')
+      return false
     }
+  }
+
+  async function withErrorToast(fn: () => Promise<void>): Promise<void> {
+    await attempt(fn)
   }
 
   async function createProject(name: string) {
@@ -158,7 +164,6 @@ export function ProjectsView({
     await client.projects.trash(project.id)
     setProjects((prev) => prev.filter((p) => p.id !== project.id))
     onSelectedIdChange(null)
-    onScreenChange('detail')
     setConfirmDelete(null)
   }
 
@@ -177,14 +182,13 @@ export function ProjectsView({
         if (err instanceof ApiError && err.code === 'project_not_found') {
           setProjects((prev) => prev.filter((p) => p.id !== selected.id))
           onSelectedIdChange(null)
-          onScreenChange('detail')
-          return
+                return
         }
         throw err
       }
     },
     rename: (name: string, texts) =>
-      withErrorToast(async () => {
+      attempt(async () => {
         if (!selected) return
         replace(await client.projects.rename(selected.id, name, texts))
       }),
@@ -194,7 +198,7 @@ export function ProjectsView({
         replace(await client.projects.setVisibility(selected.id, visibility))
       }),
     setPublicMode: (publicMode, afterReason) =>
-      withErrorToast(async () => {
+      attempt(async () => {
         if (!selected) return
         replace(await client.projects.setPublicMode(selected.id, publicMode, afterReason))
       }),
@@ -228,11 +232,6 @@ export function ProjectsView({
         if (!selected) return
         replace(await client.projects.teardownChannel(selected.id))
       }),
-    setEncoderSending: (sending: boolean) =>
-      withErrorToast(async () => {
-        if (!selected) return
-        replace(await client.projects.setEncoderSending(selected.id, sending))
-      }),
     interruptionDecision: (decision) =>
       withErrorToast(async () => {
         if (!selected) return
@@ -249,12 +248,17 @@ export function ProjectsView({
       }
     },
     publish: () =>
-      withErrorToast(async () => {
+      attempt(async () => {
         if (!selected) return
         replace(await client.projects.publish(selected.id))
       }),
+    unpublish: () =>
+      attempt(async () => {
+        if (!selected) return
+        replace(await client.projects.unpublish(selected.id))
+      }),
     returnToLive: () =>
-      withErrorToast(async () => {
+      attempt(async () => {
         if (!selected) return
         replace(await client.projects.returnToLive(selected.id))
       }),
@@ -354,28 +358,10 @@ export function ProjectsView({
         },
       )
     },
-    reset: () =>
-      withErrorToast(async () => {
-        if (!selected) return
-        replace(await client.projects.resetSimulation(selected.id))
-      }),
   }
 
-    const selectedProjectDetail = selected ? (
-      <ProjectDetail
-        project={selected}
-        meetingDomain={meetingDomain}
-        onDelete={() => setConfirmDelete(selected)}
-        onDeleteBlocked={setToast}
-        actions={actions}
-        onOpenAgenda={onOpenAgenda}
-        onOpenNameList={onOpenNameList}
-        onOpenPlayout={() => onScreenChange('playout')}
-      />
-    ) : null
-
   return (
-    <div class={`view${screen === 'playout' ? ' playout-active' : ''}`}>
+    <div class="view">
       <header class={`project-header${selected ? ' collapsed' : ''}`}>
         <div class="header-list-zone">
           <h1>Projekt</h1>
@@ -387,36 +373,18 @@ export function ProjectsView({
       </header>
 
       <div class="content">
-        {selected && screen === 'playout' ? (
-          <div class="playout-frame doc">
-            <Playout project={selected} onClose={() => onScreenChange('detail')} actions={actions} />
-          </div>
-        ) : selected && screen === 'livesandning' ? (
+        {selected && screen === 'livesandning' ? (
           <Livesandning
             project={selected}
             actions={actions}
             onBack={() => onSelectedIdChange(null)}
-            onModeChanged={(mode) => onScreenChange(screenForMode(mode))}
-            onOpenLegacy={onScreenChange}
           />
         ) : selected && screen === 'ondemand' ? (
-          <ModePlaceholder
+          <OndemandView
             project={selected}
-            kind="ondemand"
             actions={actions}
             onBack={() => onSelectedIdChange(null)}
-            onModeChanged={(mode) => onScreenChange(screenForMode(mode))}
-            onOpenLegacy={onScreenChange}
           />
-        ) : selected ? (
-          <div class="project-workspace doc">
-            <div class="project-workspace-nav">
-              <button class="btn btn-sm" type="button" onClick={() => onSelectedIdChange(null)}>
-                ← Projekt
-              </button>
-            </div>
-            {selectedProjectDetail}
-          </div>
         ) : (
           <div class="project-list">
             {resource.loading && projects.length === 0 && <p class="project-list-empty">Laddar…</p>}

@@ -3,6 +3,7 @@ import { client } from '../../data'
 import type { MeetingSummary, MeetingTopic } from '../../data/types'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
+import './MeetingBindingModal.css'
 
 type Step = 'domain' | 'meetings' | 'events' | 'done'
 

@@ -147,6 +147,8 @@ export interface Client {
     trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }): Promise<Project>
     createReviewLink(id: string): Promise<Project>
     publish(id: string): Promise<Project>
+    /** Avpublicerar inspelningen: läget blir After (afterReason ondemandUnpublished) och manifestet tas bort. */
+    unpublish(id: string): Promise<Project>
     returnToLive(id: string): Promise<Project>
     cue(id: string, kind: CueKind, refId: string, label: string): Promise<TimelineEvent>
     /** Rensar aktiv dagordningspunkt/namnskylt — loggas som en egen tidslinjehändelse, tar inte bort tidigare utspelningar. */

@@ -10,7 +10,6 @@ import { OverflowMenu } from '../../components/OverflowMenu'
 import { PdfIcon, PlayIcon, StopIcon } from '../../components/icons'
 import { formatHms } from '../../app/time'
 import type { ProjectActions } from './actions'
-import './Playout.css'
 import './PlayoutColumns.css'
 
 interface PlayoutColumnsProps {

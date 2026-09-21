@@ -17,6 +17,9 @@ const CONFIRMED: ReadonlySet<string> = new Set([
   'after>live',
   'ondemand>live',
   'live>before',
+  // Inte i specen: att lämna Ondemand avpublicerar alltid inspelningen, så
+  // även Ondemand → Before kräver bekräftelse.
+  'ondemand>before',
 ])
 
 export function requiresConfirmation(from: PublicMode, to: PublicMode): boolean {
@@ -71,6 +74,15 @@ export function confirmationCopy(from: PublicMode, to: PublicMode): Confirmation
       danger: true,
     }
   }
+  if (from === 'ondemand' && to === 'before') {
+    return {
+      title: 'Avpublicera inspelningen?',
+      body: 'Inspelningen tas bort från spelaren och publiken ser Before-meddelandet i stället.',
+      confirmLabel: 'Gå till Before',
+      editsAfterText: false,
+      danger: true,
+    }
+  }
   return {
     title: 'Gå tillbaka till Before?',
     body: 'Den pågående sändningen bryts för publiken, som i stället ser Before-meddelandet.',
@@ -78,6 +90,22 @@ export function confirmationCopy(from: PublicMode, to: PublicMode): Confirmation
     editsAfterText: false,
     danger: true,
   }
+}
+
+// Servern har egna vägar för publicering: PUT /public-mode byter bara läge,
+// medan publicera/avpublicera/återgå till live också hanterar inspelning,
+// kapitel och manifest. Därför avgör målet vilka steg som körs.
+export type ModeChangeStep = 'publish' | 'unpublish' | 'returnToLive' | 'setMode'
+
+export function modeChangePlan(from: PublicMode, to: PublicMode): ModeChangeStep[] {
+  if (from === to) return []
+  if (to === 'ondemand') return ['publish']
+  if (from === 'ondemand') {
+    if (to === 'live') return ['returnToLive']
+    if (to === 'after') return ['unpublish']
+    return ['unpublish', 'setMode']
+  }
+  return ['setMode']
 }
 
 export function afterReasonFor(from: PublicMode, to: PublicMode): AfterReason | undefined {

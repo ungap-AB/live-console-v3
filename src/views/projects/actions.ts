@@ -4,22 +4,22 @@ import type { AfterReason, CueKind, Project, PublicMode, Visibility } from '../.
 export interface ProjectActions {
   refreshProject: () => Promise<void>
   refreshPlayout: () => Promise<void>
-  rename: (name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText'>>) => Promise<void>
+  /** Metoderna som returnerar boolean resolvar true när anropet lyckades (fel visas som toast). */
+  rename: (name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText'>>) => Promise<boolean>
   setVisibility: (visibility: Visibility) => void
-  setPublicMode: (publicMode: PublicMode, afterReason?: AfterReason) => Promise<void>
+  setPublicMode: (publicMode: PublicMode, afterReason?: AfterReason) => Promise<boolean>
   setAgenda: (agendaId: string | null) => Promise<void>
   setNameList: (namelistId: string | null) => void
   setMeetingBinding: (meetingDomain: string, meetingId: string, eventsEnabled?: boolean) => Promise<void>
   clearMeetingBinding: () => Promise<void>
   createChannel: () => Promise<void>
   teardownChannel: () => Promise<void>
-  setEncoderSending: (sending: boolean) => Promise<void>
   interruptionDecision: (decision: 'wait_for_reconnect' | 'end') => Promise<void>
   trim: (range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }) => Promise<boolean>
-  publish: () => Promise<void>
-  returnToLive: () => Promise<void>
+  publish: () => Promise<boolean>
+  unpublish: () => Promise<boolean>
+  returnToLive: () => Promise<boolean>
   cue: (kind: CueKind, refId: string, label: string) => void
   /** Rensar aktiv dagordningspunkt/namnskylt — loggas som en egen händelse, tar inte bort tidigare utspelningar. */
   clear: (kind: CueKind) => void
-  reset: () => Promise<void>
 }

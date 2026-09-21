@@ -854,7 +854,7 @@ export const mockClient: Client = {
       p.onDemandLocked = true
       return delay(projectSnapshot(p))
     },
-    async returnToLive(id) {
+    async unpublish(id) {
       const p = findProject(id)
       if (p.recording?.state === 'trimmed' || p.recording?.state === 'published') p.recording = null
       p.publication.state = 'none'
@@ -873,6 +873,18 @@ export const mockClient: Client = {
         reason: 'ondemandUnpublished',
         metadataJson: null,
       })
+      p.onDemandLocked = false
+      return delay(projectSnapshot(p))
+    },
+    async returnToLive(id) {
+      // Samma som servern: avkopplar ondemand-versionen och sätter läget Live, stängt.
+      const p = findProject(id)
+      if (p.recording?.state === 'trimmed' || p.recording?.state === 'published') p.recording = null
+      p.publication.state = 'none'
+      p.publicMode = 'live'
+      p.visibility = 'closed'
+      p.afterReason = null
+      p.recordingReadiness = 'unknown'
       p.onDemandLocked = false
       return delay(projectSnapshot(p))
     },

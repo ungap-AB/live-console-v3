@@ -50,7 +50,7 @@ const NAV_GROUPS: NavGroup[] = [
 interface ShellProps {
   active: RouteKey
   children: ComponentChildren
-  /** Kontextuell knapp bredvid "Projekt" i navmenyn — "+ Ny" i listläge, "Playout" när en sändning är öppen. Null döljer knappen (t.ex. på andra vyer). */
+  /** Kontextuell knapp bredvid "Projekt" i navmenyn — "+ Ny" i listläge, "Livesändning"/"Ondemand" när ett projekt är öppet. Null döljer knappen (t.ex. på andra vyer). */
   projectsNavAction: { label: string; onClick: () => void } | null
   onLogout: () => void
   currentUserId: string

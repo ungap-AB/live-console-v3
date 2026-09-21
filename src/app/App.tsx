@@ -41,16 +41,16 @@ export function App() {
   function logout() {
     client.auth.logout().finally(() => {
       setActiveProjectId(null)
-      setProjectScreen('detail')
+      setProjectScreen('livesandning')
       setAuth({ status: 'anon' })
     })
   }
 
   // Lyft upp ur ProjectsView så att vilket projekt/vy som senast visades
   // överlever att man navigerar bort och tillbaka — det är vad som gör
-  // Playout-genvägen i sidomenyn meningsfull.
+  // genvägen i sidomenyn meningsfull.
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
-  const [projectScreen, setProjectScreen] = useState<ProjectScreen>('detail')
+  const [projectScreen, setProjectScreen] = useState<ProjectScreen>('livesandning')
   // Lyft hit av samma skäl som projectScreen — navmenyns "+ Ny"-knapp (bild 1)
   // måste kunna öppna ProjectsViews skapa-dialog utifrån, inte bara inifrån.
   const [creatingProject, setCreatingProject] = useState(false)
@@ -66,7 +66,8 @@ export function App() {
   // Delad av Dagordningar/Videoarkiv för "gå till projekt"-snabblänkar.
   function openProject(id: string) {
     setActiveProjectId(id)
-    setProjectScreen('detail')
+    // Rätt vy väljs av ProjectsView när projektet laddats, utifrån dess läge.
+    setProjectScreen('livesandning')
     window.location.hash = routeHref('projects')
   }
 
@@ -76,16 +77,6 @@ export function App() {
   // det räcker att konsumera det en gång vid montering (se onInitialSelectionConsumed).
   const [pendingAgendaId, setPendingAgendaId] = useState<string | null>(null)
   const [pendingNameListId, setPendingNameListId] = useState<string | null>(null)
-
-  function openAgenda(id: string) {
-    setPendingAgendaId(id)
-    window.location.hash = routeHref('agendas')
-  }
-
-  function openNameList(id: string) {
-    setPendingNameListId(id)
-    window.location.hash = routeHref('namelists')
-  }
 
   const isRootAdmin = auth.status === 'authed' && auth.user.roles.includes('rootAdmin')
   const routeAllowed = isRootAdmin || ['projects', 'agendas', 'namelists', 'trash'].includes(route)
@@ -99,12 +90,14 @@ export function App() {
   if (auth.status === 'loading') return <div class="login-screen">Laddar…</div>
   if (auth.status === 'anon') return <LoginView onLogin={login} />
 
-  // "Playout" vinner om en sändning redan är öppen (går att hoppa tillbaka
-  // till den från vilken vy som helst) — annars "+ Nytt" bara medan man
-  // faktiskt tittar på Projekt-listan/detaljvyn.
+  // Genvägen till det öppna projektets vy vinner när man står på en annan sida
+  // — annars "+ Nytt" medan man tittar på Projekt.
   const projectsNavAction =
-    projectScreen === 'playout'
-      ? { label: 'Playout', onClick: () => { window.location.hash = routeHref('projects') } }
+    activeProjectId && route !== 'projects'
+      ? {
+          label: projectScreen === 'ondemand' ? 'Ondemand' : 'Livesändning',
+          onClick: () => { window.location.hash = routeHref('projects') },
+        }
       : route === 'projects'
         ? { label: '+ Nytt', onClick: () => setCreatingProject(true) }
         : null
@@ -116,7 +109,6 @@ export function App() {
       onLogout={logout}
       currentUserId={auth.user.id}
       currentUserRoles={auth.user.roles}
-      contentLocked={route === 'projects' && projectScreen === 'playout'}
     >
       {routeAllowed && route === 'projects' && (
         <ProjectsView
@@ -128,8 +120,6 @@ export function App() {
           onScreenChange={setProjectScreen}
           creating={creatingProject}
           onCreatingChange={setCreatingProject}
-          onOpenAgenda={openAgenda}
-          onOpenNameList={openNameList}
         />
       )}
       {routeAllowed && route === 'agendas' && (
