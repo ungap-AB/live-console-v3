@@ -1,4 +1,4 @@
-import type { CueKind, Visibility } from '../../data/types'
+import type { AfterReason, CueKind, PublicMode, Visibility } from '../../data/types'
 
 // Delas mellan ProjectDetail och Playout.
 export interface ProjectActions {
@@ -6,6 +6,7 @@ export interface ProjectActions {
   refreshPlayout: () => Promise<void>
   rename: (name: string) => Promise<void>
   setVisibility: (visibility: Visibility) => void
+  setPublicMode: (publicMode: PublicMode, afterReason?: AfterReason) => Promise<void>
   setAgenda: (agendaId: string | null) => Promise<void>
   setNameList: (namelistId: string | null) => void
   setMeetingBinding: (meetingDomain: string, meetingId: string, eventsEnabled?: boolean) => Promise<void>

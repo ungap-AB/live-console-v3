@@ -13,6 +13,8 @@ import type {
   NameList,
   OperationCapability,
   Project,
+  PublicMode,
+  AfterReason,
   ProjectRef,
   PublicationState,
   Recording,
@@ -298,6 +300,8 @@ function toProjectLite(dto: ServerProject): Project {
     name: dto.name,
     createdAt: dto.createdAt,
     visibility: dto.visibility as Visibility,
+    publicMode: dto.publicMode as PublicMode,
+    afterReason: dto.afterReason as AfterReason | null,
     playerUrl: dto.playerUrl,
     channel: dto.channel ? { id: dto.channel.id, state: dto.channel.state as ChannelState } : null,
     technicalHealth: {
@@ -667,6 +671,13 @@ export const httpClient: Client = {
     },
     async setVisibility(id, visibility) {
       const dto = await api<ServerProject>(`/projects/${id}/visibility`, { method: 'PUT', body: { visibility } })
+      return toProjectFull(dto)
+    },
+    async setPublicMode(id, publicMode, afterReason) {
+      const dto = await api<ServerProject>(`/projects/${id}/public-mode`, {
+        method: 'PUT',
+        body: { publicMode, afterReason },
+      })
       return toProjectFull(dto)
     },
     async setAgenda(id, agendaId) {

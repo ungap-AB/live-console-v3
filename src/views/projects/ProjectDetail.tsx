@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Project, Recording, RecordingState } from '../../data/types'
+import type { Project, PublicMode, Recording, RecordingState } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { StatusChip, type ChipTone } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
@@ -216,6 +216,11 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
     setTab('live')
   }
 
+  async function setPublicMode(publicMode: PublicMode) {
+    await actions.setPublicMode(publicMode, publicMode === 'after' ? 'liveFinished' : undefined)
+    setTab(publicMode === 'after' || publicMode === 'ondemand' ? 'odm' : 'live')
+  }
+
   async function openTrimDialog() {
     if (!p.recording) return
     const original = await resolveOriginalRecordingForTrim(p.recording.id)
@@ -299,6 +304,24 @@ export function ProjectDetail({ project: p, meetingDomain, onDelete, onDeleteBlo
             </div>
             <p class="field-help">
               {p.visibility === 'open' ? 'Vem som helst med spelarlänken kan se projektet.' : 'Projektet är dolt för publik.'}
+            </p>
+          </div>
+        </div>
+        <div class="panel-head-row">
+          <div class="field-block grow">
+            <div class="field-block-label">Publikläge</div>
+            <select
+              class="rename-input"
+              value={p.publicMode}
+              onChange={(event) => void setPublicMode(event.currentTarget.value as PublicMode)}
+            >
+              <option value="before">Before</option>
+              <option value="live">Live</option>
+              <option value="after">After</option>
+              <option value="ondemand">Ondemand</option>
+            </select>
+            <p class="field-help">
+              {p.afterReason === 'ondemandUnpublished' ? 'Ondemand är avpublicerad.' : 'Publikläget ändras separat från synlighet.'}
             </p>
           </div>
         </div>

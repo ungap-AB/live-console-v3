@@ -637,6 +637,8 @@ export const mockClient: Client = {
         name: input.name,
         createdAt: new Date().toISOString(),
         visibility: 'closed',
+        publicMode: 'before',
+        afterReason: null,
         playerUrl: `https://play.ungap.se/p/${input.name.trim().toLowerCase().replace(/\s+/g, '-')}`,
         channel: null,
         technicalHealth: defaultTechnicalHealth(),
@@ -664,6 +666,15 @@ export const mockClient: Client = {
     async setVisibility(id, visibility) {
       const p = findProject(id)
       p.visibility = visibility
+      return delay(projectSnapshot(p))
+    },
+    async setPublicMode(id, publicMode, afterReason) {
+      const p = findProject(id)
+      if (p.publicMode === 'ondemand' && publicMode === 'live') {
+        throw new Error('Gå först via Before innan projektet återgår till Live.')
+      }
+      p.publicMode = publicMode
+      p.afterReason = publicMode === 'after' ? afterReason ?? 'liveFinished' : null
       return delay(projectSnapshot(p))
     },
     async setAgenda(id, agendaId) {
@@ -817,6 +828,8 @@ export const mockClient: Client = {
       }
       p.recording.state = 'published'
       p.publication.state = 'published'
+      p.publicMode = 'ondemand'
+      p.afterReason = null
       p.onDemandLocked = true
       return delay(projectSnapshot(p))
     },
@@ -824,6 +837,8 @@ export const mockClient: Client = {
       const p = findProject(id)
       if (p.recording?.state === 'trimmed' || p.recording?.state === 'published') p.recording = null
       p.publication.state = 'none'
+      p.publicMode = 'after'
+      p.afterReason = 'ondemandUnpublished'
       p.onDemandLocked = false
       return delay(projectSnapshot(p))
     },

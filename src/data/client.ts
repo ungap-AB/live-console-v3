@@ -1,6 +1,7 @@
 import type {
   Agenda,
   AgendaItem,
+  AfterReason,
   Channel,
   ChannelHealth,
   ChannelQuota,
@@ -12,6 +13,7 @@ import type {
   MeetingSummary,
   MeetingTopic,
   Project,
+  PublicMode,
   Recording,
   Role,
   TimelineEvent,
@@ -132,6 +134,7 @@ export interface Client {
     rename(id: string, name: string): Promise<Project>
     trash(id: string): Promise<void>
     setVisibility(id: string, visibility: Visibility): Promise<Project>
+    setPublicMode(id: string, publicMode: PublicMode, afterReason?: AfterReason): Promise<Project>
     setAgenda(id: string, agendaId: string | null): Promise<Project>
     setNameList(id: string, namelistId: string | null): Promise<Project>
     setMeetingBinding(id: string, meetingDomain: string, meetingId: string, eventsEnabled?: boolean): Promise<Project>

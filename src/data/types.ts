@@ -88,6 +88,8 @@ export interface NameList {
 // ---- Projekt ----
 
 export type Visibility = 'open' | 'closed'
+export type PublicMode = 'before' | 'live' | 'after' | 'ondemand'
+export type AfterReason = 'liveFinished' | 'ondemandUnpublished'
 export type ChannelState = 'none' | 'idle' | 'live'
 export type RecordingState = 'none' | 'recording' | 'processing' | 'recorded' | 'trimmed' | 'published'
 
@@ -127,6 +129,8 @@ export interface Project {
   name: string
   createdAt: string
   visibility: Visibility
+  publicMode: PublicMode
+  afterReason: AfterReason | null
   playerUrl: string
   channel: { id: string; state: ChannelState } | null
   technicalHealth: ProjectTechnicalHealth

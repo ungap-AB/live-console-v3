@@ -168,6 +168,11 @@ export function ProjectsView({
         if (!selected) return
         replace(await client.projects.setVisibility(selected.id, visibility))
       }),
+    setPublicMode: (publicMode, afterReason) =>
+      withErrorToast(async () => {
+        if (!selected) return
+        replace(await client.projects.setPublicMode(selected.id, publicMode, afterReason))
+      }),
     setAgenda: (agendaId: string | null) =>
       withErrorToast(async () => {
         if (!selected) return

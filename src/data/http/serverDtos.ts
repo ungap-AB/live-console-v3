@@ -93,6 +93,8 @@ export interface ServerProject {
   name: string
   createdAt: string
   visibility: string
+  publicMode: string
+  afterReason: string | null
   playerUrl: string
   channel: ServerChannelRef | null
   technicalHealth: ServerProjectTechnicalHealth
