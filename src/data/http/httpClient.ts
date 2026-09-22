@@ -786,6 +786,13 @@ export const httpClient: Client = {
       const dto = await api<ServerTimelineEvent>(`/projects/${id}/playout/cue`, { method: 'POST', body: { kind, refId: null } })
       return toTimelineEvent(dto)
     },
+    async updateTimelineEvent(id, eventId, input) {
+      const dto = await api<ServerTimelineEvent>(`/projects/${id}/timeline/${eventId}`, { method: 'PATCH', body: input })
+      return toTimelineEvent(dto)
+    },
+    async updateChapterOffset(id, index, offsetSeconds) {
+      await api<void>(`/projects/${id}/chapters/${index}`, { method: 'PATCH', body: { offsetSeconds } })
+    },
     async resetSimulation(id) {
       await api<void>(`/debug/projects/${id}/reset`, { method: 'POST' })
       return fetchProject(id)

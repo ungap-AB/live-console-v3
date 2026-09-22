@@ -24,29 +24,6 @@ const CHAPTER_KIND: Record<CueKind, string> = {
   exclamation: 'Utrop',
 }
 
-const MOCK_ONDEMAND_HLS_URL = 'https://dev.media.ungap.net/ivs/v1/471112617922/LDHByX7JxjGF/2026/9/19/16/10/KRuUDSAVxa8x/media/hls/_odm_20260919161006_20260919170951.m3u8'
-
-const MOCK_FALLBACK_RECORDING: Recording = {
-  id: 'mock-ondemand-recording',
-  kind: 'original',
-  name: 'Mockad inspelning',
-  createdAt: '2026-09-19T16:10:06Z',
-  durationSeconds: 5995,
-  sizeBytes: 8_240_000_000,
-  resolution: '1920×1080p50',
-  source: 'Mockad inspelning',
-  hlsUrl: MOCK_ONDEMAND_HLS_URL,
-  project: null,
-  segments: [{ startedAt: '2026-09-19T16:10:06Z', durationSeconds: 5995 }],
-  chapters: [
-    { kind: 'agendaItem', label: '1. Mötet öppnas', offsetSeconds: 0 },
-    { kind: 'agendaItem', label: '2. Föredragningslista', offsetSeconds: 180 },
-    { kind: 'person', label: 'Ordförande', offsetSeconds: 720 },
-    { kind: 'agendaItem', label: '3. Beslutsärenden', offsetSeconds: 1560 },
-    { kind: 'agendaItem', label: '4. Mötet avslutas', offsetSeconds: 5760 },
-  ],
-}
-
 function chaptersFor(recording: Recording, original: Recording | null): Chapter[] {
   const source = recording.kind === 'trimmed' ? original : recording
   if (!source) return []
@@ -101,7 +78,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const recordingState = p.recording?.state
 
   useEffect(() => {
-    const active = recording ?? ((p.publicMode === 'after' || p.publicMode === 'ondemand') && !recordingId ? MOCK_FALLBACK_RECORDING : null)
+    const active = recording
     if (!active) return
     setMockTrimStart(active.trimRange?.startOffsetSeconds ?? 0)
     setMockTrimEnd(active.trimRange?.endOffsetSeconds ?? active.durationSeconds)
@@ -131,9 +108,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return null
 
   const isAfter = p.publicMode === 'after'
-  const fallbackOriginal = (isAfter || p.publicMode === 'ondemand') && !p.recording ? MOCK_FALLBACK_RECORDING : null
-  const displayedRecording = recording ?? fallbackOriginal
-  const displayedOriginal = original ?? fallbackOriginal
+  const displayedRecording = recording
+  const displayedOriginal = original
   const chapters = displayedRecording ? chaptersFor(displayedRecording, displayedOriginal) : []
   const source = displayedOriginal ?? displayedRecording
   const mockTrimDuration = source?.durationSeconds ?? 0
@@ -309,15 +285,29 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     }
   }
 
-  function saveSelectedChapter() {
+  async function saveSelectedChapter() {
     if (selectedChapter === null || draftOffsets[selectedChapter] === undefined) return
-    setSavedOffsets((current) => ({ ...current, [selectedChapter]: draftOffsets[selectedChapter] }))
-    setUndoVisible(true)
-    setDraftOffsets((current) => {
-      const next = { ...current }
-      delete next[selectedChapter]
-      return next
-    })
+    const nextOffset = draftOffsets[selectedChapter]
+    try {
+      if (p.publicMode === 'ondemand') {
+        await client.projects.updateChapterOffset(p.id, selectedChapter, nextOffset)
+      } else {
+        const chapter = chapters[selectedChapter]
+        const event = p.playout.timeline
+          .filter((item) => item.kind === chapter.kind && item.refId !== null && item.label !== 'Rensat')
+          .find((item) => item.label === chapter.label || item.offsetSeconds === chapter.offsetSeconds)
+        if (event) await client.projects.updateTimelineEvent(p.id, event.id, { offsetSeconds: nextOffset })
+      }
+      setSavedOffsets((current) => ({ ...current, [selectedChapter]: nextOffset }))
+      setUndoVisible(true)
+      setDraftOffsets((current) => {
+        const next = { ...current }
+        delete next[selectedChapter]
+        return next
+      })
+    } catch {
+      // Keep the draft visible so the operator can retry.
+    }
   }
   const defaultTrimStart = displayedRecording?.trimRange?.startOffsetSeconds ?? 0
   const defaultTrimEnd = displayedRecording?.trimRange?.endOffsetSeconds ?? mockTrimDuration
@@ -390,7 +380,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
         <div class="od-cols">
           <section class="od-col" aria-label="Trimning">
             {displayedRecording && (
-              <div class="od-mock-trim" aria-label={isAfter ? 'Mockad trimning' : 'Trim-förhandsvisning'}>
+              <div class="od-mock-trim" aria-label={isAfter ? 'Trimning' : 'Trim-förhandsvisning'}>
                 <div class="od-trim-preview">
                   <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
                 </div>

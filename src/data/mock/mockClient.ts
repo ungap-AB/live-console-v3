@@ -984,6 +984,17 @@ export const mockClient: Client = {
       else p.playout.currentPersonId = null
       return delay(clone(event))
     },
+    async updateTimelineEvent(id, eventId, input) {
+      const project = findProject(id)
+      const event = project.playout.timeline.find((item) => item.id === eventId)
+      if (!event) throw new Error(`Händelse ${eventId} finns inte`)
+      if (input.label !== undefined) event.label = input.label
+      if (input.offsetSeconds !== undefined) event.offsetSeconds = input.offsetSeconds
+      return delay(clone(event))
+    },
+    async updateChapterOffset(_id, _index, _offsetSeconds) {
+      return delay(undefined)
+    },
     async resetSimulation(id) {
       const p = findProject(id)
       p.visibility = 'closed'
