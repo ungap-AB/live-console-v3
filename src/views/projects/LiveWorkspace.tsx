@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Channel, ChannelHealth, LivePhase, Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
-import { Clock } from '../../components/Clock'
+import { Icon } from '../../components/Icon'
 import type { ProjectActions } from './actions'
 import { IngestInfo } from './IngestInfo'
 import { PlayoutColumns } from './PlayoutColumns'
@@ -33,8 +33,7 @@ function signalStatus(hasIngest: boolean, phase: LivePhase | undefined): { label
   }
 }
 
-// Ren sändningskontroll för läget Live. Statusraden, ingest-rutan och
-// Before-meddelandet visas inte här.
+// Ren sändningskontroll för läget Live.
 export function LiveWorkspace({ project: p, actions, channel, health, streamKey }: LiveWorkspaceProps) {
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
@@ -47,7 +46,6 @@ export function LiveWorkspace({ project: p, actions, channel, health, streamKey 
   const [showIngestInfo, setShowIngestInfo] = useState(false)
 
   const phase = health?.livePhase
-  const receiving = phase === 'live'
   const signal = signalStatus(p.channel !== null, phase)
 
   const nowItem =
@@ -61,8 +59,8 @@ export function LiveWorkspace({ project: p, actions, channel, health, streamKey 
   const nowExclamation = p.playout.currentExclamation?.label ?? null
 
   const panels: { key: string; label: string; value: string | null; clearLabel: string; onClear: () => void }[] = [
-    { key: 'item', label: 'Ärende i bild', value: nowItem, clearLabel: 'Rensa ärende i bild', onClear: () => actions.clear('agendaItem') },
-    { key: 'person', label: 'Talare i bild', value: nowSpeaker, clearLabel: 'Rensa talare i bild', onClear: () => actions.clear('person') },
+    { key: 'item', label: '', value: nowItem, clearLabel: 'Rensa ärende i bild', onClear: () => actions.clear('agendaItem') },
+    { key: 'person', label: '', value: nowSpeaker, clearLabel: 'Rensa talare i bild', onClear: () => actions.clear('person') },
   ]
   if (p.meetingBindingId) {
     panels.push({
@@ -77,24 +75,22 @@ export function LiveWorkspace({ project: p, actions, channel, health, streamKey 
   return (
     <div class="lw">
       <div class="lw-status-row">
-        <span class="lw-badge">{receiving ? 'SÄNDER' : 'LIVE'}</span>
         <span class={`lw-signal is-${signal.tone}`} role="status">
           <span class="lw-dot" aria-hidden="true" />
           {signal.label}
         </span>
         <span class="spacer" />
         <button
-          class="btn btn-ghost"
+          class="lw-info-button"
           type="button"
           disabled={!channel}
+          aria-label={showIngestInfo ? 'Dölj ingest-info' : 'Visa ingest-info'}
           aria-expanded={showIngestInfo}
+          title={showIngestInfo ? 'Dölj ingest-info' : 'Visa ingest-info'}
           onClick={() => setShowIngestInfo((v) => !v)}
         >
-          {showIngestInfo ? 'Dölj ingest-info' : 'Visa ingest-info'}
+          <Icon name="info" size={18} />
         </button>
-        <span class="lw-clock">
-          <Clock />
-        </span>
       </div>
 
       {phase === 'signalInterrupted' && (
@@ -109,12 +105,24 @@ export function LiveWorkspace({ project: p, actions, channel, health, streamKey 
         </div>
       )}
 
-      {showIngestInfo && channel && <IngestInfo channel={channel} streamKey={streamKey} />}
+      {showIngestInfo && channel && (
+        <div class="lw-ingest-info">
+          <IngestInfo
+            channel={channel}
+            streamKey={streamKey}
+            trailingAction={(
+              <button class="lw-info-close" type="button" aria-label="Stäng ingest-info" title="Stäng" onClick={() => setShowIngestInfo(false)}>
+                <Icon name="close" size={18} />
+              </button>
+            )}
+          />
+        </div>
+      )}
 
       <div class="lw-now">
         {panels.map((panel) => (
           <div key={panel.key} class={`lw-now-panel${panel.value ? ' is-active' : ''}`}>
-            <span class="lw-now-label">{panel.label}</span>
+            {panel.label && <span class="lw-now-label">{panel.label}</span>}
             <span class="lw-now-value">
               <span>{panel.value ?? '–'}</span>
               {panel.value && (

@@ -256,7 +256,6 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                         <PdfIcon />
                         <span class="pdf-count" aria-hidden="true">{it.attachments?.length ?? 0}</span>
                       </button>
-                      {active && <span class="in-picture">I BILD</span>}
                       {offset != null && <span class="time">{formatHms(offset)}</span>}
                       <button
                         class="play"
@@ -337,7 +336,6 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                   const active = p.playout.currentPersonId === person.id
                   return (
                     <>
-                      {active && <span class="in-picture">I BILD</span>}
                       <span class="play-count" title={`${speakerPlayCount(person.id)} utspelningar`}>
                         {speakerPlayCount(person.id)}
                       </span>

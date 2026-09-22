@@ -8,25 +8,16 @@
 .lw-status-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  min-height: 32px;
+  gap: 10px;
   flex-wrap: wrap;
-}
-
-.lw-badge {
-  background: var(--mode-live-bg);
-  color: var(--mode-live-fg);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 5px 10px;
-  border-radius: 6px;
 }
 
 .lw-signal {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .lw-dot {
@@ -40,10 +31,51 @@
   background: var(--live);
 }
 
-.lw-clock {
-  font-family: var(--mono);
-  font-size: 20px;
-  font-variant-numeric: tabular-nums;
+.lw-info-button,
+.lw-info-close {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.lw-info-button:hover:not(:disabled),
+.lw-info-button[aria-expanded='true'],
+.lw-info-close:hover {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.lw-info-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.lw-ingest-info {
+  padding: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.lw-ingest-info .ingest-info {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  width: 100%;
+  align-items: end;
+}
+
+.lw-ingest-info .field {
+  min-width: 0;
+}
+
+.lw-info-close {
+  align-self: end;
 }
 
 .lw-interrupt {

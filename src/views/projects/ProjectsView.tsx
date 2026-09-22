@@ -122,6 +122,10 @@ export function ProjectsView({
     setProjects((prev) => prev.map((p) => (p.id === next.id ? next : p)))
   }
 
+  function updateProjectPlayout(projectId: string, update: (playout: PlayoutState) => PlayoutState) {
+    setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, playout: update(p.playout) } : p)))
+  }
+
   // client.projects.list() ger bara en lätt sammanfattning (tom playout) —
   // hämta hela projektet (med riktig tidslinje) när ett projekt väljs, annars
   // ser Playout ut som om inget någonsin spelats ut på tidigare besökta projekt.
@@ -286,26 +290,19 @@ export function ProjectsView({
       // Optimistisk uppdatering — inget behov av att vänta på eller hämta om
       // hela projektet. Servern är sanningen i bakgrunden; vi rättar till
       // eller rullar tillbaka om anropet faktiskt misslyckas.
-      replace({ ...project, playout: derivePlayoutState([...project.playout.timeline, optimisticEvent]) })
+      updateProjectPlayout(project.id, (playout) => derivePlayoutState([...playout.timeline, optimisticEvent]))
 
       client.projects.cue(project.id, kind, refId, label).then(
         (realEvent) => {
-          setProjects((prev) =>
-            prev.map((p) =>
-              p.id === project.id
-                ? { ...p, playout: derivePlayoutState(p.playout.timeline.map((e) => (e.id === tempId ? realEvent : e))) }
-                : p,
-            ),
-          )
+          if (realEvent.kind !== kind || realEvent.refId !== refId) {
+            updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => e.id !== tempId)))
+            setToast('Backend bekräftade inte den klickade punkten.')
+            return
+          }
+          updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId ? realEvent : e))))
         },
         (err) => {
-          setProjects((prev) =>
-            prev.map((p) =>
-              p.id === project.id
-                ? { ...p, playout: derivePlayoutState(p.playout.timeline.filter((e) => e.id !== tempId)) }
-                : p,
-            ),
-          )
+          updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => e.id !== tempId)))
           setToast(err instanceof Error ? err.message : 'Kunde inte spela ut.')
         },
       )
@@ -334,26 +331,19 @@ export function ProjectsView({
       // Rensning loggas som en egen (tom) tidslinjehändelse, precis som cueing
       // — en utspelad cue är oåterkallelig, så det här är inte en ångra-knapp
       // som tar bort tidigare händelser.
-      replace({ ...project, playout: derivePlayoutState([...project.playout.timeline, optimisticEvent]) })
+      updateProjectPlayout(project.id, (playout) => derivePlayoutState([...playout.timeline, optimisticEvent]))
 
       client.projects.clear(project.id, kind).then(
         (realEvent) => {
-          setProjects((prev) =>
-            prev.map((p) =>
-              p.id === project.id
-                ? { ...p, playout: derivePlayoutState(p.playout.timeline.map((e) => (e.id === tempId ? realEvent : e))) }
-                : p,
-            ),
-          )
+          if (realEvent.kind !== kind || realEvent.label !== 'Rensat') {
+            updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => e.id !== tempId)))
+            setToast('Backend bekräftade inte rensningen.')
+            return
+          }
+          updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId ? realEvent : e))))
         },
         (err) => {
-          setProjects((prev) =>
-            prev.map((p) =>
-              p.id === project.id
-                ? { ...p, playout: derivePlayoutState(p.playout.timeline.filter((e) => e.id !== tempId)) }
-                : p,
-            ),
-          )
+          updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => e.id !== tempId)))
           setToast(err instanceof Error ? err.message : 'Kunde inte rensa.')
         },
       )
