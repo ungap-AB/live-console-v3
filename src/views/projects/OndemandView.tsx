@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Chapter, CueKind, Project, Recording } from '../../data/types'
+import type { Channel, Chapter, CueKind, Project, Recording } from '../../data/types'
 import { formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
@@ -56,6 +56,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const { selectMode, dialog } = useModeChange(p, actions)
   const [recording, setRecording] = useState<Recording | null>(null)
   const [original, setOriginal] = useState<Recording | null>(null)
+  const [channel, setChannel] = useState<Channel | null>(null)
   const [mockTrimStart, setMockTrimStart] = useState(0)
   const [mockTrimEnd, setMockTrimEnd] = useState(0)
   const previewVideoRef = useRef<HTMLVideoElement>(null)
@@ -105,9 +106,24 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     }
   }, [recordingId, recordingState])
 
+  useEffect(() => {
+    let cancelled = false
+    if (!p.channel) {
+      setChannel(null)
+      return
+    }
+    client.channels.get(p.channel.id).then((nextChannel) => {
+      if (!cancelled) setChannel(nextChannel ?? null)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [p.channel?.id])
+
   if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return null
 
   const isAfter = p.publicMode === 'after'
+  const broadcastInProgress = p.recording?.state === 'recording' || channel?.state === 'live' || p.technicalHealth.channelLivePhase === 'live'
   const displayedRecording = recording
   const displayedOriginal = original
   const chapters = displayedRecording ? chaptersFor(displayedRecording, displayedOriginal) : []
@@ -379,12 +395,19 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
 
         <div class="od-cols">
           <section class="od-col" aria-label="Trimning">
-            {displayedRecording && (
+            {(displayedRecording || broadcastInProgress) && (
               <div class="od-mock-trim" aria-label={isAfter ? 'Trimning' : 'Trim-förhandsvisning'}>
                 <div class="od-trim-preview">
-                  <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
+                  {broadcastInProgress ? (
+                    <div class="od-broadcast-warning" role="status">
+                      <strong>Sändning pågår</strong>
+                      <span>Stoppa enkodern för att trimma och publicera ondemand. Eller gå tillbaka till Before om detta bara var en test.</span>
+                    </div>
+                  ) : (
+                    <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
+                  )}
                 </div>
-                <div class={`od-selected-chapter${selectedChapter !== null && chapters[selectedChapter] ? ' has-selected-chapter' : ''}`}>
+                <div class={`od-selected-chapter${selectedChapter !== null && chapters[selectedChapter] ? ' has-selected-chapter' : ''}${broadcastInProgress ? ' is-broadcasting' : ''}`}>
                   {selectedChapter !== null && chapters[selectedChapter] ? (
                     <div class="od-selected-chapter-heading">
                       <button class="od-chapter-nav" type="button" aria-label="Föregående kapitel" title="Föregående kapitel" disabled={selectedChapter <= 0} onClick={() => selectChapter(selectedChapter - 1)}>
