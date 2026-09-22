@@ -211,6 +211,12 @@
   border-radius: 8px;
 }
 
+.od-readonly-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
 @media (max-width: 980px) {
   .od-cols {
     flex-direction: column;

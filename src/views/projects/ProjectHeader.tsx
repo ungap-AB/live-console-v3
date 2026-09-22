@@ -137,7 +137,8 @@ export function ProjectHeader({ project: p, actions, onBack }: ProjectHeaderProp
                 type="button"
                 class={`pv-seg-btn${v.value === 'open' ? ' is-open' : ''}`}
                 aria-pressed={p.visibility === v.value}
-                onClick={() => p.visibility !== v.value && actions.setVisibility(v.value)}
+                disabled={p.publicMode === 'after' && v.value === 'open'}
+                onClick={() => p.publicMode !== 'after' && p.visibility !== v.value && actions.setVisibility(v.value)}
               >
                 <Icon name={v.icon} size={16} />
                 <span>{v.label}</span>

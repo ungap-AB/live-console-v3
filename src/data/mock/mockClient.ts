@@ -708,6 +708,7 @@ export const mockClient: Client = {
     },
     async setVisibility(id, visibility) {
       const p = findProject(id)
+      if (p.publicMode === 'after' && visibility === 'open') return delay(projectSnapshot(p))
       p.visibility = visibility
       return delay(projectSnapshot(p))
     },
@@ -725,6 +726,7 @@ export const mockClient: Client = {
         p.visibility = 'closed'
       }
       p.publicMode = publicMode
+      if (publicMode === 'after') p.visibility = 'closed'
       p.afterReason = publicMode === 'after' ? afterReason ?? 'liveFinished' : null
       return delay(projectSnapshot(p))
     },
@@ -904,6 +906,7 @@ export const mockClient: Client = {
       }
       p.publication.state = 'none'
       p.publicMode = 'after'
+      p.visibility = 'closed'
       p.afterReason = 'ondemandUnpublished'
       p.recordingReadiness = 'ready'
       p.publicationHistory.push({

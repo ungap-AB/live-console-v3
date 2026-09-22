@@ -5,8 +5,6 @@ import { formatHms } from '../../app/time'
 import { VideoLightbox } from '../../components/VideoLightbox'
 import type { ProjectActions } from './actions'
 import { ProjectHeader } from './ProjectHeader'
-import { resolveOriginalRecordingForTrim } from './openTrimDialog'
-import { TrimDialog } from '../archive/TrimDialog'
 import { useModeChange } from './useModeChange'
 import './OndemandView.css'
 
@@ -47,16 +45,11 @@ function chaptersFor(recording: Recording, original: Recording | null): Chapter[
 // Ondemand är förvaltningsyta (inspelningen är publicerad).
 export function OndemandView({ project: p, actions, onBack }: OndemandViewProps) {
   const { selectMode, dialog } = useModeChange(p, actions)
-  const [draft, setDraft] = useState(p.afterText)
-  const [saving, setSaving] = useState(false)
   const [recording, setRecording] = useState<Recording | null>(null)
   const [original, setOriginal] = useState<Recording | null>(null)
   const [showVideo, setShowVideo] = useState(false)
-  const [trimming, setTrimming] = useState<Recording | null>(null)
   const [mockTrimStart, setMockTrimStart] = useState(0)
   const [mockTrimEnd, setMockTrimEnd] = useState(0)
-
-  useEffect(() => setDraft(p.afterText), [p.afterText])
 
   useEffect(() => {
     if (!recording) return
@@ -90,7 +83,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
 
   const isAfter = p.publicMode === 'after'
   const rec = p.recording?.state ?? 'none'
-  const dirty = draft !== p.afterText
   const canTrim = isAfter && p.capabilities.trimRecording.status === 'allowed'
   const canPublish = isAfter && rec === 'trimmed' && p.capabilities.publishVod.status !== 'blocked'
   const publishHint = canPublish
@@ -103,25 +95,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const previewUrl = p.recording?.hlsUrl ?? recording?.hlsUrl ?? ''
   const mockTrimDuration = source?.durationSeconds ?? 0
 
-  async function saveAfterText() {
-    setSaving(true)
-    try {
-      await actions.rename(p.name, { afterText: draft })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  async function openTrim() {
-    if (!p.recording) return
-    const originalRecording = await resolveOriginalRecordingForTrim(p.recording.id)
-    if (originalRecording) setTrimming(originalRecording)
-  }
-
   async function saveTrim(range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }): Promise<void> {
     if (await actions.trim(range)) {
       await actions.refreshProject()
-      setTrimming(null)
     }
   }
 
@@ -136,20 +112,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       <div class="od">
         {isAfter ? (
           <div class="od-top">
-            <div class="od-message">
-              <label for="od-after-text">After-meddelande – visas för publiken tills du publicerar ondemand</label>
-              <div class="od-message-row">
-                <textarea
-                  id="od-after-text"
-                  rows={2}
-                  value={draft}
-                  onInput={(e) => setDraft((e.target as HTMLTextAreaElement).value)}
-                />
-                <button class="btn" type="button" disabled={!dirty || saving} onClick={() => void saveAfterText()}>
-                  Spara
-                </button>
-              </div>
-            </div>
             <button class="btn btn-primary" type="button" disabled={!canPublish} title={publishHint} onClick={() => selectMode('ondemand')}>
               Publicera ondemand
             </button>
@@ -194,7 +156,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 type="button"
                 disabled={!canTrim}
                 title={isAfter ? undefined : 'Gå till After för att trimma inspelningen'}
-                onClick={() => void openTrim()}
+                onClick={() => setMockTrimStart(Math.min(Math.round(mockTrimDuration * 0.1), mockTrimEnd - 1))}
               >
                 Trimma inspelning
               </button>
@@ -237,7 +199,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
               </div>
             )}
             <p class="od-todo">
-              Tidslinjen är mockad i utvecklingsläget. Den använder samma inspelningsdata som den riktiga trimdialogen.
+              Trimningen är mockad i utvecklingsläget och ändrar giltig inspelningsdata utan att ändra videokällan.
             </p>
           </section>
 
@@ -259,14 +221,13 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 ))}
               </ul>
             )}
-            <p class="od-todo">Ej implementerat: redigering av kapitel och talare.</p>
+            <p class="od-readonly-note">Kapitel från livesändningen. Redigering kommer senare.</p>
           </section>
         </div>
       </div>
 
       {dialog}
       {showVideo && <VideoLightbox title={p.name} src={previewUrl} onClose={() => setShowVideo(false)} />}
-      {trimming && <TrimDialog recording={trimming} onCancel={() => setTrimming(null)} onSave={saveTrim} />}
     </div>
   )
 }
