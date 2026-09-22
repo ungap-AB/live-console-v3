@@ -8,10 +8,11 @@ interface VideoLightboxProps {
   title: string
   src: string
   live?: boolean
+  initialSeekSeconds?: number
   onClose: () => void
 }
 
-export function VideoLightbox({ title, src, live, onClose }: VideoLightboxProps) {
+export function VideoLightbox({ title, src, live, initialSeekSeconds = 0, onClose }: VideoLightboxProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,6 +35,10 @@ export function VideoLightbox({ title, src, live, onClose }: VideoLightboxProps)
     const player = create({ wasmWorker, wasmBinary })
     player.attachHTMLVideoElement(video)
     player.load(src)
+    const seekOnMetadata = () => {
+      if (!live && initialSeekSeconds > 0) video.currentTime = initialSeekSeconds
+    }
+    video.addEventListener('loadedmetadata', seekOnMetadata)
     if (live) {
       video.defaultMuted = true
       video.muted = true
@@ -41,10 +46,11 @@ export function VideoLightbox({ title, src, live, onClose }: VideoLightboxProps)
     }
 
     return () => {
+      video.removeEventListener('loadedmetadata', seekOnMetadata)
       player.pause()
       player.delete()
     }
-  }, [live, src])
+  }, [initialSeekSeconds, live, src])
 
   return (
     <div class="video-scrim" onClick={onClose}>

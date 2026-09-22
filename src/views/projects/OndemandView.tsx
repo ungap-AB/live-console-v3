@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Chapter, CueKind, Project, Recording } from '../../data/types'
 import { formatHms } from '../../app/time'
+import { create, isPlayerSupported } from 'amazon-ivs-player'
+import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
+import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
+import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ProjectHeader } from './ProjectHeader'
@@ -77,6 +81,13 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [original, setOriginal] = useState<Recording | null>(null)
   const [mockTrimStart, setMockTrimStart] = useState(0)
   const [mockTrimEnd, setMockTrimEnd] = useState(0)
+  const previewVideoRef = useRef<HTMLVideoElement>(null)
+  const chapterInputRef = useRef<HTMLInputElement>(null)
+  const [previewSeekSeconds, setPreviewSeekSeconds] = useState<number | null>(null)
+  const [previewPlayRequest, setPreviewPlayRequest] = useState(0)
+  const [chapterLabels, setChapterLabels] = useState<Record<number, string>>({})
+  const [editingChapter, setEditingChapter] = useState<number | null>(null)
+  const [chapterDraft, setChapterDraft] = useState('')
   const [confirmOndemand, setConfirmOndemand] = useState(false)
   const [publishing, setPublishing] = useState(false)
 
@@ -121,6 +132,37 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const chapters = displayedRecording ? chaptersFor(displayedRecording, displayedOriginal) : []
   const source = displayedOriginal ?? displayedRecording
   const mockTrimDuration = source?.durationSeconds ?? 0
+  const previewUrl = displayedRecording?.hlsUrl ?? ''
+
+  useEffect(() => {
+    const video = previewVideoRef.current
+    if (!video || !previewUrl || !isPlayerSupported) return
+    const player = create({ wasmWorker, wasmBinary })
+    player.attachHTMLVideoElement(video)
+    player.load(previewUrl)
+    return () => {
+      player.pause()
+      player.delete()
+    }
+  }, [previewUrl])
+
+  useEffect(() => {
+    const video = previewVideoRef.current
+    if (!video || previewSeekSeconds === null) return
+    const seek = () => {
+      video.currentTime = previewSeekSeconds
+      setPreviewSeekSeconds(null)
+    }
+    if (video.readyState >= 1) seek()
+    else {
+      video.addEventListener('loadedmetadata', seek, { once: true })
+      return () => video.removeEventListener('loadedmetadata', seek)
+    }
+  }, [previewPlayRequest, previewSeekSeconds])
+
+  useEffect(() => {
+    if (editingChapter !== null) chapterInputRef.current?.focus()
+  }, [editingChapter])
   const defaultTrimStart = displayedRecording?.trimRange?.startOffsetSeconds ?? 0
   const defaultTrimEnd = displayedRecording?.trimRange?.endOffsetSeconds ?? mockTrimDuration
   const startChanged = mockTrimStart !== defaultTrimStart
@@ -161,6 +203,19 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     selectMode(mode)
   }
 
+  function startChapterEdit(index: number, label: string) {
+    setEditingChapter(index)
+    setChapterDraft(label)
+  }
+
+  function finishChapterEdit() {
+    if (editingChapter !== null && chapterDraft.trim()) {
+      setChapterLabels((current) => ({ ...current, [editingChapter]: chapterDraft.trim() }))
+    }
+    setEditingChapter(null)
+    setChapterDraft('')
+  }
+
   return (
     <div class="project-workspace doc">
       <ProjectHeader project={p} actions={actions} onBack={onBack} onModeSelect={handleModeSelect} />
@@ -177,8 +232,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
           <section class="od-col" aria-label="Trimning">
             {displayedRecording && (
               <div class="od-mock-trim" aria-label={isAfter ? 'Mockad trimning' : 'Trim-förhandsvisning'}>
-                <div class="od-trim-preview" role="img" aria-label="Förhandsvisning av trimning">
-                  <span>Förhandsvisning</span>
+                <div class="od-trim-preview">
+                  <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
                 </div>
                 {isAfter && canTrim && source && (
                   <>
@@ -201,18 +256,48 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
           </section>
 
           <section class="od-col" aria-labelledby="od-chapters-title">
-            <div class="od-col-head">
-              <h2 id="od-chapters-title">Kapitel och talare</h2>
-              <span class="od-sub">från livesändningen</span>
-            </div>
             {chapters.length === 0 ? (
               <p class="od-empty">Inga kapitel än. De skapas från det som spelades ut under sändningen.</p>
             ) : (
               <ul class="od-chapters">
                 {chapters.map((chapter, index) => (
-                  <li key={`${chapter.offsetSeconds}-${index}`}>
+                  <li
+                    key={`${chapter.offsetSeconds}-${index}`}
+                    class="od-chapter-row"
+                  >
+                    <button
+                      class="od-chapter-play"
+                      type="button"
+                      aria-label={`Spela från ${chapter.label}`}
+                      title="Spela från denna punkt"
+                      onClick={() => {
+                        setPreviewSeekSeconds(chapter.offsetSeconds)
+                        setPreviewPlayRequest((request) => request + 1)
+                      }}
+                    >
+                      <Icon name="vertical_align_bottom" size={16} />
+                    </button>
                     <span class="od-time">{formatHms(chapter.offsetSeconds)}</span>
-                    <span class="od-chapter-label">{chapter.label}</span>
+                    {editingChapter === index ? (
+                      <span class="od-chapter-edit">
+                        <input
+                          ref={chapterInputRef}
+                          aria-label="Kapiteltext"
+                          value={chapterDraft}
+                          autoFocus
+                          onInput={(event) => setChapterDraft(event.currentTarget.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') finishChapterEdit()
+                            if (event.key === 'Escape') finishChapterEdit()
+                          }}
+                        />
+                        <button class="btn btn-sm" type="button" onClick={finishChapterEdit}>Klar</button>
+                      </span>
+                    ) : (
+                      <span class="od-chapter-label" onDblClick={() => startChapterEdit(index, chapterLabels[index] ?? chapter.label)} title="Dubbelklicka för att redigera">
+                        {chapterLabels[index] ?? chapter.label}
+                      </span>
+                    )}
                     <span class="od-chapter-kind">{CHAPTER_KIND[chapter.kind]}</span>
                   </li>
                 ))}
