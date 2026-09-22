@@ -12,34 +12,6 @@
   flex-wrap: wrap;
 }
 
-.od-message {
-  flex: 1 1 360px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.od-message label {
-  font-size: 13px;
-  color: var(--ink-2);
-}
-
-.od-message-row {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-}
-
-.od-message-row textarea {
-  flex: 1;
-  min-width: 0;
-  resize: vertical;
-}
-
-.od-top > .btn-primary {
-  margin-top: 23px;
-}
-
 .od-published {
   display: flex;
   align-items: center;
@@ -127,6 +99,18 @@
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+
+.od-trim-preview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--rail);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink-3);
+  font-size: 13px;
 }
 
 .od-mock-trim-head,

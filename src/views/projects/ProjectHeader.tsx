@@ -13,6 +13,7 @@ interface ProjectHeaderProps {
   project: Project
   actions: ProjectActions
   onBack: () => void
+  onModeSelect?: (mode: Project['publicMode']) => void
 }
 
 const VISIBILITIES: { value: Visibility; label: string; icon: string }[] = [
@@ -26,7 +27,7 @@ function displayUrl(url: string): string {
 }
 
 // Gemensam för Livesändning och Ondemand.
-export function ProjectHeader({ project: p, actions, onBack }: ProjectHeaderProps) {
+export function ProjectHeader({ project: p, actions, onBack, onModeSelect }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
   const { selectMode, dialog: modeDialog } = useModeChange(p, actions)
@@ -118,7 +119,7 @@ export function ProjectHeader({ project: p, actions, onBack }: ProjectHeaderProp
                 type="button"
                 class={`pv-seg-btn${mode === 'live' ? ' is-live' : ''}`}
                 aria-pressed={p.publicMode === mode}
-                onClick={() => selectMode(mode)}
+                onClick={() => (onModeSelect ? onModeSelect(mode) : selectMode(mode))}
               >
                 {MODE_LABEL[mode]}
               </button>

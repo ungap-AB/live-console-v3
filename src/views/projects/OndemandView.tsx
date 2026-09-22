@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Chapter, CueKind, Project, Recording, RecordingState } from '../../data/types'
+import type { Chapter, CueKind, Project, Recording } from '../../data/types'
 import { formatHms } from '../../app/time'
-import { VideoLightbox } from '../../components/VideoLightbox'
+import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ProjectHeader } from './ProjectHeader'
 import { useModeChange } from './useModeChange'
@@ -14,51 +14,82 @@ interface OndemandViewProps {
   onBack: () => void
 }
 
-const RECORDING_LABEL: Record<RecordingState, string> = {
-  none: 'Ingen inspelning',
-  recording: 'Spelas in',
-  processing: 'Bearbetas',
-  recorded: 'Inspelad, inte trimmad',
-  trimmed: 'Trimmad',
-  published: 'Publicerad',
-}
-
 const CHAPTER_KIND: Record<CueKind, string> = {
   agendaItem: 'Ärende',
   person: 'Talare',
   exclamation: 'Utrop',
 }
 
-// En trimmad version läser kapitel från originalet, filtrerade på trimintervallet
-// och räknade från trimmens start.
+const MOCK_ONDEMAND_HLS_URL = 'https://dev.media.ungap.net/ivs/v1/471112617922/LDHByX7JxjGF/2026/9/19/16/10/KRuUDSAVxa8x/media/hls/_odm_20260919161006_20260919170951.m3u8'
+
+const MOCK_FALLBACK_RECORDING: Recording = {
+  id: 'mock-ondemand-recording',
+  kind: 'original',
+  name: 'Mockad inspelning',
+  createdAt: '2026-09-19T16:10:06Z',
+  durationSeconds: 5995,
+  sizeBytes: 8_240_000_000,
+  resolution: '1920×1080p50',
+  source: 'Mockad inspelning',
+  hlsUrl: MOCK_ONDEMAND_HLS_URL,
+  project: null,
+  segments: [{ startedAt: '2026-09-19T16:10:06Z', durationSeconds: 5995 }],
+  chapters: [
+    { kind: 'agendaItem', label: '1. Mötet öppnas', offsetSeconds: 0 },
+    { kind: 'agendaItem', label: '2. Föredragningslista', offsetSeconds: 180 },
+    { kind: 'person', label: 'Ordförande', offsetSeconds: 720 },
+    { kind: 'agendaItem', label: '3. Beslutsärenden', offsetSeconds: 1560 },
+    { kind: 'agendaItem', label: '4. Mötet avslutas', offsetSeconds: 5760 },
+  ],
+}
+
 function chaptersFor(recording: Recording, original: Recording | null): Chapter[] {
   const source = recording.kind === 'trimmed' ? original : recording
   if (!source) return []
   const range = recording.kind === 'trimmed' ? recording.trimRange : undefined
   return source.chapters
-    .filter((c) => !range || (c.offsetSeconds >= range.startOffsetSeconds && c.offsetSeconds <= range.endOffsetSeconds))
-    .map((c) => ({ ...c, offsetSeconds: c.offsetSeconds - (range?.startOffsetSeconds ?? 0) }))
-    .sort((a, b) => a.offsetSeconds - b.offsetSeconds)
+    .filter((chapter) => !range || (chapter.offsetSeconds >= range.startOffsetSeconds && chapter.offsetSeconds <= range.endOffsetSeconds))
+    .map((chapter) => ({ ...chapter, offsetSeconds: chapter.offsetSeconds - (range?.startOffsetSeconds ?? 0) }))
+    .sort((left, right) => left.offsetSeconds - right.offsetSeconds)
 }
 
-// Ondemand: After är arbetsyta (meddelande, publicera, redigera inspelningen),
-// Ondemand är förvaltningsyta (inspelningen är publicerad).
+function chaptersForRange(source: Recording | null, startOffsetSeconds: number, endOffsetSeconds: number): Chapter[] {
+  if (!source) return []
+  return source.chapters
+    .filter((chapter) => chapter.offsetSeconds >= startOffsetSeconds && chapter.offsetSeconds <= endOffsetSeconds)
+    .map((chapter) => ({ ...chapter, offsetSeconds: chapter.offsetSeconds - startOffsetSeconds }))
+    .sort((left, right) => left.offsetSeconds - right.offsetSeconds)
+}
+
+function chaptersChanged(source: Recording | null, startOffsetSeconds: number, endOffsetSeconds: number): boolean {
+  if (!source) return false
+  const original = chaptersForRange(source, 0, source.durationSeconds)
+  const adjusted = chaptersForRange(source, startOffsetSeconds, endOffsetSeconds)
+  return original.length !== adjusted.length || original.some((chapter, index) => {
+    const next = adjusted[index]
+    return !next || chapter.kind !== next.kind || chapter.label !== next.label || chapter.offsetSeconds !== next.offsetSeconds
+  })
+}
+
 export function OndemandView({ project: p, actions, onBack }: OndemandViewProps) {
   const { selectMode, dialog } = useModeChange(p, actions)
   const [recording, setRecording] = useState<Recording | null>(null)
   const [original, setOriginal] = useState<Recording | null>(null)
-  const [showVideo, setShowVideo] = useState(false)
   const [mockTrimStart, setMockTrimStart] = useState(0)
   const [mockTrimEnd, setMockTrimEnd] = useState(0)
-
-  useEffect(() => {
-    if (!recording) return
-    setMockTrimStart(recording.trimRange?.startOffsetSeconds ?? 0)
-    setMockTrimEnd(recording.trimRange?.endOffsetSeconds ?? recording.durationSeconds)
-  }, [recording?.id, recording?.durationSeconds, recording?.trimRange?.startOffsetSeconds, recording?.trimRange?.endOffsetSeconds])
+  const [confirmOndemand, setConfirmOndemand] = useState(false)
+  const [publishing, setPublishing] = useState(false)
 
   const recordingId = p.recording?.id
   const recordingState = p.recording?.state
+
+  useEffect(() => {
+    const active = recording ?? ((p.publicMode === 'after' || p.publicMode === 'ondemand') && !recordingId ? MOCK_FALLBACK_RECORDING : null)
+    if (!active) return
+    setMockTrimStart(active.trimRange?.startOffsetSeconds ?? 0)
+    setMockTrimEnd(active.trimRange?.endOffsetSeconds ?? active.durationSeconds)
+  }, [recording?.id, recording?.durationSeconds, recording?.trimRange?.startOffsetSeconds, recording?.trimRange?.endOffsetSeconds, p.publicMode, recordingId])
+
   useEffect(() => {
     let cancelled = false
     if (!recordingId || recordingState === 'recording' || recordingState === 'processing') {
@@ -66,11 +97,13 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       setOriginal(null)
       return
     }
-    client.recordings.get(recordingId).then(async (rec) => {
-      if (!rec || cancelled) return
-      const parent = rec.kind === 'trimmed' && rec.parentId ? ((await client.recordings.get(rec.parentId)) ?? null) : null
+    client.recordings.get(recordingId).then(async (nextRecording) => {
+      if (!nextRecording || cancelled) return
+      const parent = nextRecording.kind === 'trimmed' && nextRecording.parentId
+        ? ((await client.recordings.get(nextRecording.parentId)) ?? null)
+        : null
       if (cancelled) return
-      setRecording(rec)
+      setRecording(nextRecording)
       setOriginal(parent)
     })
     return () => {
@@ -78,129 +111,93 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     }
   }, [recordingId, recordingState])
 
-  // Before/Live hör till Livesändning; vyn byts av ProjectsView när läget ändrats.
   if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return null
 
   const isAfter = p.publicMode === 'after'
-  const rec = p.recording?.state ?? 'none'
-  const canTrim = isAfter && p.capabilities.trimRecording.status === 'allowed'
-  const canPublish = isAfter && rec === 'trimmed' && p.capabilities.publishVod.status !== 'blocked'
-  const publishHint = canPublish
-    ? undefined
-    : rec === 'trimmed'
-      ? 'Det går inte att publicera just nu'
-      : 'Trimma inspelningen innan du publicerar'
-  const chapters = recording ? chaptersFor(recording, original) : []
-  const source = original ?? recording
-  const previewUrl = p.recording?.hlsUrl ?? recording?.hlsUrl ?? ''
+  const fallbackOriginal = (isAfter || p.publicMode === 'ondemand') && !p.recording ? MOCK_FALLBACK_RECORDING : null
+  const displayedRecording = recording ?? fallbackOriginal
+  const displayedOriginal = original ?? fallbackOriginal
+  const canTrim = isAfter && (p.capabilities.trimRecording.status === 'allowed' || !!fallbackOriginal)
+  const chapters = displayedRecording ? chaptersFor(displayedRecording, displayedOriginal) : []
+  const source = displayedOriginal ?? displayedRecording
   const mockTrimDuration = source?.durationSeconds ?? 0
+  const defaultTrimStart = displayedRecording?.trimRange?.startOffsetSeconds ?? 0
+  const defaultTrimEnd = displayedRecording?.trimRange?.endOffsetSeconds ?? mockTrimDuration
+  const startChanged = mockTrimStart !== defaultTrimStart
+  const endChanged = mockTrimEnd !== defaultTrimEnd
+  const trimDirty = isAfter && (startChanged || endChanged)
+  const chaptersAdjusted = trimDirty && chaptersChanged(source, mockTrimStart, mockTrimEnd)
+  const confirmationChanges = [
+    trimDirty ? 'Videon är trimmad' : '',
+    chaptersAdjusted ? 'kapitel är justerade' : '',
+  ].filter(Boolean).join(' och ')
+  const confirmationText = trimDirty
+    ? `${confirmationChanges}. Är du redo att publicera ändringarna för ondemand?`
+    : 'Ingen trimning har gjorts. Är du redo att gå till ondemand med originalinspelningen?'
 
-  async function saveTrim(range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }): Promise<void> {
-    if (await actions.trim(range)) {
-      await actions.refreshProject()
+  async function publishWithTrim() {
+    setConfirmOndemand(false)
+    setPublishing(true)
+    try {
+      if (trimDirty && p.recording) {
+        if (!(await actions.trim({ startOffsetSeconds: mockTrimStart, endOffsetSeconds: mockTrimEnd }))) return
+        await actions.refreshProject()
+        await actions.publish()
+        return
+      }
+      if (await actions.setPublicMode('ondemand')) {
+        actions.setVisibility('open')
+      }
+    } finally {
+      setPublishing(false)
     }
   }
 
-  async function saveMockTrim() {
-    if (!mockTrimDuration || mockTrimEnd <= mockTrimStart) return
-    await saveTrim({ startOffsetSeconds: mockTrimStart, endOffsetSeconds: mockTrimEnd })
+  function handleModeSelect(mode: Project['publicMode']) {
+    if (mode === 'ondemand' && isAfter) {
+      setConfirmOndemand(true)
+      return
+    }
+    selectMode(mode)
   }
 
   return (
     <div class="project-workspace doc">
-      <ProjectHeader project={p} actions={actions} onBack={onBack} />
+      <ProjectHeader project={p} actions={actions} onBack={onBack} onModeSelect={handleModeSelect} />
       <div class="od">
-        {isAfter ? (
-          <div class="od-top">
-            <button class="btn btn-primary" type="button" disabled={!canPublish} title={publishHint} onClick={() => selectMode('ondemand')}>
-              Publicera ondemand
-            </button>
-          </div>
-        ) : (
+        {!isAfter && (
           <div class="od-published" role="status">
             <span class="od-published-badge">PUBLICERAD</span>
             <span class="od-published-text">Ändringar du sparar syns direkt för publiken. Gör större ändringar i läget After.</span>
-            <button class="btn" type="button" onClick={() => selectMode('after')}>
-              Gå till After
-            </button>
+            <button class="btn" type="button" onClick={() => selectMode('after')}>Gå till After</button>
           </div>
         )}
 
         <div class="od-cols">
-          <section class="od-col" aria-labelledby="od-recording-title">
-            <h2 id="od-recording-title">Inspelning</h2>
-            <dl class="od-facts">
-              <dt>Status</dt>
-              <dd>{RECORDING_LABEL[rec]}</dd>
-              {source && (
-                <>
-                  <dt>Längd</dt>
-                  <dd>{formatHms(source.durationSeconds)}</dd>
-                </>
-              )}
-              {recording?.kind === 'trimmed' && recording.trimRange && (
-                <>
-                  <dt>Trimmad</dt>
-                  <dd>
-                    {formatHms(recording.trimRange.startOffsetSeconds)} – {formatHms(recording.trimRange.endOffsetSeconds)}
-                  </dd>
-                </>
-              )}
-            </dl>
-            <div class="od-actions">
-              <button class="btn" type="button" disabled={!previewUrl} onClick={() => setShowVideo(true)}>
-                Förhandsgranska
-              </button>
-              <button
-                class="btn"
-                type="button"
-                disabled={!canTrim}
-                title={isAfter ? undefined : 'Gå till After för att trimma inspelningen'}
-                onClick={() => setMockTrimStart(Math.min(Math.round(mockTrimDuration * 0.1), mockTrimEnd - 1))}
-              >
-                Trimma inspelning
-              </button>
-            </div>
-            {canTrim && source && (
-              <div class="od-mock-trim" aria-label="Mockad trimning">
-                <div class="od-mock-trim-head">
-                  <span>Trimning</span>
-                  <span>{formatHms(mockTrimStart)} – {formatHms(mockTrimEnd)}</span>
+          <section class="od-col" aria-label="Trimning">
+            {displayedRecording && (
+              <div class="od-mock-trim" aria-label={isAfter ? 'Mockad trimning' : 'Trim-förhandsvisning'}>
+                <div class="od-trim-preview" role="img" aria-label="Förhandsvisning av trimning">
+                  <span>Förhandsvisning</span>
                 </div>
-                <div class="od-mock-trim-track">
-                  <input
-                    aria-label="Trimningens start"
-                    type="range"
-                    min="0"
-                    max={Math.max(1, mockTrimDuration - 1)}
-                    value={mockTrimStart}
-                    onInput={(e) => setMockTrimStart(Math.min(Number(e.currentTarget.value), mockTrimEnd - 1))}
-                  />
-                  <input
-                    aria-label="Trimningens slut"
-                    type="range"
-                    min="1"
-                    max={mockTrimDuration}
-                    value={mockTrimEnd}
-                    onInput={(e) => setMockTrimEnd(Math.max(Number(e.currentTarget.value), mockTrimStart + 1))}
-                  />
-                </div>
-                <div class="od-mock-trim-actions">
-                  <button class="btn" type="button" onClick={() => setMockTrimStart(Math.min(Math.round(mockTrimDuration * 0.1), mockTrimEnd - 1))}>
-                    Sätt start här
-                  </button>
-                  <button class="btn" type="button" onClick={() => setMockTrimEnd(Math.max(Math.round(mockTrimDuration * 0.9), mockTrimStart + 1))}>
-                    Sätt slut här
-                  </button>
-                  <button class="btn btn-primary" type="button" disabled={mockTrimEnd <= mockTrimStart} onClick={() => void saveMockTrim()}>
-                    Spara trimning
-                  </button>
-                </div>
+                {isAfter && canTrim && source && (
+                  <>
+                    <div class="od-mock-trim-head">
+                      <span>Trimning</span>
+                      <span>{formatHms(mockTrimStart)} – {formatHms(mockTrimEnd)}</span>
+                    </div>
+                    <div class="od-mock-trim-track">
+                      <input aria-label="Trimningens start" type="range" min="0" max={Math.max(1, mockTrimDuration - 1)} value={mockTrimStart} onInput={(event) => setMockTrimStart(Math.min(Number(event.currentTarget.value), mockTrimEnd - 1))} />
+                      <input aria-label="Trimningens slut" type="range" min="1" max={mockTrimDuration} value={mockTrimEnd} onInput={(event) => setMockTrimEnd(Math.max(Number(event.currentTarget.value), mockTrimStart + 1))} />
+                    </div>
+                    <div class="od-mock-trim-actions">
+                      <button class="btn" type="button" onClick={() => setMockTrimStart(Math.min(Math.round(mockTrimDuration * 0.1), mockTrimEnd - 1))}>Sätt start här</button>
+                      <button class="btn" type="button" onClick={() => setMockTrimEnd(Math.max(Math.round(mockTrimDuration * 0.9), mockTrimStart + 1))}>Sätt slut här</button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
-            <p class="od-todo">
-              Trimningen är mockad i utvecklingsläget och ändrar giltig inspelningsdata utan att ändra videokällan.
-            </p>
           </section>
 
           <section class="od-col" aria-labelledby="od-chapters-title">
@@ -212,11 +209,11 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
               <p class="od-empty">Inga kapitel än. De skapas från det som spelades ut under sändningen.</p>
             ) : (
               <ul class="od-chapters">
-                {chapters.map((c, i) => (
-                  <li key={`${c.offsetSeconds}-${i}`}>
-                    <span class="od-time">{formatHms(c.offsetSeconds)}</span>
-                    <span class="od-chapter-label">{c.label}</span>
-                    <span class="od-chapter-kind">{CHAPTER_KIND[c.kind]}</span>
+                {chapters.map((chapter, index) => (
+                  <li key={`${chapter.offsetSeconds}-${index}`}>
+                    <span class="od-time">{formatHms(chapter.offsetSeconds)}</span>
+                    <span class="od-chapter-label">{chapter.label}</span>
+                    <span class="od-chapter-kind">{CHAPTER_KIND[chapter.kind]}</span>
                   </li>
                 ))}
               </ul>
@@ -225,9 +222,21 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
           </section>
         </div>
       </div>
-
       {dialog}
-      {showVideo && <VideoLightbox title={p.name} src={previewUrl} onClose={() => setShowVideo(false)} />}
+      {confirmOndemand && (
+        <Modal title="Publicera ändringarna?" onClose={() => setConfirmOndemand(false)}>
+          <p>{confirmationText}</p>
+          <div class="modal-actions">
+            <button class="btn" type="button" onClick={() => setConfirmOndemand(false)}>Nej</button>
+            <button class="btn btn-primary" type="button" onClick={() => void publishWithTrim()}>{trimDirty ? 'Ja, publicera' : 'Ja, gå till ondemand'}</button>
+          </div>
+        </Modal>
+      )}
+      {publishing && (
+        <Modal title="Publicerar ondemand" onClose={() => undefined}>
+          <p>Förbereder video och publicerar ändringarna. Vänta tills publiceringen är klar.</p>
+        </Modal>
+      )}
     </div>
   )
 }
