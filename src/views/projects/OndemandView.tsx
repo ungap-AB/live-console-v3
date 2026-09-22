@@ -134,7 +134,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const fallbackOriginal = (isAfter || p.publicMode === 'ondemand') && !p.recording ? MOCK_FALLBACK_RECORDING : null
   const displayedRecording = recording ?? fallbackOriginal
   const displayedOriginal = original ?? fallbackOriginal
-  const canTrim = isAfter && (p.capabilities.trimRecording.status === 'allowed' || !!fallbackOriginal)
   const chapters = displayedRecording ? chaptersFor(displayedRecording, displayedOriginal) : []
   const source = displayedOriginal ?? displayedRecording
   const mockTrimDuration = source?.durationSeconds ?? 0
@@ -213,21 +212,26 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     setPreviewPosition(video.currentTime)
   }
 
-  function adjustSelectedChapter(seconds: number) {
-    if (selectedChapter === null) return
-    const chapter = chapters[selectedChapter]
-    if (!chapter) return
-    const maxOffset = previewVideoRef.current?.duration || mockTrimDuration
-    const nextOffset = Math.max(0, Math.min(maxOffset, (draftOffsets[selectedChapter] ?? savedOffsets[selectedChapter] ?? chapter.offsetSeconds) + seconds))
-    setDraftOffsets((current) => ({
-      ...current,
-      [selectedChapter]: nextOffset,
-    }))
+  function setTrimIn() {
+    setMockTrimStart(Math.round(previewPosition))
+  }
+
+  function setTrimOut() {
+    setMockTrimEnd(Math.round(previewPosition))
+  }
+
+  function goToTrimIn() {
     const video = previewVideoRef.current
-    if (video) {
-      video.currentTime = nextOffset
-      setPreviewPosition(nextOffset)
-    }
+    if (!video) return
+    video.currentTime = mockTrimStart
+    setPreviewPosition(mockTrimStart)
+  }
+
+  function goToTrimOut() {
+    const video = previewVideoRef.current
+    if (!video) return
+    video.currentTime = mockTrimEnd
+    setPreviewPosition(mockTrimEnd)
   }
 
   function returnToSavedOffset() {
@@ -271,6 +275,12 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       video.currentTime = originalOffset
       setPreviewPosition(originalOffset)
     }
+  }
+
+  function undoAllOffsets() {
+    setDraftOffsets({})
+    setSavedOffsets({})
+    setUndoVisible(false)
   }
 
   function pausePreview() {
@@ -323,7 +333,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     ? `${confirmationChanges}. Är du redo att publicera ändringarna för ondemand?`
     : 'Ingen trimning har gjorts. Är du redo att gå till ondemand med originalinspelningen?'
   const hasOffsetDrafts = Object.keys(draftOffsets).length > 0
-  const selectedChapterOffset = selectedChapter === null ? null : (draftOffsets[selectedChapter] ?? savedOffsets[selectedChapter] ?? chapters[selectedChapter]?.offsetSeconds ?? null)
   const videoDuration = previewVideoRef.current?.duration || mockTrimDuration
   const canReturnToSaved = selectedChapter !== null && draftOffsets[selectedChapter] !== undefined
 
@@ -385,9 +394,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 <div class="od-trim-preview">
                   <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
                 </div>
-                <div class="od-selected-chapter">
+                <div class={`od-selected-chapter${selectedChapter !== null && chapters[selectedChapter] ? ' has-selected-chapter' : ''}`}>
                   {selectedChapter !== null && chapters[selectedChapter] ? (
-                    <>
                     <div class="od-selected-chapter-heading">
                       <button class="od-chapter-nav" type="button" aria-label="Föregående kapitel" title="Föregående kapitel" disabled={selectedChapter <= 0} onClick={() => selectChapter(selectedChapter - 1)}>
                         <Icon name="chevron_left" size={20} />
@@ -399,57 +407,50 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                         <Icon name="chevron_right" size={20} />
                       </button>
                     </div>
-                    <div class="od-selected-chapter-controls">
-                      <div class="od-chapter-adjust-controls" aria-label="Justera kapiteltid">
-                        <button class="btn btn-sm" type="button" disabled={(selectedChapterOffset ?? 0) <= 0} onClick={() => adjustSelectedChapter(-10)}>−10 s</button>
-                        <button class="btn btn-sm" type="button" disabled={(selectedChapterOffset ?? 0) <= 0} onClick={() => adjustSelectedChapter(-5)}>−5 s</button>
-                        <output class="od-selected-chapter-time">
-                          {formatHms(selectedChapterOffset ?? chapters[selectedChapter].offsetSeconds)}
-                        </output>
-                        <button class="btn btn-sm" type="button" disabled={(selectedChapterOffset ?? 0) >= videoDuration} onClick={() => adjustSelectedChapter(5)}>+5 s</button>
-                        <button class="btn btn-sm" type="button" disabled={(selectedChapterOffset ?? 0) >= videoDuration} onClick={() => adjustSelectedChapter(10)}>+10 s</button>
-                      </div>
-                      </div>
-                      <div class="od-selected-chapter-actions">
-                        <div class="od-main-commit-group">
-                          <button class="btn btn-sm od-commit-button" type="button" aria-label="Tillbaka till sparad tid" title="Tillbaka till sparad tid" disabled={!canReturnToSaved} onClick={returnToSavedOffset}>Tillbaka</button>
-                          <button class="btn btn-sm od-commit-button" type="button" aria-label="Spela eller pausa" title="Spela eller pausa" onClick={togglePreviewPlayback}>
-                            <Icon name={previewPlaying ? 'pause' : 'play_arrow'} size={18} />
-                          </button>
-                          <button class="btn btn-sm od-commit-button" type="button" aria-label="Spara tidsändring" title="Spara tidsändring" disabled={!hasOffsetDrafts} onClick={saveSelectedChapter}>Spara</button>
-                        </div>
-                        {undoVisible && (
-                          <button class="btn btn-sm od-commit-button od-undo-button" type="button" aria-label="Ångra tidsändring" title="Ångra tidsändring" onClick={undoToOriginalOffset}>Ångra</button>
-                        )}
-                      </div>
-                    </>
                   ) : (
                     <span class="od-selected-chapter-empty">
                       Klicka på kapitlets <Icon name="skip_next" size={16} />-knapp för att justera det
                     </span>
                   )}
+                  <div class="od-time-controls" aria-label="Videoposition">
+                    <div class="od-trim-in-group">
+                      <button class="od-trim-go-button od-trim-go-in" type="button" aria-label="Gå till trimningens start" title="Gå till IN" onClick={goToTrimIn}>
+                        <Icon name="skip_previous" size={18} />
+                      </button>
+                      <button class="od-trim-boundary-button od-trim-in" type="button" onClick={setTrimIn}>IN</button>
+                    </div>
+                    <div class="od-controls-middle">
+                      <button class="btn btn-sm" type="button" disabled={selectedChapter === null || previewPosition <= 0} onClick={() => seekBy(-10)}>−10 s</button>
+                      <button class="btn btn-sm" type="button" disabled={selectedChapter === null || previewPosition <= 0} onClick={() => seekBy(-5)}>−5 s</button>
+                      <output>{formatHms(previewPosition)}</output>
+                      <button class="btn btn-sm" type="button" disabled={selectedChapter === null || previewPosition >= videoDuration} onClick={() => seekBy(5)}>+5 s</button>
+                      <button class="btn btn-sm" type="button" disabled={selectedChapter === null || previewPosition >= videoDuration} onClick={() => seekBy(10)}>+10 s</button>
+                    </div>
+                    <div class="od-trim-out-group">
+                      <button class="od-trim-boundary-button od-trim-out" type="button" onClick={setTrimOut}>OUT</button>
+                      <button class="od-trim-go-button od-trim-go-out" type="button" aria-label="Gå till trimningens slut" title="Gå till OUT" onClick={goToTrimOut}>
+                        <Icon name="skip_next" size={18} />
+                      </button>
+                    </div>
+                  </div>
+                  <div class="od-selected-chapter-controls">
+                    <div class="od-selected-chapter-actions">
+                      <div class="od-main-commit-group">
+                        <button class="btn btn-sm od-commit-button" type="button" aria-label="Tillbaka till sparad tid" title="Tillbaka till sparad tid" disabled={!canReturnToSaved} onClick={returnToSavedOffset}>Tillbaka</button>
+                        <button class="btn btn-sm od-commit-button" type="button" aria-label="Spela eller pausa" title="Spela eller pausa" onClick={togglePreviewPlayback}>
+                          <Icon name={previewPlaying ? 'pause' : 'play_arrow'} size={18} />
+                        </button>
+                        <button class="btn btn-sm od-commit-button" type="button" aria-label="Spara tidsändring" title="Spara tidsändring" disabled={!hasOffsetDrafts} onClick={saveSelectedChapter}>Spara</button>
+                      </div>
+                      {undoVisible && <button class="btn btn-sm od-commit-button od-undo-button" type="button" aria-label="Ångra tidsändring" title="Ångra tidsändring" onClick={undoToOriginalOffset}>Ångra</button>}
+                    </div>
+                  </div>
                 </div>
-                {isAfter && canTrim && source && (
-                  <>
-                    <div class="od-mock-trim-head">
-                      <span>Trimning</span>
-                      <span>{formatHms(mockTrimStart)} – {formatHms(mockTrimEnd)}</span>
-                    </div>
-                    <div class="od-mock-trim-track">
-                      <input aria-label="Trimningens start" type="range" min="0" max={Math.max(1, mockTrimDuration - 1)} value={mockTrimStart} onInput={(event) => setMockTrimStart(Math.min(Number(event.currentTarget.value), mockTrimEnd - 1))} />
-                      <input aria-label="Trimningens slut" type="range" min="1" max={mockTrimDuration} value={mockTrimEnd} onInput={(event) => setMockTrimEnd(Math.max(Number(event.currentTarget.value), mockTrimStart + 1))} />
-                    </div>
-                    <div class="od-mock-trim-actions">
-                      <button class="btn" type="button" onClick={() => setMockTrimStart(Math.min(Math.round(mockTrimDuration * 0.1), mockTrimEnd - 1))}>Sätt start här</button>
-                      <button class="btn" type="button" onClick={() => setMockTrimEnd(Math.max(Math.round(mockTrimDuration * 0.9), mockTrimStart + 1))}>Sätt slut här</button>
-                    </div>
-                  </>
-                )}
               </div>
             )}
           </section>
 
-          <section class="od-col" aria-labelledby="od-chapters-title">
+          <section class="od-col od-chapters-col" aria-labelledby="od-chapters-title">
             {chapters.length === 0 ? (
               <p class="od-empty">Inga kapitel än. De skapas från det som spelades ut under sändningen.</p>
             ) : (
@@ -496,7 +497,11 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 ))}
               </ul>
             )}
-            <p class="od-readonly-note">Kapitel från livesändningen. Redigering kommer senare.</p>
+            <footer class="od-chapters-footer">
+              <button class="btn btn-sm" type="button" disabled={Object.keys(draftOffsets).length === 0 && Object.keys(savedOffsets).length === 0} onClick={undoAllOffsets}>
+                Ångra alla justeringar
+              </button>
+            </footer>
           </section>
         </div>
       </div>
