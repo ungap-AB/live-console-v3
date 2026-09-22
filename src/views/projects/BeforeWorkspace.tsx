@@ -2,11 +2,12 @@ import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Channel, ChannelHealth, Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
-import { Clock } from '../../components/Clock'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
+import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { IngestInfo } from './IngestInfo'
+import { MeetingBindingModal } from './MeetingBindingModal'
 import { PlayoutColumns } from './PlayoutColumns'
 import './BeforeWorkspace.css'
 
@@ -20,14 +21,7 @@ interface BeforeWorkspaceProps {
   stopPolling: () => void
 }
 
-interface StatusItem {
-  label: string
-  value: string
-  ready: boolean
-}
-
-// Arbetsyta för förberedelser i läget Before. Statusraden är passiv
-// information — kopplingarna är frivilliga och inget är ett tvingande steg.
+// Arbetsyta för förberedelser i läget Before.
 export function BeforeWorkspace({ project: p, actions, channel, health, streamKey, refresh, stopPolling }: BeforeWorkspaceProps) {
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
@@ -37,123 +31,165 @@ export function BeforeWorkspace({ project: p, actions, channel, health, streamKe
     () => (p.namelistId ? client.namelists.get(p.namelistId) : Promise.resolve(undefined)),
     [p.namelistId],
   )
-  const [showIngestInfo, setShowIngestInfo] = useState(false)
   const [confirmTeardown, setConfirmTeardown] = useState(false)
-  const [draft, setDraft] = useState(p.beforeText)
-  const [saving, setSaving] = useState(false)
+  const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const [openPicker, setOpenPicker] = useState<'agenda' | 'namelist' | null>(null)
+  const [notUsed, setNotUsed] = useState<string[]>([])
+  const [showIngestInfo, setShowIngestInfo] = useState(false)
+  const [showMessages, setShowMessages] = useState(false)
+  const [showLayout, setShowLayout] = useState(false)
+  const [showMeeting, setShowMeeting] = useState(false)
+  const [messageDraft, setMessageDraft] = useState({
+    before: p.beforeText,
+    live: p.liveText,
+    after: p.afterText,
+    ondemand: p.ondemandText,
+  })
+  const [savingMessages, setSavingMessages] = useState(false)
 
-  // Nytt värde utifrån (annat fönster, sparat) ersätter utkastet bara när det inte redigeras.
-  useEffect(() => setDraft(p.beforeText), [p.beforeText])
+  useEffect(() => {
+    setMessageDraft({ before: p.beforeText, live: p.liveText, after: p.afterText, ondemand: p.ondemandText })
+  }, [p.beforeText, p.liveText, p.afterText, p.ondemandText])
 
   const hasIngest = p.channel !== null
   const receivingSignal = health?.livePhase === 'live'
-  const dirty = draft !== p.beforeText
-
-  const status: StatusItem[] = [
-    { label: 'Dagordning', value: p.agendaId ? (agendaResource.data?.name ?? 'Kopplad') : 'Ej kopplad', ready: !!p.agendaId },
-    { label: 'Namnlista', value: p.namelistId ? (nameListResource.data?.name ?? 'Kopplad') : 'Ej kopplad', ready: !!p.namelistId },
-    { label: 'Ingest', value: hasIngest ? 'Skapad' : 'Inte skapad', ready: hasIngest },
-    { label: 'Signal', value: receivingSignal ? 'Signal OK' : 'Ingen signal', ready: receivingSignal },
-    { label: 'Spelare', value: p.visibility === 'open' ? 'Öppen' : 'Stängd', ready: p.visibility === 'open' },
-  ]
-
-  async function createIngest() {
-    await actions.createChannel()
-    await refresh()
-  }
 
   async function teardownIngest() {
     setConfirmTeardown(false)
-    setShowIngestInfo(false)
     // Kanalen är borta direkt efter teardown — stoppa pollningen i stället för
     // att hälsokolla ett id som inte finns (se useLiveChannel.refresh-racet).
     stopPolling()
     await actions.teardownChannel()
   }
 
-  async function saveBeforeText() {
-    setSaving(true)
+  async function createIngest() {
+    setOpenMenu(null)
+    await actions.createChannel()
+    await refresh()
+  }
+
+  async function saveMessages() {
+    setSavingMessages(true)
     try {
-      await actions.rename(p.name, { beforeText: draft })
+      await actions.rename(p.name, {
+        beforeText: messageDraft.before,
+        liveText: messageDraft.live,
+        afterText: messageDraft.after,
+        ondemandText: messageDraft.ondemand,
+      })
+      setShowMessages(false)
     } finally {
-      setSaving(false)
+      setSavingMessages(false)
     }
+  }
+
+  function markNotUsed(label: string) {
+    setNotUsed((current) => current.includes(label) ? current : [...current, label])
+    setOpenMenu(null)
+  }
+
+  function statusValue(label: string, value: string) {
+    return notUsed.includes(label) ? 'Används ej' : value
+  }
+
+  function toggleMenu(label: string) {
+    setOpenMenu((current) => current === label ? null : label)
+  }
+
+  function actionMenu(label: string, actionsForItem: { label: string; onClick: () => void; danger?: boolean }[]) {
+    return (
+      <div class="bw-menu-wrap">
+        <button class="bw-menu-button" type="button" aria-label={`Åtgärder för ${label}`} aria-expanded={openMenu === label} onClick={() => toggleMenu(label)}>
+          <Icon name="more_horiz" size={20} />
+        </button>
+        {openMenu === label && (
+          <div class="bw-menu" role="menu">
+            {actionsForItem.map((item) => (
+              <button key={item.label} class={item.danger ? 'is-danger' : ''} type="button" role="menuitem" onClick={item.onClick}>
+                {item.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  function preparationCard(label: string, value: string, ready: boolean, menu: preact.ComponentChildren) {
+    return (
+      <li key={label} class={ready ? 'is-ready' : 'is-pending'}>
+        <Icon name={ready ? 'check_circle' : 'radio_button_unchecked'} size={20} />
+        <span class="bw-status-text">
+          <span class="bw-status-label">{label}</span>
+          <span class="bw-status-value">
+            {statusValue(label, value)}
+            <span class="sr-only">{ready ? ' – klart' : ' – inte klart'}</span>
+          </span>
+        </span>
+        {menu}
+      </li>
+    )
   }
 
   return (
     <div class="bw">
-      <div class="bw-title-row">
-        <h2>Förberedelser</h2>
-        <span class="bw-clock">
-          <Clock />
-        </span>
-      </div>
-
       <ul class="bw-status" aria-label="Status för förberedelser">
-        {status.map((item) => (
-          <li key={item.label} class={item.ready ? 'is-ready' : 'is-pending'}>
-            <Icon name={item.ready ? 'check_circle' : 'radio_button_unchecked'} size={20} />
-            <span class="bw-status-text">
-              <span class="bw-status-label">{item.label}</span>
-              <span class="bw-status-value">
-                {item.value}
-                <span class="sr-only">{item.ready ? ' – klart' : ' – inte klart'}</span>
-              </span>
-            </span>
-          </li>
-        ))}
+        {p.meetingDomain && preparationCard('Meeting', p.meetingBindingId ? 'Kopplad' : 'Ej kopplad', !!p.meetingBindingId, actionMenu('Meeting', [
+          { label: 'Koppla', onClick: () => { setOpenMenu(null); setShowMeeting(true) } },
+          { label: 'Använd ej', onClick: () => markNotUsed('Meeting') },
+        ]))}
+        {preparationCard('Dagordning', p.agendaId ? (agendaResource.data?.name ?? 'Kopplad') : 'Ej kopplad', !!p.agendaId, actionMenu('Dagordning', [
+          { label: 'Koppla', onClick: () => { setOpenMenu(null); setOpenPicker('agenda') } },
+          { label: 'Använd ej', onClick: () => { void actions.setAgenda(null); markNotUsed('Dagordning') } },
+        ]))}
+        {preparationCard('Namnlista', p.namelistId ? (nameListResource.data?.name ?? 'Kopplad') : 'Ej kopplad', !!p.namelistId, actionMenu('Namnlista', [
+          { label: 'Koppla', onClick: () => { setOpenMenu(null); setOpenPicker('namelist') } },
+          { label: 'Använd ej', onClick: () => { actions.setNameList(null); markNotUsed('Namnlista') } },
+        ]))}
+        {preparationCard('Ingest', receivingSignal ? 'Signal OK' : hasIngest ? 'Ingen signal' : 'Inte skapad', hasIngest, <>
+          {hasIngest && (
+            <button
+              class="bw-info-button"
+              type="button"
+              aria-label="Visa ingest-info"
+              title="Visa ingest-info"
+              aria-expanded={showIngestInfo}
+              onClick={() => setShowIngestInfo((visible) => !visible)}
+            >
+              <Icon name="info" size={18} />
+            </button>
+          )}
+          {actionMenu('Ingest', [
+          ...(!hasIngest ? [{ label: 'Skapa', onClick: () => void createIngest() }] : []),
+          ...(hasIngest ? [
+            { label: showIngestInfo ? 'Dölj ingest-info' : 'Visa ingest-info', onClick: () => { setShowIngestInfo((value) => !value); setOpenMenu(null) } },
+            { label: 'Riv', onClick: () => { setOpenMenu(null); setConfirmTeardown(true) }, danger: true },
+          ] : []),
+          ])}
+        </>)}
+        {preparationCard('Spelare', p.visibility === 'open' ? 'Öppen' : 'Stängd', p.visibility === 'open', actionMenu('Spelare', [
+          { label: 'Meddelanden', onClick: () => { setOpenMenu(null); setShowMessages(true) } },
+          { label: 'Layout', onClick: () => { setOpenMenu(null); setShowLayout(true) } },
+          { label: 'Kopiera länk', onClick: () => { setOpenMenu(null); void navigator.clipboard.writeText(p.playerUrl) } },
+          { label: 'Öppna länk', onClick: () => { setOpenMenu(null); window.open(p.playerUrl, '_blank', 'noopener,noreferrer') } },
+        ]))}
       </ul>
 
-      <section class="bw-ingest" aria-label="Ingest">
-        {!hasIngest ? (
-          <div class="bw-ingest-row">
-            <p>Skapa en ingest-resurs för att kunna ta emot signal från enkodern.</p>
-            <button class="btn btn-primary" type="button" onClick={() => void createIngest()}>
-              Skapa ingest
-            </button>
-          </div>
-        ) : (
-          <>
-            <div class="bw-ingest-row">
-              <p>Ingest är skapad. Ange servern och stream key i enkodern för att skicka signal.</p>
-              <button class="btn" type="button" aria-expanded={showIngestInfo} onClick={() => setShowIngestInfo((v) => !v)}>
-                {showIngestInfo ? 'Dölj ingest-info' : 'Visa ingest-info'}
+      {showIngestInfo && hasIngest && (
+        <div class="bw-ingest-info">
+          <IngestInfo
+            channel={channel}
+            streamKey={streamKey}
+            trailingAction={(
+              <button class="bw-info-close" type="button" aria-label="Stäng ingest-info" title="Stäng" onClick={() => setShowIngestInfo(false)}>
+                <Icon name="close" size={18} />
               </button>
-              <button
-                class="btn btn-danger-ghost"
-                type="button"
-                disabled={receivingSignal}
-                title={receivingSignal ? 'Går inte att riva medan signal tas emot' : undefined}
-                onClick={() => setConfirmTeardown(true)}
-              >
-                Riv ingest
-              </button>
-            </div>
-            {showIngestInfo && (
-              <div class="bw-ingest-info">
-                <IngestInfo channel={channel} streamKey={streamKey} />
-              </div>
             )}
-          </>
-        )}
-      </section>
-
-      <div class="bw-message">
-        <label for="bw-before-text">Before-meddelande – visas för publiken tills du går till Live</label>
-        <div class="bw-message-row">
-          <textarea
-            id="bw-before-text"
-            rows={2}
-            value={draft}
-            onInput={(e) => setDraft((e.target as HTMLTextAreaElement).value)}
           />
-          <button class="btn" type="button" disabled={!dirty || saving} onClick={() => void saveBeforeText()}>
-            Spara
-          </button>
         </div>
-      </div>
+      )}
 
-      <PlayoutColumns project={p} actions={actions} />
+      <PlayoutColumns project={p} actions={actions} openPicker={openPicker} onPickerClosed={() => setOpenPicker(null)} />
 
       {confirmTeardown && (
         <ConfirmModal
@@ -165,6 +201,26 @@ export function BeforeWorkspace({ project: p, actions, channel, health, streamKe
         >
           <p>Ingest-resursen tas bort. För att sända behöver du skapa en ny ingest och använda en ny stream key i enkodern.</p>
         </ConfirmModal>
+      )}
+      {showMeeting && p.meetingDomain && (
+        <MeetingBindingModal projectName={p.name} meetingDomain={p.meetingDomain} actions={actions} onClose={() => setShowMeeting(false)} />
+      )}
+      {showLayout && (
+        <Modal title="Spelarlayout" onClose={() => setShowLayout(false)}>
+          <p>Layoutredigering är inte implementerad ännu.</p>
+          <p class="field-help">Det här är en mockruta för att reservera flödet tills layoutverktyget finns.</p>
+          <div class="modal-actions"><button class="btn btn-primary" type="button" onClick={() => setShowLayout(false)}>Stäng</button></div>
+        </Modal>
+      )}
+      {showMessages && (
+        <Modal title="Meddelanden" onClose={() => setShowMessages(false)} footer={<><button class="btn" type="button" onClick={() => setShowMessages(false)}>Avbryt</button><button class="btn btn-primary" type="button" disabled={savingMessages} onClick={() => void saveMessages()}>{savingMessages ? 'Sparar...' : 'Spara'}</button></>}>
+          {(['before', 'live', 'after', 'ondemand'] as const).map((mode) => (
+            <label class="bw-message-field" key={mode}>
+              <span>{mode === 'before' ? 'Before' : mode === 'live' ? 'Live' : mode === 'after' ? 'After' : 'Ondemand'}</span>
+              <textarea rows={2} value={messageDraft[mode]} onInput={(event) => setMessageDraft((current) => ({ ...current, [mode]: event.currentTarget.value }))} />
+            </label>
+          ))}
+        </Modal>
       )}
     </div>
   )

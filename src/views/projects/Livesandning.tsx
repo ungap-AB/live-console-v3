@@ -38,7 +38,7 @@ export function Livesandning({ project: p, actions, onBack }: LivesandningProps)
   if (p.publicMode !== 'before' && p.publicMode !== 'live') return null
 
   return (
-    <div class="project-workspace doc">
+    <div class={`project-workspace doc${p.publicMode === 'before' ? ' before-project-workspace' : ''}`}>
       <ProjectHeader project={p} actions={actions} onBack={onBack} />
       {p.publicMode === 'before' ? (
         <BeforeWorkspace

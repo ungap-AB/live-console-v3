@@ -30,6 +30,7 @@ import {
 
 const CHANNEL_QUOTA_LIMIT = 20
 const TRASH_RETENTION_DAYS = 30
+const MOCK_ONDEMAND_HLS_URL = 'https://dev.media.ungap.net/ivs/v1/471112617922/LDHByX7JxjGF/2026/9/19/16/10/KRuUDSAVxa8x/media/hls/_odm_20260919161006_20260919170951.m3u8'
 
 function defaultCapabilities() {
   return {
@@ -119,6 +120,35 @@ function syncChannelState(id: string, state: ChannelState, markUsed = false) {
   // att health() ska kunna skilja waitingForStream (aldrig sänt) från
   // streamEnded (sänt, nu tyst) utan en egen hysteres-modell.
   if (markUsed) channel.lastUsedAt = new Date().toISOString()
+}
+
+function ensureMockRecording(project: Project): Recording {
+  const recordingId = project.recording?.id ?? `rec-${project.id}`
+  const existing = recordings.find((recording) => recording.id === recordingId)
+  if (existing) return existing
+
+  const recording: Recording = {
+    id: recordingId,
+    kind: 'original',
+    name: project.name,
+    createdAt: new Date().toISOString(),
+    durationSeconds: 5995,
+    sizeBytes: 8_240_000_000,
+    resolution: '1920×1080p50',
+    source: 'Mockad inspelning',
+    hlsUrl: MOCK_ONDEMAND_HLS_URL,
+    project: { id: project.id, name: project.name, state: project.visibility },
+    segments: [{ startedAt: new Date().toISOString(), durationSeconds: 5995 }],
+    chapters: [
+      { kind: 'agendaItem', label: '1. Mötet öppnas', offsetSeconds: 0 },
+      { kind: 'agendaItem', label: '2. Föredragningslista', offsetSeconds: 180 },
+      { kind: 'person', label: 'Ordförande', offsetSeconds: 720 },
+      { kind: 'agendaItem', label: '3. Beslutsärenden', offsetSeconds: 1560 },
+      { kind: 'agendaItem', label: '4. Mötet avslutas', offsetSeconds: 5760 },
+    ],
+  }
+  recordings = [recording, ...recordings]
+  return recording
 }
 
 let nextId = 100
@@ -371,14 +401,17 @@ export const mockClient: Client = {
       return delay(undefined)
     },
     async trim(id, range) {
-      const original = recordings.find((r) => r.id === id)
+      const selected = recordings.find((r) => r.id === id)
+      const original = selected?.kind === 'trimmed' && selected.parentId
+        ? recordings.find((r) => r.id === selected.parentId)
+        : selected
       if (!original) throw new Error(`Inspelning ${id} finns inte`)
-      const existing = recordings.find((r) => r.parentId === id)
+      const existing = recordings.find((r) => r.parentId === original.id)
       const duration = range.endOffsetSeconds - range.startOffsetSeconds
       const trimmed: Recording = {
         id: existing?.id ?? `${id}t`,
         kind: 'trimmed',
-        parentId: id,
+        parentId: original.id,
         name: `${original.name} (trimmad)`,
         createdAt: new Date().toISOString(),
         durationSeconds: duration,
@@ -388,7 +421,9 @@ export const mockClient: Client = {
         hlsUrl: original.hlsUrl.replace('/rec/', '/vod/').replace('/original', ''),
         project: original.project,
         segments: [],
-        chapters: [],
+        chapters: original.chapters
+          .filter((chapter) => chapter.offsetSeconds >= range.startOffsetSeconds && chapter.offsetSeconds <= range.endOffsetSeconds)
+          .map((chapter) => ({ ...chapter, offsetSeconds: chapter.offsetSeconds - range.startOffsetSeconds })),
         trimRange: range,
         published: existing?.published ?? false,
       }
@@ -681,6 +716,14 @@ export const mockClient: Client = {
       if (p.publicMode === 'ondemand' && publicMode === 'live') {
         throw new Error('Gå först via Before innan projektet återgår till Live.')
       }
+      if (publicMode === 'after') {
+        const recording = ensureMockRecording(p)
+        if (!p.recording || !['trimmed', 'published'].includes(p.recording.state)) {
+          p.recording = { id: recording.id, state: 'recorded', hlsUrl: recording.hlsUrl }
+          p.recordingReadiness = 'ready'
+        }
+        p.visibility = 'closed'
+      }
       p.publicMode = publicMode
       p.afterReason = publicMode === 'after' ? afterReason ?? 'liveFinished' : null
       return delay(projectSnapshot(p))
@@ -810,13 +853,8 @@ export const mockClient: Client = {
       if (!p.recording || !['recorded', 'trimmed', 'published'].includes(p.recording.state)) {
         throw new Error('Inspelningen måste vara klar innan den kan trimmas.')
       }
-      // p.recording.id pekar alltid på originalet (bara .state ändras här) —
-      // den trimmade varianten lever som en egen post i `recordings`, se
-      // recordings.trim(). HLS-URL:en som visas i projektets Ondemand-flik är
-      // den trimmade (spelbara) varianten, inte originalets.
       const trimmed = await mockClient.recordings.trim(p.recording.id, range)
-      p.recording.state = 'trimmed'
-      p.recording.hlsUrl = trimmed.hlsUrl
+      p.recording = { id: trimmed.id, state: 'trimmed', hlsUrl: trimmed.hlsUrl }
       p.onDemandLocked = true
       return delay(projectSnapshot(p))
     },
@@ -856,7 +894,14 @@ export const mockClient: Client = {
     },
     async unpublish(id) {
       const p = findProject(id)
-      if (p.recording?.state === 'trimmed' || p.recording?.state === 'published') p.recording = null
+      if (p.recording) {
+        const recording = recordings.find((item) => item.id === p.recording!.id)
+        if (recording) recording.published = false
+        p.recording = { ...p.recording, state: p.recording.state === 'published' ? 'trimmed' : p.recording.state }
+      } else {
+        const recording = ensureMockRecording(p)
+        p.recording = { id: recording.id, state: 'recorded', hlsUrl: recording.hlsUrl }
+      }
       p.publication.state = 'none'
       p.publicMode = 'after'
       p.afterReason = 'ondemandUnpublished'

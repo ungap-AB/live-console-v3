@@ -1,11 +1,12 @@
 import { useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
+import { Clock } from '../../components/Clock'
 import type { Project, Visibility } from '../../data/types'
 import { formatDate } from '../../app/time'
 import type { ProjectActions } from './actions'
 import { useModeChange } from './useModeChange'
-import { MODES, MODE_LABEL, audienceSees } from './projectMode'
+import { MODES, MODE_LABEL } from './projectMode'
 import './ProjectHeader.css'
 
 interface ProjectHeaderProps {
@@ -24,7 +25,7 @@ function displayUrl(url: string): string {
   return url.replace(/^https?:\/\//, '')
 }
 
-// Gemensam för Livesändning och Ondemand. Ingest, signal och klocka hör inte hemma här.
+// Gemensam för Livesändning och Ondemand.
 export function ProjectHeader({ project: p, actions, onBack }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
@@ -98,6 +99,7 @@ export function ProjectHeader({ project: p, actions, onBack }: ProjectHeaderProp
           </>
         )}
         <span class="spacer" />
+        <span class="pv-clock"><Clock /></span>
         <button class="btn" type="button" ref={settingsButton} onClick={() => setShowSettings(true)}>
           <Icon name="settings" size={18} />
           <span>Projektinställningar</span>
@@ -168,12 +170,6 @@ export function ProjectHeader({ project: p, actions, onBack }: ProjectHeaderProp
           </div>
         </div>
 
-        <div class="pv-field pv-audience">
-          <div class="pv-label">Publiken ser nu</div>
-          <div class="pv-audience-text" aria-live="polite">
-            {audienceSees(p.visibility, p.publicMode)}
-          </div>
-        </div>
       </div>
 
       {modeDialog}

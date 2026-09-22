@@ -119,6 +119,44 @@
   flex-wrap: wrap;
 }
 
+.od-mock-trim {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.od-mock-trim-head,
+.od-mock-trim-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.od-mock-trim-head {
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.od-mock-trim-track {
+  display: grid;
+  gap: 4px;
+}
+
+.od-mock-trim-track input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.od-mock-trim-actions .btn-primary {
+  margin-left: auto;
+}
+
 .od-chapters {
   list-style: none;
   margin: 0;

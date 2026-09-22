@@ -17,13 +17,15 @@ interface PlayoutColumnsProps {
   actions: ProjectActions
   /** Läget Live: raden i bild markeras i rött (rött är reserverat för Live). */
   live?: boolean
+  openPicker?: 'agenda' | 'namelist' | null
+  onPickerClosed?: () => void
 }
 
 // Dagordning och namnlista med utspelning. Portad från Playout (samma
 // klientanrop och utspelningslogik) — Playouts egen kopia försvinner när
 // den gamla vyn tas bort. Kopplingen görs i kolumnens rubrikrad; en
 // okopplad kolumn visar ett tomt läge, inte ett fel.
-export function PlayoutColumns({ project: p, actions, live = false }: PlayoutColumnsProps) {
+export function PlayoutColumns({ project: p, actions, live = false, openPicker = null, onPickerClosed }: PlayoutColumnsProps) {
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
     [p.agendaId],
@@ -201,10 +203,18 @@ export function PlayoutColumns({ project: p, actions, live = false }: PlayoutCol
               items={(allAgendasResource.data ?? []).map((a) => ({ id: a.id, name: a.name }))}
               pickerTitle={p.agendaId ? 'Byt dagordning' : 'Koppla dagordning'}
               createNewLabel="Ny dagordning"
-              onPick={(id) => void actions.setAgenda(id)}
-              onCreateNew={createAndAttachAgenda}
+              onPick={(id) => {
+                void actions.setAgenda(id)
+                onPickerClosed?.()
+              }}
+              onCreateNew={async () => {
+                await createAndAttachAgenda()
+                onPickerClosed?.()
+              }}
               buttonLabel={p.agendaId ? 'Byt' : 'Koppla dagordning…'}
               buttonClassName="btn btn-sm btn-ghost"
+              open={openPicker === 'agenda'}
+              onClose={onPickerClosed}
             />
             <OverflowMenu
               label="Dagordningsalternativ"
@@ -286,10 +296,18 @@ export function PlayoutColumns({ project: p, actions, live = false }: PlayoutCol
               items={(allNameListsResource.data ?? []).map((n) => ({ id: n.id, name: n.name }))}
               pickerTitle={p.namelistId ? 'Byt namnlista' : 'Koppla namnlista'}
               createNewLabel="Ny namnlista"
-              onPick={(id) => void actions.setNameList(id)}
-              onCreateNew={createAndAttachNameList}
+              onPick={(id) => {
+                actions.setNameList(id)
+                onPickerClosed?.()
+              }}
+              onCreateNew={() => {
+                createAndAttachNameList()
+                onPickerClosed?.()
+              }}
               buttonLabel={p.namelistId ? 'Byt' : 'Koppla namnlista…'}
               buttonClassName="btn btn-sm btn-ghost"
+              open={openPicker === 'namelist'}
+              onClose={onPickerClosed}
             />
             <OverflowMenu
               label="Namnlistealternativ"

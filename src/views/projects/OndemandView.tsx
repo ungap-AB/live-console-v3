@@ -53,8 +53,16 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [original, setOriginal] = useState<Recording | null>(null)
   const [showVideo, setShowVideo] = useState(false)
   const [trimming, setTrimming] = useState<Recording | null>(null)
+  const [mockTrimStart, setMockTrimStart] = useState(0)
+  const [mockTrimEnd, setMockTrimEnd] = useState(0)
 
   useEffect(() => setDraft(p.afterText), [p.afterText])
+
+  useEffect(() => {
+    if (!recording) return
+    setMockTrimStart(recording.trimRange?.startOffsetSeconds ?? 0)
+    setMockTrimEnd(recording.trimRange?.endOffsetSeconds ?? recording.durationSeconds)
+  }, [recording?.id, recording?.durationSeconds, recording?.trimRange?.startOffsetSeconds, recording?.trimRange?.endOffsetSeconds])
 
   const recordingId = p.recording?.id
   const recordingState = p.recording?.state
@@ -93,6 +101,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const chapters = recording ? chaptersFor(recording, original) : []
   const source = original ?? recording
   const previewUrl = p.recording?.hlsUrl ?? recording?.hlsUrl ?? ''
+  const mockTrimDuration = source?.durationSeconds ?? 0
 
   async function saveAfterText() {
     setSaving(true)
@@ -114,6 +123,11 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       await actions.refreshProject()
       setTrimming(null)
     }
+  }
+
+  async function saveMockTrim() {
+    if (!mockTrimDuration || mockTrimEnd <= mockTrimStart) return
+    await saveTrim({ startOffsetSeconds: mockTrimStart, endOffsetSeconds: mockTrimEnd })
   }
 
   return (
@@ -185,9 +199,45 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 Trimma inspelning
               </button>
             </div>
+            {canTrim && source && (
+              <div class="od-mock-trim" aria-label="Mockad trimning">
+                <div class="od-mock-trim-head">
+                  <span>Trimning</span>
+                  <span>{formatHms(mockTrimStart)} – {formatHms(mockTrimEnd)}</span>
+                </div>
+                <div class="od-mock-trim-track">
+                  <input
+                    aria-label="Trimningens start"
+                    type="range"
+                    min="0"
+                    max={Math.max(1, mockTrimDuration - 1)}
+                    value={mockTrimStart}
+                    onInput={(e) => setMockTrimStart(Math.min(Number(e.currentTarget.value), mockTrimEnd - 1))}
+                  />
+                  <input
+                    aria-label="Trimningens slut"
+                    type="range"
+                    min="1"
+                    max={mockTrimDuration}
+                    value={mockTrimEnd}
+                    onInput={(e) => setMockTrimEnd(Math.max(Number(e.currentTarget.value), mockTrimStart + 1))}
+                  />
+                </div>
+                <div class="od-mock-trim-actions">
+                  <button class="btn" type="button" onClick={() => setMockTrimStart(Math.min(Math.round(mockTrimDuration * 0.1), mockTrimEnd - 1))}>
+                    Sätt start här
+                  </button>
+                  <button class="btn" type="button" onClick={() => setMockTrimEnd(Math.max(Math.round(mockTrimDuration * 0.9), mockTrimStart + 1))}>
+                    Sätt slut här
+                  </button>
+                  <button class="btn btn-primary" type="button" disabled={mockTrimEnd <= mockTrimStart} onClick={() => void saveMockTrim()}>
+                    Spara trimning
+                  </button>
+                </div>
+              </div>
+            )}
             <p class="od-todo">
-              Ej implementerat: trimning direkt på tidslinjen ("Sätt start här", "Sätt slut här") och nya kapitel. Tills vidare
-              trimmas inspelningen i trimdialogen.
+              Tidslinjen är mockad i utvecklingsläget. Den använder samma inspelningsdata som den riktiga trimdialogen.
             </p>
           </section>
 

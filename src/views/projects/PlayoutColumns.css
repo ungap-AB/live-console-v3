@@ -88,7 +88,14 @@
 .pcols {
   display: flex;
   gap: 20px;
-  flex: none;
+  flex: 0 1 auto;
+  min-height: 0;
+  height: max(260px, calc(100vh - 360px));
+}
+
+.before-project-workspace .pcols {
+  height: auto;
+  flex: 1 1 auto;
 }
 
 .pcol {
@@ -131,7 +138,9 @@
 .pcol-body {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
 /* Okopplad kolumn är ett tomt läge, inte ett fel. */
@@ -147,10 +156,13 @@
 @media (max-width: 980px) {
   .pcols {
     flex-direction: column;
+    height: auto;
   }
 
   .pcol {
-    flex: none;
+    flex: 0 1 auto;
+    min-height: 260px;
+    max-height: 420px;
   }
 }
 
