@@ -156,7 +156,8 @@ export interface Client {
     /** Rensar aktiv dagordningspunkt/namnskylt — loggas som en egen tidslinjehändelse, tar inte bort tidigare utspelningar. */
     clear(id: string, kind: CueKind): Promise<TimelineEvent>
     updateTimelineEvent(id: string, eventId: string, input: { label?: string; offsetSeconds?: number }): Promise<TimelineEvent>
-    updateChapterOffset(id: string, index: number, offsetSeconds: number): Promise<void>
+    updateChapterOffset(id: string, index: number, input: { offsetSeconds?: number; label?: string }): Promise<void>
+    deleteChapter(id: string, index: number): Promise<void>
     saveTrimDraft(id: string, draft: import('./types').TrimDraft): Promise<Project>
     /** Mockup-bara: återställer sändningssimuleringen till ett obörjat läge. */
     resetSimulation(id: string): Promise<Project>

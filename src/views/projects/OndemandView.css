@@ -93,6 +93,31 @@
 
 .od-save-button {
   margin-left: auto;
+  background: #208a4a;
+  border-color: #208a4a;
+  color: #fff;
+}
+
+.od-save-button:hover:not(:disabled) {
+  background: #176b39;
+  border-color: #176b39;
+}
+
+.od-chapter-delete {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--danger);
+  cursor: pointer;
+}
+
+.od-chapter-delete:hover {
+  background: var(--danger-bg);
 }
 
 .od-trim-footer {

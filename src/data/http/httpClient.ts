@@ -805,8 +805,11 @@ export const httpClient: Client = {
       const dto = await api<ServerTimelineEvent>(`/projects/${id}/timeline/${eventId}`, { method: 'PATCH', body: input })
       return toTimelineEvent(dto)
     },
-    async updateChapterOffset(id, index, offsetSeconds) {
-      await api<void>(`/projects/${id}/chapters/${index}`, { method: 'PATCH', body: { offsetSeconds } })
+    async updateChapterOffset(id, index, input) {
+      await api<void>(`/projects/${id}/chapters/${index}`, { method: 'PATCH', body: input })
+    },
+    async deleteChapter(id, index) {
+      await api<void>(`/projects/${id}/chapters/${index}`, { method: 'DELETE' })
     },
     async saveTrimDraft(id, draft) {
       const dto = await api<ServerProject>(`/projects/${id}/trim-draft`, { method: 'PUT', body: draft })

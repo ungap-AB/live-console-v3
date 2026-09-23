@@ -6,7 +6,7 @@ import { afterReasonFor, modeChangePlan, requiresConfirmation } from './projectM
 
 // Gemensam lägeshantering för headern och genvägarna i vyerna: bekräftelse
 // där den krävs, sparande av After-meddelandet och rätt serveranrop per byte.
-export function useModeChange(project: Project, actions: ProjectActions, onApplied?: (from: PublicMode, to: PublicMode) => void) {
+export function useModeChange(project: Project, actions: ProjectActions, onApplied?: (from: PublicMode, to: PublicMode) => void | Promise<void>) {
   const [pending, setPending] = useState<PublicMode | null>(null)
 
   async function apply(to: PublicMode, afterText?: string) {
@@ -26,7 +26,7 @@ export function useModeChange(project: Project, actions: ProjectActions, onAppli
               : await actions.setPublicMode(to, afterReasonFor(from, to))
       if (!ok) return
     }
-    onApplied?.(from, to)
+    await onApplied?.(from, to)
   }
 
   function selectMode(to: PublicMode) {

@@ -1008,7 +1008,10 @@ export const mockClient: Client = {
       if (input.offsetSeconds !== undefined) event.offsetSeconds = input.offsetSeconds
       return delay(clone(event))
     },
-    async updateChapterOffset(_id, _index, _offsetSeconds) {
+    async updateChapterOffset(_id, _index, _input) {
+      return delay(undefined)
+    },
+    async deleteChapter(_id, _index) {
       return delay(undefined)
     },
     async saveTrimDraft(id, draft) {

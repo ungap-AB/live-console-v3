@@ -4,6 +4,7 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { Modal } from '../../components/Modal'
 import { Clock } from '../../components/Clock'
 import type { Channel, ChannelHealth, Project, Visibility } from '../../data/types'
+import { client } from '../../data'
 import { formatDate } from '../../app/time'
 import type { ProjectActions } from './actions'
 import { useModeChange } from './useModeChange'
@@ -35,9 +36,14 @@ function displayUrl(url: string): string {
 export function ProjectHeader({ project: p, actions, onBack, onModeSelect, channel = null, health = null, streamKey = null }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
-  const { selectMode, dialog: modeDialog } = useModeChange(p, actions, (from, to) => {
-    const encoderStopped = health !== null && health.state.toLowerCase() !== 'live'
-    if (from === 'live' && to === 'after' && channel && encoderStopped) setConfirmTeardown(true)
+  const { selectMode, dialog: modeDialog } = useModeChange(p, actions, async (from, to) => {
+    if (from !== 'live' || to !== 'after' || !channel) return
+    try {
+      const latestHealth = await client.channels.health(channel.id)
+      if (latestHealth.state.toLowerCase() !== 'live') setConfirmTeardown(true)
+    } catch {
+      // Teardownfrågan ska inte blockera lägesbytet om IVS-health inte kan läsas.
+    }
   })
   const [showSettings, setShowSettings] = useState(false)
   const [showIngestInfo, setShowIngestInfo] = useState(false)

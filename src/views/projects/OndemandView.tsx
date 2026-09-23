@@ -85,6 +85,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [chapterLabels, setChapterLabels] = useState<Record<number, string>>({})
   const [editingChapter, setEditingChapter] = useState<number | null>(null)
   const [chapterDraft, setChapterDraft] = useState('')
+  const [deletingChapter, setDeletingChapter] = useState<number | null>(null)
   const [confirmOndemand, setConfirmOndemand] = useState(false)
   const [publishing, setPublishing] = useState(false)
 
@@ -163,7 +164,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const displayedRecording = recording
   const displayedOriginal = original
   const recordingChapters = displayedRecording ? chaptersFor(displayedRecording, displayedOriginal) : []
-  const chapters = recordingChapters.length > 0
+  const chapters = isAfter && recordingChapters.length > 0
     ? recordingChapters
     : projectChapters.length > 0
       ? projectChapters
@@ -355,7 +356,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     setDraftOffsets((current) => ({ ...current, [selectedChapter]: nextOffset }))
     try {
       if (p.publicMode === 'ondemand') {
-        await client.projects.updateChapterOffset(p.id, selectedChapter, nextOffset)
+        await client.projects.updateChapterOffset(p.id, selectedChapter, { offsetSeconds: nextOffset })
       } else {
         const chapter = chapters[selectedChapter]
         const event = p.playout.timeline
@@ -442,12 +443,26 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     setChapterDraft(label)
   }
 
-  function finishChapterEdit() {
+  async function finishChapterEdit() {
     if (editingChapter !== null && chapterDraft.trim()) {
       setChapterLabels((current) => ({ ...current, [editingChapter]: chapterDraft.trim() }))
+      if (p.publicMode === 'ondemand') {
+        await client.projects.updateChapterOffset(p.id, editingChapter, { label: chapterDraft.trim() })
+        const nextChapters = await client.projects.chapters(p.id)
+        setProjectChapters(nextChapters)
+      }
     }
     setEditingChapter(null)
     setChapterDraft('')
+  }
+
+  async function deleteChapter(index: number) {
+    if (p.publicMode !== 'ondemand') return
+    setDeletingChapter(null)
+    await client.projects.deleteChapter(p.id, index)
+    setSelectedChapter(null)
+    setEditingChapter(null)
+    setProjectChapters(await client.projects.chapters(p.id))
   }
 
   return (
@@ -575,11 +590,11 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                           autoFocus
                           onInput={(event) => setChapterDraft(event.currentTarget.value)}
                           onKeyDown={(event) => {
-                            if (event.key === 'Enter') finishChapterEdit()
-                            if (event.key === 'Escape') finishChapterEdit()
+                            if (event.key === 'Enter') void finishChapterEdit()
+                            if (event.key === 'Escape') void finishChapterEdit()
                           }}
                         />
-                        <button class="btn btn-sm" type="button" onClick={finishChapterEdit}>Klar</button>
+                        <button class="btn btn-sm" type="button" onClick={() => void finishChapterEdit()}>Klar</button>
                       </span>
                     ) : (
                       <span class="od-chapter-label" onDblClick={() => startChapterEdit(index, chapterLabels[index] ?? chapter.label)} title="Dubbelklicka för att redigera">
@@ -587,6 +602,11 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       </span>
                     )}
                     <span class="od-chapter-kind">{CHAPTER_KIND[chapter.kind]}</span>
+                    {p.publicMode === 'ondemand' && (
+                      <button class="od-chapter-delete" type="button" aria-label={`Radera ${chapter.label}`} title="Radera kapitel" onClick={() => setDeletingChapter(index)}>
+                        <Icon name="delete" size={16} />
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -603,6 +623,15 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
         </div>
       </div>
       {dialog}
+      {deletingChapter !== null && chapters[deletingChapter] && (
+        <Modal title="Radera kapitel?" onClose={() => setDeletingChapter(null)}>
+          <p>Kapitlet tas bort från den publicerade spelaren.</p>
+          <div class="modal-actions">
+            <button class="btn" type="button" onClick={() => setDeletingChapter(null)}>Avbryt</button>
+            <button class="btn btn-danger" type="button" onClick={() => void deleteChapter(deletingChapter)}>Radera</button>
+          </div>
+        </Modal>
+      )}
       {confirmOndemand && (
         <Modal title="Publicera ändringarna?" onClose={() => setConfirmOndemand(false)}>
           <p>{confirmationText}</p>
