@@ -195,9 +195,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     if (!video) return
     const updatePosition = () => {
       setPreviewPosition(video.currentTime)
-      if (!video.paused && selectedChapter !== null) {
-        setDraftOffsets((current) => ({ ...current, [selectedChapter]: Math.round(video.currentTime) }))
-      }
     }
     const updatePlayback = () => setPreviewPlaying(!video.paused && !video.ended)
     video.addEventListener('timeupdate', updatePosition)
@@ -308,6 +305,12 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     setUndoVisible(false)
   }
 
+  function resetVideoToOriginal() {
+    setMockTrimStart(defaultTrimStart)
+    setMockTrimEnd(defaultTrimEnd)
+    undoAllOffsets()
+  }
+
   function pausePreview() {
     previewVideoRef.current?.pause()
     setPreviewPlaying(false)
@@ -319,7 +322,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     pausePreview()
     setUndoVisible(false)
     setSelectedChapter(index)
-    setPreviewSeekSeconds(draftOffsets[index] ?? chapter.offsetSeconds)
+    setPreviewSeekSeconds(draftOffsets[index] ?? savedOffsets[index] ?? chapter.offsetSeconds)
     setPreviewPlayRequest((request) => request + 1)
   }
 
@@ -335,8 +338,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   }
 
   async function saveSelectedChapter() {
-    if (selectedChapter === null || draftOffsets[selectedChapter] === undefined) return
-    const nextOffset = draftOffsets[selectedChapter]
+    if (selectedChapter === null) return
+    const nextOffset = Math.round(previewPosition)
+    setDraftOffsets((current) => ({ ...current, [selectedChapter]: nextOffset }))
     try {
       if (p.publicMode === 'ondemand') {
         await client.projects.updateChapterOffset(p.id, selectedChapter, nextOffset)
@@ -371,7 +375,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const confirmationText = trimDirty
     ? `${confirmationChanges}. Är du redo att publicera ändringarna för ondemand?`
     : 'Ingen trimning har gjorts. Är du redo att gå till ondemand med originalinspelningen?'
-  const hasOffsetDrafts = Object.keys(draftOffsets).length > 0
   const videoDuration = previewVideoRef.current?.duration || mockTrimDuration
   const canReturnToSaved = selectedChapter !== null && draftOffsets[selectedChapter] !== undefined
 
@@ -418,7 +421,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
 
   return (
     <div class="project-workspace doc">
-      <ProjectHeader project={p} actions={actions} onBack={onBack} onModeSelect={handleModeSelect} />
+      <ProjectHeader project={p} actions={actions} onBack={onBack} onModeSelect={handleModeSelect} channel={live.channel} health={live.health} streamKey={live.streamKey} />
       <div class="od">
         {!isAfter && (
           <div class="od-published" role="status">
@@ -435,7 +438,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 <div class="od-trim-preview">
                   {broadcastInProgress ? (
                     <div class="od-broadcast-warning" role="status">
-                      <strong>Sändning pågår</strong>
+                      <strong>{isAfter ? 'Sändningen avslutad' : 'Sändning pågår'}</strong>
                       <span>Stoppa enkodern för att trimma och publicera ondemand. Eller gå tillbaka till Before om detta bara var en test.</span>
                     </div>
                   ) : recordingProcessing ? (
@@ -493,7 +496,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                         <button class="btn btn-sm od-commit-button" type="button" aria-label="Spela eller pausa" title="Spela eller pausa" onClick={togglePreviewPlayback}>
                           <Icon name={previewPlaying ? 'pause' : 'play_arrow'} size={18} />
                         </button>
-                        <button class="btn btn-sm od-commit-button" type="button" aria-label="Spara tidsändring" title="Spara tidsändring" disabled={!hasOffsetDrafts} onClick={saveSelectedChapter}>Spara</button>
+                        <button class="btn btn-sm od-commit-button" type="button" aria-label="Cue tidsändring" title="Cue tidsändring" disabled={selectedChapter === null} onClick={() => void saveSelectedChapter()}>Cue</button>
                       </div>
                       {undoVisible && <button class="btn btn-sm od-commit-button od-undo-button" type="button" aria-label="Ångra tidsändring" title="Ångra tidsändring" onClick={undoToOriginalOffset}>Ångra</button>}
                     </div>
@@ -501,6 +504,10 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 </div>}
               </div>
             )}
+            <footer class="od-trim-footer">
+              <span>{trimDirty ? 'Trimändringar väntar på publicering' : 'Originalvideo'}</span>
+              {isAfter && <span>{selectedChapter === null ? 'Välj ett kapitel för att justera tid' : 'Kapitel valt för justering'}</span>}
+            </footer>
           </section>
 
           <section class="od-col od-chapters-col" aria-labelledby="od-chapters-title">
@@ -511,19 +518,19 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 {chapters.map((chapter, index) => (
                   <li
                     key={`${chapter.offsetSeconds}-${index}`}
-                    class="od-chapter-row"
+                    class={`od-chapter-row${selectedChapter === index ? ' is-selected' : ''}`}
                   >
-                    <button
+                      <button
                       class="od-chapter-play"
                       type="button"
                       aria-label={`Spela från ${chapter.label}`}
                       title="Spela från denna punkt"
-                      onClick={() => selectChapter(index)}
+                        onClick={() => selectChapter(index)}
                     >
                       <Icon name="skip_next" size={16} />
                     </button>
                     <span class={`od-time${draftOffsets[index] !== undefined ? ' is-draft' : ''}`}>
-                      {formatHms(draftOffsets[index] ?? chapter.offsetSeconds)}
+                      {formatHms(draftOffsets[index] ?? savedOffsets[index] ?? chapter.offsetSeconds)}
                     </span>
                     {editingChapter === index ? (
                       <span class="od-chapter-edit">
@@ -553,6 +560,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
             <footer class="od-chapters-footer">
               <button class="btn btn-sm" type="button" disabled={Object.keys(draftOffsets).length === 0 && Object.keys(savedOffsets).length === 0} onClick={undoAllOffsets}>
                 Ångra alla justeringar
+              </button>
+              <button class="btn btn-sm" type="button" onClick={resetVideoToOriginal}>
+                Återställ video till original
               </button>
             </footer>
           </section>

@@ -76,6 +76,26 @@
   min-height: 48px;
   padding-top: 8px;
   border-top: 1px solid var(--line);
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.od-trim-footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.od-chapter-row.is-selected {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 1px var(--focus);
 }
 
 .od-col h2 {

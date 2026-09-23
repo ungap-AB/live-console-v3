@@ -2,11 +2,12 @@ import { useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
 import { Clock } from '../../components/Clock'
-import type { Project, Visibility } from '../../data/types'
+import type { Channel, ChannelHealth, Project, Visibility } from '../../data/types'
 import { formatDate } from '../../app/time'
 import type { ProjectActions } from './actions'
 import { useModeChange } from './useModeChange'
 import { MODES, MODE_LABEL } from './projectMode'
+import { IngestInfo } from './IngestInfo'
 import './ProjectHeader.css'
 
 interface ProjectHeaderProps {
@@ -14,6 +15,9 @@ interface ProjectHeaderProps {
   actions: ProjectActions
   onBack: () => void
   onModeSelect?: (mode: Project['publicMode']) => void
+  channel?: Channel | null
+  health?: ChannelHealth | null
+  streamKey?: string | null
 }
 
 const VISIBILITIES: { value: Visibility; label: string; icon: string }[] = [
@@ -27,11 +31,12 @@ function displayUrl(url: string): string {
 }
 
 // Gemensam för Livesändning och Ondemand.
-export function ProjectHeader({ project: p, actions, onBack, onModeSelect }: ProjectHeaderProps) {
+export function ProjectHeader({ project: p, actions, onBack, onModeSelect, channel = null, health = null, streamKey = null }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
   const { selectMode, dialog: modeDialog } = useModeChange(p, actions)
   const [showSettings, setShowSettings] = useState(false)
+  const [showIngestInfo, setShowIngestInfo] = useState(false)
   const [copied, setCopied] = useState(false)
   const settingsButton = useRef<HTMLButtonElement>(null)
 
@@ -50,6 +55,21 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect }: Pro
       // Kopieringen misslyckas tyst; länken är synlig och går att markera.
     }
   }
+
+  const phase = health?.livePhase?.toLowerCase()
+  const encoderStatus = !channel
+    ? { label: 'Ingen ingest', tone: 'warn' }
+    : p.publicMode === 'after' && (phase === 'live' || phase === 'waitingforstream' || health?.state?.toLowerCase() === 'live')
+      ? { label: 'Väntar på att enkoder stoppar', tone: 'warn' }
+      : phase === 'live' || health?.state?.toLowerCase() === 'live'
+      ? { label: 'Signal OK', tone: 'ok' }
+      : phase === 'signalinterrupted' || phase === 'signalinterrupteddeclined'
+        ? { label: 'Avbrott i signal', tone: 'warn' }
+        : p.publicMode === 'after' && phase === 'waitingforstream'
+          ? { label: 'Väntar på att enkoder stoppar', tone: 'warn' }
+          : phase === 'streamended'
+            ? { label: 'Sändningen avslutad', tone: 'ok' }
+            : { label: 'Väntar på signal', tone: 'warn' }
 
   return (
     <header class="pv-header">
@@ -99,6 +119,20 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect }: Pro
             </button>
           </>
         )}
+        <div class={`pv-encoder-status is-${encoderStatus.tone}`} role="status">
+          <span class="pv-encoder-dot" aria-hidden="true" />
+          <span>{encoderStatus.label}</span>
+        </div>
+        <button
+          class="pv-ingest-button"
+          type="button"
+          disabled={!channel}
+          aria-expanded={showIngestInfo}
+          onClick={() => setShowIngestInfo((visible) => !visible)}
+        >
+          <Icon name="info" size={17} />
+          <span>Ingest info</span>
+        </button>
         <span class="spacer" />
         <span class="pv-clock"><Clock /></span>
         <button class="btn" type="button" ref={settingsButton} onClick={() => setShowSettings(true)}>
@@ -106,6 +140,16 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect }: Pro
           <span>Projektinställningar</span>
         </button>
       </div>
+
+      {showIngestInfo && channel && (
+        <div class="pv-ingest-info">
+          <IngestInfo channel={channel} streamKey={streamKey} trailingAction={(
+            <button class="pv-icon-btn" type="button" aria-label="Stäng ingest-info" title="Stäng" onClick={() => setShowIngestInfo(false)}>
+              <Icon name="close" size={18} />
+            </button>
+          )} />
+        </div>
+      )}
 
       <div class="pv-row pv-controls">
         <div class="pv-field">

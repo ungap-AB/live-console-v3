@@ -1,10 +1,7 @@
-import { useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Channel, ChannelHealth, LivePhase, Project } from '../../data/types'
+import type { Channel, ChannelHealth, Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
-import { Icon } from '../../components/Icon'
 import type { ProjectActions } from './actions'
-import { IngestInfo } from './IngestInfo'
 import { PlayoutColumns } from './PlayoutColumns'
 import './LiveWorkspace.css'
 
@@ -16,25 +13,8 @@ interface LiveWorkspaceProps {
   streamKey: string | null
 }
 
-type SignalTone = 'ok' | 'warn'
-
-// Signalstatus visas som information — den styr aldrig läget.
-function signalStatus(hasIngest: boolean, phase: LivePhase | undefined): { label: string; tone: SignalTone } {
-  if (!hasIngest) return { label: 'Ingen ingest', tone: 'warn' }
-  switch (phase) {
-    case 'live':
-      return { label: 'Signal OK', tone: 'ok' }
-    case 'signalInterrupted':
-      return { label: 'Signalavbrott', tone: 'warn' }
-    case 'streamEnded':
-      return { label: 'Signalen har avslutats', tone: 'warn' }
-    default:
-      return { label: 'Ingen signal', tone: 'warn' }
-  }
-}
-
 // Ren sändningskontroll för läget Live.
-export function LiveWorkspace({ project: p, actions, channel, health, streamKey }: LiveWorkspaceProps) {
+export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProps) {
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
     [p.agendaId],
@@ -43,10 +23,7 @@ export function LiveWorkspace({ project: p, actions, channel, health, streamKey 
     () => (p.namelistId ? client.namelists.get(p.namelistId) : Promise.resolve(undefined)),
     [p.namelistId],
   )
-  const [showIngestInfo, setShowIngestInfo] = useState(false)
-
   const phase = health?.livePhase
-  const signal = signalStatus(p.channel !== null, phase)
 
   const nowItem =
     p.playout.currentAgendaItem?.label ??
@@ -74,25 +51,6 @@ export function LiveWorkspace({ project: p, actions, channel, health, streamKey 
 
   return (
     <div class="lw">
-      <div class="lw-status-row">
-        <span class={`lw-signal is-${signal.tone}`} role="status">
-          <span class="lw-dot" aria-hidden="true" />
-          {signal.label}
-        </span>
-        <span class="spacer" />
-        <button
-          class="lw-info-button"
-          type="button"
-          disabled={!channel}
-          aria-label={showIngestInfo ? 'Dölj ingest-info' : 'Visa ingest-info'}
-          aria-expanded={showIngestInfo}
-          title={showIngestInfo ? 'Dölj ingest-info' : 'Visa ingest-info'}
-          onClick={() => setShowIngestInfo((v) => !v)}
-        >
-          <Icon name="info" size={18} />
-        </button>
-      </div>
-
       {phase === 'signalInterrupted' && (
         <div class="lw-interrupt" role="alert">
           <p>Signalavbrott — videosignalen har avbrutits medan spelaren är öppen.</p>
@@ -102,20 +60,6 @@ export function LiveWorkspace({ project: p, actions, channel, health, streamKey 
           <button class="btn btn-danger btn-sm" type="button" onClick={() => void actions.interruptionDecision('end')}>
             Stäng player och avsluta
           </button>
-        </div>
-      )}
-
-      {showIngestInfo && channel && (
-        <div class="lw-ingest-info">
-          <IngestInfo
-            channel={channel}
-            streamKey={streamKey}
-            trailingAction={(
-              <button class="lw-info-close" type="button" aria-label="Stäng ingest-info" title="Stäng" onClick={() => setShowIngestInfo(false)}>
-                <Icon name="close" size={18} />
-              </button>
-            )}
-          />
         </div>
       )}
 

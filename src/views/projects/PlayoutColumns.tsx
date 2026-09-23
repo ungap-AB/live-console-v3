@@ -7,7 +7,7 @@ import { EditableItemList } from '../../components/EditableItemList'
 import { PdfAttachmentsModal } from '../../components/PdfAttachmentsModal'
 import { Modal } from '../../components/Modal'
 import { OverflowMenu } from '../../components/OverflowMenu'
-import { PdfIcon, PlayIcon, StopIcon } from '../../components/icons'
+import { CheckIcon, PdfIcon, PlayIcon, StopIcon } from '../../components/icons'
 import { formatHms } from '../../app/time'
 import type { ProjectActions } from './actions'
 import './PlayoutColumns.css'
@@ -263,9 +263,15 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                         disabled={!canPlay}
                         title={active ? 'Rensa punkt i bild' : 'Spela ut'}
                         aria-label={active ? `Rensa ${it.title} i bild` : `Spela ut ${it.title}`}
-                        onClick={() => (active ? actions.clear('agendaItem') : actions.cue('agendaItem', it.id, it.title))}
+                        onClick={() => {
+                          if (active) actions.clear('agendaItem')
+                          else {
+                            actions.clear('person')
+                            actions.cue('agendaItem', it.id, it.title)
+                          }
+                        }}
                       >
-                        {active ? <StopIcon /> : <PlayIcon />}
+                        {active ? <StopIcon /> : offset != null ? <CheckIcon /> : <PlayIcon />}
                       </button>
                     </>
                   )
@@ -347,7 +353,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                         aria-label={active ? `Rensa ${person.name} i bild` : `Spela ut ${person.name}`}
                         onClick={() => (active ? actions.clear('person') : actions.cue('person', person.id, person.name))}
                       >
-                        {active ? <StopIcon /> : <PlayIcon />}
+                        {active ? <StopIcon /> : speakerPlayCount(person.id) > 0 ? <CheckIcon /> : <PlayIcon />}
                       </button>
                     </>
                   )

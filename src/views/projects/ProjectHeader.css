@@ -30,6 +30,62 @@
   color: var(--ink-2);
 }
 
+.pv-encoder-status,
+.pv-ingest-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  white-space: nowrap;
+}
+
+.pv-encoder-status {
+  margin-left: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.pv-encoder-status.is-ok {
+  color: var(--open-fg);
+}
+
+.pv-encoder-status.is-warn {
+  color: var(--warn);
+}
+
+.pv-encoder-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pv-ingest-button {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pv-ingest-button:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.pv-ingest-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pv-ingest-info {
+  margin: -4px 0 0;
+}
+
 .pv-title {
   margin: 0;
   font-size: 20px;

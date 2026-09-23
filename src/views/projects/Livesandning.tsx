@@ -39,7 +39,7 @@ export function Livesandning({ project: p, actions, onBack }: LivesandningProps)
 
   return (
     <div class={`project-workspace doc${p.publicMode === 'before' ? ' before-project-workspace' : ''}`}>
-      <ProjectHeader project={p} actions={actions} onBack={onBack} />
+      <ProjectHeader project={p} actions={actions} onBack={onBack} channel={live.channel} health={live.health} streamKey={live.streamKey} />
       {p.publicMode === 'before' ? (
         <BeforeWorkspace
           project={p}
