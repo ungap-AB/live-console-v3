@@ -86,6 +86,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [editingChapter, setEditingChapter] = useState<number | null>(null)
   const [chapterDraft, setChapterDraft] = useState('')
   const [deletingChapter, setDeletingChapter] = useState<number | null>(null)
+  const deleteConfirmationTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [confirmOndemand, setConfirmOndemand] = useState(false)
   const [publishing, setPublishing] = useState(false)
 
@@ -308,17 +309,45 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     }
   }
 
-  function undoAllOffsets() {
-    setDraftOffsets({})
-    setSavedOffsets({})
-    setUndoVisible(false)
+  async function undoAllOffsets() {
+    const savedIndexes = Object.keys(savedOffsets).map(Number)
+    try {
+      for (const index of savedIndexes) {
+        const chapter = chapters[index]
+        if (!chapter) continue
+        if (p.publicMode === 'ondemand') {
+          await client.projects.updateChapterOffset(p.id, index, { offsetSeconds: chapter.offsetSeconds })
+        } else {
+          const event = p.playout.timeline
+            .filter((item) => item.kind === chapter.kind && item.refId !== null && item.label !== 'Rensat')
+            .find((item) => item.label === chapter.label || item.offsetSeconds === chapter.offsetSeconds)
+          if (event) await client.projects.updateTimelineEvent(p.id, event.id, { offsetSeconds: chapter.offsetSeconds })
+        }
+      }
+      if (p.publicMode === 'ondemand' && savedIndexes.length > 0) {
+        setProjectChapters(await client.projects.chapters(p.id))
+      }
+      setDraftOffsets({})
+      setSavedOffsets({})
+      setUndoVisible(false)
+      if (selectedChapter !== null && chapters[selectedChapter]) {
+        const originalOffset = chapters[selectedChapter].offsetSeconds
+        const video = previewVideoRef.current
+        if (video) {
+          video.currentTime = originalOffset
+          setPreviewPosition(originalOffset)
+        }
+      }
+    } catch {
+      // Behåll state synligt så operatören kan försöka igen.
+    }
   }
 
   async function resetVideoToOriginal() {
     if (isAfter && !(await actions.restoreOriginal())) return
     setMockTrimStart(0)
     setMockTrimEnd(original?.durationSeconds ?? mockTrimDuration)
-    undoAllOffsets()
+    void undoAllOffsets()
     setChapterLabels({})
     setSelectedChapter(null)
     setPreviewSeekSeconds(null)
@@ -458,11 +487,21 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
 
   async function deleteChapter(index: number) {
     if (p.publicMode !== 'ondemand') return
+    if (deleteConfirmationTimer.current) clearTimeout(deleteConfirmationTimer.current)
     setDeletingChapter(null)
     await client.projects.deleteChapter(p.id, index)
     setSelectedChapter(null)
     setEditingChapter(null)
     setProjectChapters(await client.projects.chapters(p.id))
+  }
+
+  function requestChapterDelete(index: number) {
+    if (deleteConfirmationTimer.current) clearTimeout(deleteConfirmationTimer.current)
+    setDeletingChapter(index)
+    deleteConfirmationTimer.current = setTimeout(() => {
+      setDeletingChapter(null)
+      deleteConfirmationTimer.current = null
+    }, 3000)
   }
 
   return (
@@ -603,16 +642,22 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     )}
                     <span class="od-chapter-kind">{CHAPTER_KIND[chapter.kind]}</span>
                     {p.publicMode === 'ondemand' && (
-                      <button class="od-chapter-delete" type="button" aria-label={`Radera ${chapter.label}`} title="Radera kapitel" onClick={() => setDeletingChapter(index)}>
-                        <Icon name="delete" size={16} />
-                      </button>
+                      deletingChapter === index ? (
+                        <button class="od-chapter-delete is-confirm" type="button" aria-label={`Bekräfta radering av ${chapter.label}`} title="Bekräfta radering" onClick={() => void deleteChapter(index)}>
+                          <Icon name="check" size={16} />
+                        </button>
+                      ) : (
+                        <button class="od-chapter-delete" type="button" aria-label={`Radera ${chapter.label}`} title="Radera kapitel" onClick={() => requestChapterDelete(index)}>
+                          <Icon name="delete" size={16} />
+                        </button>
+                      )
                     )}
                   </li>
                 ))}
               </ul>
             )}
             <footer class="od-chapters-footer">
-              <button class="btn btn-sm" type="button" disabled={Object.keys(draftOffsets).length === 0 && Object.keys(savedOffsets).length === 0} onClick={undoAllOffsets}>
+              <button class="btn btn-sm" type="button" disabled={Object.keys(draftOffsets).length === 0 && Object.keys(savedOffsets).length === 0} onClick={() => void undoAllOffsets()}>
                 Ångra alla justeringar
               </button>
               <button class="btn btn-sm btn-primary od-save-button" type="button" disabled={!draftDirty} onClick={() => void saveTrimDraft()}>
@@ -623,15 +668,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
         </div>
       </div>
       {dialog}
-      {deletingChapter !== null && chapters[deletingChapter] && (
-        <Modal title="Radera kapitel?" onClose={() => setDeletingChapter(null)}>
-          <p>Kapitlet tas bort från den publicerade spelaren.</p>
-          <div class="modal-actions">
-            <button class="btn" type="button" onClick={() => setDeletingChapter(null)}>Avbryt</button>
-            <button class="btn btn-danger" type="button" onClick={() => void deleteChapter(deletingChapter)}>Radera</button>
-          </div>
-        </Modal>
-      )}
       {confirmOndemand && (
         <Modal title="Publicera ändringarna?" onClose={() => setConfirmOndemand(false)}>
           <p>{confirmationText}</p>

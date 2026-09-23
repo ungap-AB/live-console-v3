@@ -120,6 +120,14 @@
   background: var(--danger-bg);
 }
 
+.od-chapter-delete.is-confirm {
+  color: var(--open-fg);
+}
+
+.od-chapter-delete.is-confirm:hover {
+  background: var(--open-bg);
+}
+
 .od-trim-footer {
   flex: none;
   display: flex;

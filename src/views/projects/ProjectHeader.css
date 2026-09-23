@@ -104,6 +104,16 @@
 
 .pv-ingest-info {
   margin: -4px 0 0;
+  overflow: hidden;
+  max-height: 180px;
+  opacity: 1;
+  transition: max-height 350ms ease, opacity 350ms ease, margin 350ms ease;
+}
+
+.pv-ingest-info.is-closing {
+  max-height: 0;
+  margin-top: -4px;
+  opacity: 0;
 }
 
 .pv-ingest-info .ingest-info {

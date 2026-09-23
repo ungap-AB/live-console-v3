@@ -1,4 +1,4 @@
-import { useRef, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Modal } from '../../components/Modal'
@@ -47,8 +47,10 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
   })
   const [showSettings, setShowSettings] = useState(false)
   const [showIngestInfo, setShowIngestInfo] = useState(false)
+  const [closingIngestInfo, setClosingIngestInfo] = useState(false)
   const [confirmTeardown, setConfirmTeardown] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [iframeCopied, setIframeCopied] = useState(false)
   const settingsButton = useRef<HTMLButtonElement>(null)
 
   async function saveTitle() {
@@ -64,6 +66,17 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
       setTimeout(() => setCopied(false), 1500)
     } catch {
       // Kopieringen misslyckas tyst; länken är synlig och går att markera.
+    }
+  }
+
+  async function copyIframe() {
+    const iframe = `<iframe src="${p.playerUrl}" title="${p.name.replaceAll('"', '&quot;')}" allow="autoplay; fullscreen" allowfullscreen></iframe>`
+    try {
+      await navigator.clipboard.writeText(iframe)
+      setIframeCopied(true)
+      setTimeout(() => setIframeCopied(false), 1500)
+    } catch {
+      // Kopieringen misslyckas tyst; länken är fortfarande tillgänglig.
     }
   }
 
@@ -87,6 +100,19 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
           : phase === 'streamended'
             ? { label: 'Sändningen avslutad', tone: 'ended' }
             : { label: 'Väntar på signal', tone: 'warn' }
+
+  useEffect(() => {
+    if (!showIngestInfo || encoderStatus.label !== 'Signal OK') {
+      setClosingIngestInfo(false)
+      return
+    }
+
+    const closeTimer = window.setTimeout(() => {
+      setClosingIngestInfo(true)
+      window.setTimeout(() => setShowIngestInfo(false), 350)
+    }, 5000)
+    return () => window.clearTimeout(closeTimer)
+  }, [encoderStatus.label, showIngestInfo])
 
   return (
     <header class="pv-header">
@@ -146,7 +172,10 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
           type="button"
           disabled={!channel}
           aria-expanded={showIngestInfo}
-          onClick={() => setShowIngestInfo((visible) => !visible)}
+          onClick={() => {
+            setClosingIngestInfo(false)
+            setShowIngestInfo((visible) => !visible)
+          }}
         >
           <Icon name="info" size={17} />
           <span>Ingest info</span>
@@ -159,8 +188,8 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
         </button>
       </div>
 
-      {showIngestInfo && channel && (
-        <div class="pv-ingest-info">
+      {(showIngestInfo || closingIngestInfo) && channel && (
+        <div class={`pv-ingest-info${closingIngestInfo ? ' is-closing' : ''}`}>
           <IngestInfo
             channel={channel}
             streamKey={streamKey}
@@ -169,7 +198,7 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
                 <button class="btn btn-sm btn-danger" type="button" onClick={() => setConfirmTeardown(true)}>
                   Riv ingest
                 </button>
-                <button class="pv-icon-btn" type="button" aria-label="Stäng ingest-info" title="Stäng" onClick={() => setShowIngestInfo(false)}>
+                <button class="pv-icon-btn" type="button" aria-label="Stäng ingest-info" title="Stäng" onClick={() => { setClosingIngestInfo(false); setShowIngestInfo(false) }}>
                   <Icon name="close" size={18} />
                 </button>
               </div>
@@ -242,6 +271,15 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
               onClick={() => void copyLink()}
             >
               <Icon name={copied ? 'check' : 'content_copy'} size={18} />
+            </button>
+            <button
+              class="pv-icon-btn"
+              type="button"
+              aria-label={iframeCopied ? 'Iframe-koden kopierad' : 'Kopiera iframe-kod'}
+              title={iframeCopied ? 'Iframe-koden kopierad' : 'Kopiera iframe-kod'}
+              onClick={() => void copyIframe()}
+            >
+              <Icon name={iframeCopied ? 'check' : 'code'} size={18} />
             </button>
             <a
               class="pv-icon-btn"
