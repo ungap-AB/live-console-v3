@@ -129,6 +129,7 @@ export interface Client {
     list(query?: string): Promise<Project[]>
     get(id: string): Promise<Project | undefined>
     playout(id: string): Promise<Project['playout']>
+    chapters(id: string): Promise<import('./types').Chapter[]>
     touchPlayout(id: string): Promise<void>
     create(input: { name: string }): Promise<Project>
     rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText'>>): Promise<Project>

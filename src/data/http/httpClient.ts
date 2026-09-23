@@ -674,6 +674,10 @@ export const httpClient: Client = {
     async playout(id) {
       return fetchPlayout(id)
     },
+    async chapters(id) {
+      const response = await api<{ frozen: boolean; chapters: ServerChapter[] }>(`/projects/${id}/chapters`)
+      return response.chapters.map(toChapter)
+    },
     async touchPlayout(id) {
       await api<void>(`/projects/${id}/playout/presence`, { method: 'POST' })
     },

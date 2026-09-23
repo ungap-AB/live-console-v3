@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Channel, Chapter, CueKind, Project, Recording } from '../../data/types'
+import type { Chapter, CueKind, Project, Recording } from '../../data/types'
 import { formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
@@ -10,6 +10,7 @@ import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ProjectHeader } from './ProjectHeader'
 import { useModeChange } from './useModeChange'
+import { useLiveChannel } from './useLiveChannel'
 import './OndemandView.css'
 
 interface OndemandViewProps {
@@ -52,11 +53,23 @@ function chaptersChanged(source: Recording | null, startOffsetSeconds: number, e
   })
 }
 
+function chaptersFromTimeline(project: Project): Chapter[] {
+  return project.playout.timeline
+    .filter((event) => event.refId !== null && event.label !== 'Rensat' && event.offsetSeconds !== null)
+    .map((event) => ({
+      kind: event.kind,
+      label: event.label,
+      offsetSeconds: event.offsetSeconds!,
+    }))
+    .sort((left, right) => left.offsetSeconds - right.offsetSeconds)
+}
+
 export function OndemandView({ project: p, actions, onBack }: OndemandViewProps) {
   const { selectMode, dialog } = useModeChange(p, actions)
+  const live = useLiveChannel(p.channel?.id ?? null)
   const [recording, setRecording] = useState<Recording | null>(null)
   const [original, setOriginal] = useState<Recording | null>(null)
-  const [channel, setChannel] = useState<Channel | null>(null)
+  const [projectChapters, setProjectChapters] = useState<Chapter[]>([])
   const [mockTrimStart, setMockTrimStart] = useState(0)
   const [mockTrimEnd, setMockTrimEnd] = useState(0)
   const previewVideoRef = useRef<HTMLVideoElement>(null)
@@ -108,28 +121,48 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
 
   useEffect(() => {
     let cancelled = false
-    if (!p.channel) {
-      setChannel(null)
+    if (p.publicMode !== 'ondemand') {
+      setProjectChapters([])
       return
     }
-    client.channels.get(p.channel.id).then((nextChannel) => {
-      if (!cancelled) setChannel(nextChannel ?? null)
+    client.projects.chapters(p.id).then((nextChapters) => {
+      if (!cancelled) setProjectChapters(nextChapters)
+    }).catch(() => {
+      if (!cancelled) setProjectChapters([])
     })
     return () => {
       cancelled = true
     }
-  }, [p.channel?.id])
+  }, [p.id, p.publicMode])
+
+  useEffect(() => {
+    if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return
+    if (p.recording?.state !== 'recording' && p.recording?.state !== 'processing') return
+
+    const refresh = () => {
+      void actions.refreshProject().catch(() => undefined)
+    }
+    const id = setInterval(refresh, 5000)
+    return () => clearInterval(id)
+  }, [actions.refreshProject, p.id, p.publicMode, p.recording?.state])
 
   if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return null
 
   const isAfter = p.publicMode === 'after'
-  const broadcastInProgress = p.recording?.state === 'recording' || channel?.state === 'live' || p.technicalHealth.channelLivePhase === 'live'
+  const livePhase = live.health?.livePhase?.toLowerCase()
+  const broadcastInProgress = live.health?.state?.toLowerCase() === 'live' || livePhase === 'live'
+  const recordingProcessing = !broadcastInProgress && (p.recording?.state === 'recording' || p.recording?.state === 'processing')
   const displayedRecording = recording
   const displayedOriginal = original
-  const chapters = displayedRecording ? chaptersFor(displayedRecording, displayedOriginal) : []
+  const recordingChapters = displayedRecording ? chaptersFor(displayedRecording, displayedOriginal) : []
+  const chapters = recordingChapters.length > 0
+    ? recordingChapters
+    : projectChapters.length > 0
+      ? projectChapters
+      : chaptersFromTimeline(p)
   const source = displayedOriginal ?? displayedRecording
   const mockTrimDuration = source?.durationSeconds ?? 0
-  const previewUrl = displayedRecording?.hlsUrl ?? ''
+  const previewUrl = displayedRecording?.hlsUrl || p.recording?.hlsUrl || ''
 
   useEffect(() => {
     const video = previewVideoRef.current
@@ -352,7 +385,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
         await actions.publish()
         return
       }
-      if (await actions.setPublicMode('ondemand')) {
+      if (p.recording) {
+        await actions.publish()
+      } else if (await actions.setPublicMode('ondemand')) {
         actions.setVisibility('open')
       }
     } finally {
@@ -395,7 +430,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
 
         <div class="od-cols">
           <section class="od-col" aria-label="Trimning">
-            {(displayedRecording || broadcastInProgress) && (
+            {(displayedRecording || previewUrl || broadcastInProgress || recordingProcessing) && (
               <div class="od-mock-trim" aria-label={isAfter ? 'Trimning' : 'Trim-förhandsvisning'}>
                 <div class="od-trim-preview">
                   {broadcastInProgress ? (
@@ -403,11 +438,16 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       <strong>Sändning pågår</strong>
                       <span>Stoppa enkodern för att trimma och publicera ondemand. Eller gå tillbaka till Before om detta bara var en test.</span>
                     </div>
+                  ) : recordingProcessing ? (
+                    <div class="od-broadcast-warning" role="status">
+                      <strong>Inspelningen bearbetas</strong>
+                      <span>Vänta tills inspelningen är klar innan du trimmar och publicerar ondemand.</span>
+                    </div>
                   ) : (
                     <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
                   )}
                 </div>
-                <div class={`od-selected-chapter${selectedChapter !== null && chapters[selectedChapter] ? ' has-selected-chapter' : ''}${broadcastInProgress ? ' is-broadcasting' : ''}`}>
+                {isAfter && <div class={`od-selected-chapter${selectedChapter !== null && chapters[selectedChapter] ? ' has-selected-chapter' : ''}${broadcastInProgress || recordingProcessing ? ' is-broadcasting' : ''}`}>
                   {selectedChapter !== null && chapters[selectedChapter] ? (
                     <div class="od-selected-chapter-heading">
                       <button class="od-chapter-nav" type="button" aria-label="Föregående kapitel" title="Föregående kapitel" disabled={selectedChapter <= 0} onClick={() => selectChapter(selectedChapter - 1)}>
@@ -458,7 +498,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       {undoVisible && <button class="btn btn-sm od-commit-button od-undo-button" type="button" aria-label="Ångra tidsändring" title="Ångra tidsändring" onClick={undoToOriginalOffset}>Ångra</button>}
                     </div>
                   </div>
-                </div>
+                </div>}
               </div>
             )}
           </section>

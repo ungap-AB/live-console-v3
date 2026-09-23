@@ -664,6 +664,11 @@ export const mockClient: Client = {
     async playout(id) {
       return delay(clone(findProject(id).playout))
     },
+    async chapters(id) {
+      const project = findProject(id)
+      const recording = project.recording ? recordings.find((item) => item.id === project.recording!.id) : undefined
+      return delay(clone(recording?.chapters ?? []))
+    },
     async touchPlayout(_id) {
       await delay(undefined)
     },
@@ -871,8 +876,8 @@ export const mockClient: Client = {
     },
     async publish(id) {
       const p = findProject(id)
-      if (!p.recording || p.recording.state !== 'trimmed') {
-        throw new Error('Trimma inspelningen innan publicering.')
+      if (!p.recording || !['recorded', 'trimmed', 'published'].includes(p.recording.state)) {
+        throw new Error('Inspelningen är inte klar för publicering.')
       }
       p.recording.state = 'published'
       p.publication.state = 'published'
