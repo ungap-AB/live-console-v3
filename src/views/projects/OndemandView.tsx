@@ -131,7 +131,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
 
   useEffect(() => {
     let cancelled = false
-    if (p.publicMode !== 'ondemand') {
+    if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') {
       setProjectChapters([])
       return
     }
@@ -165,11 +165,17 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const displayedRecording = recording
   const displayedOriginal = original
   const recordingChapters = displayedRecording ? chaptersFor(displayedRecording, displayedOriginal) : []
-  const chapters = isAfter && recordingChapters.length > 0
-    ? recordingChapters
-    : projectChapters.length > 0
+  const chapters = isAfter
+    ? projectChapters.length > 0
       ? projectChapters
-      : chaptersFromTimeline(p)
+      : recordingChapters.length > 0
+        ? recordingChapters
+        : chaptersFromTimeline(p)
+    : recordingChapters.length > 0
+      ? recordingChapters
+      : projectChapters.length > 0
+        ? projectChapters
+        : chaptersFromTimeline(p)
   const source = displayedOriginal ?? displayedRecording
   const mockTrimDuration = source?.durationSeconds ?? 0
   const previewUrl = displayedRecording?.hlsUrl || p.recording?.hlsUrl || ''
