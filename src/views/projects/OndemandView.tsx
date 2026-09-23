@@ -664,7 +664,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
             )}
             <footer class="od-chapters-footer">
               <button class="btn btn-sm" type="button" disabled={Object.keys(draftOffsets).length === 0 && Object.keys(savedOffsets).length === 0} onClick={() => void undoAllOffsets()}>
-                Ångra alla justeringar
+                Ångra alla tidsjusteringar
               </button>
               <button class="btn btn-sm btn-primary od-save-button" type="button" disabled={!draftDirty} onClick={() => void saveTrimDraft()}>
                 Spara
