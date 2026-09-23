@@ -1,5 +1,6 @@
 import { useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
+import { ConfirmModal } from '../../components/ConfirmModal'
 import { Modal } from '../../components/Modal'
 import { Clock } from '../../components/Clock'
 import type { Channel, ChannelHealth, Project, Visibility } from '../../data/types'
@@ -34,9 +35,13 @@ function displayUrl(url: string): string {
 export function ProjectHeader({ project: p, actions, onBack, onModeSelect, channel = null, health = null, streamKey = null }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
-  const { selectMode, dialog: modeDialog } = useModeChange(p, actions)
+  const { selectMode, dialog: modeDialog } = useModeChange(p, actions, (from, to) => {
+    const encoderStopped = health !== null && health.state.toLowerCase() !== 'live'
+    if (from === 'live' && to === 'after' && channel && encoderStopped) setConfirmTeardown(true)
+  })
   const [showSettings, setShowSettings] = useState(false)
   const [showIngestInfo, setShowIngestInfo] = useState(false)
+  const [confirmTeardown, setConfirmTeardown] = useState(false)
   const [copied, setCopied] = useState(false)
   const settingsButton = useRef<HTMLButtonElement>(null)
 
@@ -56,19 +61,25 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
     }
   }
 
+  async function teardownIngest() {
+    setConfirmTeardown(false)
+    setShowIngestInfo(false)
+    await actions.teardownChannel()
+  }
+
   const phase = health?.livePhase?.toLowerCase()
   const encoderStatus = !channel
-    ? { label: 'Ingen ingest', tone: 'warn' }
+    ? { label: 'Ingen ingest', tone: 'neutral' }
     : p.publicMode === 'after' && (phase === 'live' || phase === 'waitingforstream' || health?.state?.toLowerCase() === 'live')
       ? { label: 'Väntar på att enkoder stoppar', tone: 'warn' }
       : phase === 'live' || health?.state?.toLowerCase() === 'live'
       ? { label: 'Signal OK', tone: 'ok' }
       : phase === 'signalinterrupted' || phase === 'signalinterrupteddeclined'
-        ? { label: 'Avbrott i signal', tone: 'warn' }
+        ? { label: 'Avbrott i signal', tone: 'danger' }
         : p.publicMode === 'after' && phase === 'waitingforstream'
           ? { label: 'Väntar på att enkoder stoppar', tone: 'warn' }
           : phase === 'streamended'
-            ? { label: 'Sändningen avslutad', tone: 'ok' }
+            ? { label: 'Sändningen avslutad', tone: 'ended' }
             : { label: 'Väntar på signal', tone: 'warn' }
 
   return (
@@ -119,6 +130,7 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
             </button>
           </>
         )}
+        <span class="spacer" />
         <div class={`pv-encoder-status is-${encoderStatus.tone}`} role="status">
           <span class="pv-encoder-dot" aria-hidden="true" />
           <span>{encoderStatus.label}</span>
@@ -143,12 +155,33 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
 
       {showIngestInfo && channel && (
         <div class="pv-ingest-info">
-          <IngestInfo channel={channel} streamKey={streamKey} trailingAction={(
-            <button class="pv-icon-btn" type="button" aria-label="Stäng ingest-info" title="Stäng" onClick={() => setShowIngestInfo(false)}>
-              <Icon name="close" size={18} />
-            </button>
-          )} />
+          <IngestInfo
+            channel={channel}
+            streamKey={streamKey}
+            trailingAction={(
+              <div class="pv-ingest-actions">
+                <button class="btn btn-sm btn-danger" type="button" onClick={() => setConfirmTeardown(true)}>
+                  Riv ingest
+                </button>
+                <button class="pv-icon-btn" type="button" aria-label="Stäng ingest-info" title="Stäng" onClick={() => setShowIngestInfo(false)}>
+                  <Icon name="close" size={18} />
+                </button>
+              </div>
+            )}
+          />
         </div>
+      )}
+
+      {confirmTeardown && (
+        <ConfirmModal
+          title="Riva ingest?"
+          confirmLabel="Riv ingest"
+          danger
+          onCancel={() => setConfirmTeardown(false)}
+          onConfirm={() => void teardownIngest()}
+        >
+          <p>Ingest-resursen tas bort. För att sända behöver du skapa en ny ingest och använda en ny stream key i enkodern.</p>
+        </ConfirmModal>
       )}
 
       <div class="pv-row pv-controls">

@@ -507,6 +507,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
             <footer class="od-trim-footer">
               <span>{trimDirty ? 'Trimändringar väntar på publicering' : 'Originalvideo'}</span>
               {isAfter && <span>{selectedChapter === null ? 'Välj ett kapitel för att justera tid' : 'Kapitel valt för justering'}</span>}
+              <button class="btn btn-sm" type="button" onClick={resetVideoToOriginal}>
+                Återställ video till original
+              </button>
             </footer>
           </section>
 
@@ -560,9 +563,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
             <footer class="od-chapters-footer">
               <button class="btn btn-sm" type="button" disabled={Object.keys(draftOffsets).length === 0 && Object.keys(savedOffsets).length === 0} onClick={undoAllOffsets}>
                 Ångra alla justeringar
-              </button>
-              <button class="btn btn-sm" type="button" onClick={resetVideoToOriginal}>
-                Återställ video till original
               </button>
             </footer>
           </section>

@@ -264,7 +264,9 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                         title={active ? 'Rensa punkt i bild' : 'Spela ut'}
                         aria-label={active ? `Rensa ${it.title} i bild` : `Spela ut ${it.title}`}
                         onClick={() => {
-                          if (active) actions.clear('agendaItem')
+                          if (active) {
+                            actions.clear('agendaItem')
+                          }
                           else {
                             actions.clear('person')
                             actions.cue('agendaItem', it.id, it.title)
@@ -353,7 +355,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                         aria-label={active ? `Rensa ${person.name} i bild` : `Spela ut ${person.name}`}
                         onClick={() => (active ? actions.clear('person') : actions.cue('person', person.id, person.name))}
                       >
-                        {active ? <StopIcon /> : speakerPlayCount(person.id) > 0 ? <CheckIcon /> : <PlayIcon />}
+                        {active ? <StopIcon /> : <PlayIcon />}
                       </button>
                     </>
                   )
