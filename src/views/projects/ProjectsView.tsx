@@ -261,6 +261,11 @@ export function ProjectsView({
         if (!selected) return
         replace(await client.projects.unpublish(selected.id))
       }),
+    restoreOriginal: () =>
+      attempt(async () => {
+        if (!selected) return
+        replace(await client.projects.restoreOriginal(selected.id))
+      }),
     returnToLive: () =>
       attempt(async () => {
         if (!selected) return

@@ -150,6 +150,7 @@ export interface Client {
     publish(id: string): Promise<Project>
     /** Avpublicerar inspelningen: läget blir After (afterReason ondemandUnpublished) och manifestet tas bort. */
     unpublish(id: string): Promise<Project>
+    restoreOriginal(id: string): Promise<Project>
     returnToLive(id: string): Promise<Project>
     cue(id: string, kind: CueKind, refId: string, label: string): Promise<TimelineEvent>
     /** Rensar aktiv dagordningspunkt/namnskylt — loggas som en egen tidslinjehändelse, tar inte bort tidigare utspelningar. */

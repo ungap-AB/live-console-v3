@@ -18,6 +18,7 @@ export interface ProjectActions {
   trim: (range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }) => Promise<boolean>
   publish: () => Promise<boolean>
   unpublish: () => Promise<boolean>
+  restoreOriginal: () => Promise<boolean>
   returnToLive: () => Promise<boolean>
   cue: (kind: CueKind, refId: string, label: string) => void
   /** Rensar aktiv dagordningspunkt/namnskylt — loggas som en egen händelse, tar inte bort tidigare utspelningar. */

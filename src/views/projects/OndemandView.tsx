@@ -313,10 +313,14 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     setUndoVisible(false)
   }
 
-  function resetVideoToOriginal() {
-    setMockTrimStart(defaultTrimStart)
-    setMockTrimEnd(defaultTrimEnd)
+  async function resetVideoToOriginal() {
+    if (isAfter && !(await actions.restoreOriginal())) return
+    setMockTrimStart(0)
+    setMockTrimEnd(original?.durationSeconds ?? mockTrimDuration)
     undoAllOffsets()
+    setChapterLabels({})
+    setSelectedChapter(null)
+    setPreviewSeekSeconds(null)
   }
 
   function pausePreview() {
@@ -534,9 +538,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
             <footer class="od-trim-footer">
               <span>{trimDirty ? 'Trimändringar väntar på publicering' : 'Originalvideo'}</span>
               {isAfter && <span>{selectedChapter === null ? 'Välj ett kapitel för att justera tid' : 'Kapitel valt för justering'}</span>}
-              <button class="btn btn-sm" type="button" onClick={resetVideoToOriginal}>
+              {isAfter && <button class="btn btn-sm" type="button" onClick={() => void resetVideoToOriginal()}>
                 Återställ video till original
-              </button>
+              </button>}
             </footer>
           </section>
 

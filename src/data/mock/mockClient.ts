@@ -930,6 +930,16 @@ export const mockClient: Client = {
       p.onDemandLocked = false
       return delay(projectSnapshot(p))
     },
+    async restoreOriginal(id) {
+      const p = findProject(id)
+      if (p.recording?.state === 'trimmed' || p.recording?.state === 'published') {
+        const trimmed = recordings.find((item) => item.id === p.recording?.id)
+        const original = trimmed?.parentId ? recordings.find((item) => item.id === trimmed.parentId) : undefined
+        if (original) p.recording = { id: original.id, state: 'recorded', hlsUrl: original.hlsUrl }
+      }
+      p.trimDraft = null
+      return delay(projectSnapshot(p))
+    },
     async returnToLive(id) {
       // Samma som servern: avkopplar ondemand-versionen och sätter läget Live, stängt.
       const p = findProject(id)
