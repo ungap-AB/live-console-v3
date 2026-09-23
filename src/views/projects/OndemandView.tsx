@@ -70,6 +70,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [recording, setRecording] = useState<Recording | null>(null)
   const [original, setOriginal] = useState<Recording | null>(null)
   const [projectChapters, setProjectChapters] = useState<Chapter[]>([])
+  const [projectChaptersLoaded, setProjectChaptersLoaded] = useState(false)
   const [mockTrimStart, setMockTrimStart] = useState(0)
   const [mockTrimEnd, setMockTrimEnd] = useState(0)
   const previewVideoRef = useRef<HTMLVideoElement>(null)
@@ -134,12 +135,20 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     let cancelled = false
     if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') {
       setProjectChapters([])
+      setProjectChaptersLoaded(false)
       return
     }
+    setProjectChaptersLoaded(false)
     client.projects.chapters(p.id).then((nextChapters) => {
-      if (!cancelled) setProjectChapters(nextChapters)
+      if (!cancelled) {
+        setProjectChapters(nextChapters)
+        setProjectChaptersLoaded(true)
+      }
     }).catch(() => {
-      if (!cancelled) setProjectChapters([])
+      if (!cancelled) {
+        setProjectChapters([])
+        setProjectChaptersLoaded(true)
+      }
     })
     return () => {
       cancelled = true
@@ -167,7 +176,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const displayedOriginal = original
   const recordingChapters = displayedRecording ? chaptersFor(displayedRecording, displayedOriginal) : []
   const chapters = isAfter
-    ? projectChapters.length > 0
+    ? !projectChaptersLoaded
+      ? []
+      : projectChapters.length > 0
       ? projectChapters
       : recordingChapters.length > 0
         ? recordingChapters
@@ -632,11 +643,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
               </div>
             )}
             <footer class="od-trim-footer">
-              <span>{trimDirty ? 'Trimändringar väntar på publicering' : 'Originalvideo'}</span>
-              {isAfter && <span>{selectedChapter === null ? 'Välj ett kapitel för att justera tid' : 'Kapitel valt för justering'}</span>}
-              {isAfter && <button class="btn btn-sm" type="button" onClick={() => void resetVideoToOriginal()}>
-                Återställ video till original
-              </button>}
             </footer>
           </section>
 
@@ -699,15 +705,19 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
               </ul>
             )}
             <footer class="od-chapters-footer">
-              <button class="btn btn-sm" type="button" disabled={selectedChapter === null} onClick={() => void undoLatestChange()}>
-                Ångra senaste
-              </button>
-              <button class="btn btn-sm" type="button" onClick={() => setConfirmUndoAll(true)}>
-                Ångra allt
-              </button>
-              <button class="btn btn-sm btn-primary od-publish-button" type="button" onClick={() => setConfirmOndemand(true)}>
-                Publicera ondemand
-              </button>
+              {isAfter && (
+                <>
+                  <button class="btn btn-sm" type="button" disabled={selectedChapter === null} onClick={() => void undoLatestChange()}>
+                    Ångra senaste
+                  </button>
+                  <button class="btn btn-sm" type="button" onClick={() => setConfirmUndoAll(true)}>
+                    Ångra allt
+                  </button>
+                  <button class="btn btn-sm btn-primary od-publish-button" type="button" onClick={() => setConfirmOndemand(true)}>
+                    Publicera ondemand
+                  </button>
+                </>
+              )}
             </footer>
           </section>
         </div>
