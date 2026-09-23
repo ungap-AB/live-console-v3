@@ -88,6 +88,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [deletingChapter, setDeletingChapter] = useState<number | null>(null)
   const deleteConfirmationTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [confirmOndemand, setConfirmOndemand] = useState(false)
+  const [confirmUndoAll, setConfirmUndoAll] = useState(false)
   const [publishing, setPublishing] = useState(false)
 
   const recordingId = p.recording?.id
@@ -315,6 +316,35 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     }
   }
 
+  async function undoLatestChange() {
+    if (selectedChapter === null) return
+    const chapter = chapters[selectedChapter]
+    if (!chapter) return
+    const originalOffset = chapter.offsetSeconds
+    try {
+      if (p.publicMode === 'ondemand') {
+        await client.projects.updateChapterOffset(p.id, selectedChapter, {
+          offsetSeconds: originalOffset,
+          label: chapter.label,
+        })
+        setProjectChapters(await client.projects.chapters(p.id))
+      } else {
+        const event = p.playout.timeline
+          .filter((item) => item.kind === chapter.kind && item.refId !== null && item.label !== 'Rensat')
+          .find((item) => item.label === chapter.label || item.offsetSeconds === chapter.offsetSeconds)
+        if (event) await client.projects.updateTimelineEvent(p.id, event.id, { label: chapter.label, offsetSeconds: originalOffset })
+      }
+      undoToOriginalOffset()
+      setChapterLabels((current) => {
+        const next = { ...current }
+        delete next[selectedChapter]
+        return next
+      })
+    } catch {
+      // Behåll ändringen synlig om återställningen misslyckas.
+    }
+  }
+
   async function undoAllOffsets() {
     const savedIndexes = Object.keys(savedOffsets).map(Number)
     try {
@@ -449,6 +479,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     setConfirmOndemand(false)
     setPublishing(true)
     try {
+      if (draftDirty) await saveTrimDraft()
       if (trimDirty && p.recording) {
         if (!(await actions.trim({ startOffsetSeconds: mockTrimStart, endOffsetSeconds: mockTrimEnd }))) return
         await actions.refreshProject()
@@ -471,6 +502,11 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       return
     }
     selectMode(mode)
+  }
+
+  async function undoAllAndClose() {
+    setConfirmUndoAll(false)
+    await resetVideoToOriginal()
   }
 
   function startChapterEdit(index: number, label: string) {
@@ -663,11 +699,14 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
               </ul>
             )}
             <footer class="od-chapters-footer">
-              <button class="btn btn-sm" type="button" disabled={Object.keys(draftOffsets).length === 0 && Object.keys(savedOffsets).length === 0} onClick={() => void undoAllOffsets()}>
-                Ångra alla tidsjusteringar
+              <button class="btn btn-sm" type="button" disabled={selectedChapter === null} onClick={() => void undoLatestChange()}>
+                Ångra senaste
               </button>
-              <button class="btn btn-sm btn-primary od-save-button" type="button" disabled={!draftDirty} onClick={() => void saveTrimDraft()}>
-                Spara
+              <button class="btn btn-sm" type="button" onClick={() => setConfirmUndoAll(true)}>
+                Ångra allt
+              </button>
+              <button class="btn btn-sm btn-primary od-publish-button" type="button" onClick={() => setConfirmOndemand(true)}>
+                Publicera ondemand
               </button>
             </footer>
           </section>
@@ -680,6 +719,15 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
           <div class="modal-actions">
             <button class="btn" type="button" onClick={() => setConfirmOndemand(false)}>Nej</button>
             <button class="btn btn-primary" type="button" onClick={() => void publishWithTrim()}>{trimDirty ? 'Ja, publicera' : 'Ja, gå till ondemand'}</button>
+          </div>
+        </Modal>
+      )}
+      {confirmUndoAll && (
+        <Modal title="Ångra allt?" onClose={() => setConfirmUndoAll(false)}>
+          <p>Alla ändringar i After återställs till läget när sändningen gick över till After. Originalinspelningen används igen.</p>
+          <div class="modal-actions">
+            <button class="btn" type="button" onClick={() => setConfirmUndoAll(false)}>Avbryt</button>
+            <button class="btn btn-danger" type="button" onClick={() => void undoAllAndClose()}>Ångra allt</button>
           </div>
         </Modal>
       )}

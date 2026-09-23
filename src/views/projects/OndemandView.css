@@ -91,14 +91,14 @@
   flex-wrap: wrap;
 }
 
-.od-save-button {
+.od-publish-button {
   margin-left: auto;
   background: #208a4a;
   border-color: #208a4a;
   color: #fff;
 }
 
-.od-save-button:hover:not(:disabled) {
+.od-publish-button:hover:not(:disabled) {
   background: #176b39;
   border-color: #176b39;
 }
