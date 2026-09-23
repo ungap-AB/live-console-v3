@@ -88,6 +88,18 @@ export interface ServerProjectTechnicalHealth {
   recordingState: string | null
 }
 
+export interface ServerTrimDraftChapter {
+  index: number
+  label: string
+  offsetSeconds: number
+}
+
+export interface ServerTrimDraft {
+  startOffsetSeconds: number
+  endOffsetSeconds: number
+  chapters: ServerTrimDraftChapter[]
+}
+
 export interface ServerPublicationHistory {
   id: string
   action: string
@@ -132,6 +144,7 @@ export interface ServerProject {
   meetingDomain?: string
   meetingId?: string
   meetingEventsEnabled?: boolean
+  trimDraft: ServerTrimDraft | null
 }
 
 export interface ServerTimelineEvent {

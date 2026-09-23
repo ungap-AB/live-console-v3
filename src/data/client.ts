@@ -156,6 +156,7 @@ export interface Client {
     clear(id: string, kind: CueKind): Promise<TimelineEvent>
     updateTimelineEvent(id: string, eventId: string, input: { label?: string; offsetSeconds?: number }): Promise<TimelineEvent>
     updateChapterOffset(id: string, index: number, offsetSeconds: number): Promise<void>
+    saveTrimDraft(id: string, draft: import('./types').TrimDraft): Promise<Project>
     /** Mockup-bara: återställer sändningssimuleringen till ett obörjat läge. */
     resetSimulation(id: string): Promise<Project>
   }

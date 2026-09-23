@@ -94,6 +94,18 @@ export type RecordingReadiness = 'unknown' | 'recording' | 'processing' | 'ready
 export type ChannelState = 'none' | 'idle' | 'live'
 export type RecordingState = 'none' | 'recording' | 'processing' | 'recorded' | 'trimmed' | 'published'
 
+export interface TrimDraftChapter {
+  index: number
+  label: string
+  offsetSeconds: number
+}
+
+export interface TrimDraft {
+  startOffsetSeconds: number
+  endOffsetSeconds: number
+  chapters: TrimDraftChapter[]
+}
+
 export interface RecordingSession {
   id: string
   streamId: string
@@ -152,6 +164,7 @@ export interface Project {
   meetingDomain?: string
   meetingId?: string
   meetingEventsEnabled?: boolean
+  trimDraft: TrimDraft | null
   /**
    * Mockup-bara fält för att simulera sändningsförloppet utan en riktig
    * IVS-kanal (se mockup/HANDOVER.md §6.5 — panelen som styr detta tas bort

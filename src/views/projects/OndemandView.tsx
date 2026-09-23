@@ -99,6 +99,14 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   }, [recording?.id, recording?.durationSeconds, recording?.trimRange?.startOffsetSeconds, recording?.trimRange?.endOffsetSeconds, p.publicMode, recordingId])
 
   useEffect(() => {
+    if (!p.trimDraft) return
+    setMockTrimStart(p.trimDraft.startOffsetSeconds)
+    setMockTrimEnd(p.trimDraft.endOffsetSeconds)
+    setSavedOffsets(Object.fromEntries(p.trimDraft.chapters.map((chapter) => [chapter.index, chapter.offsetSeconds])))
+    setChapterLabels(Object.fromEntries(p.trimDraft.chapters.map((chapter) => [chapter.index, chapter.label])))
+  }, [p.trimDraft])
+
+  useEffect(() => {
     let cancelled = false
     if (!recordingId || recordingState === 'recording' || recordingState === 'processing') {
       setRecording(null)
@@ -362,11 +370,30 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       // Keep the draft visible so the operator can retry.
     }
   }
+
+  async function saveTrimDraft() {
+    const nextDraft = {
+      startOffsetSeconds: mockTrimStart,
+      endOffsetSeconds: mockTrimEnd,
+      chapters: chapters.map((chapter, index) => ({
+        index,
+        label: chapterLabels[index] ?? chapter.label,
+        offsetSeconds: savedOffsets[index] ?? draftOffsets[index] ?? chapter.offsetSeconds,
+      })),
+    }
+    try {
+      await client.projects.saveTrimDraft(p.id, nextDraft)
+      await actions.refreshProject()
+    } catch {
+      // Behåll draften lokalt så operatören kan försöka spara igen.
+    }
+  }
   const defaultTrimStart = displayedRecording?.trimRange?.startOffsetSeconds ?? 0
   const defaultTrimEnd = displayedRecording?.trimRange?.endOffsetSeconds ?? mockTrimDuration
   const startChanged = mockTrimStart !== defaultTrimStart
   const endChanged = mockTrimEnd !== defaultTrimEnd
   const trimDirty = isAfter && (startChanged || endChanged)
+  const draftDirty = trimDirty || Object.entries(chapterLabels).some(([index, label]) => label !== chapters[Number(index)]?.label)
   const chaptersAdjusted = trimDirty && chaptersChanged(source, mockTrimStart, mockTrimEnd)
   const confirmationChanges = [
     trimDirty ? 'Videon är trimmad' : '',
@@ -563,6 +590,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
             <footer class="od-chapters-footer">
               <button class="btn btn-sm" type="button" disabled={Object.keys(draftOffsets).length === 0 && Object.keys(savedOffsets).length === 0} onClick={undoAllOffsets}>
                 Ångra alla justeringar
+              </button>
+              <button class="btn btn-sm btn-primary od-save-button" type="button" disabled={!draftDirty} onClick={() => void saveTrimDraft()}>
+                Spara
               </button>
             </footer>
           </section>

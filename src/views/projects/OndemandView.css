@@ -91,6 +91,10 @@
   flex-wrap: wrap;
 }
 
+.od-save-button {
+  margin-left: auto;
+}
+
 .od-trim-footer {
   flex: none;
   display: flex;

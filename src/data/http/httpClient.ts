@@ -344,6 +344,13 @@ function toProjectLite(dto: ServerProject): Project {
     meetingDomain: dto.meetingDomain,
     meetingId: dto.meetingId,
     meetingEventsEnabled: dto.meetingEventsEnabled,
+    trimDraft: dto.trimDraft
+      ? {
+          startOffsetSeconds: dto.trimDraft.startOffsetSeconds,
+          endOffsetSeconds: dto.trimDraft.endOffsetSeconds,
+          chapters: dto.trimDraft.chapters,
+        }
+      : null,
     sim: { everSent: false, segments: 0, accumulatedSeconds: 0, recordingStartedAt: null },
     playout: { currentAgendaItemId: null, currentPersonId: null, timeline: [] },
   }
@@ -796,6 +803,10 @@ export const httpClient: Client = {
     },
     async updateChapterOffset(id, index, offsetSeconds) {
       await api<void>(`/projects/${id}/chapters/${index}`, { method: 'PATCH', body: { offsetSeconds } })
+    },
+    async saveTrimDraft(id, draft) {
+      const dto = await api<ServerProject>(`/projects/${id}/trim-draft`, { method: 'PUT', body: draft })
+      return toProjectFull(dto)
     },
     async resetSimulation(id) {
       await api<void>(`/debug/projects/${id}/reset`, { method: 'POST' })

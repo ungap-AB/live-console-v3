@@ -693,6 +693,7 @@ export const mockClient: Client = {
         publication: { state: 'none' },
         capabilities: defaultCapabilities(),
         onDemandLocked: false,
+        trimDraft: null,
         agendaId: null,
         namelistId: null,
         sim: { everSent: false, segments: 0, accumulatedSeconds: 0, recordingStartedAt: null },
@@ -999,6 +1000,11 @@ export const mockClient: Client = {
     },
     async updateChapterOffset(_id, _index, _offsetSeconds) {
       return delay(undefined)
+    },
+    async saveTrimDraft(id, draft) {
+      const project = findProject(id)
+      project.trimDraft = clone(draft)
+      return delay(projectSnapshot(project))
     },
     async resetSimulation(id) {
       const p = findProject(id)
