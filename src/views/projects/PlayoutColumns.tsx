@@ -256,7 +256,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                         <PdfIcon />
                         <span class="pdf-count" aria-hidden="true">{it.attachments?.length ?? 0}</span>
                       </button>
-                      {offset != null && <span class="time">{formatHms(offset)}</span>}
+                      {offset != null && <span class="time" title="Position i inspelningen">{formatHms(offset)}</span>}
                       <button
                         class="play"
                         type="button"

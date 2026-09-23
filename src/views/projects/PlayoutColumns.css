@@ -21,6 +21,10 @@
   flex: none;
 }
 
+.local-time {
+  color: var(--ink-2);
+}
+
 .play-count {
   min-width: 18px;
   text-align: center;

@@ -137,6 +137,19 @@
   font-weight: 600;
 }
 
+.lw-now-value > span {
+  min-width: 0;
+}
+
+.lw-now-time {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 400;
+}
+
 .lw-now-panel:not(.is-active) .lw-now-value {
   font-weight: 400;
   color: var(--ink-3);

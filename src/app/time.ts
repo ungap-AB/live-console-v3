@@ -29,6 +29,14 @@ export function formatDateTime(iso: string): string {
   })
 }
 
+export function formatLocalTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('sv-SE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+}
+
 export function formatDate(iso: string | undefined): string {
   if (!iso) return '–'
   return new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' })
