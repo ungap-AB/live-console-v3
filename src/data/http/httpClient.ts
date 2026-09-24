@@ -808,6 +808,12 @@ export const httpClient: Client = {
     async deleteTimelineEvent(id, eventId) {
       await api<void>(`/projects/${id}/timeline/${eventId}`, { method: 'DELETE' })
     },
+    async updateDraftChapter(id, chapterId, input) {
+      await api<void>(`/projects/${id}/timeline-draft/chapters/${chapterId}`, { method: 'PATCH', body: input })
+    },
+    async deleteDraftChapter(id, chapterId) {
+      await api<void>(`/projects/${id}/timeline-draft/chapters/${chapterId}`, { method: 'DELETE' })
+    },
     async updateChapterOffset(id, index, input) {
       await api<void>(`/projects/${id}/chapters/${index}`, { method: 'PATCH', body: input })
     },

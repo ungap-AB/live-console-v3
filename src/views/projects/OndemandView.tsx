@@ -25,16 +25,6 @@ const CHAPTER_KIND: Record<CueKind, string> = {
   exclamation: 'Utrop',
 }
 
-function chaptersFor(recording: Recording, original: Recording | null): Chapter[] {
-  const source = recording.kind === 'trimmed' ? original : recording
-  if (!source) return []
-  const range = recording.kind === 'trimmed' ? recording.trimRange : undefined
-  return source.chapters
-    .filter((chapter) => !range || (chapter.offsetSeconds >= range.startOffsetSeconds && chapter.offsetSeconds <= range.endOffsetSeconds))
-    .map((chapter) => ({ ...chapter, offsetSeconds: chapter.offsetSeconds - (range?.startOffsetSeconds ?? 0) }))
-    .sort((left, right) => left.offsetSeconds - right.offsetSeconds)
-}
-
 function chaptersForRange(source: Recording | null, startOffsetSeconds: number, endOffsetSeconds: number): Chapter[] {
   if (!source) return []
   return source.chapters
@@ -51,17 +41,6 @@ function chaptersChanged(source: Recording | null, startOffsetSeconds: number, e
     const next = adjusted[index]
     return !next || chapter.kind !== next.kind || chapter.label !== next.label || chapter.offsetSeconds !== next.offsetSeconds
   })
-}
-
-function chaptersFromTimeline(project: Project): Chapter[] {
-  return project.playout.timeline
-    .filter((event) => event.refId !== null && event.label !== 'Rensat' && event.offsetSeconds !== null)
-    .map((event) => ({
-      kind: event.kind,
-      label: event.label,
-      offsetSeconds: event.offsetSeconds!,
-    }))
-    .sort((left, right) => left.offsetSeconds - right.offsetSeconds)
 }
 
 export function OndemandView({ project: p, actions, onBack }: OndemandViewProps) {
@@ -174,20 +153,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const recordingProcessing = !broadcastInProgress && (p.recording?.state === 'recording' || p.recording?.state === 'processing')
   const displayedRecording = recording
   const displayedOriginal = original
-  const recordingChapters = displayedRecording ? chaptersFor(displayedRecording, displayedOriginal) : []
-  const chapters = isAfter
-    ? !projectChaptersLoaded
-      ? []
-      : projectChapters.length > 0
-      ? projectChapters
-      : recordingChapters.length > 0
-        ? recordingChapters
-        : chaptersFromTimeline(p)
-    : recordingChapters.length > 0
-      ? recordingChapters
-      : projectChapters.length > 0
-        ? projectChapters
-        : chaptersFromTimeline(p)
+  const chapters = !projectChaptersLoaded
+    ? []
+    : projectChapters
   const source = displayedOriginal ?? displayedRecording
   const mockTrimDuration = source?.durationSeconds ?? 0
   const previewUrl = displayedRecording?.hlsUrl || p.recording?.hlsUrl || ''
@@ -435,10 +403,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
         await client.projects.updateChapterOffset(p.id, selectedChapter, { offsetSeconds: nextOffset })
       } else {
         const chapter = chapters[selectedChapter]
-        const event = p.playout.timeline
-          .filter((item) => item.kind === chapter.kind && item.refId !== null && item.label !== 'Rensat')
-          .find((item) => item.label === chapter.label || item.offsetSeconds === chapter.offsetSeconds)
-        if (event) await client.projects.updateTimelineEvent(p.id, event.id, { offsetSeconds: nextOffset })
+        if (chapter.sourceEventId) await client.projects.updateDraftChapter(p.id, chapter.sourceEventId, { offsetSeconds: nextOffset })
       }
       setSavedOffsets((current) => ({ ...current, [selectedChapter]: nextOffset }))
       setUndoVisible(true)
@@ -535,7 +500,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       } else if (p.publicMode === 'after') {
         const chapter = chapters[editingChapter]
         if (chapter?.sourceEventId) {
-          await client.projects.updateTimelineEvent(p.id, chapter.sourceEventId, { label: chapterDraft.trim() })
+          await client.projects.updateDraftChapter(p.id, chapter.sourceEventId, { label: chapterDraft.trim() })
           const nextChapters = await client.projects.chapters(p.id)
           setProjectChapters(nextChapters)
         }
@@ -553,7 +518,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       setProjectChapters(await client.projects.chapters(p.id))
     } else if (p.publicMode === 'after') {
       const chapter = chapters[index]
-      if (chapter?.sourceEventId) await client.projects.deleteTimelineEvent(p.id, chapter.sourceEventId)
+      if (chapter?.sourceEventId) await client.projects.deleteDraftChapter(p.id, chapter.sourceEventId)
       await actions.refreshPlayout()
     } else return
     setSelectedChapter(null)
@@ -665,7 +630,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
               <ul class="od-chapters">
                 {chapters.map((chapter, index) => (
                   <li
-                    key={`${chapter.offsetSeconds}-${index}`}
+                    key={chapter.sourceEventId ?? `${chapter.offsetSeconds}-${index}`}
                     class={`od-chapter-row${selectedChapter === index ? ' is-selected' : ''}`}
                   >
                       <button

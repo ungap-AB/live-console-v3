@@ -157,6 +157,8 @@ export interface Client {
     clear(id: string, kind: CueKind): Promise<TimelineEvent>
     updateTimelineEvent(id: string, eventId: string, input: { label?: string; offsetSeconds?: number }): Promise<TimelineEvent>
     deleteTimelineEvent(id: string, eventId: string): Promise<void>
+    updateDraftChapter(id: string, chapterId: string, input: { label?: string; offsetSeconds?: number }): Promise<void>
+    deleteDraftChapter(id: string, chapterId: string): Promise<void>
     updateChapterOffset(id: string, index: number, input: { offsetSeconds?: number; label?: string }): Promise<void>
     deleteChapter(id: string, index: number): Promise<void>
     saveTrimDraft(id: string, draft: import('./types').TrimDraft): Promise<Project>

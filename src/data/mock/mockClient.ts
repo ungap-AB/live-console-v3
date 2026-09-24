@@ -1013,6 +1013,12 @@ export const mockClient: Client = {
       project.playout.timeline = project.playout.timeline.filter((event) => event.id !== eventId)
       return delay(undefined)
     },
+    async updateDraftChapter(_id, _chapterId, _input) {
+      return delay(undefined)
+    },
+    async deleteDraftChapter(_id, _chapterId) {
+      return delay(undefined)
+    },
     async updateChapterOffset(_id, _index, _input) {
       return delay(undefined)
     },
