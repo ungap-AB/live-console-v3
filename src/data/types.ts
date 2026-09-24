@@ -106,15 +106,6 @@ export interface TrimDraft {
   chapters: TrimDraftChapter[]
 }
 
-export interface RecordingSession {
-  id: string
-  streamId: string
-  startedAt: string
-  endedAt?: string
-  durationSeconds: number
-  hlsUrl?: string
-  availabilityReason?: string
-}
 export type PublicationState = 'none' | 'review' | 'published'
 
 export type CapabilityStatus = 'allowed' | 'allowedWithWarning' | 'blocked'
@@ -283,6 +274,17 @@ export interface Chapter {
   readOnly?: boolean
 }
 
+// En av projektets egna sändningar (även test-sändningar) — valbara i
+// Ondemand-vyns "Sändning"-dropdown, se ProjectRecordingDto på servern.
+export interface ProjectRecording {
+  id: string
+  name: string
+  durationSeconds: number
+  hlsUrl: string
+  startedAt: string
+  isActive: boolean
+}
+
 export interface Recording {
   id: string
   kind: RecordingKind
@@ -296,8 +298,6 @@ export interface Recording {
   project: ProjectRef | null
   /** Endast original — glapp syns som segments.length > 1. */
   segments: RecordingSegment[]
-  /** IVS-sessioner som sparats innan ingest-kanalen revs. */
-  sessions?: RecordingSession[]
   /** Endast original — en trimmad version läser kapitel via parentId och filtrerar på trimRange. */
   chapters: Chapter[]
   /** Endast trimmade versioner. */

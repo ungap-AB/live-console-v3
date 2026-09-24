@@ -3,33 +3,20 @@ import { create, isPlayerSupported, PlayerEventType } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { Modal } from '../../components/Modal'
-import { client } from '../../data'
 import type { Recording } from '../../data/types'
-import { formatDateTime, formatHms, parseHms } from '../../app/time'
+import { formatHms, parseHms } from '../../app/time'
 import './TrimDialog.css'
 
 interface TrimDialogProps {
   recording: Recording
-  sessionId?: string
   initialRange?: { startOffsetSeconds: number; endOffsetSeconds: number }
   onCancel: () => void
-  onSave: (range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }) => Promise<void>
+  onSave: (range: { startOffsetSeconds: number; endOffsetSeconds: number }) => Promise<void>
 }
 
-export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSave }: TrimDialogProps) {
-  const availableSessions = recording.sessions?.filter((session) => session.hlsUrl)
-  const defaultSessionId = sessionId && availableSessions?.some((session) => session.id === sessionId)
-    ? sessionId
-    : availableSessions?.toSorted((a, b) => b.durationSeconds - a.durationSeconds)[0]?.id
-  // `activeRecording` speglar VILKEN sessions manifest/längd som just nu
-  // förhandsvisas — måste bytas ut när operatören väljer en annan session i
-  // listan, annars trimmas offset:er som satts mot en video mot en helt
-  // annan video (se granskningen 2026-09-17).
-  const [activeRecording, setActiveRecording] = useState(recording)
-  const [selectedSessionId, setSelectedSessionId] = useState(defaultSessionId)
-  const [switchingSession, setSwitchingSession] = useState(false)
+export function TrimDialog({ recording, initialRange, onCancel, onSave }: TrimDialogProps) {
   const [from, setFrom] = useState(initialRange?.startOffsetSeconds ?? 0)
-  const [to, setTo] = useState(initialRange?.endOffsetSeconds ?? activeRecording.durationSeconds)
+  const [to, setTo] = useState(initialRange?.endOffsetSeconds ?? recording.durationSeconds)
   const [fromText, setFromText] = useState(formatHms(from))
   const [toText, setToText] = useState(formatHms(to))
   const [saving, setSaving] = useState(false)
@@ -38,15 +25,11 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
   const [rangeError, setRangeError] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  const duration = activeRecording.durationSeconds
-
-  useEffect(() => {
-    if (defaultSessionId) void selectSession(defaultSessionId)
-  }, [recording.id, defaultSessionId])
+  const duration = recording.durationSeconds
 
   useEffect(() => {
     const video = videoRef.current
-    if (!video || !activeRecording.hlsUrl) return
+    if (!video || !recording.hlsUrl) return
     if (!isPlayerSupported) {
       setVideoError('AWS IVS Player kan inte köras i den här webbläsaren.')
       return
@@ -58,38 +41,16 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
     player.addEventListener(PlayerEventType.ERROR, (error) => {
       setVideoError(error.message || 'Originalvideon kunde inte laddas.')
     })
-    player.load(activeRecording.hlsUrl)
+    player.load(recording.hlsUrl)
 
     return () => {
       player.pause()
       player.delete()
     }
-  }, [activeRecording.hlsUrl, switchingSession])
-
-  async function selectSession(nextSessionId: string) {
-    const previousSessionId = selectedSessionId
-    setSelectedSessionId(nextSessionId)
-    setSwitchingSession(true)
-    setVideoError(null)
-    try {
-      const updated = await client.recordings.selectSession(recording.id, nextSessionId)
-      const next = updated ?? recording
-      setActiveRecording(next)
-      // Tidigare satta start-/sluttider hörde till förra videon — nollställ
-      // mot den nya, annars kan de peka bortom den faktiska längden.
-      setFrom(0)
-      setTo(next.durationSeconds)
-      setFromText(formatHms(0))
-      setToText(formatHms(next.durationSeconds))
-    } catch (error) {
-      setSelectedSessionId(previousSessionId)
-      setVideoError(error instanceof Error ? error.message : 'Sessionen kunde inte laddas.')
-    } finally {
-      setSwitchingSession(false)
-    }
-  }
+  }, [recording.hlsUrl])
 
   function setVideoTime(value: number) {
+
     const video = videoRef.current
     if (!video) return
     video.currentTime = Math.max(0, Math.min(value, duration))
@@ -160,7 +121,7 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
     setRangeError(null)
     setSaving(true)
     try {
-      await onSave({ startOffsetSeconds, endOffsetSeconds, sessionId: selectedSessionId })
+      await onSave({ startOffsetSeconds, endOffsetSeconds })
     } finally {
       setSaving(false)
     }
@@ -189,29 +150,8 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
         </>
       }
     >
-      {availableSessions && availableSessions.length > 0 && (
-        <div class="trim-session-select">
-          <label>Inspelningssession</label>
-          <select
-            value={selectedSessionId ?? ''}
-            disabled={switchingSession}
-            onChange={(e) => void selectSession(e.currentTarget.value)}
-          >
-            {availableSessions.map((session) => (
-              <option value={session.id} key={session.id}>
-                {formatDateTime(session.startedAt)} · {formatHms(session.durationSeconds)}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-      {recording.sessions && recording.sessions.length > 0 && availableSessions?.length === 0 && (
-        <p class="trim-session-empty">Ingen av inspelningssessionerna har ett färdigt manifest ännu.</p>
-      )}
       <div class="trim-editor-video">
-        {switchingSession ? (
-          <div class="trim-video-empty">Byter session…</div>
-        ) : activeRecording.hlsUrl ? (
+        {recording.hlsUrl ? (
           <>
             {videoError && (
               <div class="trim-video-error">
@@ -225,7 +165,7 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
               </div>
             )}
             <video
-              key={activeRecording.hlsUrl}
+              key={recording.hlsUrl}
               ref={videoRef}
               controls
               playsInline
@@ -248,10 +188,10 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
             onBlur={commitFromText}
             onKeyDown={(e) => e.key === 'Enter' && commitFromText()}
           />
-          <button class="btn btn-sm" type="button" disabled={!activeRecording.hlsUrl || saving} onClick={setFromCurrent}>
+          <button class="btn btn-sm" type="button" disabled={!recording.hlsUrl || saving} onClick={setFromCurrent}>
             Sätt här
           </button>
-          <button class="btn btn-sm" type="button" disabled={!activeRecording.hlsUrl} onClick={() => setVideoTime(from)}>
+          <button class="btn btn-sm" type="button" disabled={!recording.hlsUrl} onClick={() => setVideoTime(from)}>
             Hoppa
           </button>
         </div>
@@ -264,10 +204,10 @@ export function TrimDialog({ recording, sessionId, initialRange, onCancel, onSav
             onBlur={commitToText}
             onKeyDown={(e) => e.key === 'Enter' && commitToText()}
           />
-          <button class="btn btn-sm" type="button" disabled={!activeRecording.hlsUrl || saving} onClick={setToCurrent}>
+          <button class="btn btn-sm" type="button" disabled={!recording.hlsUrl || saving} onClick={setToCurrent}>
             Sätt här
           </button>
-          <button class="btn btn-sm" type="button" disabled={!activeRecording.hlsUrl} onClick={() => setVideoTime(to)}>
+          <button class="btn btn-sm" type="button" disabled={!recording.hlsUrl} onClick={() => setVideoTime(to)}>
             Hoppa
           </button>
         </div>

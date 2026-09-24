@@ -11,6 +11,7 @@ import type {
   NameList,
   NameListPerson,
   Project,
+  ProjectRecording,
   Recording,
   Role,
   TimelineEvent,
@@ -385,9 +386,6 @@ export const mockClient: Client = {
     async get(id) {
       return delay(clone(recordings.find((r) => r.id === id)))
     },
-    async selectSession(id) {
-      return delay(clone(recordings.find((r) => r.id === id)))
-    },
     async rename(id, name) {
       const recording = recordings.find((r) => r.id === id)
       if (!recording) throw new Error(`Inspelning ${id} finns inte`)
@@ -668,6 +666,17 @@ export const mockClient: Client = {
       const project = findProject(id)
       const recording = project.recording ? recordings.find((item) => item.id === project.recording!.id) : undefined
       return delay(clone(recording?.chapters ?? []))
+    },
+    async recordings(id) {
+      const project = findProject(id)
+      const recording = project.recording ? recordings.find((item) => item.id === project.recording!.id) : undefined
+      const list: ProjectRecording[] = recording
+        ? [{ id: recording.id, name: recording.name, durationSeconds: recording.durationSeconds, hlsUrl: recording.hlsUrl, startedAt: recording.createdAt, isActive: true }]
+        : []
+      return delay(list)
+    },
+    async setActiveRecording(id, _recordingId) {
+      return delay(projectSnapshot(findProject(id)))
     },
     async touchPlayout(_id) {
       await delay(undefined)

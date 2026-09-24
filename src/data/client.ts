@@ -84,10 +84,9 @@ export interface Client {
   recordings: {
     list(query?: string): Promise<Recording[]>
     get(id: string): Promise<Recording | undefined>
-    selectSession(id: string, sessionId: string): Promise<Recording | undefined>
     rename(id: string, name: string): Promise<Recording>
     trash(id: string): Promise<void>
-    trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }): Promise<Recording>
+    trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number }): Promise<Recording>
   }
   channels: {
     list(query?: string): Promise<Channel[]>
@@ -130,6 +129,10 @@ export interface Client {
     get(id: string): Promise<Project | undefined>
     playout(id: string): Promise<Project['playout']>
     chapters(id: string): Promise<import('./types').Chapter[]>
+    /** Projektets egna spända inspelningar (Kind=Original), för "Sändning"-väljaren i Ondemand. */
+    recordings(id: string): Promise<import('./types').ProjectRecording[]>
+    /** Byter vilken inspelning som räknas som aktiv för Ondemand — räknar om kapitlens tider. */
+    setActiveRecording(id: string, recordingId: string): Promise<Project>
     touchPlayout(id: string): Promise<void>
     create(input: { name: string }): Promise<Project>
     rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText'>>): Promise<Project>
@@ -145,7 +148,7 @@ export interface Client {
     /** Mockup-bara: simulerar att enkodern startar/stoppar sändning. */
     setEncoderSending(id: string, sending: boolean): Promise<Project>
     interruptionDecision(id: string, decision: 'wait_for_reconnect' | 'end'): Promise<Project>
-    trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }): Promise<Project>
+    trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number }): Promise<Project>
     createReviewLink(id: string): Promise<Project>
     publish(id: string): Promise<Project>
     /** Avpublicerar inspelningen: läget blir After (afterReason ondemandUnpublished) och manifestet tas bort. */

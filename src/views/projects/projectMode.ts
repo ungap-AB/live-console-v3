@@ -16,7 +16,9 @@ const CONFIRMED: ReadonlySet<string> = new Set([
   'ondemand>after',
   'after>live',
   'ondemand>live',
-  'live>before',
+  // Live → Before är inte längre en tillåten övergång — ett avbrutet test
+  // ska alltid granskas i After först, se After → Before nedan.
+  'after>before',
   // Inte i specen: att lämna Ondemand avpublicerar alltid inspelningen, så
   // även Ondemand → Before kräver bekräftelse.
   'ondemand>before',
@@ -78,6 +80,15 @@ export function confirmationCopy(from: PublicMode, to: PublicMode): Confirmation
     return {
       title: 'Avpublicera inspelningen?',
       body: 'Inspelningen tas bort från spelaren och publiken ser Before-meddelandet i stället.',
+      confirmLabel: 'Gå till Before',
+      editsAfterText: false,
+      danger: true,
+    }
+  }
+  if (from === 'after' && to === 'before') {
+    return {
+      title: 'Avbryt och gå till Before?',
+      body: 'Historiken från sändningen/testet lämnas kvar för arkivet, men After-granskningen avslutas och publiken ser Before-meddelandet.',
       confirmLabel: 'Gå till Before',
       editsAfterText: false,
       danger: true,

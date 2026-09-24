@@ -223,16 +223,6 @@ export interface ServerRecordingSegment {
   durationSeconds: number
 }
 
-export interface ServerRecordingSession {
-  id: string
-  streamId: string
-  startedAt: string
-  endedAt?: string
-  durationSeconds: number
-  hlsUrl?: string
-  availabilityReason?: string
-}
-
 export interface ServerRecording {
   id: string
   kind: 'original' | 'trim'
@@ -251,7 +241,15 @@ export interface ServerRecording {
   startOffsetSeconds?: number
   endOffsetSeconds?: number
   published?: boolean
-  sessions?: ServerRecordingSession[]
+}
+
+export interface ServerProjectRecording {
+  id: string
+  name: string
+  durationSeconds: number
+  hlsUrl: string
+  startedAt: string
+  isActive: boolean
 }
 
 export interface ServerTrimJob {

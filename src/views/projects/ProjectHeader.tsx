@@ -231,6 +231,8 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
                 type="button"
                 class={`pv-seg-btn${mode === 'live' ? ' is-live' : ''}`}
                 aria-pressed={p.publicMode === mode}
+                disabled={mode === 'before' && p.publicMode === 'live'}
+                title={mode === 'before' && p.publicMode === 'live' ? 'Gå till After innan Before — ett avbrutet test granskas alltid där först.' : undefined}
                 onClick={() => (onModeSelect ? onModeSelect(mode) : selectMode(mode))}
               >
                 {MODE_LABEL[mode]}

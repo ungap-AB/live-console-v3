@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Chapter, CueKind, Project, Recording } from '../../data/types'
+import type { Chapter, CueKind, Project, ProjectRecording, Recording } from '../../data/types'
 import { formatDateTime, formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
@@ -53,8 +53,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [confirmUndoAll, setConfirmUndoAll] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false)
-  const [activeOriginal, setActiveOriginal] = useState<Recording | null>(null)
-  const [switchingSession, setSwitchingSession] = useState(false)
+  const [projectRecordings, setProjectRecordings] = useState<ProjectRecording[]>([])
+  const [switchingRecording, setSwitchingRecording] = useState(false)
 
   const recordingId = p.recording?.id
   const recordingState = p.recording?.state
@@ -136,6 +136,22 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     return () => clearInterval(id)
   }, [actions.refreshProject, p.id, p.publicMode, p.recording?.state, projectChapters])
 
+  useEffect(() => {
+    let cancelled = false
+    if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') {
+      setProjectRecordings([])
+      return
+    }
+    client.projects.recordings(p.id).then((list) => {
+      if (!cancelled) setProjectRecordings(list)
+    }).catch(() => {
+      if (!cancelled) setProjectRecordings([])
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [p.id, p.publicMode, p.recording?.id, p.recording?.state])
+
   if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return null
 
   const isAfter = p.publicMode === 'after'
@@ -147,42 +163,31 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     : projectChapters
   const chaptersReadOnly = chapters.some((chapter) => chapter.readOnly)
   const source = original ?? (recording?.kind === 'original' ? recording : null)
-  const mockTrimDuration = activeOriginal?.durationSeconds ?? 0
-  const previewUrl = activeOriginal?.hlsUrl ?? ''
-  const availableSessions = activeOriginal?.sessions?.filter((session) => session.hlsUrl) ?? []
+  const mockTrimDuration = source?.durationSeconds ?? 0
+  const previewUrl = source?.hlsUrl ?? ''
 
-  async function selectSession(recordingId: string, sessionId: string) {
-    setSwitchingSession(true)
+  async function switchActiveRecording(recordingId: string) {
+    setSwitchingRecording(true)
     try {
-      const updated = await client.recordings.selectSession(recordingId, sessionId)
-      if (!updated) return
-      setActiveOriginal(updated)
-      setMockTrimStart(0)
-      setMockTrimEnd(updated.durationSeconds)
-      setProjectChaptersLoaded(false)
-      client.projects.chapters(p.id).then((nextChapters) => {
-        setProjectChapters(nextChapters)
-        setChapterLabels({})
-        setProjectChaptersLoaded(true)
-      }).catch(() => setProjectChaptersLoaded(true))
+      await client.projects.setActiveRecording(p.id, recordingId)
+      await actions.refreshProject()
+      const [nextRecordings, nextChapters] = await Promise.all([
+        client.projects.recordings(p.id),
+        client.projects.chapters(p.id),
+      ])
+      setProjectRecordings(nextRecordings)
+      setProjectChapters(nextChapters)
+      setChapterLabels({})
+      setProjectChaptersLoaded(true)
+      setSelectedChapter(null)
+      setDraftOffsets({})
+      setSavedOffsets({})
     } catch {
-      // Lämna föregående session vald; operatören kan försöka igen.
+      // Lämna nuvarande val; operatören kan försöka igen.
     } finally {
-      setSwitchingSession(false)
+      setSwitchingRecording(false)
     }
   }
-
-  // Flera sändningar (t.ex. en test- och en skarp sändning) kan höra till
-  // samma original — längsta sändningen väljs som utgångspunkt för trimning.
-  useEffect(() => {
-    setActiveOriginal(source)
-    if (!source) return
-    const sessions = source.sessions?.filter((session) => session.hlsUrl)
-    if (!sessions || sessions.length <= 1) return
-    const longest = [...sessions].sort((a, b) => b.durationSeconds - a.durationSeconds)[0]
-    void selectSession(source.id, longest.id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [source?.id])
 
   useEffect(() => {
     const video = previewVideoRef.current
@@ -326,7 +331,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   async function resetVideoToOriginal(): Promise<boolean> {
     if (isAfter && !(await actions.restoreOriginal())) return false
     setMockTrimStart(0)
-    setMockTrimEnd(activeOriginal?.durationSeconds ?? mockTrimDuration)
+    setMockTrimEnd(source?.durationSeconds ?? mockTrimDuration)
     setDraftOffsets({})
     setSavedOffsets({})
     setUndoVisible(false)
@@ -532,7 +537,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       <div class="od">
         <div class="od-cols">
           <section class="od-col" aria-label="Trimning">
-            {(activeOriginal || previewUrl || broadcastInProgress || recordingProcessing) && (
+            {(source || previewUrl || broadcastInProgress || recordingProcessing) && (
               <div class="od-mock-trim" aria-label={isAfter ? 'Trimning' : 'Trim-förhandsvisning'}>
                 <div class="od-trim-preview">
                   {broadcastInProgress ? (
@@ -549,17 +554,17 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
                   )}
                 </div>
-                {availableSessions.length > 1 && activeOriginal && (
-                  <div class="od-session-select">
+                {projectRecordings.length > 1 && (
+                  <div class="od-recording-select">
                     <label>Sändning</label>
                     <select
-                      value={activeOriginal.sessions?.find((session) => session.hlsUrl === activeOriginal.hlsUrl)?.id ?? ''}
-                      disabled={switchingSession}
-                      onChange={(event) => void selectSession(activeOriginal.id, event.currentTarget.value)}
+                      value={projectRecordings.find((item) => item.isActive)?.id ?? ''}
+                      disabled={switchingRecording}
+                      onChange={(event) => void switchActiveRecording(event.currentTarget.value)}
                     >
-                      {availableSessions.map((session) => (
-                        <option value={session.id} key={session.id}>
-                          {formatDateTime(session.startedAt)} · {formatHms(session.durationSeconds)}
+                      {projectRecordings.map((item) => (
+                        <option value={item.id} key={item.id}>
+                          {formatDateTime(item.startedAt)} · {formatHms(item.durationSeconds)}
                         </option>
                       ))}
                     </select>

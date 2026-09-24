@@ -8,7 +8,7 @@ test('bekräftelse krävs för exakt de sex övergångarna', () => {
     ['ondemand', 'after'],
     ['after', 'live'],
     ['ondemand', 'live'],
-    ['live', 'before'],
+    ['after', 'before'],
     ['ondemand', 'before'],
   ]
   for (const from of MODES) {

@@ -15,7 +15,7 @@ export interface ProjectActions {
   createChannel: () => Promise<void>
   teardownChannel: () => Promise<void>
   interruptionDecision: (decision: 'wait_for_reconnect' | 'end') => Promise<void>
-  trim: (range: { startOffsetSeconds: number; endOffsetSeconds: number; sessionId?: string }) => Promise<boolean>
+  trim: (range: { startOffsetSeconds: number; endOffsetSeconds: number }) => Promise<boolean>
   publish: () => Promise<boolean>
   unpublish: () => Promise<boolean>
   restoreOriginal: () => Promise<boolean>

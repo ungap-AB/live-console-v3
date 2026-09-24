@@ -13,6 +13,7 @@ import type {
   NameList,
   OperationCapability,
   Project,
+  ProjectRecording,
   PublicMode,
   AfterReason,
   RecordingReadiness,
@@ -24,7 +25,6 @@ import type {
   TimelineEvent,
   UserAccount,
   Visibility,
-  RecordingSession,
 } from '../types'
 import { ApiError, api, setAuthToken } from './fetchJson'
 import type {
@@ -42,8 +42,8 @@ import type {
   ServerPaged,
   ServerPlayout,
   ServerProject,
+  ServerProjectRecording,
   ServerRecording,
-  ServerRecordingSession,
   ServerTimelineEvent,
   ServerTrashItem,
   ServerTrimJob,
@@ -160,6 +160,10 @@ function toChapter(dto: ServerChapter): Chapter {
   return { chapterId: dto.chapterId, kind: dto.kind as CueKind, label: dto.label, offsetSeconds: dto.offsetSeconds, sourceEventId: dto.sourceEventId ?? undefined }
 }
 
+function toProjectRecording(dto: ServerProjectRecording): ProjectRecording {
+  return { id: dto.id, name: dto.name, durationSeconds: dto.durationSeconds, hlsUrl: dto.hlsUrl, startedAt: dto.startedAt, isActive: dto.isActive }
+}
+
 function toRecording(dto: ServerRecording, chapters: ServerChapter[], project: ProjectRef | null): Recording {
   return {
     id: dto.id,
@@ -180,19 +184,6 @@ function toRecording(dto: ServerRecording, chapters: ServerChapter[], project: P
         ? { startOffsetSeconds: dto.startOffsetSeconds, endOffsetSeconds: dto.endOffsetSeconds }
         : undefined,
     published: dto.published,
-    sessions: dto.sessions?.map(toRecordingSession),
-  }
-}
-
-function toRecordingSession(dto: ServerRecordingSession): RecordingSession {
-  return {
-    id: dto.id,
-    streamId: dto.streamId,
-    startedAt: dto.startedAt,
-    endedAt: dto.endedAt,
-    durationSeconds: dto.durationSeconds,
-    hlsUrl: dto.hlsUrl,
-    availabilityReason: dto.availabilityReason,
   }
 }
 
@@ -520,10 +511,6 @@ export const httpClient: Client = {
       const dto = await getOrUndefined(api<ServerRecording>(`/recordings/${id}`))
       return dto ? fetchRecordingDetail(dto) : undefined
     },
-    async selectSession(id, sessionId) {
-      const dto = await api<ServerRecording>(`/recordings/${id}/sessions/${sessionId}/select`, { method: 'POST' })
-      return fetchRecordingDetail(dto)
-    },
     async rename(id, name) {
       const dto = await api<ServerRecording>(`/recordings/${id}`, { method: 'PATCH', body: { name } })
       return fetchRecordingDetail(dto)
@@ -537,7 +524,6 @@ export const httpClient: Client = {
         body: {
           startOffsetSeconds: range.startOffsetSeconds,
           endOffsetSeconds: range.endOffsetSeconds,
-          sessionId: range.sessionId,
         },
       })
       const done = await pollTrimJob(job.jobId)
@@ -684,6 +670,14 @@ export const httpClient: Client = {
     async chapters(id) {
       const response = await api<{ frozen: boolean; chapters: ServerChapter[]; readOnly?: boolean }>(`/projects/${id}/chapters`)
       return response.chapters.map((chapter) => ({ ...toChapter(chapter), readOnly: response.readOnly }))
+    },
+    async recordings(id) {
+      const list = await api<ServerProjectRecording[]>(`/projects/${id}/recordings`)
+      return list.map(toProjectRecording)
+    },
+    async setActiveRecording(id, recordingId) {
+      const dto = await api<ServerProject>(`/projects/${id}/active-recording`, { method: 'PUT', body: { recordingId } })
+      return toProjectFull(dto)
     },
     async touchPlayout(id) {
       await api<void>(`/projects/${id}/playout/presence`, { method: 'POST' })
