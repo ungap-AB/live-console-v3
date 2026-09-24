@@ -275,6 +275,7 @@ export interface RecordingSegment {
 }
 
 export interface Chapter {
+  chapterId: string
   kind: CueKind
   label: string
   offsetSeconds: number

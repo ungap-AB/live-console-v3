@@ -345,10 +345,10 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     try {
       if (p.publicMode === 'ondemand') {
         const chapter = chapters[selectedChapter]
-        if (chapter.sourceEventId) await client.projects.updateDraftChapter(p.id, chapter.sourceEventId, { offsetSeconds: nextOffset })
+        await client.projects.updateDraftChapter(p.id, chapter.chapterId, { offsetSeconds: nextOffset })
       } else {
         const chapter = chapters[selectedChapter]
-        if (chapter.sourceEventId) await client.projects.updateDraftChapter(p.id, chapter.sourceEventId, { offsetSeconds: nextOffset })
+        await client.projects.updateDraftChapter(p.id, chapter.chapterId, { offsetSeconds: nextOffset })
       }
       setSavedOffsets((current) => ({ ...current, [selectedChapter]: nextOffset }))
       setUndoVisible(true)
@@ -440,13 +440,13 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       setChapterLabels((current) => ({ ...current, [editingChapter]: chapterDraft.trim() }))
       if (p.publicMode === 'ondemand') {
         const chapter = chapters[editingChapter]
-        if (chapter?.sourceEventId) await client.projects.updateDraftChapter(p.id, chapter.sourceEventId, { label: chapterDraft.trim() })
+        await client.projects.updateDraftChapter(p.id, chapter.chapterId, { label: chapterDraft.trim() })
         const nextChapters = await client.projects.chapters(p.id)
         setProjectChapters(nextChapters)
       } else if (p.publicMode === 'after') {
         const chapter = chapters[editingChapter]
-        if (chapter?.sourceEventId) {
-          await client.projects.updateDraftChapter(p.id, chapter.sourceEventId, { label: chapterDraft.trim() })
+        if (chapter) {
+          await client.projects.updateDraftChapter(p.id, chapter.chapterId, { label: chapterDraft.trim() })
           const nextChapters = await client.projects.chapters(p.id)
           setProjectChapters(nextChapters)
         }
@@ -461,11 +461,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     setDeletingChapter(null)
     if (p.publicMode === 'ondemand') {
       const chapter = chapters[index]
-      if (chapter?.sourceEventId) {
-        await client.projects.deleteDraftChapter(p.id, chapter.sourceEventId)
-      } else {
-        return
-      }
+      if (!chapter) return
+      await client.projects.deleteDraftChapter(p.id, chapter.chapterId)
       setProjectChapters((current) => current.filter((_, chapterIndex) => chapterIndex !== index))
       setChapterLabels((current) => Object.fromEntries(
         Object.entries(current)
@@ -484,7 +481,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       ))
     } else if (p.publicMode === 'after') {
       const chapter = chapters[index]
-      if (chapter?.sourceEventId) await client.projects.deleteDraftChapter(p.id, chapter.sourceEventId)
+      if (chapter) await client.projects.deleteDraftChapter(p.id, chapter.chapterId)
       await actions.refreshPlayout()
     } else return
     setSelectedChapter(null)
@@ -596,7 +593,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
               <ul class="od-chapters">
                 {chapters.map((chapter, index) => (
                   <li
-                    key={chapter.sourceEventId ?? `${chapter.offsetSeconds}-${index}`}
+                    key={chapter.chapterId}
                     class={`od-chapter-row${selectedChapter === index ? ' is-selected' : ''}`}
                   >
                       <button

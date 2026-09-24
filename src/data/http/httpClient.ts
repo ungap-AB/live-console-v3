@@ -157,7 +157,7 @@ function toProjectRef(project: ServerProject | undefined, kind: 'recording' | 'c
 // ---- Inspelningar och videoarkiv ----
 
 function toChapter(dto: ServerChapter): Chapter {
-  return { kind: dto.kind as CueKind, label: dto.label, offsetSeconds: dto.offsetSeconds, sourceEventId: dto.sourceEventId ?? undefined }
+  return { chapterId: dto.chapterId, kind: dto.kind as CueKind, label: dto.label, offsetSeconds: dto.offsetSeconds, sourceEventId: dto.sourceEventId ?? undefined }
 }
 
 function toRecording(dto: ServerRecording, chapters: ServerChapter[], project: ProjectRef | null): Recording {

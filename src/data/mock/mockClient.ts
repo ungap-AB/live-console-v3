@@ -140,11 +140,11 @@ function ensureMockRecording(project: Project): Recording {
     project: { id: project.id, name: project.name, state: project.visibility },
     segments: [{ startedAt: new Date().toISOString(), durationSeconds: 5995 }],
     chapters: [
-      { kind: 'agendaItem', label: '1. Mötet öppnas', offsetSeconds: 0 },
-      { kind: 'agendaItem', label: '2. Föredragningslista', offsetSeconds: 180 },
-      { kind: 'person', label: 'Ordförande', offsetSeconds: 720 },
-      { kind: 'agendaItem', label: '3. Beslutsärenden', offsetSeconds: 1560 },
-      { kind: 'agendaItem', label: '4. Mötet avslutas', offsetSeconds: 5760 },
+      { chapterId: 'mock-created-0', kind: 'agendaItem', label: '1. Mötet öppnas', offsetSeconds: 0 },
+      { chapterId: 'mock-created-1', kind: 'agendaItem', label: '2. Föredragningslista', offsetSeconds: 180 },
+      { chapterId: 'mock-created-2', kind: 'person', label: 'Ordförande', offsetSeconds: 720 },
+      { chapterId: 'mock-created-3', kind: 'agendaItem', label: '3. Beslutsärenden', offsetSeconds: 1560 },
+      { chapterId: 'mock-created-4', kind: 'agendaItem', label: '4. Mötet avslutas', offsetSeconds: 5760 },
     ],
   }
   recordings = [recording, ...recordings]

@@ -170,6 +170,7 @@ export interface ServerReviewLink {
 }
 
 export interface ServerChapter {
+  chapterId: string
   kind: string
   label: string
   offsetSeconds: number
