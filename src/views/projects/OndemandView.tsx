@@ -140,15 +140,13 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const livePhase = live.health?.livePhase?.toLowerCase()
   const broadcastInProgress = live.health?.state?.toLowerCase() === 'live' || livePhase === 'live'
   const recordingProcessing = !broadcastInProgress && (p.recording?.state === 'recording' || p.recording?.state === 'processing')
-  const displayedRecording = recording
-  const displayedOriginal = original
   const chapters = !projectChaptersLoaded
     ? []
     : projectChapters
   const chaptersReadOnly = chapters.some((chapter) => chapter.readOnly)
-  const source = displayedOriginal ?? displayedRecording
+  const source = original ?? (recording?.kind === 'original' ? recording : null)
   const mockTrimDuration = source?.durationSeconds ?? 0
-  const previewUrl = displayedRecording?.hlsUrl || p.recording?.hlsUrl || ''
+  const previewUrl = source?.hlsUrl ?? ''
 
   useEffect(() => {
     const video = previewVideoRef.current
@@ -375,8 +373,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       // Behåll draften lokalt så operatören kan försöka spara igen.
     }
   }
-  const defaultTrimStart = displayedRecording?.trimRange?.startOffsetSeconds ?? 0
-  const defaultTrimEnd = displayedRecording?.trimRange?.endOffsetSeconds ?? mockTrimDuration
+  const defaultTrimStart = recording?.trimRange?.startOffsetSeconds ?? 0
+  const defaultTrimEnd = recording?.trimRange?.endOffsetSeconds ?? mockTrimDuration
   const startChanged = mockTrimStart !== defaultTrimStart
   const endChanged = mockTrimEnd !== defaultTrimEnd
   const trimDirty = isAfter && (startChanged || endChanged)
@@ -498,7 +496,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       <div class="od">
         <div class="od-cols">
           <section class="od-col" aria-label="Trimning">
-            {(displayedRecording || previewUrl || broadcastInProgress || recordingProcessing) && (
+            {(source || previewUrl || broadcastInProgress || recordingProcessing) && (
               <div class="od-mock-trim" aria-label={isAfter ? 'Trimning' : 'Trim-förhandsvisning'}>
                 <div class="od-trim-preview">
                   {broadcastInProgress ? (
