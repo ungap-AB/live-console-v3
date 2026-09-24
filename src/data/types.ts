@@ -278,6 +278,7 @@ export interface Chapter {
   kind: CueKind
   label: string
   offsetSeconds: number
+  sourceEventId?: string
 }
 
 export interface Recording {

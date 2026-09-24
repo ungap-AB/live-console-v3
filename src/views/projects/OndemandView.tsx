@@ -532,6 +532,13 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
         await client.projects.updateChapterOffset(p.id, editingChapter, { label: chapterDraft.trim() })
         const nextChapters = await client.projects.chapters(p.id)
         setProjectChapters(nextChapters)
+      } else if (p.publicMode === 'after') {
+        const chapter = chapters[editingChapter]
+        if (chapter?.sourceEventId) {
+          await client.projects.updateTimelineEvent(p.id, chapter.sourceEventId, { label: chapterDraft.trim() })
+          const nextChapters = await client.projects.chapters(p.id)
+          setProjectChapters(nextChapters)
+        }
       }
     }
     setEditingChapter(null)
@@ -539,13 +546,18 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   }
 
   async function deleteChapter(index: number) {
-    if (p.publicMode !== 'ondemand') return
     if (deleteConfirmationTimer.current) clearTimeout(deleteConfirmationTimer.current)
     setDeletingChapter(null)
-    await client.projects.deleteChapter(p.id, index)
+    if (p.publicMode === 'ondemand') {
+      await client.projects.deleteChapter(p.id, index)
+      setProjectChapters(await client.projects.chapters(p.id))
+    } else if (p.publicMode === 'after') {
+      const chapter = chapters[index]
+      if (chapter?.sourceEventId) await client.projects.deleteTimelineEvent(p.id, chapter.sourceEventId)
+      await actions.refreshPlayout()
+    } else return
     setSelectedChapter(null)
     setEditingChapter(null)
-    setProjectChapters(await client.projects.chapters(p.id))
   }
 
   function requestChapterDelete(index: number) {
@@ -689,7 +701,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       </span>
                     )}
                     <span class="od-chapter-kind">{CHAPTER_KIND[chapter.kind]}</span>
-                    {p.publicMode === 'ondemand' && (
+                    {(p.publicMode === 'ondemand' || p.publicMode === 'after') && (
                       deletingChapter === index ? (
                         <button class="od-chapter-delete is-confirm" type="button" aria-label={`Bekräfta radering av ${chapter.label}`} title="Bekräfta radering" onClick={() => void deleteChapter(index)}>
                           <Icon name="check" size={16} />

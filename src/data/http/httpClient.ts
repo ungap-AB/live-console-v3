@@ -157,7 +157,7 @@ function toProjectRef(project: ServerProject | undefined, kind: 'recording' | 'c
 // ---- Inspelningar och videoarkiv ----
 
 function toChapter(dto: ServerChapter): Chapter {
-  return { kind: dto.kind as CueKind, label: dto.label, offsetSeconds: dto.offsetSeconds }
+  return { kind: dto.kind as CueKind, label: dto.label, offsetSeconds: dto.offsetSeconds, sourceEventId: dto.sourceEventId ?? undefined }
 }
 
 function toRecording(dto: ServerRecording, chapters: ServerChapter[], project: ProjectRef | null): Recording {
@@ -804,6 +804,9 @@ export const httpClient: Client = {
     async updateTimelineEvent(id, eventId, input) {
       const dto = await api<ServerTimelineEvent>(`/projects/${id}/timeline/${eventId}`, { method: 'PATCH', body: input })
       return toTimelineEvent(dto)
+    },
+    async deleteTimelineEvent(id, eventId) {
+      await api<void>(`/projects/${id}/timeline/${eventId}`, { method: 'DELETE' })
     },
     async updateChapterOffset(id, index, input) {
       await api<void>(`/projects/${id}/chapters/${index}`, { method: 'PATCH', body: input })

@@ -1008,6 +1008,11 @@ export const mockClient: Client = {
       if (input.offsetSeconds !== undefined) event.offsetSeconds = input.offsetSeconds
       return delay(clone(event))
     },
+    async deleteTimelineEvent(id, eventId) {
+      const project = findProject(id)
+      project.playout.timeline = project.playout.timeline.filter((event) => event.id !== eventId)
+      return delay(undefined)
+    },
     async updateChapterOffset(_id, _index, _input) {
       return delay(undefined)
     },

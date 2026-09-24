@@ -173,6 +173,7 @@ export interface ServerChapter {
   kind: string
   label: string
   offsetSeconds: number
+  sourceEventId?: string | null
 }
 
 // ---- Live-resurser ----
