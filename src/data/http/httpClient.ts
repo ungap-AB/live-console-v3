@@ -817,8 +817,14 @@ export const httpClient: Client = {
     async updateChapterOffset(id, index, input) {
       await api<void>(`/projects/${id}/chapters/${index}`, { method: 'PATCH', body: input })
     },
+    async updatePublishedChapter(id, chapterId, input) {
+      await api<void>(`/projects/${id}/published-timeline/chapters/${chapterId}`, { method: 'PATCH', body: input })
+    },
     async deleteChapter(id, index) {
       await api<void>(`/projects/${id}/chapters/${index}`, { method: 'DELETE' })
+    },
+    async deletePublishedChapter(id, chapterId) {
+      await api<void>(`/projects/${id}/published-timeline/chapters/${chapterId}`, { method: 'DELETE' })
     },
     async saveTrimDraft(id, draft) {
       const dto = await api<ServerProject>(`/projects/${id}/trim-draft`, { method: 'PUT', body: draft })

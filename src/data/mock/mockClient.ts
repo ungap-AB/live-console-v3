@@ -1022,7 +1022,13 @@ export const mockClient: Client = {
     async updateChapterOffset(_id, _index, _input) {
       return delay(undefined)
     },
+    async updatePublishedChapter(_id, _chapterId, _input) {
+      return delay(undefined)
+    },
     async deleteChapter(_id, _index) {
+      return delay(undefined)
+    },
+    async deletePublishedChapter(_id, _chapterId) {
       return delay(undefined)
     },
     async saveTrimDraft(id, draft) {

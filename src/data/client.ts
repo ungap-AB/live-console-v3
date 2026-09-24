@@ -160,7 +160,9 @@ export interface Client {
     updateDraftChapter(id: string, chapterId: string, input: { label?: string; offsetSeconds?: number }): Promise<void>
     deleteDraftChapter(id: string, chapterId: string): Promise<void>
     updateChapterOffset(id: string, index: number, input: { offsetSeconds?: number; label?: string }): Promise<void>
+    updatePublishedChapter(id: string, chapterId: string, input: { offsetSeconds?: number; label?: string }): Promise<void>
     deleteChapter(id: string, index: number): Promise<void>
+    deletePublishedChapter(id: string, chapterId: string): Promise<void>
     saveTrimDraft(id: string, draft: import('./types').TrimDraft): Promise<Project>
     /** Mockup-bara: återställer sändningssimuleringen till ett obörjat läge. */
     resetSimulation(id: string): Promise<Project>

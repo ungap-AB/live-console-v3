@@ -295,69 +295,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     }
   }
 
-  async function undoLatestChange() {
-    if (selectedChapter === null) return
-    const chapter = chapters[selectedChapter]
-    if (!chapter) return
-    const originalOffset = chapter.offsetSeconds
-    try {
-      if (p.publicMode === 'ondemand') {
-        await client.projects.updateChapterOffset(p.id, selectedChapter, {
-          offsetSeconds: originalOffset,
-          label: chapter.label,
-        })
-        setProjectChapters(await client.projects.chapters(p.id))
-      } else {
-        const event = p.playout.timeline
-          .filter((item) => item.kind === chapter.kind && item.refId !== null && item.label !== 'Rensat')
-          .find((item) => item.label === chapter.label || item.offsetSeconds === chapter.offsetSeconds)
-        if (event) await client.projects.updateTimelineEvent(p.id, event.id, { label: chapter.label, offsetSeconds: originalOffset })
-      }
-      undoToOriginalOffset()
-      setChapterLabels((current) => {
-        const next = { ...current }
-        delete next[selectedChapter]
-        return next
-      })
-    } catch {
-      // Behåll ändringen synlig om återställningen misslyckas.
-    }
-  }
-
-  async function undoAllOffsets() {
-    const savedIndexes = Object.keys(savedOffsets).map(Number)
-    try {
-      for (const index of savedIndexes) {
-        const chapter = chapters[index]
-        if (!chapter) continue
-        if (p.publicMode === 'ondemand') {
-          await client.projects.updateChapterOffset(p.id, index, { offsetSeconds: chapter.offsetSeconds })
-        } else {
-          const event = p.playout.timeline
-            .filter((item) => item.kind === chapter.kind && item.refId !== null && item.label !== 'Rensat')
-            .find((item) => item.label === chapter.label || item.offsetSeconds === chapter.offsetSeconds)
-          if (event) await client.projects.updateTimelineEvent(p.id, event.id, { offsetSeconds: chapter.offsetSeconds })
-        }
-      }
-      if (p.publicMode === 'ondemand' && savedIndexes.length > 0) {
-        setProjectChapters(await client.projects.chapters(p.id))
-      }
-      setDraftOffsets({})
-      setSavedOffsets({})
-      setUndoVisible(false)
-      if (selectedChapter !== null && chapters[selectedChapter]) {
-        const originalOffset = chapters[selectedChapter].offsetSeconds
-        const video = previewVideoRef.current
-        if (video) {
-          video.currentTime = originalOffset
-          setPreviewPosition(originalOffset)
-        }
-      }
-    } catch {
-      // Behåll state synligt så operatören kan försöka igen.
-    }
-  }
-
   async function resetVideoToOriginal() {
     if (isAfter && !(await actions.restoreOriginal())) return
     setMockTrimStart(0)
@@ -407,7 +344,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     setDraftOffsets((current) => ({ ...current, [selectedChapter]: nextOffset }))
     try {
       if (p.publicMode === 'ondemand') {
-        await client.projects.updateChapterOffset(p.id, selectedChapter, { offsetSeconds: nextOffset })
+        const chapter = chapters[selectedChapter]
+        if (chapter.sourceEventId) await client.projects.updatePublishedChapter(p.id, chapter.sourceEventId, { offsetSeconds: nextOffset })
       } else {
         const chapter = chapters[selectedChapter]
         if (chapter.sourceEventId) await client.projects.updateDraftChapter(p.id, chapter.sourceEventId, { offsetSeconds: nextOffset })
@@ -501,7 +439,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     if (editingChapter !== null && chapterDraft.trim()) {
       setChapterLabels((current) => ({ ...current, [editingChapter]: chapterDraft.trim() }))
       if (p.publicMode === 'ondemand') {
-        await client.projects.updateChapterOffset(p.id, editingChapter, { label: chapterDraft.trim() })
+        const chapter = chapters[editingChapter]
+        if (chapter?.sourceEventId) await client.projects.updatePublishedChapter(p.id, chapter.sourceEventId, { label: chapterDraft.trim() })
         const nextChapters = await client.projects.chapters(p.id)
         setProjectChapters(nextChapters)
       } else if (p.publicMode === 'after') {
@@ -521,7 +460,12 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     if (deleteConfirmationTimer.current) clearTimeout(deleteConfirmationTimer.current)
     setDeletingChapter(null)
     if (p.publicMode === 'ondemand') {
-      await client.projects.deleteChapter(p.id, index)
+      const chapter = chapters[index]
+      if (chapter?.sourceEventId) {
+        await client.projects.deletePublishedChapter(p.id, chapter.sourceEventId)
+      } else {
+        return
+      }
       setProjectChapters(await client.projects.chapters(p.id))
     } else if (p.publicMode === 'after') {
       const chapter = chapters[index]
