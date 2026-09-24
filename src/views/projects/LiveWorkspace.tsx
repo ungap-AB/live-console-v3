@@ -1,10 +1,11 @@
 import { client } from '../../data'
 import type { Channel, ChannelHealth, Project, TimelineEvent } from '../../data/types'
 import { useResource } from '../../app/useResource'
-import { formatLocalTime } from '../../app/time'
+import { formatHms, formatLocalTime } from '../../app/time'
 import { useLayoutEffect, useRef, useState } from 'preact/hooks'
 import type { ProjectActions } from './actions'
 import { PlayoutColumns } from './PlayoutColumns'
+import { usePlayoutTestbed } from './playoutTestbed'
 import './LiveWorkspace.css'
 
 interface LiveWorkspaceProps {
@@ -17,6 +18,7 @@ interface LiveWorkspaceProps {
 
 // Ren sändningskontroll för läget Live.
 export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProps) {
+  const testbed = usePlayoutTestbed(p, actions)
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
     [p.agendaId],
@@ -47,6 +49,11 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
     refId ? p.playout.timeline.filter((event) => event.kind === kind && event.refId === refId).at(-1) ?? null : null
   const currentAgendaEvent = latestEvent('agendaItem', p.playout.currentAgendaItemId)
   const currentPersonEvent = latestEvent('person', p.playout.currentPersonId)
+  const testCanStart = !testbed.state.running
+    && Boolean(p.agendaId && p.namelistId && agendaResource.data?.items.length && nameListResource.data?.people.length)
+  const expectedEndAt = testbed.state.startedAt
+    ? new Date(testbed.state.startedAt.getTime() + testbed.state.durationSeconds * 1000).toISOString()
+    : null
 
   useLayoutEffect(() => {
     const measurements = [
@@ -117,6 +124,26 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
           </button>
         </div>
       )}
+
+      <section class="lw-testbed" aria-label="Testbädd">
+        <div>
+          <strong>Testbädd</strong>
+          {testbed.state.running ? (
+            <span>{testbed.state.completedSteps}/{testbed.state.totalSteps} cues · {formatHms(testbed.state.durationSeconds)} · klar cirka {expectedEndAt ? formatLocalTime(expectedEndAt) : '–'}</span>
+          ) : (
+            <span>20 sekunder per cue · starta i Live-läge</span>
+          )}
+          {testbed.state.failedSteps > 0 && <small>{testbed.state.failedSteps} cue-fel, testet fortsätter</small>}
+        </div>
+        {testbed.state.running ? (
+          <button class="btn btn-danger btn-sm" type="button" onClick={testbed.stop}>STOP TEST</button>
+        ) : (
+          <button class="btn btn-sm" type="button" disabled={!testCanStart} onClick={() => void testbed.start()}>START TEST</button>
+        )}
+        {testbed.state.totalSteps > 0 && !testbed.state.running && (
+          <output>{formatHms(testbed.state.durationSeconds)}</output>
+        )}
+      </section>
 
       <div class="lw-now">
         {panels.map((panel) => (

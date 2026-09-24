@@ -379,7 +379,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const endChanged = mockTrimEnd !== defaultTrimEnd
   const trimDirty = isAfter && (startChanged || endChanged)
   const draftDirty = trimDirty || Object.entries(chapterLabels).some(([index, label]) => label !== chapters[Number(index)]?.label)
-  const canPublishOndemand = !chaptersReadOnly && (hasUnpublishedChanges || trimDirty)
+  const canPublishOndemand = !chaptersReadOnly && (isAfter || hasUnpublishedChanges || trimDirty)
   const videoDuration = previewVideoRef.current?.duration || mockTrimDuration
   const canReturnToSaved = selectedChapter !== null && draftOffsets[selectedChapter] !== undefined
 
