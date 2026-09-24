@@ -362,10 +362,17 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     if (isAfter && !(await actions.restoreOriginal())) return
     setMockTrimStart(0)
     setMockTrimEnd(original?.durationSeconds ?? mockTrimDuration)
-    void undoAllOffsets()
+    setDraftOffsets({})
+    setSavedOffsets({})
+    setUndoVisible(false)
     setChapterLabels({})
     setSelectedChapter(null)
     setPreviewSeekSeconds(null)
+    setProjectChaptersLoaded(false)
+    void client.projects.chapters(p.id).then((nextChapters) => {
+      setProjectChapters(nextChapters)
+      setProjectChaptersLoaded(true)
+    }).catch(() => setProjectChaptersLoaded(true))
   }
 
   function pausePreview() {
@@ -684,9 +691,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
             <footer class="od-chapters-footer">
               {isAfter && (
                 <>
-                  <button class="btn btn-sm" type="button" disabled={selectedChapter === null} onClick={() => void undoLatestChange()}>
-                    Ångra senaste
-                  </button>
                   <button class="btn btn-sm" type="button" onClick={() => setConfirmUndoAll(true)}>
                     Ångra allt
                   </button>
