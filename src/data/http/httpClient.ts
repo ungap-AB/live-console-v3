@@ -682,8 +682,8 @@ export const httpClient: Client = {
       return fetchPlayout(id)
     },
     async chapters(id) {
-      const response = await api<{ frozen: boolean; chapters: ServerChapter[] }>(`/projects/${id}/chapters`)
-      return response.chapters.map(toChapter)
+      const response = await api<{ frozen: boolean; chapters: ServerChapter[]; readOnly?: boolean }>(`/projects/${id}/chapters`)
+      return response.chapters.map((chapter) => ({ ...toChapter(chapter), readOnly: response.readOnly }))
     },
     async touchPlayout(id) {
       await api<void>(`/projects/${id}/playout/presence`, { method: 'POST' })

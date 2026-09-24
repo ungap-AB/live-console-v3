@@ -80,6 +80,11 @@
   overflow-y: auto;
 }
 
+.od-chapters-col.is-readonly > .od-empty {
+  flex: none;
+  overflow: visible;
+}
+
 .od-chapters-footer {
   flex: none;
   display: flex;

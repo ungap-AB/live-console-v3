@@ -280,6 +280,7 @@ export interface Chapter {
   label: string
   offsetSeconds: number
   sourceEventId?: string
+  readOnly?: boolean
 }
 
 export interface Recording {

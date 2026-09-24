@@ -25,24 +25,6 @@ const CHAPTER_KIND: Record<CueKind, string> = {
   exclamation: 'Utrop',
 }
 
-function chaptersForRange(source: Recording | null, startOffsetSeconds: number, endOffsetSeconds: number): Chapter[] {
-  if (!source) return []
-  return source.chapters
-    .filter((chapter) => chapter.offsetSeconds >= startOffsetSeconds && chapter.offsetSeconds <= endOffsetSeconds)
-    .map((chapter) => ({ ...chapter, offsetSeconds: chapter.offsetSeconds - startOffsetSeconds }))
-    .sort((left, right) => left.offsetSeconds - right.offsetSeconds)
-}
-
-function chaptersChanged(source: Recording | null, startOffsetSeconds: number, endOffsetSeconds: number): boolean {
-  if (!source) return false
-  const original = chaptersForRange(source, 0, source.durationSeconds)
-  const adjusted = chaptersForRange(source, startOffsetSeconds, endOffsetSeconds)
-  return original.length !== adjusted.length || original.some((chapter, index) => {
-    const next = adjusted[index]
-    return !next || chapter.kind !== next.kind || chapter.label !== next.label || chapter.offsetSeconds !== next.offsetSeconds
-  })
-}
-
 export function OndemandView({ project: p, actions, onBack }: OndemandViewProps) {
   const { selectMode, dialog } = useModeChange(p, actions)
   const live = useLiveChannel(p.channel?.id ?? null)
@@ -70,6 +52,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [confirmOndemand, setConfirmOndemand] = useState(false)
   const [confirmUndoAll, setConfirmUndoAll] = useState(false)
   const [publishing, setPublishing] = useState(false)
+  const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false)
 
   const recordingId = p.recording?.id
   const recordingState = p.recording?.state
@@ -86,7 +69,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     setMockTrimStart(p.trimDraft.startOffsetSeconds)
     setMockTrimEnd(p.trimDraft.endOffsetSeconds)
     setSavedOffsets(Object.fromEntries(p.trimDraft.chapters.map((chapter) => [chapter.index, chapter.offsetSeconds])))
-    setChapterLabels(Object.fromEntries(p.trimDraft.chapters.map((chapter) => [chapter.index, chapter.label])))
   }, [p.trimDraft])
 
   useEffect(() => {
@@ -121,6 +103,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     client.projects.chapters(p.id).then((nextChapters) => {
       if (!cancelled) {
         setProjectChapters(nextChapters)
+        setChapterLabels({})
         setProjectChaptersLoaded(true)
       }
     }).catch(() => {
@@ -132,18 +115,24 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     return () => {
       cancelled = true
     }
-  }, [p.id, p.publicMode])
+  }, [p.id, p.publicMode, p.recording?.state, p.recording?.hlsUrl])
 
   useEffect(() => {
     if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return
-    if (p.recording?.state !== 'recording' && p.recording?.state !== 'processing') return
+    const recordingReady = p.recording?.state === 'recorded' || p.recording?.state === 'trimmed' || p.recording?.state === 'published'
+    if (recordingReady && !projectChapters.some((chapter) => chapter.readOnly)) return
 
     const refresh = () => {
       void actions.refreshProject().catch(() => undefined)
+      void client.projects.chapters(p.id).then((nextChapters) => {
+        setProjectChapters(nextChapters)
+        setChapterLabels({})
+        setProjectChaptersLoaded(true)
+      }).catch(() => undefined)
     }
     const id = setInterval(refresh, 5000)
     return () => clearInterval(id)
-  }, [actions.refreshProject, p.id, p.publicMode, p.recording?.state])
+  }, [actions.refreshProject, p.id, p.publicMode, p.recording?.state, projectChapters])
 
   if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return null
 
@@ -156,6 +145,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const chapters = !projectChaptersLoaded
     ? []
     : projectChapters
+  const chaptersReadOnly = chapters.some((chapter) => chapter.readOnly)
   const source = displayedOriginal ?? displayedRecording
   const mockTrimDuration = source?.durationSeconds ?? 0
   const previewUrl = displayedRecording?.hlsUrl || p.recording?.hlsUrl || ''
@@ -351,6 +341,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
         await client.projects.updateDraftChapter(p.id, chapter.chapterId, { offsetSeconds: nextOffset })
       }
       setSavedOffsets((current) => ({ ...current, [selectedChapter]: nextOffset }))
+      setHasUnpublishedChanges(true)
       setUndoVisible(true)
       setDraftOffsets((current) => {
         const next = { ...current }
@@ -385,14 +376,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const endChanged = mockTrimEnd !== defaultTrimEnd
   const trimDirty = isAfter && (startChanged || endChanged)
   const draftDirty = trimDirty || Object.entries(chapterLabels).some(([index, label]) => label !== chapters[Number(index)]?.label)
-  const chaptersAdjusted = trimDirty && chaptersChanged(source, mockTrimStart, mockTrimEnd)
-  const confirmationChanges = [
-    trimDirty ? 'Videon är trimmad' : '',
-    chaptersAdjusted ? 'kapitel är justerade' : '',
-  ].filter(Boolean).join(' och ')
-  const confirmationText = trimDirty
-    ? `${confirmationChanges}. Är du redo att publicera ändringarna för ondemand?`
-    : 'Ingen trimning har gjorts. Är du redo att gå till ondemand med originalinspelningen?'
+  const canPublishOndemand = !chaptersReadOnly && (hasUnpublishedChanges || trimDirty)
   const videoDuration = previewVideoRef.current?.duration || mockTrimDuration
   const canReturnToSaved = selectedChapter !== null && draftOffsets[selectedChapter] !== undefined
 
@@ -404,11 +388,11 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       if (trimDirty && p.recording) {
         if (!(await actions.trim({ startOffsetSeconds: mockTrimStart, endOffsetSeconds: mockTrimEnd }))) return
         await actions.refreshProject()
-        await actions.publish()
+        if (await actions.publish()) setHasUnpublishedChanges(false)
         return
       }
       if (p.recording) {
-        await actions.publish()
+        if (await actions.publish()) setHasUnpublishedChanges(false)
       } else if (await actions.setPublicMode('ondemand')) {
         actions.setVisibility('open')
       }
@@ -443,12 +427,16 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
         await client.projects.updateDraftChapter(p.id, chapter.chapterId, { label: chapterDraft.trim() })
         const nextChapters = await client.projects.chapters(p.id)
         setProjectChapters(nextChapters)
+        setChapterLabels({})
+        setHasUnpublishedChanges(true)
       } else if (p.publicMode === 'after') {
         const chapter = chapters[editingChapter]
         if (chapter) {
           await client.projects.updateDraftChapter(p.id, chapter.chapterId, { label: chapterDraft.trim() })
           const nextChapters = await client.projects.chapters(p.id)
           setProjectChapters(nextChapters)
+          setChapterLabels({})
+          setHasUnpublishedChanges(true)
         }
       }
     }
@@ -464,6 +452,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       if (!chapter) return
       await client.projects.deleteDraftChapter(p.id, chapter.chapterId)
       setProjectChapters((current) => current.filter((_, chapterIndex) => chapterIndex !== index))
+      setHasUnpublishedChanges(true)
       setChapterLabels((current) => Object.fromEntries(
         Object.entries(current)
           .filter(([chapterIndex]) => Number(chapterIndex) !== index)
@@ -483,6 +472,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       const chapter = chapters[index]
       if (chapter) await client.projects.deleteDraftChapter(p.id, chapter.chapterId)
       await actions.refreshPlayout()
+      setHasUnpublishedChanges(true)
     } else return
     setSelectedChapter(null)
     setEditingChapter(null)
@@ -501,14 +491,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     <div class="project-workspace doc">
       <ProjectHeader project={p} actions={actions} onBack={onBack} onModeSelect={handleModeSelect} channel={live.channel} health={live.health} streamKey={live.streamKey} />
       <div class="od">
-        {!isAfter && (
-          <div class="od-published" role="status">
-            <span class="od-published-badge">PUBLICERAD</span>
-            <span class="od-published-text">Ändringar du sparar syns direkt för publiken. Gör större ändringar i läget After.</span>
-            <button class="btn" type="button" onClick={() => selectMode('after')}>Gå till After</button>
-          </div>
-        )}
-
         <div class="od-cols">
           <section class="od-col" aria-label="Trimning">
             {(displayedRecording || previewUrl || broadcastInProgress || recordingProcessing) && (
@@ -546,7 +528,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       Klicka på kapitlets <Icon name="skip_next" size={16} />-knapp för att justera det
                     </span>
                   )}
-                  <div class="od-time-controls" aria-label="Videoposition">
+                  {!chaptersReadOnly && <div class="od-time-controls" aria-label="Videoposition">
                     <div class="od-trim-in-group">
                       <button class="od-trim-go-button od-trim-go-in" type="button" aria-label="Gå till trimningens start" title="Gå till IN" onClick={goToTrimIn}>
                         <Icon name="skip_previous" size={18} />
@@ -566,8 +548,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                         <Icon name="skip_next" size={18} />
                       </button>
                     </div>
-                  </div>
-                  <div class="od-selected-chapter-controls">
+                  </div>}
+                  {!chaptersReadOnly && <div class="od-selected-chapter-controls">
                     <div class="od-selected-chapter-actions">
                       <div class="od-main-commit-group">
                         <button class="btn btn-sm od-commit-button" type="button" aria-label="Tillbaka till sparad tid" title="Tillbaka till sparad tid" disabled={!canReturnToSaved} onClick={returnToSavedOffset}>Tillbaka</button>
@@ -578,7 +560,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       </div>
                       {undoVisible && <button class="btn btn-sm od-commit-button od-undo-button" type="button" aria-label="Ångra tidsändring" title="Ångra tidsändring" onClick={undoToOriginalOffset}>Ångra</button>}
                     </div>
-                  </div>
+                  </div>}
                 </div>}
               </div>
             )}
@@ -586,7 +568,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
             </footer>
           </section>
 
-          <section class="od-col od-chapters-col" aria-labelledby="od-chapters-title">
+          <section class={`od-col od-chapters-col${chaptersReadOnly ? ' is-readonly' : ''}`} aria-labelledby="od-chapters-title">
+            {chaptersReadOnly && <p class="od-empty">Kapitlen är registrerade. Videopositioner och redigering blir tillgängliga när inspelningen är klar.</p>}
             {chapters.length === 0 ? (
               <p class="od-empty">Inga kapitel än. De skapas från det som spelades ut under sändningen.</p>
             ) : (
@@ -596,7 +579,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     key={chapter.chapterId}
                     class={`od-chapter-row${selectedChapter === index ? ' is-selected' : ''}`}
                   >
-                      <button
+                      {!chaptersReadOnly && <button
                       class="od-chapter-play"
                       type="button"
                       aria-label={`Spela från ${chapter.label}`}
@@ -604,11 +587,11 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                         onClick={() => selectChapter(index)}
                     >
                       <Icon name="skip_next" size={16} />
-                    </button>
-                    <span class={`od-time${draftOffsets[index] !== undefined ? ' is-draft' : ''}`}>
+                    </button>}
+                    {!chaptersReadOnly && <span class={`od-time${draftOffsets[index] !== undefined ? ' is-draft' : ''}`}>
                       {formatHms(draftOffsets[index] ?? savedOffsets[index] ?? chapter.offsetSeconds)}
-                    </span>
-                    {editingChapter === index ? (
+                    </span>}
+                    {!chaptersReadOnly && editingChapter === index ? (
                       <span class="od-chapter-edit">
                         <input
                           ref={chapterInputRef}
@@ -624,12 +607,12 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                         <button class="btn btn-sm" type="button" onClick={() => void finishChapterEdit()}>Klar</button>
                       </span>
                     ) : (
-                      <span class="od-chapter-label" onDblClick={() => startChapterEdit(index, chapterLabels[index] ?? chapter.label)} title="Dubbelklicka för att redigera">
+                      <span class="od-chapter-label" onDblClick={chaptersReadOnly ? undefined : () => startChapterEdit(index, chapterLabels[index] ?? chapter.label)} title={chaptersReadOnly ? undefined : 'Dubbelklicka för att redigera'}>
                         {chapterLabels[index] ?? chapter.label}
                       </span>
                     )}
                     <span class="od-chapter-kind">{CHAPTER_KIND[chapter.kind]}</span>
-                    {(p.publicMode === 'ondemand' || p.publicMode === 'after') && (
+                    {!chaptersReadOnly && (p.publicMode === 'ondemand' || p.publicMode === 'after') && (
                       deletingChapter === index ? (
                         <button class="od-chapter-delete is-confirm" type="button" aria-label={`Bekräfta radering av ${chapter.label}`} title="Bekräfta radering" onClick={() => void deleteChapter(index)}>
                           <Icon name="check" size={16} />
@@ -647,10 +630,10 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
             <footer class="od-chapters-footer">
               {(isAfter || p.publicMode === 'ondemand') && (
                 <>
-                  {isAfter && <button class="btn btn-sm" type="button" onClick={() => setConfirmUndoAll(true)}>
+                  {isAfter && <button class="btn btn-sm" type="button" disabled={chaptersReadOnly} onClick={() => setConfirmUndoAll(true)}>
                     Ångra allt
                   </button>}
-                  <button class="btn btn-sm btn-primary od-publish-button" type="button" onClick={() => setConfirmOndemand(true)}>
+                  <button class="btn btn-sm btn-primary od-publish-button" type="button" disabled={!canPublishOndemand} onClick={() => setConfirmOndemand(true)}>
                     Publicera ondemand
                   </button>
                 </>
@@ -662,10 +645,10 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       {dialog}
       {confirmOndemand && (
         <Modal title="Publicera ändringarna?" onClose={() => setConfirmOndemand(false)}>
-          <p>{confirmationText}</p>
+          <p>Sändningen sätts i Ondemand-läge när du publicerar.</p>
           <div class="modal-actions">
-            <button class="btn" type="button" onClick={() => setConfirmOndemand(false)}>Nej</button>
-            <button class="btn btn-primary" type="button" onClick={() => void publishWithTrim()}>{trimDirty ? 'Ja, publicera' : 'Ja, gå till ondemand'}</button>
+            <button class="btn" type="button" onClick={() => setConfirmOndemand(false)}>Avbryt</button>
+            <button class="btn btn-primary" type="button" onClick={() => void publishWithTrim()}>Publicera</button>
           </div>
         </Modal>
       )}
