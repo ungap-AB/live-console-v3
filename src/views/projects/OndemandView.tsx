@@ -221,11 +221,15 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   }
 
   function setTrimIn() {
-    setMockTrimStart(Math.round(previewPosition))
+    const nextTrimStart = Math.round(previewPosition)
+    setMockTrimStart(nextTrimStart)
+    if (isAfter && nextTrimStart !== defaultTrimStart) setHasUnpublishedChanges(true)
   }
 
   function setTrimOut() {
-    setMockTrimEnd(Math.round(previewPosition))
+    const nextTrimEnd = Math.round(previewPosition)
+    setMockTrimEnd(nextTrimEnd)
+    if (isAfter && nextTrimEnd !== defaultTrimEnd) setHasUnpublishedChanges(true)
   }
 
   function goToTrimIn() {
@@ -285,8 +289,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     }
   }
 
-  async function resetVideoToOriginal() {
-    if (isAfter && !(await actions.restoreOriginal())) return
+  async function resetVideoToOriginal(): Promise<boolean> {
+    if (isAfter && !(await actions.restoreOriginal())) return false
     setMockTrimStart(0)
     setMockTrimEnd(original?.durationSeconds ?? mockTrimDuration)
     setDraftOffsets({})
@@ -300,6 +304,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       setProjectChapters(nextChapters)
       setProjectChaptersLoaded(true)
     }).catch(() => setProjectChaptersLoaded(true))
+    return true
   }
 
   function pausePreview() {
@@ -411,7 +416,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
 
   async function undoAllAndClose() {
     setConfirmUndoAll(false)
-    await resetVideoToOriginal()
+    if (await resetVideoToOriginal()) setHasUnpublishedChanges(true)
   }
 
   function startChapterEdit(index: number, label: string) {
@@ -530,10 +535,10 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                   )}
                   {!chaptersReadOnly && <div class="od-time-controls" aria-label="Videoposition">
                     <div class="od-trim-in-group">
-                      <button class="od-trim-go-button od-trim-go-in" type="button" aria-label="Gå till trimningens start" title="Gå till IN" onClick={goToTrimIn}>
+                      <button class="od-trim-go-button od-trim-go-in" type="button" aria-label="Gå till trimningens start" title="Gå till IN" disabled={!isAfter} onClick={goToTrimIn}>
                         <Icon name="skip_previous" size={18} />
                       </button>
-                      <button class="od-trim-boundary-button od-trim-in" type="button" onClick={setTrimIn}>IN</button>
+                      <button class="od-trim-boundary-button od-trim-in" type="button" disabled={!isAfter} onClick={setTrimIn}>IN</button>
                     </div>
                     <div class="od-controls-middle">
                       <button class="btn btn-sm" type="button" disabled={selectedChapter === null || previewPosition <= 0} onClick={() => seekBy(-10)}>−10 s</button>
@@ -543,8 +548,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       <button class="btn btn-sm" type="button" disabled={selectedChapter === null || previewPosition >= videoDuration} onClick={() => seekBy(10)}>+10 s</button>
                     </div>
                     <div class="od-trim-out-group">
-                      <button class="od-trim-boundary-button od-trim-out" type="button" onClick={setTrimOut}>OUT</button>
-                      <button class="od-trim-go-button od-trim-go-out" type="button" aria-label="Gå till trimningens slut" title="Gå till OUT" onClick={goToTrimOut}>
+                      <button class="od-trim-boundary-button od-trim-out" type="button" disabled={!isAfter} onClick={setTrimOut}>OUT</button>
+                      <button class="od-trim-go-button od-trim-go-out" type="button" aria-label="Gå till trimningens slut" title="Gå till OUT" disabled={!isAfter} onClick={goToTrimOut}>
                         <Icon name="skip_next" size={18} />
                       </button>
                     </div>
