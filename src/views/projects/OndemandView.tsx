@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Chapter, CueKind, Project, Recording } from '../../data/types'
-import { formatHms } from '../../app/time'
+import { formatDateTime, formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
@@ -53,6 +53,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [confirmUndoAll, setConfirmUndoAll] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false)
+  const [activeOriginal, setActiveOriginal] = useState<Recording | null>(null)
+  const [switchingSession, setSwitchingSession] = useState(false)
 
   const recordingId = p.recording?.id
   const recordingState = p.recording?.state
@@ -145,8 +147,42 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     : projectChapters
   const chaptersReadOnly = chapters.some((chapter) => chapter.readOnly)
   const source = original ?? (recording?.kind === 'original' ? recording : null)
-  const mockTrimDuration = source?.durationSeconds ?? 0
-  const previewUrl = source?.hlsUrl ?? ''
+  const mockTrimDuration = activeOriginal?.durationSeconds ?? 0
+  const previewUrl = activeOriginal?.hlsUrl ?? ''
+  const availableSessions = activeOriginal?.sessions?.filter((session) => session.hlsUrl) ?? []
+
+  async function selectSession(recordingId: string, sessionId: string) {
+    setSwitchingSession(true)
+    try {
+      const updated = await client.recordings.selectSession(recordingId, sessionId)
+      if (!updated) return
+      setActiveOriginal(updated)
+      setMockTrimStart(0)
+      setMockTrimEnd(updated.durationSeconds)
+      setProjectChaptersLoaded(false)
+      client.projects.chapters(p.id).then((nextChapters) => {
+        setProjectChapters(nextChapters)
+        setChapterLabels({})
+        setProjectChaptersLoaded(true)
+      }).catch(() => setProjectChaptersLoaded(true))
+    } catch {
+      // Lämna föregående session vald; operatören kan försöka igen.
+    } finally {
+      setSwitchingSession(false)
+    }
+  }
+
+  // Flera sändningar (t.ex. en test- och en skarp sändning) kan höra till
+  // samma original — längsta sändningen väljs som utgångspunkt för trimning.
+  useEffect(() => {
+    setActiveOriginal(source)
+    if (!source) return
+    const sessions = source.sessions?.filter((session) => session.hlsUrl)
+    if (!sessions || sessions.length <= 1) return
+    const longest = [...sessions].sort((a, b) => b.durationSeconds - a.durationSeconds)[0]
+    void selectSession(source.id, longest.id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source?.id])
 
   useEffect(() => {
     const video = previewVideoRef.current
@@ -290,7 +326,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   async function resetVideoToOriginal(): Promise<boolean> {
     if (isAfter && !(await actions.restoreOriginal())) return false
     setMockTrimStart(0)
-    setMockTrimEnd(original?.durationSeconds ?? mockTrimDuration)
+    setMockTrimEnd(activeOriginal?.durationSeconds ?? mockTrimDuration)
     setDraftOffsets({})
     setSavedOffsets({})
     setUndoVisible(false)
@@ -496,7 +532,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       <div class="od">
         <div class="od-cols">
           <section class="od-col" aria-label="Trimning">
-            {(source || previewUrl || broadcastInProgress || recordingProcessing) && (
+            {(activeOriginal || previewUrl || broadcastInProgress || recordingProcessing) && (
               <div class="od-mock-trim" aria-label={isAfter ? 'Trimning' : 'Trim-förhandsvisning'}>
                 <div class="od-trim-preview">
                   {broadcastInProgress ? (
@@ -513,6 +549,22 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
                   )}
                 </div>
+                {availableSessions.length > 1 && activeOriginal && (
+                  <div class="od-session-select">
+                    <label>Sändning</label>
+                    <select
+                      value={activeOriginal.sessions?.find((session) => session.hlsUrl === activeOriginal.hlsUrl)?.id ?? ''}
+                      disabled={switchingSession}
+                      onChange={(event) => void selectSession(activeOriginal.id, event.currentTarget.value)}
+                    >
+                      {availableSessions.map((session) => (
+                        <option value={session.id} key={session.id}>
+                          {formatDateTime(session.startedAt)} · {formatHms(session.durationSeconds)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 {isAfter && <div class={`od-selected-chapter${selectedChapter !== null && chapters[selectedChapter] ? ' has-selected-chapter' : ''}${broadcastInProgress || recordingProcessing ? ' is-broadcasting' : ''}`}>
                   {selectedChapter !== null && chapters[selectedChapter] ? (
                     <div class="od-selected-chapter-heading">
