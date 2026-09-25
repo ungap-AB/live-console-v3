@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
+import { create, isPlayerSupported } from 'amazon-ivs-player'
+import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
+import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { Icon } from '../../components/Icon'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Modal } from '../../components/Modal'
@@ -40,6 +43,9 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
   const [iframeCopied, setIframeCopied] = useState(false)
   const [showIframeMenu, setShowIframeMenu] = useState(false)
   const [showPlayerSettings, setShowPlayerSettings] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+  const previewVideoRef = useRef<HTMLVideoElement>(null)
   const iframeMenuRef = useRef<HTMLDivElement>(null)
   const wasStoppedInAfter = useRef(false)
 
@@ -109,6 +115,40 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
     }
   }, [showIframeMenu])
 
+  useEffect(() => {
+    if (!showPreview) return
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShowPreview(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [showPreview])
+
+  // Förhandsgranskningen spelar HLS direkt via IVS-spelaren (inte live-player-v3-sidan).
+  useEffect(() => {
+    setPreviewError(null)
+    if (!showPreview) return
+    const video = previewVideoRef.current
+    const playbackUrl = channel?.playbackUrl
+    if (!video || !playbackUrl) return
+    if (!isPlayerSupported) {
+      setPreviewError('AWS IVS Player kan inte köras i den här webbläsaren.')
+      return
+    }
+
+    const player = create({ wasmWorker, wasmBinary })
+    player.attachHTMLVideoElement(video)
+    player.load(playbackUrl)
+    video.defaultMuted = true
+    video.muted = true
+    player.play()
+
+    return () => {
+      player.pause()
+      player.delete()
+    }
+  }, [showPreview, channel?.playbackUrl])
+
   async function teardownIngest() {
     setConfirmTeardown(null)
     onShowIngestInfoChange(false)
@@ -141,13 +181,20 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
               ? { label: 'Ingen signal', tone: 'warn' }
               : { label: 'Väntar på signal', tone: 'warn' }
 
+  const prevEncoderLabelRef = useRef(encoderStatus.label)
+
   useEffect(() => {
-    if (!showIngestInfo || encoderStatus.label !== 'Signal OK') {
+    const prevLabel = prevEncoderLabelRef.current
+    prevEncoderLabelRef.current = encoderStatus.label
+
+    // Bara auto-kollapsa när signalen blir OK medan panelen redan är öppen —
+    // öppnar man den efter att signalen redan är OK ska den ligga kvar.
+    const justBecameOk = showIngestInfo && encoderStatus.label === 'Signal OK' && prevLabel !== 'Signal OK'
+    if (!justBecameOk) {
       setClosingIngestInfo(false)
       return
     }
 
-    // Ingen fördröjning — kollapsa direkt så fort signalen är OK.
     setClosingIngestInfo(true)
     const closeTimer = window.setTimeout(() => onShowIngestInfoChange(false), 350)
     return () => window.clearTimeout(closeTimer)
@@ -218,6 +265,18 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
         >
           <Icon name="info" size={17} />
           <span>Ingest info</span>
+        </button>
+        <button
+          class="pv-ingest-button"
+          type="button"
+          disabled={encoderStatus.label !== 'Signal OK'}
+          aria-pressed={showPreview}
+          aria-label="Förhandsgranska sändningen"
+          title={encoderStatus.label === 'Signal OK' ? 'Förhandsgranska sändningen' : 'Kräver signal för att förhandsgranska'}
+          onClick={() => setShowPreview((visible) => !visible)}
+        >
+          <Icon name="videocam" size={17} />
+          <span>Preview</span>
         </button>
         <span class="spacer" />
         <span class="pv-clock"><Clock /></span>
@@ -353,6 +412,18 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
           <p class="field-help">Det här är en mockruta för att reservera flödet tills spelarinställningarna finns.</p>
           <div class="modal-actions"><button class="btn btn-primary" type="button" onClick={() => setShowPlayerSettings(false)}>Stäng</button></div>
         </Modal>
+      )}
+
+      {showPreview && (
+        <div class="pv-preview-popup" role="dialog" aria-label="Förhandsgranska sändningen">
+          <div class="pv-preview-video">
+            <button class="pv-preview-close" type="button" aria-label="Stäng förhandsgranskning" onClick={() => setShowPreview(false)}>
+              <Icon name="close" size={20} />
+            </button>
+            {previewError && <div class="pv-preview-error">{previewError}</div>}
+            <video ref={previewVideoRef} playsInline />
+          </div>
+        </div>
       )}
     </header>
   )
