@@ -98,18 +98,18 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
 
   const panels: { key: string; label: string; value: string | null; occurredAt: string | null; clearLabel: string; onClear: () => void }[] = [
     { key: 'item', label: 'Aktuell punkt', value: nowItem, occurredAt: currentAgendaEvent?.occurredAt ?? null, clearLabel: 'Rensa ärende i bild', onClear: () => actions.clear('agendaItem') },
-    { key: 'person', label: 'Aktuell talare', value: nowSpeaker, occurredAt: currentPersonEvent?.occurredAt ?? null, clearLabel: 'Rensa talare i bild', onClear: () => actions.clear('person') },
+    {
+      key: 'person',
+      label: 'Aktuell talare',
+      // Tillfällig talare (exclamation-cue) är momentan och visas i samma ruta
+      // istället för en egen — den vinner medan den är aktiv, annars faller
+      // vi tillbaka till den ordinarie aktuella talaren.
+      value: nowExclamation ?? nowSpeaker,
+      occurredAt: nowExclamation ? null : currentPersonEvent?.occurredAt ?? null,
+      clearLabel: nowExclamation ? 'Rensa tillfällig talare' : 'Rensa talare i bild',
+      onClear: () => actions.clear(nowExclamation ? 'exclamation' : 'person'),
+    },
   ]
-  if (p.meetingBindingId) {
-    panels.push({
-      key: 'exclamation',
-      label: 'Tillfällig talare',
-      value: nowExclamation,
-      occurredAt: null,
-      clearLabel: 'Rensa tillfällig talare',
-      onClear: () => actions.clear('exclamation'),
-    })
-  }
 
   return (
     <div class="lw">

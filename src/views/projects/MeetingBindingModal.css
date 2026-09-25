@@ -48,9 +48,23 @@
   background: var(--accent-bg);
 }
 
+.meeting-picker-list button.is-active-meeting {
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
 .meeting-picker-list span {
   color: var(--ink-3);
   font-size: 12px;
+}
+
+.meeting-picker-active {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .empty-state {

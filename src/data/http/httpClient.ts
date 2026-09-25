@@ -461,6 +461,9 @@ export const httpClient: Client = {
     async list(domain): Promise<MeetingSummary[]> {
       return api<MeetingSummary[]>('/meetings', { query: { domain } })
     },
+    async getActive(domain): Promise<MeetingSummary | null> {
+      return api<MeetingSummary | null>('/meetings/active', { query: { domain } })
+    },
     async getAgenda(domain, meetingId): Promise<MeetingTopic[]> {
       return api<MeetingTopic[]>(`/meetings/${meetingId}/topics`, { query: { domain } })
     },

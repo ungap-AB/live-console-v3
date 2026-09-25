@@ -326,7 +326,13 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
           </div>
           <div class="pcol-body">
             {!nameList ? (
-              <p class="pcol-empty">{p.namelistId ? 'Laddar…' : 'Ingen namnlista kopplad. Koppla en för att kunna spela ut talare.'}</p>
+              <p class="pcol-empty">
+                {p.namelistId
+                  ? 'Laddar…'
+                  : p.meetingBindingId
+                    ? 'Talare spelas ut direkt från Meeting.'
+                    : 'Ingen namnlista kopplad. Koppla en för att kunna spela ut talare.'}
+              </p>
             ) : (
               <EditableItemList
                 items={nameList.people}

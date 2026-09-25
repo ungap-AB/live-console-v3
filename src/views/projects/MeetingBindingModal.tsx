@@ -18,6 +18,7 @@ interface MeetingBindingModalProps {
 export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaName, actions, onClose }: MeetingBindingModalProps) {
   const [step, setStep] = useState<Step>('domain')
   const [meetings, setMeetings] = useState<MeetingSummary[]>([])
+  const [activeMeetingId, setActiveMeetingId] = useState<number | null>(null)
   const [selectedMeeting, setSelectedMeeting] = useState<MeetingSummary | null>(null)
   const [topics, setTopics] = useState<MeetingTopic[]>([])
   const [loading, setLoading] = useState(false)
@@ -37,9 +38,18 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
     setLoading(true)
     setError(null)
     try {
-      const found = await client.meetings.list(normalizedDomain)
-      setMeetings(found)
-      setSelectedMeeting(null)
+      const [found, active] = await Promise.all([
+        client.meetings.list(normalizedDomain),
+        client.meetings.getActive(normalizedDomain).catch(() => null),
+      ])
+      const activeId = active?.id ?? null
+      // Aktivt möte först — det är oftast det man vill koppla till — annars nyast först.
+      const sorted = [...found].sort((a, b) => (b.id === activeId ? 1 : 0) - (a.id === activeId ? 1 : 0) || b.id - a.id)
+      setMeetings(sorted)
+      setActiveMeetingId(activeId)
+      // Förvald: det aktiva mötet, om det finns bland de listade — annars måste
+      // operatören välja själv (inget möte förvalt).
+      setSelectedMeeting(sorted.find((meeting) => meeting.id === activeId) ?? null)
       setStep('meetings')
       if (found.length === 0) setError('Inga möten hittades för domänen.')
     } catch (cause) {
@@ -136,11 +146,17 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
               <li key={meeting.id}>
                 <button
                   type="button"
-                  class={selectedMeeting?.id === meeting.id ? 'selected' : ''}
+                  class={[
+                    selectedMeeting?.id === meeting.id ? 'selected' : '',
+                    meeting.id === activeMeetingId ? 'is-active-meeting' : '',
+                  ].filter(Boolean).join(' ')}
                   onClick={() => setSelectedMeeting(meeting)}
                 >
                   <strong>{meeting.title}</strong>
-                  <span>Meeting-ID {meeting.id}</span>
+                  <span>
+                    Meeting-ID {meeting.id}
+                    {meeting.id === activeMeetingId && <span class="meeting-picker-active">Aktivt möte</span>}
+                  </span>
                 </button>
               </li>
             ))}

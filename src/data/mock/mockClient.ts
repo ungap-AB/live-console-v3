@@ -292,6 +292,11 @@ export const mockClient: Client = {
     async list(domain): Promise<MeetingSummary[]> {
       return delay(clone(meetingFixtures[domain.trim().toLowerCase()]?.meetings ?? []))
     },
+    async getActive(domain): Promise<MeetingSummary | null> {
+      const meetings = meetingFixtures[domain.trim().toLowerCase()]?.meetings ?? []
+      const active = meetings.reduce<MeetingSummary | null>((newest, m) => (!newest || m.id > newest.id ? m : newest), null)
+      return delay(active ? clone(active) : null)
+    },
     async getAgenda(domain, meetingId): Promise<MeetingTopic[]> {
       const topics = meetingFixtures[domain.trim().toLowerCase()]?.topics[meetingId] ?? []
       return delay(clone(topics).sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id))

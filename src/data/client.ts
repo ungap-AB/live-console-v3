@@ -63,6 +63,7 @@ export interface Client {
   }
   meetings: {
     list(domain: string): Promise<MeetingSummary[]>
+    getActive(domain: string): Promise<MeetingSummary | null>
     getAgenda(domain: string, meetingId: number): Promise<MeetingTopic[]>
   }
   namelists: {
