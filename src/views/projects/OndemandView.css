@@ -232,13 +232,32 @@
   flex: none;
 }
 
-.od-recording-select select {
+.od-recording-current {
   flex: 1;
-  border: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.od-recording-picker-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.od-recording-picker-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
   border-radius: 6px;
-  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.od-recording-picker-option:hover {
   background: var(--field-bg);
-  color: var(--field-fg);
 }
 
 .od-broadcast-warning {

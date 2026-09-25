@@ -25,6 +25,10 @@ const CHAPTER_KIND: Record<CueKind, string> = {
   exclamation: 'Utrop',
 }
 
+// Under denna längd flaggas en sändning som misstänkt kort (t.ex. ett test)
+// i "Byt sändning"-dialogen, så operatören inte råkar välja fel av misstag.
+const VERY_SHORT_RECORDING_SECONDS = 60
+
 export function OndemandView({ project: p, actions, onBack }: OndemandViewProps) {
   const { selectMode, dialog } = useModeChange(p, actions)
   const live = useLiveChannel(p.channel?.id ?? null)
@@ -55,6 +59,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false)
   const [projectRecordings, setProjectRecordings] = useState<ProjectRecording[]>([])
   const [switchingRecording, setSwitchingRecording] = useState(false)
+  const [showRecordingPicker, setShowRecordingPicker] = useState(false)
+  const [pendingRecordingId, setPendingRecordingId] = useState<string | null>(null)
 
   const recordingId = p.recording?.id
   const recordingState = p.recording?.state
@@ -158,6 +164,15 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const livePhase = live.health?.livePhase?.toLowerCase()
   const broadcastInProgress = live.health?.state?.toLowerCase() === 'live' || livePhase === 'live'
   const recordingProcessing = !broadcastInProgress && (p.recording?.state === 'recording' || p.recording?.state === 'processing')
+  const [processingStuck, setProcessingStuck] = useState(false)
+  useEffect(() => {
+    setProcessingStuck(false)
+    if (!recordingProcessing) return
+    // AWS hinner normalt klart inom en minut — om det tar mycket längre kan
+    // sändningen ha varit för kort för att IVS skulle spara en inspelning alls.
+    const timer = window.setTimeout(() => setProcessingStuck(true), 90_000)
+    return () => window.clearTimeout(timer)
+  }, [recordingProcessing, p.recording?.id])
   const chapters = !projectChaptersLoaded
     ? []
     : projectChapters
@@ -187,6 +202,17 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     } finally {
       setSwitchingRecording(false)
     }
+  }
+
+  function openRecordingPicker() {
+    setPendingRecordingId(projectRecordings.find((item) => item.isActive)?.id ?? null)
+    setShowRecordingPicker(true)
+  }
+
+  async function confirmRecordingSwitch() {
+    if (!pendingRecordingId) return
+    setShowRecordingPicker(false)
+    await switchActiveRecording(pendingRecordingId)
   }
 
   useEffect(() => {
@@ -420,7 +446,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const endChanged = mockTrimEnd !== defaultTrimEnd
   const trimDirty = isAfter && (startChanged || endChanged)
   const draftDirty = trimDirty || Object.entries(chapterLabels).some(([index, label]) => label !== chapters[Number(index)]?.label)
-  const canPublishOndemand = !chaptersReadOnly && (isAfter || hasUnpublishedChanges || trimDirty)
+  // Backend spärrar redan publish medan enkodern sänder (channel_live) — spärra
+  // knappen här också så det inte ser ut som ett fungerande val.
+  const canPublishOndemand = !chaptersReadOnly && !broadcastInProgress && (isAfter || hasUnpublishedChanges || trimDirty)
   const videoDuration = previewVideoRef.current?.duration || mockTrimDuration
   const canReturnToSaved = selectedChapter !== null && draftOffsets[selectedChapter] !== undefined
 
@@ -515,6 +543,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     } else if (p.publicMode === 'after') {
       const chapter = chapters[index]
       if (chapter) await client.projects.deleteDraftChapter(p.id, chapter.chapterId)
+      const nextChapters = await client.projects.chapters(p.id)
+      setProjectChapters(nextChapters)
+      setChapterLabels({})
       await actions.refreshPlayout()
       setHasUnpublishedChanges(true)
     } else return
@@ -549,25 +580,29 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     <div class="od-broadcast-warning" role="status">
                       <strong>Inspelningen bearbetas</strong>
                       <span>Vänta tills inspelningen är klar innan du trimmar och publicerar ondemand.</span>
+                      {processingStuck && (
+                        <>
+                          <span>Det här tar ovanligt lång tid — sändningen kan ha varit för kort för att AWS skulle spara en inspelning.</span>
+                          {isAfter && projectRecordings.length > 1 && (
+                            <button class="btn btn-sm" type="button" onClick={openRecordingPicker}>Byt sändning…</button>
+                          )}
+                        </>
+                      )}
                     </div>
                   ) : (
                     <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
                   )}
                 </div>
-                {projectRecordings.length > 1 && (
+                {isAfter && projectRecordings.length > 1 && (
                   <div class="od-recording-select">
                     <label>Sändning</label>
-                    <select
-                      value={projectRecordings.find((item) => item.isActive)?.id ?? ''}
-                      disabled={switchingRecording}
-                      onChange={(event) => void switchActiveRecording(event.currentTarget.value)}
-                    >
-                      {projectRecordings.map((item) => (
-                        <option value={item.id} key={item.id}>
-                          {formatDateTime(item.startedAt)} · {formatHms(item.durationSeconds)}
-                        </option>
-                      ))}
-                    </select>
+                    <span class="od-recording-current">
+                      {formatDateTime(projectRecordings.find((item) => item.isActive)?.startedAt ?? '')} ·{' '}
+                      {formatHms(projectRecordings.find((item) => item.isActive)?.durationSeconds ?? 0)}
+                    </span>
+                    <button class="btn btn-sm" type="button" disabled={switchingRecording} onClick={openRecordingPicker}>
+                      Byt sändning…
+                    </button>
                   </div>
                 )}
                 {isAfter && <div class={`od-selected-chapter${selectedChapter !== null && chapters[selectedChapter] ? ' has-selected-chapter' : ''}${broadcastInProgress || recordingProcessing ? ' is-broadcasting' : ''}`}>
@@ -718,6 +753,37 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
           <div class="modal-actions">
             <button class="btn" type="button" onClick={() => setConfirmUndoAll(false)}>Avbryt</button>
             <button class="btn btn-danger" type="button" onClick={() => void undoAllAndClose()}>Ångra allt</button>
+          </div>
+        </Modal>
+      )}
+      {showRecordingPicker && (
+        <Modal title="Välj vilken sändning som ska användas" onClose={() => setShowRecordingPicker(false)}>
+          <ul class="od-recording-picker-list">
+            {projectRecordings.map((item) => (
+              <li key={item.id}>
+                <label class="od-recording-picker-option">
+                  <input
+                    type="radio"
+                    name="recording-picker"
+                    checked={pendingRecordingId === item.id}
+                    onChange={() => setPendingRecordingId(item.id)}
+                  />
+                  <span>{formatDateTime(item.startedAt)} · {formatHms(item.durationSeconds)}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+          {(() => {
+            const selected = projectRecordings.find((item) => item.id === pendingRecordingId)
+            return selected && selected.durationSeconds < VERY_SHORT_RECORDING_SECONDS ? (
+              <p class="note warn">Den valda sändningen är väldigt kort ({formatHms(selected.durationSeconds)}) — kontrollera att det inte var ett test innan du byter.</p>
+            ) : null
+          })()}
+          <div class="modal-actions">
+            <button class="btn" type="button" onClick={() => setShowRecordingPicker(false)}>Avbryt</button>
+            <button class="btn btn-primary" type="button" disabled={!pendingRecordingId || switchingRecording} onClick={() => void confirmRecordingSwitch()}>
+              Byt sändning
+            </button>
           </div>
         </Modal>
       )}

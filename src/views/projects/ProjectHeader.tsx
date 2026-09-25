@@ -4,7 +4,6 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { Modal } from '../../components/Modal'
 import { Clock } from '../../components/Clock'
 import type { Channel, ChannelHealth, Project, Visibility } from '../../data/types'
-import { client } from '../../data'
 import { formatDate } from '../../app/time'
 import type { ProjectActions } from './actions'
 import { useModeChange } from './useModeChange'
@@ -36,22 +35,15 @@ function displayUrl(url: string): string {
 export function ProjectHeader({ project: p, actions, onBack, onModeSelect, channel = null, health = null, streamKey = null }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
-  const { selectMode, dialog: modeDialog } = useModeChange(p, actions, async (from, to) => {
-    if (from !== 'live' || to !== 'after' || !channel) return
-    try {
-      const latestHealth = await client.channels.health(channel.id)
-      if (latestHealth.state.toLowerCase() !== 'live') setConfirmTeardown(true)
-    } catch {
-      // Teardownfrågan ska inte blockera lägesbytet om IVS-health inte kan läsas.
-    }
-  })
+  const { selectMode, dialog: modeDialog } = useModeChange(p, actions)
   const [showSettings, setShowSettings] = useState(false)
   const [showIngestInfo, setShowIngestInfo] = useState(false)
   const [closingIngestInfo, setClosingIngestInfo] = useState(false)
-  const [confirmTeardown, setConfirmTeardown] = useState(false)
+  const [confirmTeardown, setConfirmTeardown] = useState<'manual' | 'encoderStopped' | null>(null)
   const [copied, setCopied] = useState(false)
   const [iframeCopied, setIframeCopied] = useState(false)
   const settingsButton = useRef<HTMLButtonElement>(null)
+  const wasStoppedInAfter = useRef(false)
 
   async function saveTitle() {
     const name = titleDraft.trim()
@@ -81,12 +73,21 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
   }
 
   async function teardownIngest() {
-    setConfirmTeardown(false)
+    setConfirmTeardown(null)
     setShowIngestInfo(false)
     await actions.teardownChannel()
   }
 
   const phase = health?.livePhase?.toLowerCase()
+
+  // Fångar övergången till "stoppad medan vi redan står i After" — oavsett om
+  // enkodern hann stanna innan eller efter klicket Live→After. Frågan ska
+  // bara ställas en gång per stopp, inte vid varje pollning (var 5:e sekund).
+  useEffect(() => {
+    const stoppedInAfter = p.publicMode === 'after' && phase === 'streamended'
+    if (stoppedInAfter && !wasStoppedInAfter.current) setConfirmTeardown('encoderStopped')
+    wasStoppedInAfter.current = stoppedInAfter
+  }, [p.publicMode, phase])
   const encoderStatus = !channel
     ? { label: 'Ingen ingest', tone: 'neutral' }
     : p.publicMode === 'after' && (phase === 'live' || phase === 'waitingforstream' || health?.state?.toLowerCase() === 'live')
@@ -195,7 +196,7 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
             streamKey={streamKey}
             trailingAction={(
               <div class="pv-ingest-actions">
-                <button class="btn btn-sm btn-danger" type="button" onClick={() => setConfirmTeardown(true)}>
+                <button class="btn btn-sm btn-danger" type="button" onClick={() => setConfirmTeardown('manual')}>
                   Riv ingest
                 </button>
                 <button class="pv-icon-btn" type="button" aria-label="Stäng ingest-info" title="Stäng" onClick={() => { setClosingIngestInfo(false); setShowIngestInfo(false) }}>
@@ -209,13 +210,17 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
 
       {confirmTeardown && (
         <ConfirmModal
-          title="Riva ingest?"
+          title={confirmTeardown === 'encoderStopped' ? 'Är sändningen slut?' : 'Riva ingest?'}
           confirmLabel="Riv ingest"
           danger
-          onCancel={() => setConfirmTeardown(false)}
+          onCancel={() => setConfirmTeardown(null)}
           onConfirm={() => void teardownIngest()}
         >
-          <p>Ingest-resursen tas bort. För att sända behöver du skapa en ny ingest och använda en ny stream key i enkodern.</p>
+          {confirmTeardown === 'encoderStopped' ? (
+            <p>Enkodern har slutat sända. Ska vi riva streamingservern (ingesten) som användes? Om detta bara var ett test svarar du Avbryt — servern finns kvar och redo för en ny sändning.</p>
+          ) : (
+            <p>Ingest-resursen tas bort. För att sända behöver du skapa en ny ingest och använda en ny stream key i enkodern.</p>
+          )}
         </ConfirmModal>
       )}
 
