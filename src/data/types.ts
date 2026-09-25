@@ -30,6 +30,8 @@ export interface AgendaItem {
   position: number
   title: string
   reference?: string
+  /** Meetings eget ärende-id (topic.id), sätts bara vid import från Meeting. */
+  meetingItemId?: string
   attachments?: AgendaAttachment[]
 }
 

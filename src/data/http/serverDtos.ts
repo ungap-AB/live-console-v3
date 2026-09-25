@@ -17,6 +17,7 @@ export interface ServerAgendaItem {
   position: number
   title: string
   reference?: string
+  meetingItemId?: string
   attachments: ServerAgendaAttachment[]
 }
 

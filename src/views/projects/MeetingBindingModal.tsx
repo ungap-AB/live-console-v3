@@ -76,7 +76,7 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
       })
       let agenda = created
       for (const topic of topics) {
-        agenda = await client.agendas.addItem(agenda.id, { title: topic.title })
+        agenda = await client.agendas.addItem(agenda.id, { title: topic.title, meetingItemId: String(topic.id) })
       }
       await actions.setAgenda(agenda.id)
       setCreatedAgendaName(agenda.name)
