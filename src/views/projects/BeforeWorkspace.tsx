@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Channel, ChannelHealth, Project } from '../../data/types'
+import type { ChannelHealth, Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
-import { IngestInfo } from './IngestInfo'
 import { MeetingBindingModal } from './MeetingBindingModal'
 import { PlayoutColumns } from './PlayoutColumns'
 import './BeforeWorkspace.css'
@@ -14,15 +13,15 @@ import './BeforeWorkspace.css'
 interface BeforeWorkspaceProps {
   project: Project
   actions: ProjectActions
-  channel: Channel | null
   health: ChannelHealth | null
-  streamKey: string | null
   refresh: () => Promise<void>
   stopPolling: () => void
+  showIngestInfo: boolean
+  onShowIngestInfoChange: (show: boolean) => void
 }
 
 // Arbetsyta för förberedelser i läget Before.
-export function BeforeWorkspace({ project: p, actions, channel, health, streamKey, refresh, stopPolling }: BeforeWorkspaceProps) {
+export function BeforeWorkspace({ project: p, actions, health, refresh, stopPolling, showIngestInfo, onShowIngestInfoChange }: BeforeWorkspaceProps) {
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
     [p.agendaId],
@@ -35,7 +34,6 @@ export function BeforeWorkspace({ project: p, actions, channel, health, streamKe
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [openPicker, setOpenPicker] = useState<'agenda' | 'namelist' | null>(null)
   const [notUsed, setNotUsed] = useState<string[]>([])
-  const [showIngestInfo, setShowIngestInfo] = useState(false)
   const [showMessages, setShowMessages] = useState(false)
   const [showLayout, setShowLayout] = useState(false)
   const [showMeeting, setShowMeeting] = useState(false)
@@ -66,6 +64,8 @@ export function BeforeWorkspace({ project: p, actions, channel, health, streamKe
     setOpenMenu(null)
     await actions.createChannel()
     await refresh()
+    // Nyskapad ingest ska visa sin info direkt, inte kräva ett extra klick.
+    onShowIngestInfoChange(true)
   }
 
   async function saveMessages() {
@@ -154,7 +154,7 @@ export function BeforeWorkspace({ project: p, actions, channel, health, streamKe
               aria-label="Visa ingest-info"
               title="Visa ingest-info"
               aria-expanded={showIngestInfo}
-              onClick={() => setShowIngestInfo((visible) => !visible)}
+              onClick={() => onShowIngestInfoChange(!showIngestInfo)}
             >
               <Icon name="info" size={18} />
             </button>
@@ -162,7 +162,7 @@ export function BeforeWorkspace({ project: p, actions, channel, health, streamKe
           {actionMenu('Ingest', [
           ...(!hasIngest ? [{ label: 'Skapa', onClick: () => void createIngest() }] : []),
           ...(hasIngest ? [
-            { label: showIngestInfo ? 'Dölj ingest-info' : 'Visa ingest-info', onClick: () => { setShowIngestInfo((value) => !value); setOpenMenu(null) } },
+            { label: showIngestInfo ? 'Dölj ingest-info' : 'Visa ingest-info', onClick: () => { onShowIngestInfoChange(!showIngestInfo); setOpenMenu(null) } },
             { label: 'Riv', onClick: () => { setOpenMenu(null); setConfirmTeardown(true) }, danger: true },
           ] : []),
           ])}
@@ -174,20 +174,6 @@ export function BeforeWorkspace({ project: p, actions, channel, health, streamKe
           { label: 'Öppna länk', onClick: () => { setOpenMenu(null); window.open(p.playerUrl, '_blank', 'noopener,noreferrer') } },
         ]))}
       </ul>
-
-      {showIngestInfo && hasIngest && (
-        <div class="bw-ingest-info">
-          <IngestInfo
-            channel={channel}
-            streamKey={streamKey}
-            trailingAction={(
-              <button class="bw-info-close" type="button" aria-label="Stäng ingest-info" title="Stäng" onClick={() => setShowIngestInfo(false)}>
-                <Icon name="close" size={18} />
-              </button>
-            )}
-          />
-        </div>
-      )}
 
       <PlayoutColumns project={p} actions={actions} openPicker={openPicker} onPickerClosed={() => setOpenPicker(null)} />
 

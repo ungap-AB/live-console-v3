@@ -142,7 +142,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
+  flex: 4 1 240px;
   min-width: 0;
 }
 
@@ -201,6 +201,7 @@
 }
 
 .pv-seg-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -223,6 +224,18 @@
   background: var(--surface-3);
   color: var(--ink);
   font-weight: 600;
+}
+
+/* Tydlig indikator för vilket läge/synlighet som är aktivt, utöver färgen. */
+.pv-seg-btn[aria-pressed='true']::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 3px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
 }
 
 /* Rött är reserverat för Live, grönt för Öppen. */
@@ -260,6 +273,42 @@
   font-family: var(--mono);
   font-size: 13px;
   color: var(--ink-2);
+}
+
+.pv-iframe-menu-wrap {
+  position: relative;
+  flex: none;
+}
+
+.pv-iframe-menu {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.pv-iframe-menu button {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pv-iframe-menu button:hover {
+  background: var(--accent-soft);
 }
 
 .mode-dialog-field {

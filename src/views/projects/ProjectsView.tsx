@@ -361,8 +361,8 @@ export function ProjectsView({
         <div class="header-list-zone">
           <h1>Projekt</h1>
           <span class="spacer" />
-          <button class="btn btn-sm btn-primary" type="button" onClick={() => onCreatingChange(true)}>
-            + Nytt projekt
+          <button class="btn btn-sm" type="button" onClick={() => onCreatingChange(true)}>
+            + Nytt
           </button>
         </div>
       </header>
@@ -449,7 +449,6 @@ export function ProjectsView({
                     </li>
                   ))}
                 </ul>
-                <p class="project-list-hint">Before och Live öppnar Livesändning. After och Ondemand öppnar Ondemand.</p>
               </>
             )}
           </div>

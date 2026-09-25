@@ -10,7 +10,6 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { RenameModal } from '../../components/RenameModal'
 import { Toast } from '../../components/Toast'
 import { EditIcon } from '../../components/icons'
-import { TrimDialog } from './TrimDialog'
 import { formatDateTime, formatGb, formatHms } from '../../app/time'
 import './VideoArchiveView.css'
 
@@ -43,7 +42,6 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   const resource = useResource(() => client.recordings.list(), [])
   const [recordings, setRecordings] = useState<Recording[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [trimming, setTrimming] = useState<Recording | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<Recording | null>(null)
   const [creating, setCreating] = useState(false)
   const [renaming, setRenaming] = useState<Recording | null>(null)
@@ -125,19 +123,6 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
     setConfirmTrash(null)
   }
 
-  async function saveTrim(range: { startOffsetSeconds: number; endOffsetSeconds: number }) {
-    if (!trimming) return
-    const trimmed = await client.recordings.trim(trimming.id, range)
-    setRecordings((prev) => {
-      const exists = prev.some((r) => r.id === trimmed.id)
-      if (exists) return prev.map((r) => (r.id === trimmed.id ? trimmed : r))
-      const idx = prev.findIndex((r) => r.id === trimming.id)
-      return [...prev.slice(0, idx + 1), trimmed, ...prev.slice(idx + 1)]
-    })
-    setSelectedId(trimmed.id)
-    setTrimming(null)
-  }
-
   return (
     <div class="view">
       <header>
@@ -189,7 +174,6 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
               <ArchiveDetail
                 recording={selected}
                 chapters={chapters}
-                onTrim={() => setTrimming(selected)}
                 onTrash={() =>
                   selected.kind === 'original' && childrenOf(selected.id).length > 0
                     ? setConfirmTrash(selected)
@@ -203,15 +187,6 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
           }
         />
       </div>
-
-      {trimming && (
-        <TrimDialog
-          recording={detail?.recording.id === trimming.id ? detail.original ?? trimming : trimming}
-          initialRange={trimming.trimRange ?? childrenOf(trimming.id)[0]?.trimRange}
-          onCancel={() => setTrimming(null)}
-          onSave={saveTrim}
-        />
-      )}
 
       {confirmTrash && (
         <ConfirmModal
@@ -254,14 +229,13 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
 interface ArchiveDetailProps {
   recording: Recording
   chapters: Chapter[]
-  onTrim: () => void
   onTrash: () => void
   onRename: () => void
   onDownload: () => void
   onOpenProject: () => void
 }
 
-function ArchiveDetail({ recording: r, chapters, onTrim, onTrash, onRename, onDownload, onOpenProject }: ArchiveDetailProps) {
+function ArchiveDetail({ recording: r, chapters, onTrash, onRename, onDownload, onOpenProject }: ArchiveDetailProps) {
   const isOriginal = r.kind === 'original'
   const visibleChapterCount = chapters.filter((c) => isInRange(r, c)).length
 
@@ -283,7 +257,15 @@ function ArchiveDetail({ recording: r, chapters, onTrim, onTrash, onRename, onDo
             <StatusChip tone="warn">{r.segments.length - 1} glapp</StatusChip>
           )}
           <span class="head-actions">
-            <OverflowMenu items={[{ label: 'Flytta till papperskorgen', danger: true, onClick: onTrash }]} />
+            <OverflowMenu
+              items={[{
+                label: 'Flytta till papperskorgen',
+                danger: true,
+                disabled: !!r.project,
+                title: r.project ? 'Inspelningar kopplade till ett projekt kan bara tas bort där.' : undefined,
+                onClick: onTrash,
+              }]}
+            />
           </span>
         </h2>
         <div class="facts">
@@ -303,11 +285,6 @@ function ArchiveDetail({ recording: r, chapters, onTrim, onTrash, onRename, onDo
           {r.project && (
             <button class="btn btn-sm" type="button" onClick={onOpenProject}>
               Gå till projekt
-            </button>
-          )}
-          {isOriginal && (
-            <button class="btn btn-sm btn-primary" type="button" onClick={onTrim}>
-              Trimma inspelning
             </button>
           )}
         </div>

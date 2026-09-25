@@ -19,6 +19,8 @@ interface ProjectHeaderProps {
   channel?: Channel | null
   health?: ChannelHealth | null
   streamKey?: string | null
+  showIngestInfo: boolean
+  onShowIngestInfoChange: (show: boolean) => void
 }
 
 const VISIBILITIES: { value: Visibility; label: string; icon: string }[] = [
@@ -31,18 +33,21 @@ function displayUrl(url: string): string {
   return url.replace(/^https?:\/\//, '')
 }
 
-// Gemensam för Livesändning och Ondemand.
-export function ProjectHeader({ project: p, actions, onBack, onModeSelect, channel = null, health = null, streamKey = null }: ProjectHeaderProps) {
+// Gemensam för Livesändning och Ondemand. showIngestInfo ägs av föräldern så
+// att t.ex. BeforeWorkspaces "Visa ingest-info"-menyval kan slå på samma
+// panel som knappen här i headern, istället för att ha en egen kopia.
+export function ProjectHeader({ project: p, actions, onBack, onModeSelect, channel = null, health = null, streamKey = null, showIngestInfo, onShowIngestInfoChange }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
   const { selectMode, dialog: modeDialog } = useModeChange(p, actions)
   const [showSettings, setShowSettings] = useState(false)
-  const [showIngestInfo, setShowIngestInfo] = useState(false)
   const [closingIngestInfo, setClosingIngestInfo] = useState(false)
   const [confirmTeardown, setConfirmTeardown] = useState<'manual' | 'encoderStopped' | null>(null)
   const [copied, setCopied] = useState(false)
   const [iframeCopied, setIframeCopied] = useState(false)
+  const [showIframeMenu, setShowIframeMenu] = useState(false)
   const settingsButton = useRef<HTMLButtonElement>(null)
+  const iframeMenuRef = useRef<HTMLDivElement>(null)
   const wasStoppedInAfter = useRef(false)
 
   async function saveTitle() {
@@ -72,9 +77,42 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
     }
   }
 
+  function iframeExampleUrl(): string {
+    // iframe.html ligger som en statisk exempelsida bredvid spelarens
+    // index.html — samma bas som playerUrl, bara med frågesträngen bortklippt.
+    const base = p.playerUrl.split('?')[0]
+    return `${base}iframe.html?p=${p.id}`
+  }
+
+  async function copyIframeAndClose() {
+    setShowIframeMenu(false)
+    await copyIframe()
+  }
+
+  function openIframeExample() {
+    setShowIframeMenu(false)
+    window.open(iframeExampleUrl(), '_blank', 'noopener,noreferrer')
+  }
+
+  useEffect(() => {
+    if (!showIframeMenu) return
+    function onDocMouseDown(e: MouseEvent) {
+      if (iframeMenuRef.current && !iframeMenuRef.current.contains(e.target as Node)) setShowIframeMenu(false)
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShowIframeMenu(false)
+    }
+    document.addEventListener('mousedown', onDocMouseDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onDocMouseDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [showIframeMenu])
+
   async function teardownIngest() {
     setConfirmTeardown(null)
-    setShowIngestInfo(false)
+    onShowIngestInfoChange(false)
     await actions.teardownChannel()
   }
 
@@ -100,7 +138,9 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
           ? { label: 'Väntar på att enkoder stoppar', tone: 'warn' }
           : phase === 'streamended'
             ? { label: 'Sändningen avslutad', tone: 'ended' }
-            : { label: 'Väntar på signal', tone: 'warn' }
+            : p.publicMode === 'ondemand'
+              ? { label: 'Ingen signal', tone: 'warn' }
+              : { label: 'Väntar på signal', tone: 'warn' }
 
   useEffect(() => {
     if (!showIngestInfo || encoderStatus.label !== 'Signal OK') {
@@ -110,7 +150,7 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
 
     const closeTimer = window.setTimeout(() => {
       setClosingIngestInfo(true)
-      window.setTimeout(() => setShowIngestInfo(false), 350)
+      window.setTimeout(() => onShowIngestInfoChange(false), 350)
     }, 5000)
     return () => window.clearTimeout(closeTimer)
   }, [encoderStatus.label, showIngestInfo])
@@ -175,7 +215,7 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
           aria-expanded={showIngestInfo}
           onClick={() => {
             setClosingIngestInfo(false)
-            setShowIngestInfo((visible) => !visible)
+            onShowIngestInfoChange(!showIngestInfo)
           }}
         >
           <Icon name="info" size={17} />
@@ -199,7 +239,7 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
                 <button class="btn btn-sm btn-danger" type="button" onClick={() => setConfirmTeardown('manual')}>
                   Riv ingest
                 </button>
-                <button class="pv-icon-btn" type="button" aria-label="Stäng ingest-info" title="Stäng" onClick={() => { setClosingIngestInfo(false); setShowIngestInfo(false) }}>
+                <button class="pv-icon-btn" type="button" aria-label="Stäng ingest-info" title="Stäng" onClick={() => { setClosingIngestInfo(false); onShowIngestInfoChange(false) }}>
                   <Icon name="close" size={18} />
                 </button>
               </div>
@@ -279,15 +319,25 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
             >
               <Icon name={copied ? 'check' : 'content_copy'} size={18} />
             </button>
-            <button
-              class="pv-icon-btn"
-              type="button"
-              aria-label={iframeCopied ? 'Iframe-koden kopierad' : 'Kopiera iframe-kod'}
-              title={iframeCopied ? 'Iframe-koden kopierad' : 'Kopiera iframe-kod'}
-              onClick={() => void copyIframe()}
-            >
-              <Icon name={iframeCopied ? 'check' : 'code'} size={18} />
-            </button>
+            <div class="pv-iframe-menu-wrap" ref={iframeMenuRef}>
+              <button
+                class="pv-icon-btn"
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={showIframeMenu}
+                aria-label={iframeCopied ? 'Iframe-koden kopierad' : 'IFRAME-alternativ'}
+                title={iframeCopied ? 'Iframe-koden kopierad' : 'IFRAME-alternativ'}
+                onClick={() => setShowIframeMenu((visible) => !visible)}
+              >
+                <Icon name={iframeCopied ? 'check' : 'code'} size={18} />
+              </button>
+              {showIframeMenu && (
+                <div class="pv-iframe-menu" role="menu">
+                  <button type="button" role="menuitem" onClick={() => void copyIframeAndClose()}>Kopiera IFRAME-kod</button>
+                  <button type="button" role="menuitem" onClick={openIframeExample}>Öppna exempelsida</button>
+                </div>
+              )}
+            </div>
             <a
               class="pv-icon-btn"
               href={p.playerUrl}

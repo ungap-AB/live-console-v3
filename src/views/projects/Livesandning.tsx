@@ -1,4 +1,4 @@
-import { useEffect } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Project } from '../../data/types'
 import type { ProjectActions } from './actions'
@@ -17,6 +17,9 @@ interface LivesandningProps {
 // Before är förberedelser, Live är ren sändningskontroll.
 export function Livesandning({ project: p, actions, onBack }: LivesandningProps) {
   const live = useLiveChannel(p.channel?.id ?? null)
+  // Delas mellan headerns "Ingest info"-knapp och BeforeWorkspaces
+  // motsvarande menyval — en enda panel, oavsett vilken som öppnar den.
+  const [showIngestInfo, setShowIngestInfo] = useState(false)
 
   // Samma pollning som Playout: håller utspelningsläget i synk mellan operatörer.
   useEffect(() => {
@@ -39,16 +42,25 @@ export function Livesandning({ project: p, actions, onBack }: LivesandningProps)
 
   return (
     <div class={`project-workspace doc${p.publicMode === 'before' ? ' before-project-workspace' : ''}`}>
-      <ProjectHeader project={p} actions={actions} onBack={onBack} channel={live.channel} health={live.health} streamKey={live.streamKey} />
+      <ProjectHeader
+        project={p}
+        actions={actions}
+        onBack={onBack}
+        channel={live.channel}
+        health={live.health}
+        streamKey={live.streamKey}
+        showIngestInfo={showIngestInfo}
+        onShowIngestInfoChange={setShowIngestInfo}
+      />
       {p.publicMode === 'before' ? (
         <BeforeWorkspace
           project={p}
           actions={actions}
-          channel={live.channel}
           health={live.health}
-          streamKey={live.streamKey}
           refresh={live.refresh}
           stopPolling={live.stopPolling}
+          showIngestInfo={showIngestInfo}
+          onShowIngestInfoChange={setShowIngestInfo}
         />
       ) : (
         <LiveWorkspace project={p} actions={actions} channel={live.channel} health={live.health} streamKey={live.streamKey} />

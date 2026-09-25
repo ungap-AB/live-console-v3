@@ -32,6 +32,7 @@ const VERY_SHORT_RECORDING_SECONDS = 60
 export function OndemandView({ project: p, actions, onBack }: OndemandViewProps) {
   const { selectMode, dialog } = useModeChange(p, actions)
   const live = useLiveChannel(p.channel?.id ?? null)
+  const [showIngestInfo, setShowIngestInfo] = useState(false)
   const [recording, setRecording] = useState<Recording | null>(null)
   const [original, setOriginal] = useState<Recording | null>(null)
   const [projectChapters, setProjectChapters] = useState<Chapter[]>([])
@@ -564,7 +565,17 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
 
   return (
     <div class="project-workspace doc">
-      <ProjectHeader project={p} actions={actions} onBack={onBack} onModeSelect={handleModeSelect} channel={live.channel} health={live.health} streamKey={live.streamKey} />
+      <ProjectHeader
+        project={p}
+        actions={actions}
+        onBack={onBack}
+        onModeSelect={handleModeSelect}
+        channel={live.channel}
+        health={live.health}
+        streamKey={live.streamKey}
+        showIngestInfo={showIngestInfo}
+        onShowIngestInfoChange={setShowIngestInfo}
+      />
       <div class="od">
         <div class="od-cols">
           <section class="od-col" aria-label="Trimning">
@@ -664,7 +675,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
           </section>
 
           <section class={`od-col od-chapters-col${chaptersReadOnly ? ' is-readonly' : ''}`} aria-labelledby="od-chapters-title">
-            {chaptersReadOnly && <p class="od-empty">Kapitlen är registrerade. Videopositioner och redigering blir tillgängliga när inspelningen är klar.</p>}
+            {chaptersReadOnly && <p class="od-empty">Kapitel går att redigera först när inspelningen är klar</p>}
             {chapters.length === 0 ? (
               <p class="od-empty">Inga kapitel än. De skapas från det som spelades ut under sändningen.</p>
             ) : (
