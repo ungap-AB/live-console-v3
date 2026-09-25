@@ -17,10 +17,11 @@ interface BeforeWorkspaceProps {
   stopPolling: () => void
   showIngestInfo: boolean
   onShowIngestInfoChange: (show: boolean) => void
+  meetingDomain: string
 }
 
 // Arbetsyta för förberedelser i läget Before.
-export function BeforeWorkspace({ project: p, actions, health, refresh, stopPolling, showIngestInfo, onShowIngestInfoChange }: BeforeWorkspaceProps) {
+export function BeforeWorkspace({ project: p, actions, health, refresh, stopPolling, showIngestInfo, onShowIngestInfoChange, meetingDomain }: BeforeWorkspaceProps) {
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
     [p.agendaId],
@@ -152,8 +153,14 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
           <p>Ingest-resursen tas bort. För att sända behöver du skapa en ny ingest och använda en ny stream key i enkodern.</p>
         </ConfirmModal>
       )}
-      {showMeeting && p.meetingDomain && (
-        <MeetingBindingModal projectName={p.name} meetingDomain={p.meetingDomain} actions={actions} onClose={() => setShowMeeting(false)} />
+      {showMeeting && (
+        <MeetingBindingModal
+          projectName={p.name}
+          meetingDomain={meetingDomain}
+          currentAgendaName={p.agendaId ? agendaResource.data?.name : undefined}
+          actions={actions}
+          onClose={() => setShowMeeting(false)}
+        />
       )}
     </div>
   )

@@ -76,6 +76,7 @@ interface ProjectsViewProps {
 }
 
 export function ProjectsView({
+  meetingDomain,
   selectionScope,
   selectedId,
   onSelectedIdChange,
@@ -372,6 +373,7 @@ export function ProjectsView({
           <Livesandning
             project={selected}
             actions={actions}
+            meetingDomain={meetingDomain}
             onBack={() => onSelectedIdChange(null)}
           />
         ) : selected && screen === 'ondemand' ? (

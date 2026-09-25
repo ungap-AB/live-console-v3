@@ -10,12 +10,13 @@ import { useLiveChannel } from './useLiveChannel'
 interface LivesandningProps {
   project: Project
   actions: ProjectActions
+  meetingDomain: string
   onBack: () => void
 }
 
 // Livesändning: gemensam header överst, innehållet beror på läget.
 // Before är förberedelser, Live är ren sändningskontroll.
-export function Livesandning({ project: p, actions, onBack }: LivesandningProps) {
+export function Livesandning({ project: p, actions, meetingDomain, onBack }: LivesandningProps) {
   const live = useLiveChannel(p.channel?.id ?? null)
   // Delas mellan headerns "Ingest info"-knapp och BeforeWorkspaces
   // motsvarande menyval — en enda panel, oavsett vilken som öppnar den.
@@ -61,6 +62,7 @@ export function Livesandning({ project: p, actions, onBack }: LivesandningProps)
           stopPolling={live.stopPolling}
           showIngestInfo={showIngestInfo}
           onShowIngestInfoChange={setShowIngestInfo}
+          meetingDomain={meetingDomain}
         />
       ) : (
         <LiveWorkspace project={p} actions={actions} channel={live.channel} health={live.health} streamKey={live.streamKey} />
