@@ -77,10 +77,10 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
   }
 
   function iframeExampleUrl(): string {
-    // iframe.html ligger som en statisk exempelsida bredvid spelarens
-    // index.html — samma bas som playerUrl, bara med frågesträngen bortklippt.
+    // host.html är den skyltade exempelsidan (engelska texter, ungap
+    // Presenter-logga) — visar hur inbäddningen ser ut för en värdsida.
     const base = p.playerUrl.split('?')[0]
-    return `${base}iframe.html?p=${p.id}`
+    return `${base}host.html?p=${p.id}`
   }
 
   async function copyIframeAndClose() {
