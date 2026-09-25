@@ -3,8 +3,7 @@ import { Icon } from '../../components/Icon'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Modal } from '../../components/Modal'
 import { Clock } from '../../components/Clock'
-import type { Channel, ChannelHealth, Project, Visibility } from '../../data/types'
-import { formatDate } from '../../app/time'
+import type { Channel, ChannelHealth, Project } from '../../data/types'
 import type { ProjectActions } from './actions'
 import { useModeChange } from './useModeChange'
 import { MODES, MODE_LABEL } from './projectMode'
@@ -23,11 +22,6 @@ interface ProjectHeaderProps {
   onShowIngestInfoChange: (show: boolean) => void
 }
 
-const VISIBILITIES: { value: Visibility; label: string; icon: string }[] = [
-  { value: 'open', label: 'Öppen', icon: 'visibility' },
-  { value: 'closed', label: 'Stängd', icon: 'visibility_off' },
-]
-
 // Spelarlänken visas utan protokoll.
 function displayUrl(url: string): string {
   return url.replace(/^https?:\/\//, '')
@@ -40,15 +34,20 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
   const { selectMode, dialog: modeDialog } = useModeChange(p, actions)
-  const [showSettings, setShowSettings] = useState(false)
   const [closingIngestInfo, setClosingIngestInfo] = useState(false)
   const [confirmTeardown, setConfirmTeardown] = useState<'manual' | 'encoderStopped' | null>(null)
   const [copied, setCopied] = useState(false)
   const [iframeCopied, setIframeCopied] = useState(false)
   const [showIframeMenu, setShowIframeMenu] = useState(false)
-  const settingsButton = useRef<HTMLButtonElement>(null)
+  const [showPlayerSettings, setShowPlayerSettings] = useState(false)
   const iframeMenuRef = useRef<HTMLDivElement>(null)
   const wasStoppedInAfter = useRef(false)
+
+  function toggleVisibility() {
+    const next = p.visibility === 'open' ? 'closed' : 'open'
+    if (p.publicMode === 'after' && next === 'open') return
+    void actions.setVisibility(next)
+  }
 
   async function saveTitle() {
     const name = titleDraft.trim()
@@ -148,10 +147,9 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
       return
     }
 
-    const closeTimer = window.setTimeout(() => {
-      setClosingIngestInfo(true)
-      window.setTimeout(() => onShowIngestInfoChange(false), 350)
-    }, 5000)
+    // Ingen fördröjning — kollapsa direkt så fort signalen är OK.
+    setClosingIngestInfo(true)
+    const closeTimer = window.setTimeout(() => onShowIngestInfoChange(false), 350)
     return () => window.clearTimeout(closeTimer)
   }, [encoderStatus.label, showIngestInfo])
 
@@ -223,10 +221,6 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
         </button>
         <span class="spacer" />
         <span class="pv-clock"><Clock /></span>
-        <button class="btn" type="button" ref={settingsButton} onClick={() => setShowSettings(true)}>
-          <Icon name="settings" size={18} />
-          <span>Projektinställningar</span>
-        </button>
       </div>
 
       {(showIngestInfo || closingIngestInfo) && channel && (
@@ -286,30 +280,20 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
           </div>
         </div>
 
-        <div class="pv-field">
-          <div class="pv-label" id="pv-vis-label">
-            Synlighet
-          </div>
-          <div class="pv-seg" role="group" aria-labelledby="pv-vis-label">
-            {VISIBILITIES.map((v) => (
-              <button
-                key={v.value}
-                type="button"
-                class={`pv-seg-btn${v.value === 'open' ? ' is-open' : ''}`}
-                aria-pressed={p.visibility === v.value}
-                disabled={p.publicMode === 'after' && v.value === 'open'}
-                onClick={() => p.publicMode !== 'after' && p.visibility !== v.value && actions.setVisibility(v.value)}
-              >
-                <Icon name={v.icon} size={16} />
-                <span>{v.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div class="pv-field pv-link-field">
-          <div class="pv-label">Spelarlänk</div>
+          <div class="pv-label">Spelare</div>
           <div class="pv-link">
+            <button
+              class="pv-icon-btn"
+              type="button"
+              aria-pressed={p.visibility === 'open'}
+              disabled={p.publicMode === 'after' && p.visibility === 'closed'}
+              aria-label={p.visibility === 'open' ? 'Stäng spelaren för publik' : 'Öppna spelaren för publik'}
+              title={p.visibility === 'open' ? 'Stäng spelaren för publik' : 'Öppna spelaren för publik'}
+              onClick={toggleVisibility}
+            >
+              <Icon name={p.visibility === 'open' ? 'visibility' : 'visibility_off'} size={18} />
+            </button>
             <span class="pv-link-url">{displayUrl(p.playerUrl)}</span>
             <button
               class="pv-icon-btn"
@@ -347,6 +331,15 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
             >
               <Icon name="open_in_new" size={18} />
             </a>
+            <button
+              class="pv-icon-btn"
+              type="button"
+              aria-label="Spelarinställningar"
+              title="Spelarinställningar"
+              onClick={() => setShowPlayerSettings(true)}
+            >
+              <Icon name="settings" size={18} />
+            </button>
           </div>
         </div>
 
@@ -354,15 +347,11 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
 
       {modeDialog}
 
-      {showSettings && (
-        <Modal title="Projektinställningar" onClose={() => setShowSettings(false)}>
-          <dl class="pv-settings">
-            <dt>Projekt-id</dt>
-            <dd>{p.id}</dd>
-            <dt>Skapad</dt>
-            <dd>{formatDate(p.createdAt)}</dd>
-          </dl>
-          <p class="pv-settings-note">Meeting-koppling och fler inställningar kommer här.</p>
+      {showPlayerSettings && (
+        <Modal title="Spelarinställningar" onClose={() => setShowPlayerSettings(false)}>
+          <p>Inställningar för spelaren är inte implementerade ännu.</p>
+          <p class="field-help">Det här är en mockruta för att reservera flödet tills spelarinställningarna finns.</p>
+          <div class="modal-actions"><button class="btn btn-primary" type="button" onClick={() => setShowPlayerSettings(false)}>Stäng</button></div>
         </Modal>
       )}
     </header>

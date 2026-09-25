@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { ChannelHealth, Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
-import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { MeetingBindingModal } from './MeetingBindingModal'
 import { PlayoutColumns } from './PlayoutColumns'
@@ -34,20 +33,7 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [openPicker, setOpenPicker] = useState<'agenda' | 'namelist' | null>(null)
   const [notUsed, setNotUsed] = useState<string[]>([])
-  const [showMessages, setShowMessages] = useState(false)
-  const [showLayout, setShowLayout] = useState(false)
   const [showMeeting, setShowMeeting] = useState(false)
-  const [messageDraft, setMessageDraft] = useState({
-    before: p.beforeText,
-    live: p.liveText,
-    after: p.afterText,
-    ondemand: p.ondemandText,
-  })
-  const [savingMessages, setSavingMessages] = useState(false)
-
-  useEffect(() => {
-    setMessageDraft({ before: p.beforeText, live: p.liveText, after: p.afterText, ondemand: p.ondemandText })
-  }, [p.beforeText, p.liveText, p.afterText, p.ondemandText])
 
   const hasIngest = p.channel !== null
   const receivingSignal = health?.livePhase === 'live'
@@ -66,21 +52,6 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
     await refresh()
     // Nyskapad ingest ska visa sin info direkt, inte kräva ett extra klick.
     onShowIngestInfoChange(true)
-  }
-
-  async function saveMessages() {
-    setSavingMessages(true)
-    try {
-      await actions.rename(p.name, {
-        beforeText: messageDraft.before,
-        liveText: messageDraft.live,
-        afterText: messageDraft.after,
-        ondemandText: messageDraft.ondemand,
-      })
-      setShowMessages(false)
-    } finally {
-      setSavingMessages(false)
-    }
   }
 
   function markNotUsed(label: string) {
@@ -134,9 +105,8 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
   return (
     <div class="bw">
       <ul class="bw-status" aria-label="Status för förberedelser">
-        {p.meetingDomain && preparationCard('Meeting', p.meetingBindingId ? 'Kopplad' : 'Ej kopplad', !!p.meetingBindingId, actionMenu('Meeting', [
+        {preparationCard('Meeting', p.meetingBindingId ? 'Kopplad' : 'Ej kopplad', !!p.meetingBindingId, actionMenu('Meeting', [
           { label: 'Koppla', onClick: () => { setOpenMenu(null); setShowMeeting(true) } },
-          { label: 'Använd ej', onClick: () => markNotUsed('Meeting') },
         ]))}
         {preparationCard('Dagordning', p.agendaId ? (agendaResource.data?.name ?? 'Kopplad') : 'Ej kopplad', !!p.agendaId, actionMenu('Dagordning', [
           { label: 'Koppla', onClick: () => { setOpenMenu(null); setOpenPicker('agenda') } },
@@ -167,12 +137,6 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
           ] : []),
           ])}
         </>)}
-        {preparationCard('Spelare', p.visibility === 'open' ? 'Öppen' : 'Stängd', p.visibility === 'open', actionMenu('Spelare', [
-          { label: 'Meddelanden', onClick: () => { setOpenMenu(null); setShowMessages(true) } },
-          { label: 'Layout', onClick: () => { setOpenMenu(null); setShowLayout(true) } },
-          { label: 'Kopiera länk', onClick: () => { setOpenMenu(null); void navigator.clipboard.writeText(p.playerUrl) } },
-          { label: 'Öppna länk', onClick: () => { setOpenMenu(null); window.open(p.playerUrl, '_blank', 'noopener,noreferrer') } },
-        ]))}
       </ul>
 
       <PlayoutColumns project={p} actions={actions} openPicker={openPicker} onPickerClosed={() => setOpenPicker(null)} />
@@ -190,23 +154,6 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
       )}
       {showMeeting && p.meetingDomain && (
         <MeetingBindingModal projectName={p.name} meetingDomain={p.meetingDomain} actions={actions} onClose={() => setShowMeeting(false)} />
-      )}
-      {showLayout && (
-        <Modal title="Spelarlayout" onClose={() => setShowLayout(false)}>
-          <p>Layoutredigering är inte implementerad ännu.</p>
-          <p class="field-help">Det här är en mockruta för att reservera flödet tills layoutverktyget finns.</p>
-          <div class="modal-actions"><button class="btn btn-primary" type="button" onClick={() => setShowLayout(false)}>Stäng</button></div>
-        </Modal>
-      )}
-      {showMessages && (
-        <Modal title="Meddelanden" onClose={() => setShowMessages(false)} footer={<><button class="btn" type="button" onClick={() => setShowMessages(false)}>Avbryt</button><button class="btn btn-primary" type="button" disabled={savingMessages} onClick={() => void saveMessages()}>{savingMessages ? 'Sparar...' : 'Spara'}</button></>}>
-          {(['before', 'live', 'after', 'ondemand'] as const).map((mode) => (
-            <label class="bw-message-field" key={mode}>
-              <span>{mode === 'before' ? 'Before' : mode === 'live' ? 'Live' : mode === 'after' ? 'After' : 'Ondemand'}</span>
-              <textarea rows={2} value={messageDraft[mode]} onInput={(event) => setMessageDraft((current) => ({ ...current, [mode]: event.currentTarget.value }))} />
-            </label>
-          ))}
-        </Modal>
       )}
     </div>
   )

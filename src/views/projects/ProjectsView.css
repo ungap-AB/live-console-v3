@@ -37,14 +37,6 @@
   overflow: auto;
 }
 
-/* Projektlistan: en ensam lista i full bredd. */
-.view > .project-header .header-list-zone {
-  width: auto;
-  flex: 1;
-  margin-left: 0;
-  padding-left: 0;
-}
-
 .project-list {
   display: flex;
   flex-direction: column;
