@@ -51,7 +51,21 @@ jobs:
           s3cmd sync --delete-removed --no-mime-magic \
             --add-header="Cache-Control: public, max-age=31536000, immutable" \
             dist/assets/ s3://${{ vars.CONSOLE_BUCKET }}/assets/
-          s3cmd setpolicy deploy/bucket-policy.json s3://${{ vars.CONSOLE_BUCKET }}
+          cat > /tmp/bucket-policy.json <<POLICY
+          {
+            "Version": "2023-04-17",
+            "Statement": [
+              {
+                "Sid": "PublicRead",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": ["s3:GetObject"],
+                "Resource": ["${{ vars.CONSOLE_BUCKET }}/*"]
+              }
+            ]
+          }
+          POLICY
+          s3cmd setpolicy /tmp/bucket-policy.json s3://${{ vars.CONSOLE_BUCKET }}
       - name: Rensa CDN-cache
         run: |
           scw edge-services purge-request create \
