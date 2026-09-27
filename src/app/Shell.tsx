@@ -62,7 +62,6 @@ export function Shell({ active, children, projectsNavAction, onLogout, currentUs
   const [navOpen, setNavOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null)
   const [currentDomain, setCurrentDomain] = useState<Domain | null>(null)
-  const [quota, setQuota] = useState<{ used: number; limit: number } | null>(null)
   const [showAccount, setShowAccount] = useState(false)
   const isRootAdmin = currentUserRoles.includes('rootAdmin')
   const visibleGroups = NAV_GROUPS
@@ -74,7 +73,6 @@ export function Shell({ active, children, projectsNavAction, onLogout, currentUs
 
   useEffect(() => {
     client.users.get(currentUserId).then((u) => u && setCurrentUser(u))
-    client.channels.quota().then(setQuota)
   }, [currentUserId])
 
   useEffect(() => {
@@ -169,7 +167,6 @@ export function Shell({ active, children, projectsNavAction, onLogout, currentUs
         <MyAccountDialog
           user={currentUser}
           domain={currentDomain}
-          quota={quota}
           onClose={() => setShowAccount(false)}
           onSaved={onAccountSaved}
         />
@@ -183,7 +180,6 @@ export function Shell({ active, children, projectsNavAction, onLogout, currentUs
 interface MyAccountDialogProps {
   user: UserAccount
   domain: Domain | null
-  quota: { used: number; limit: number } | null
   onClose: () => void
   onSaved: (user: UserAccount) => void
 }
@@ -201,7 +197,7 @@ const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: 'auto', label: 'Auto' },
 ]
 
-function MyAccountDialog({ user, domain, quota, onClose, onSaved }: MyAccountDialogProps) {
+function MyAccountDialog({ user, domain, onClose, onSaved }: MyAccountDialogProps) {
   const [name, setName] = useState(user.name)
   const [saving, setSaving] = useState(false)
   const [theme, setTheme] = useState<ThemePreference>(getStoredThemePreference)
@@ -261,10 +257,6 @@ function MyAccountDialog({ user, domain, quota, onClose, onSaved }: MyAccountDia
         <div class="v">
           {formatDate(domain?.contractStart)} – {formatDate(domain?.contractEnd)}
         </div>
-      </div>
-      <div class="block">
-        <h3>Kvarvarande kvot (live-resurser)</h3>
-        <div class="v">{quota ? `${quota.limit - quota.used} av ${quota.limit} lediga` : '…'}</div>
       </div>
       <div class="block">
         <h3>Utseende</h3>

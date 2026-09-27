@@ -28,13 +28,12 @@ export function Modal({ title, subtitle, onClose, children, footer, wide = false
   }, [onClose])
 
   return (
-    <div class="scrim" onClick={onClose}>
+    <div class="scrim">
       <div
         class={`modal ${wide ? 'wide' : ''} ${className ?? ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        onClick={(e) => e.stopPropagation()}
         onDragEnter={onDragEnter}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}

@@ -4,7 +4,11 @@ const STORAGE_KEY = 'ungap-console-theme'
 
 export function getStoredThemePreference(): ThemePreference {
   const stored = localStorage.getItem(STORAGE_KEY)
-  return stored === 'light' || stored === 'dark' ? stored : 'auto'
+  if (stored === 'light' || stored === 'dark' || stored === 'auto') return stored
+  // Nyckeln saknas helt (ny användare/ny webbläsare, aldrig gjort ett val)
+  // — mörkt läge är standard. Ett explicit val av "Auto" sparas som eget
+  // värde nedan, så det inte kan förväxlas med "inget val gjort".
+  return 'dark'
 }
 
 export function applyThemePreference(preference: ThemePreference) {
@@ -16,10 +20,6 @@ export function applyThemePreference(preference: ThemePreference) {
 }
 
 export function setThemePreference(preference: ThemePreference) {
-  if (preference === 'auto') {
-    localStorage.removeItem(STORAGE_KEY)
-  } else {
-    localStorage.setItem(STORAGE_KEY, preference)
-  }
+  localStorage.setItem(STORAGE_KEY, preference)
   applyThemePreference(preference)
 }
