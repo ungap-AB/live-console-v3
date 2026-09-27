@@ -10,6 +10,7 @@ import { OverflowMenu } from '../../components/OverflowMenu'
 import { CheckIcon, PdfIcon, PlayIcon, StopIcon } from '../../components/icons'
 import { formatHms } from '../../app/time'
 import type { ProjectActions } from './actions'
+import { useNameList } from './useNameList'
 import './PlayoutColumns.css'
 
 interface PlayoutColumnsProps {
@@ -30,10 +31,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
     [p.agendaId],
   )
-  const nameListResource = useResource(
-    () => (p.namelistId ? client.namelists.get(p.namelistId) : Promise.resolve(undefined)),
-    [p.namelistId],
-  )
+  const nameListResource = useNameList(p)
   const allAgendasResource = useResource(() => client.agendas.list(), [])
   const allNameListsResource = useResource(() => client.namelists.list(), [])
 

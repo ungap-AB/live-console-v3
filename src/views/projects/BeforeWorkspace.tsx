@@ -8,6 +8,7 @@ import type { ProjectActions } from './actions'
 import { MeetingBindingModal } from './MeetingBindingModal'
 import { linkedResourceLabel } from './preparationLabels'
 import { PlayoutColumns } from './PlayoutColumns'
+import { useNameList } from './useNameList'
 import './BeforeWorkspace.css'
 
 interface BeforeWorkspaceProps {
@@ -27,10 +28,7 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
     [p.agendaId],
   )
-  const nameListResource = useResource(
-    () => (p.namelistId ? client.namelists.get(p.namelistId) : Promise.resolve(undefined)),
-    [p.namelistId],
-  )
+  const nameListResource = useNameList(p)
   const [confirmTeardown, setConfirmTeardown] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [openPicker, setOpenPicker] = useState<'agenda' | 'namelist' | null>(null)

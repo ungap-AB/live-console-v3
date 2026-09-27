@@ -6,6 +6,7 @@ import { useLayoutEffect, useRef, useState } from 'preact/hooks'
 import type { ProjectActions } from './actions'
 import { PlayoutColumns } from './PlayoutColumns'
 import { usePlayoutTestbed } from './playoutTestbed'
+import { useNameList } from './useNameList'
 import './LiveWorkspace.css'
 
 interface LiveWorkspaceProps {
@@ -23,10 +24,7 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
     [p.agendaId],
   )
-  const nameListResource = useResource(
-    () => (p.namelistId ? client.namelists.get(p.namelistId) : Promise.resolve(undefined)),
-    [p.namelistId],
-  )
+  const nameListResource = useNameList(p)
   const phase = health?.livePhase
   const agendaPanelRef = useRef<HTMLDivElement>(null)
   const agendaValueRef = useRef<HTMLSpanElement>(null)
