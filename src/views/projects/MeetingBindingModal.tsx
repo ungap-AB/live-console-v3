@@ -23,7 +23,6 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
   const [topics, setTopics] = useState<MeetingTopic[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [createdAgendaName, setCreatedAgendaName] = useState<string | null>(null)
 
   useEffect(() => {
     if (step === 'domain') setError(null)
@@ -79,17 +78,10 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
     setLoading(true)
     setError(null)
     try {
+      // Dagordning + namnlista skapas (eller återanvänds, om mötet redan
+      // kopplats till ett annat projekt tidigare) av live-server-v3 som en del
+      // av bindningen — se ProjectsController.SetMeetingBinding.
       await actions.setMeetingBinding(meetingDomain.trim().toLowerCase(), String(selectedMeeting.id), eventsEnabled)
-      const created = await client.agendas.create({
-        name: `${selectedMeeting.title} — Meeting`,
-        description: `Importerad från Meeting ${selectedMeeting.id}`,
-      })
-      let agenda = created
-      for (const topic of topics) {
-        agenda = await client.agendas.addItem(agenda.id, { title: topic.title, meetingItemId: String(topic.id) })
-      }
-      await actions.setAgenda(agenda.id)
-      setCreatedAgendaName(agenda.name)
       setStep('done')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Kunde inte koppla mötet.')
@@ -190,7 +182,7 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
   return (
     <Modal title="Meeting kopplat" onClose={onClose}>
       <p>{selectedMeeting?.title} är kopplat till projektet.</p>
-      <p>{createdAgendaName ?? 'En ny redaktionell agenda'} skapades med {topics.length} punkter.</p>
+      <p>Dagordning ({topics.length} punkter) och en namnlista för mötet är kopplade.</p>
       <div class="modal-actions">
         <button class="btn btn-sm btn-primary" type="button" onClick={onClose}>Klart</button>
       </div>

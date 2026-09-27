@@ -109,7 +109,7 @@ function toAgendaSummary(dto: ServerAgendaListItem): Agenda {
 }
 
 function toAgenda(dto: ServerAgenda): Agenda {
-  return { ...toAgendaSummary(dto), items: dto.items }
+  return { ...toAgendaSummary(dto), items: dto.items, sourceMeetingId: dto.sourceMeetingId }
 }
 
 // ---- Namnlistor ----
@@ -128,7 +128,7 @@ function toNameListSummary(dto: ServerNameListSummary): NameList {
 }
 
 function toNameList(dto: ServerNameList): NameList {
-  return { ...toNameListSummary(dto), people: dto.people }
+  return { ...toNameListSummary(dto), people: dto.people, sourceMeetingId: dto.sourceMeetingId }
 }
 
 // ---- Live-resurser & inspelningar: projekt-referens ----

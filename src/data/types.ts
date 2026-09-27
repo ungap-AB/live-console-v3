@@ -53,6 +53,7 @@ export interface Agenda {
   isTemplate: boolean
   domainId?: string
   items: AgendaItem[]
+  sourceMeetingId?: string | null
 }
 
 export interface MeetingSummary {
@@ -85,6 +86,7 @@ export interface NameList {
   changedAt: string
   domainId?: string
   people: NameListPerson[]
+  sourceMeetingId?: string | null
 }
 
 // ---- Projekt ----

@@ -42,6 +42,7 @@ export interface ServerAgendaListItem {
 
 export interface ServerAgenda extends ServerAgendaListItem {
   items: ServerAgendaItem[]
+  sourceMeetingId?: string | null
 }
 
 // ---- Namnlistor ----
@@ -66,6 +67,7 @@ export interface ServerNameListSummary {
 
 export interface ServerNameList extends ServerNameListSummary {
   people: ServerPerson[]
+  sourceMeetingId?: string | null
 }
 
 // ---- Projekt / playout ----

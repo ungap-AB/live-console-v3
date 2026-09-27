@@ -6,6 +6,7 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import type { ProjectActions } from './actions'
 import { MeetingBindingModal } from './MeetingBindingModal'
+import { linkedResourceLabel } from './preparationLabels'
 import { PlayoutColumns } from './PlayoutColumns'
 import './BeforeWorkspace.css'
 
@@ -109,11 +110,11 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
         {preparationCard('Meeting', p.meetingBindingId ? 'Kopplad' : 'Ej kopplad', !!p.meetingBindingId, actionMenu('Meeting', [
           { label: 'Koppla', onClick: () => { setOpenMenu(null); setShowMeeting(true) } },
         ]))}
-        {preparationCard('Dagordning', p.agendaId ? (agendaResource.data?.name ?? 'Kopplad') : 'Ej kopplad', !!p.agendaId, actionMenu('Dagordning', [
+        {preparationCard('Dagordning', p.agendaId ? linkedResourceLabel(agendaResource.data) : 'Ej kopplad', !!p.agendaId, actionMenu('Dagordning', [
           { label: 'Koppla', onClick: () => { setOpenMenu(null); setOpenPicker('agenda') } },
           { label: 'Använd ej', onClick: () => { void actions.setAgenda(null); markNotUsed('Dagordning') } },
         ]))}
-        {preparationCard('Namnlista', p.namelistId ? (nameListResource.data?.name ?? 'Kopplad') : 'Ej kopplad', !!p.namelistId, actionMenu('Namnlista', [
+        {preparationCard('Namnlista', p.namelistId ? linkedResourceLabel(nameListResource.data) : 'Ej kopplad', !!p.namelistId, actionMenu('Namnlista', [
           { label: 'Koppla', onClick: () => { setOpenMenu(null); setOpenPicker('namelist') } },
           { label: 'Använd ej', onClick: () => { actions.setNameList(null); markNotUsed('Namnlista') } },
         ]))}
