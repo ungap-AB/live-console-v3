@@ -1,4 +1,4 @@
-name: Deploy live-console-v3 to Scaleway
+name: Deploy live-console-v3 to Scaleway (dev)
 
 on:
   workflow_dispatch:
@@ -8,8 +8,9 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: dev
     env:
-      VITE_API_BASE: https://api.dev.live.ungap.net/api/v1
+      VITE_API_BASE: ${{ vars.VITE_API_BASE }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
