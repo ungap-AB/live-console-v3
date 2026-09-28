@@ -197,6 +197,16 @@ export function ProjectsView({
         if (!selected) return
         replace(await client.projects.rename(selected.id, name, texts))
       }),
+    setPoster: (file: File) =>
+      attempt(async () => {
+        if (!selected) return
+        replace(await client.projects.setPoster(selected.id, file))
+      }),
+    removePoster: () =>
+      attempt(async () => {
+        if (!selected) return
+        replace(await client.projects.removePoster(selected.id))
+      }),
     setVisibility: (visibility: Visibility) =>
       withErrorToast(async () => {
         if (!selected) return

@@ -124,6 +124,7 @@ export interface ServerProject {
   liveText: string
   afterText: string
   ondemandText: string
+  posterUrl?: string | null
   visibility: string
   publicMode: string
   afterReason: string | null

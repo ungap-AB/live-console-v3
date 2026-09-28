@@ -140,6 +140,8 @@ export interface Project {
   liveText: string
   afterText: string
   ondemandText: string
+  /** Publik URL till spelarens poster (visas när ingen video spelas), eller null. */
+  posterUrl?: string | null
   visibility: Visibility
   publicMode: PublicMode
   afterReason: AfterReason | null

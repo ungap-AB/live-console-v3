@@ -722,6 +722,16 @@ export const mockClient: Client = {
       if (texts) Object.assign(p, texts)
       return delay(projectSnapshot(p))
     },
+    async setPoster(id, file) {
+      const p = findProject(id)
+      p.posterUrl = URL.createObjectURL(file)
+      return delay(projectSnapshot(p))
+    },
+    async removePoster(id) {
+      const p = findProject(id)
+      p.posterUrl = null
+      return delay(projectSnapshot(p))
+    },
     async trash(id) {
       projects = projects.filter((p) => p.id !== id)
       return delay(undefined)

@@ -6,6 +6,8 @@ export interface ProjectActions {
   refreshPlayout: () => Promise<void>
   /** Metoderna som returnerar boolean resolvar true när anropet lyckades (fel visas som toast). */
   rename: (name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText'>>) => Promise<boolean>
+  setPoster: (file: File) => Promise<boolean>
+  removePoster: () => Promise<boolean>
   setVisibility: (visibility: Visibility) => void
   setPublicMode: (publicMode: PublicMode, afterReason?: AfterReason) => Promise<boolean>
   setAgenda: (agendaId: string | null) => Promise<void>

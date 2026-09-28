@@ -4,13 +4,13 @@ import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { Icon } from '../../components/Icon'
 import { ConfirmModal } from '../../components/ConfirmModal'
-import { Modal } from '../../components/Modal'
 import { Clock } from '../../components/Clock'
 import type { Channel, ChannelHealth, Project } from '../../data/types'
 import type { ProjectActions } from './actions'
 import { useModeChange } from './useModeChange'
 import { MODES, MODE_LABEL } from './projectMode'
 import { IngestInfo } from './IngestInfo'
+import { PlayerSettingsDialog } from './PlayerSettingsDialog'
 import './ProjectHeader.css'
 
 interface ProjectHeaderProps {
@@ -407,11 +407,7 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
       {modeDialog}
 
       {showPlayerSettings && (
-        <Modal title="Spelarinställningar" onClose={() => setShowPlayerSettings(false)}>
-          <p>Inställningar för spelaren är inte implementerade ännu.</p>
-          <p class="field-help">Det här är en mockruta för att reservera flödet tills spelarinställningarna finns.</p>
-          <div class="modal-actions"><button class="btn btn-primary" type="button" onClick={() => setShowPlayerSettings(false)}>Stäng</button></div>
-        </Modal>
+        <PlayerSettingsDialog project={p} actions={actions} onClose={() => setShowPlayerSettings(false)} />
       )}
 
       {showPreview && (

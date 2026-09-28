@@ -138,6 +138,9 @@ export interface Client {
     create(input: { name: string }): Promise<Project>
     rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText'>>): Promise<Project>
     trash(id: string): Promise<void>
+    /** Laddar upp spelarens poster (JPG/PNG/WebP, högst 5 MB). Ersätter en tidigare poster. */
+    setPoster(id: string, file: File): Promise<Project>
+    removePoster(id: string): Promise<Project>
     setVisibility(id: string, visibility: Visibility): Promise<Project>
     setPublicMode(id: string, publicMode: PublicMode, afterReason?: AfterReason): Promise<Project>
     setAgenda(id: string, agendaId: string | null): Promise<Project>

@@ -296,6 +296,7 @@ function toProjectLite(dto: ServerProject): Project {
     liveText: dto.liveText ?? '',
     afterText: dto.afterText ?? '',
     ondemandText: dto.ondemandText ?? '',
+    posterUrl: dto.posterUrl ?? null,
     visibility: dto.visibility as Visibility,
     publicMode: dto.publicMode as PublicMode,
     afterReason: dto.afterReason as AfterReason | null,
@@ -692,6 +693,14 @@ export const httpClient: Client = {
     async rename(id, name, texts) {
       const dto = await api<ServerProject>(`/projects/${id}`, { method: 'PATCH', body: { name, ...texts } })
       return toProjectFull(dto)
+    },
+    async setPoster(id, file) {
+      const body = new FormData()
+      body.append('file', file, file.name)
+      return toProjectFull(await api<ServerProject>(`/projects/${id}/poster`, { method: 'PUT', body }))
+    },
+    async removePoster(id) {
+      return toProjectFull(await api<ServerProject>(`/projects/${id}/poster`, { method: 'DELETE' }))
     },
     async trash(id) {
       await api<void>(`/projects/${id}`, { method: 'DELETE' })
