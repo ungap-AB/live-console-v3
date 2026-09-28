@@ -1,0 +1,21 @@
+name: CI (live-console-v3)
+
+# Bygger och testar. Deployar inget: test/prod-miljöerna driftsätts av deploy-test.yml/deploy-prod.yml
+# på grenarna `test` och `prod` (dev-miljön i molnet är pensionerad; lokal utveckling körs med dev-kit).
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
