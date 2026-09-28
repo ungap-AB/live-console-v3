@@ -1,28 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="1440" height="900" preserveAspectRatio="xMidYMid slice">
-<defs><radialGradient id="v" cx="50%" cy="50%" r="60%"><stop offset="0" stop-color="#14171D" stop-opacity="0.75"/><stop offset="0.45" stop-color="#14171D" stop-opacity="0.15"/><stop offset="1" stop-color="#0D0F14" stop-opacity="0.85"/></radialGradient>
-<!-- A single soft wiper sweep. Only the grey seats are brightened. -->
-<filter id="seat-light" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
-  <feComponentTransfer>
-    <feFuncR type="linear" slope="1.23"/>
-    <feFuncG type="linear" slope="1.23"/>
-    <feFuncB type="linear" slope="1.23"/>
-    <feFuncA type="identity"/>
-  </feComponentTransfer>
-</filter>
-<filter id="sweep-softness" x="-2200" y="-2200" width="4400" height="4400" filterUnits="userSpaceOnUse">
-  <feGaussianBlur stdDeviation="95"/>
-</filter>
-<mask id="seat-sweep" x="0" y="0" width="1440" height="900" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" style="mask-type:alpha">
-  <g transform="translate(720 1080)">
-    <g transform="rotate(-115)">
-      <path d="M 0 0 L -1250 -2165 L 1250 -2165 Z" fill="white" filter="url(#sweep-softness)"/>
-      <animateTransform attributeName="transform" type="rotate" from="-115" to="115" begin="0s" dur="5.6s" repeatCount="1" calcMode="spline" keyTimes="0;1" keySplines="0.42 0 0.58 1" fill="freeze"/>
-    </g>
-  </g>
-</mask>
-</defs>
+<defs><radialGradient id="v" cx="50%" cy="50%" r="60%"><stop offset="0" stop-color="#14171D" stop-opacity="0.75"/><stop offset="0.45" stop-color="#14171D" stop-opacity="0.15"/><stop offset="1" stop-color="#0D0F14" stop-opacity="0.85"/></radialGradient></defs>
 <rect width="1440" height="900" fill="#14171D"/>
-<g id="grey-seats">
 <rect x="-8" y="-5" width="16" height="10" rx="3" fill="#232833" transform="translate(493.1 905.0) rotate(294.8)"/>
 <rect x="-8" y="-5" width="16" height="10" rx="3" fill="#232833" transform="translate(505.8 881.1) rotate(301.0)"/>
 <rect x="-8" y="-5" width="16" height="10" rx="3" fill="#2B313D" transform="translate(521.0 858.7) rotate(307.2)"/>
@@ -1006,12 +984,6 @@
 <rect x="-8" y="-5" width="16" height="10" rx="3" fill="#232833" transform="translate(1398.1 -1.8) rotate(393.8)"/>
 <rect x="-8" y="-5" width="16" height="10" rx="3" fill="#2B313D" transform="translate(1420.5 13.6) rotate(395.1)"/>
 <rect x="-8" y="-5" width="16" height="10" rx="3" fill="#232833" transform="translate(1442.5 29.4) rotate(396.4)"/>
-</g>
-
-<g opacity="0" mask="url(#seat-sweep)" pointer-events="none">
-  <use href="#grey-seats" filter="url(#seat-light)"/>
-  <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.92;1" begin="0s" dur="5.6s" repeatCount="1" fill="freeze"/>
-</g>
 <rect width="1440" height="900" fill="url(#v)"/>
 <circle cx="1209.0" cy="587.9" r="22" fill="none" stroke="#E5484D" stroke-opacity="0.35" stroke-width="1.5"/>
 <rect x="-8" y="-5" width="16" height="10" rx="3" fill="#E5484D" transform="translate(1209.0 587.9) rotate(409.2)"/>
