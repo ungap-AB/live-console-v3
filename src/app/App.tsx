@@ -90,15 +90,16 @@ export function App() {
   if (auth.status === 'loading') return <div class="login-screen">Laddar…</div>
   if (auth.status === 'anon') return <LoginView onLogin={login} />
 
-  // Genvägen till det öppna projektets vy vinner när man står på en annan sida
-  // — annars "+ Nytt" medan man tittar på Projekt.
+  // Genvägen till det öppna projektets vy vinner när man står på en annan sida.
+  // "+ Nytt" visas bara när Projekt-vyn faktiskt visar projektlistan — inte när
+  // ett projekt redan är öppet där (man tittar ju redan på det).
   const projectsNavAction =
     activeProjectId && route !== 'projects'
       ? {
           label: projectScreen === 'ondemand' ? 'Ondemand' : 'Livesändning',
           onClick: () => { window.location.hash = routeHref('projects') },
         }
-      : route === 'projects'
+      : route === 'projects' && !activeProjectId
         ? { label: '+ Nytt', onClick: () => setCreatingProject(true) }
         : null
 
