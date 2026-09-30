@@ -10,6 +10,7 @@ import {
   textsOf,
   validatePosterFile,
 } from './playerSettings'
+import type { PlayerTextKey } from './playerSettings'
 import './PlayerSettingsDialog.css'
 
 interface PlayerSettingsDialogProps {
@@ -22,6 +23,7 @@ interface PlayerSettingsDialogProps {
 // operatören bekräftar, och en vald bild förhandsvisas lokalt tills dess.
 export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettingsDialogProps) {
   const [texts, setTexts] = useState(() => textsOf(project))
+  const [activeTextField, setActiveTextField] = useState<PlayerTextKey>(PLAYER_TEXT_FIELDS[0].key)
   const [posterFile, setPosterFile] = useState<File | null>(null)
   const [posterRemoved, setPosterRemoved] = useState(false)
   const [posterError, setPosterError] = useState<string | null>(null)
@@ -87,12 +89,34 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
       <section class="ps-section">
         <h3>Texter i spelaren</h3>
         <p class="ps-help">Texten som tittarna ser i respektive läge. Lämnas ett fält tomt används spelarens standardtext, om det finns någon.</p>
+        <div class="ps-tabs" role="tablist" aria-label="Textläge">
+          {PLAYER_TEXT_FIELDS.map((field) => (
+            <button
+              key={field.key}
+              type="button"
+              role="tab"
+              id={`ps-tab-${field.key}`}
+              aria-selected={activeTextField === field.key}
+              aria-controls={`ps-tabpanel-${field.key}`}
+              class={`ps-tab${activeTextField === field.key ? ' active' : ''}`}
+              onClick={() => setActiveTextField(field.key)}
+            >
+              {field.label}
+            </button>
+          ))}
+        </div>
         {PLAYER_TEXT_FIELDS.map((field) => (
-          <div class="ps-field" key={field.key}>
-            <label for={`ps-${field.key}`}>{field.label}</label>
+          <div
+            key={field.key}
+            role="tabpanel"
+            id={`ps-tabpanel-${field.key}`}
+            aria-labelledby={`ps-tab-${field.key}`}
+            hidden={activeTextField !== field.key}
+            class="ps-field"
+          >
             <textarea
               id={`ps-${field.key}`}
-              rows={2}
+              rows={4}
               maxLength={MAX_PLAYER_TEXT_LENGTH}
               value={texts[field.key]}
               placeholder={field.fallback ?? 'Ingen text visas'}

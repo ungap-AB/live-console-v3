@@ -15,6 +15,33 @@
   color: var(--ink-3);
 }
 
+.ps-tabs {
+  display: inline-flex;
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.ps-tab {
+  border: 0;
+  background: var(--panel);
+  padding: 7px 15px;
+  color: var(--ink-2);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ps-tab + .ps-tab {
+  border-left: 1px solid var(--line);
+}
+
+.ps-tab.active {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
 .ps-field {
   display: flex;
   flex-direction: column;
