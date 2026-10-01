@@ -88,6 +88,7 @@ export interface Client {
     rename(id: string, name: string): Promise<Recording>
     trash(id: string): Promise<void>
     trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number }): Promise<Recording>
+    download(id: string): Promise<import('./types').DownloadJob>
   }
   channels: {
     list(query?: string): Promise<Channel[]>

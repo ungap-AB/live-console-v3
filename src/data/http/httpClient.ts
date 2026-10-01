@@ -47,6 +47,7 @@ import type {
   ServerTimelineEvent,
   ServerTrashItem,
   ServerTrimJob,
+  ServerDownloadJob,
   ServerUser,
 } from './serverDtos'
 
@@ -87,6 +88,22 @@ async function pollTrimJob(jobId: string): Promise<ServerTrimJob> {
     }
     if (job.state === 'failed') {
       throw new Error(job.error?.message ?? 'Trimningen misslyckades.')
+    }
+    return job
+  }
+}
+
+// Glesare poll-intervall än trimning — en MediaConvert-konvertering av en
+// hel sändning tar typiskt minuter, inte sekunder (UNG-58).
+async function pollDownloadJob(jobId: string): Promise<ServerDownloadJob> {
+  for (;;) {
+    const job = await api<ServerDownloadJob>(`/download-jobs/${jobId}`)
+    if (job.state === 'processing') {
+      await sleep(3000)
+      continue
+    }
+    if (job.state === 'error') {
+      throw new Error(job.error?.message ?? 'Nedladdningen kunde inte förberedas.')
     }
     return job
   }
@@ -533,6 +550,11 @@ export const httpClient: Client = {
       const done = await pollTrimJob(job.jobId)
       const fresh = await api<ServerRecording>(`/recordings/${done.recordingId}`)
       return fetchRecordingDetail(fresh)
+    },
+    async download(id) {
+      const job = await api<ServerDownloadJob>(`/recordings/${id}/download`, { method: 'POST' })
+      if (job.state === 'done') return job
+      return pollDownloadJob(job.jobId)
     },
   },
   channels: {

@@ -62,6 +62,13 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [switchingRecording, setSwitchingRecording] = useState(false)
   const [showRecordingPicker, setShowRecordingPicker] = useState(false)
   const [pendingRecordingId, setPendingRecordingId] = useState<string | null>(null)
+  // UNG-58: nedladdning av original- och/eller trimmad inspelning — vanlig
+  // operatör har ingen tillgång till Videoarkivet där samma funktion redan
+  // finns, så den behövs här också. Nyckel = recording-id (original ELLER
+  // trim har olika id:n, så båda kan pollas oberoende av varandra).
+  const [downloads, setDownloads] = useState<
+    Record<string, { status: 'processing' | 'ready' | 'error'; url?: string; message?: string }>
+  >({})
 
   const recordingId = p.recording?.id
   const recordingState = p.recording?.state
@@ -181,6 +188,24 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const source = original ?? (recording?.kind === 'original' ? recording : null)
   const mockTrimDuration = source?.durationSeconds ?? 0
   const previewUrl = source?.hlsUrl ?? ''
+
+  // Jobbet (HLS → MP4 via MediaConvert, UNG-58) kan ta flera minuter för en
+  // hel sändning — client.recordings.download pollar internt tills klart.
+  // En synlig länk (inte window.open) — ett sent popup-anrop blockeras ofta
+  // tyst av webbläsaren efter en flerminuters väntan. Fungerar för BÅDE
+  // original och trimmad inspelning — id:t avgör vilken.
+  async function downloadRecording(recordingId: string) {
+    setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'processing' } }))
+    try {
+      const job = await client.recordings.download(recordingId)
+      if (job.url) setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'ready', url: job.url } }))
+    } catch (error) {
+      setDownloads((prev) => ({
+        ...prev,
+        [recordingId]: { status: 'error', message: error instanceof Error ? error.message : 'Nedladdningen kunde inte förberedas.' },
+      }))
+    }
+  }
 
   async function switchActiveRecording(recordingId: string) {
     setSwitchingRecording(true)
@@ -604,6 +629,24 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
                   )}
                 </div>
+                {!isAfter && source && (
+                  <div class="od-download">
+                    <DownloadButton
+                      label="Ladda ner originalinspelning"
+                      fileName={`${p.name} (original)`}
+                      download={downloads[source.id]}
+                      onDownload={() => downloadRecording(source.id)}
+                    />
+                    {recording?.kind === 'trimmed' && (
+                      <DownloadButton
+                        label="Ladda ner trimmad version"
+                        fileName={`${p.name} (trimmad)`}
+                        download={downloads[recording.id]}
+                        onDownload={() => downloadRecording(recording.id)}
+                      />
+                    )}
+                  </div>
+                )}
                 {isAfter && projectRecordings.length > 1 && (
                   <div class="od-recording-select">
                     <label>Sändning</label>
@@ -804,5 +847,50 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
         </Modal>
       )}
     </div>
+  )
+}
+
+interface DownloadButtonProps {
+  label: string
+  fileName: string
+  download?: { status: 'processing' | 'ready' | 'error'; url?: string; message?: string }
+  onDownload: () => void
+}
+
+// UNG-58: samma "Förbereder… → riktig länk"-mönster som Videoarkivets
+// nedladdningsknapp — utbrutet här eftersom original och trimmad version
+// nu båda använder det, se ovan.
+function DownloadButton({ label, fileName, download, onDownload }: DownloadButtonProps) {
+  if (download?.status === 'processing') {
+    return (
+      <button class="btn btn-sm" type="button" disabled>
+        Förbereder nedladdning…
+      </button>
+    )
+  }
+  if (download?.status === 'ready' && download.url) {
+    return (
+      <span class="od-download-ready">
+        <a class="btn btn-sm" href={download.url} download>
+          Ladda ner {fileName}.mp4
+        </a>
+        <button class="btn btn-sm" type="button" onClick={onDownload}>
+          Förbered på nytt
+        </button>
+      </span>
+    )
+  }
+  return (
+    <span>
+      <button
+        class="btn btn-sm"
+        type="button"
+        onClick={onDownload}
+        title="Förbereder en nedladdningsbar fil (kan ta några minuter). Filen sparas i 7 dagar."
+      >
+        {label}
+      </button>
+      {download?.status === 'error' && <span class="od-download-error">{download.message}</span>}
+    </span>
   )
 }

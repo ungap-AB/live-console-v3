@@ -319,6 +319,14 @@ export interface TrimJob {
   error?: { code: string; message: string }
 }
 
+export interface DownloadJob {
+  jobId: string
+  state: 'processing' | 'done' | 'error'
+  url?: string
+  expiresAt?: string
+  error?: { code: string; message: string }
+}
+
 export interface ReviewLink {
   url: string
   token: string

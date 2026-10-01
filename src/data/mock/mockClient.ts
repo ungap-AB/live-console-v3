@@ -438,6 +438,16 @@ export const mockClient: Client = {
       }
       return delay(clone(trimmed))
     },
+    async download(id) {
+      const recording = recordings.find((r) => r.id === id)
+      if (!recording) throw new Error(`Inspelning ${id} finns inte`)
+      return delay({
+        jobId: `dj-${id}`,
+        state: 'done' as const,
+        url: `${recording.hlsUrl}?mock-download=1`,
+        expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
+      })
+    },
   },
   channels: {
     async list(query) {

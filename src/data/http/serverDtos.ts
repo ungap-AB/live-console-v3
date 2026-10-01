@@ -263,6 +263,14 @@ export interface ServerTrimJob {
   error?: { code: string; message: string }
 }
 
+export interface ServerDownloadJob {
+  jobId: string
+  state: 'processing' | 'done' | 'error'
+  url?: string
+  expiresAt?: string
+  error?: { code: string; message: string }
+}
+
 // ---- Papperskorg ----
 
 export interface ServerTrashItem {
