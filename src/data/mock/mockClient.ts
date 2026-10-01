@@ -448,6 +448,28 @@ export const mockClient: Client = {
         expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
       })
     },
+    async upload(file, projectId, name) {
+      const project = projects.find((p) => p.id === projectId)
+      if (!project) throw new Error(`Projektet ${projectId} finns inte`)
+      const id = `r${nextId++}`
+      const recording: Recording = {
+        id,
+        kind: 'original',
+        name: name ?? file.name,
+        createdAt: new Date().toISOString(),
+        durationSeconds: 0,
+        sizeBytes: file.size,
+        resolution: 'okänd',
+        source: 'upload',
+        hlsUrl: MOCK_ONDEMAND_HLS_URL,
+        project: { id: project.id, name: project.name, state: project.visibility },
+        segments: [],
+        chapters: [],
+      }
+      recordings = [...recordings, recording]
+      project.recording = { id, state: 'recorded', hlsUrl: recording.hlsUrl }
+      return delay({ jobId: `uj-${id}`, state: 'done' as const, recordingId: id })
+    },
   },
   channels: {
     async list(query) {

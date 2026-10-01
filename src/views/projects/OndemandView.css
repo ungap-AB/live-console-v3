@@ -244,6 +244,28 @@
   color: var(--warn);
 }
 
+.od-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.od-upload-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.od-upload-panel input[type='text'] {
+  flex: 1;
+  min-width: 160px;
+}
+
 .od-recording-select label {
   font-size: 12px;
   color: var(--ink-2);

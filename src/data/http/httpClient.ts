@@ -48,6 +48,7 @@ import type {
   ServerTrashItem,
   ServerTrimJob,
   ServerDownloadJob,
+  ServerUploadJob,
   ServerUser,
 } from './serverDtos'
 
@@ -107,6 +108,30 @@ async function pollDownloadJob(jobId: string): Promise<ServerDownloadJob> {
     }
     return job
   }
+}
+
+// Samma gleshet som nedladdning — HLS-transkodning via MediaConvert tar
+// typiskt minuter (UNG-55/56/57).
+async function pollUploadJob(jobId: string): Promise<ServerUploadJob> {
+  for (;;) {
+    const job = await api<ServerUploadJob>(`/upload-jobs/${jobId}`)
+    if (job.state === 'processing') {
+      await sleep(3000)
+      continue
+    }
+    if (job.state === 'error') {
+      throw new Error(job.error?.message ?? 'Uppladdningen kunde inte bearbetas.')
+    }
+    return job
+  }
+}
+
+// Presignade S3-URL:er pekar inte mot live-server-v3 — ett vanligt fetch-PUT
+// rakt mot S3, inte via api()-hjälparen (som alltid prependar BASE och sätter
+// JSON-content-type).
+async function putFile(url: string, file: File): Promise<void> {
+  const response = await fetch(url, { method: 'PUT', body: file })
+  if (!response.ok) throw new Error(`Uppladdningen misslyckades (${response.status}).`)
 }
 
 // ---- Dagordningar ----
@@ -555,6 +580,19 @@ export const httpClient: Client = {
       const job = await api<ServerDownloadJob>(`/recordings/${id}/download`, { method: 'POST' })
       if (job.state === 'done') return job
       return pollDownloadJob(job.jobId)
+    },
+    async upload(file, projectId, name) {
+      const init = await api<{ recordingId: string; uploadUrl: string }>('/recordings/upload', {
+        method: 'POST',
+        body: { fileName: file.name, projectId },
+      })
+      await putFile(init.uploadUrl, file)
+      const job = await api<ServerUploadJob>(`/recordings/${init.recordingId}/upload-complete`, {
+        method: 'POST',
+        body: { fileName: file.name, projectId, name },
+      })
+      if (job.state === 'done') return job
+      return pollUploadJob(job.jobId)
     },
   },
   channels: {

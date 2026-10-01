@@ -35,7 +35,9 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Sändning',
     items: [
       { route: 'live', label: 'Live', icon: 'podcasts' },
-      { route: 'archive', label: 'Videoarkiv', icon: 'video_library' },
+      // Videoarkivet gömt tillsvidare (Anders, 2026-10-01) — inspelningar
+      // ska alltid höra till ett projekt, inget fristående videobibliotek.
+      // Routen/vyn finns kvar orörd, bara navigationsgenvägen bort.
     ],
   },
   {

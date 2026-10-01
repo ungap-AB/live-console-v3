@@ -327,6 +327,13 @@ export interface DownloadJob {
   error?: { code: string; message: string }
 }
 
+export interface UploadJob {
+  jobId: string
+  state: 'processing' | 'done' | 'error'
+  recordingId?: string
+  error?: { code: string; message: string }
+}
+
 export interface ReviewLink {
   url: string
   token: string

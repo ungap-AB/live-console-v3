@@ -271,6 +271,13 @@ export interface ServerDownloadJob {
   error?: { code: string; message: string }
 }
 
+export interface ServerUploadJob {
+  jobId: string
+  state: 'processing' | 'done' | 'error'
+  recordingId?: string
+  error?: { code: string; message: string }
+}
+
 // ---- Papperskorg ----
 
 export interface ServerTrashItem {

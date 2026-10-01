@@ -713,6 +713,12 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 </div>}
               </div>
             )}
+            {!isAfter && !(source || previewUrl || broadcastInProgress || recordingProcessing) && (
+              <div class="od-upload" aria-label="Ladda upp video">
+                <p class="od-empty">Ingen sändning än. Ladda upp en färdig video för att visa den som ondemand.</p>
+                <UploadPanel projectId={p.id} projectName={p.name} onUploaded={() => void actions.refreshProject()} />
+              </div>
+            )}
             <footer class="od-trim-footer">
             </footer>
           </section>
@@ -892,5 +898,62 @@ function DownloadButton({ label, fileName, download, onDownload }: DownloadButto
       </button>
       {download?.status === 'error' && <span class="od-download-error">{download.message}</span>}
     </span>
+  )
+}
+
+interface UploadPanelProps {
+  projectId: string
+  projectName: string
+  onUploaded: () => void
+}
+
+// UNG-55/56/57: laddar upp en videofil direkt till S3 (presigned PUT) och
+// startar HLS-transkodning. Inspelningar måste alltid höra till ett projekt
+// (Anders, 2026-10-01) — därför finns ingen fristående uppladdning längre,
+// bara den här, inne i projektets Ondemand-vy.
+function UploadPanel({ projectId, projectName, onUploaded }: UploadPanelProps) {
+  const [file, setFile] = useState<File | null>(null)
+  const [name, setName] = useState('')
+  const [status, setStatus] = useState<'idle' | 'uploading' | 'error'>('idle')
+  const [error, setError] = useState('')
+
+  async function upload() {
+    if (!file) return
+    setStatus('uploading')
+    setError('')
+    try {
+      await client.recordings.upload(file, projectId, name.trim() || undefined)
+      setStatus('idle')
+      setFile(null)
+      setName('')
+      onUploaded()
+    } catch (err) {
+      setStatus('error')
+      setError(err instanceof Error ? err.message : 'Uppladdningen misslyckades.')
+    }
+  }
+
+  return (
+    <div class="od-upload-panel">
+      <input
+        type="file"
+        accept="video/*"
+        aria-label="Välj videofil"
+        disabled={status === 'uploading'}
+        onChange={(event) => setFile(event.currentTarget.files?.[0] ?? null)}
+      />
+      <input
+        type="text"
+        placeholder={projectName}
+        aria-label="Namn på inspelningen"
+        value={name}
+        disabled={status === 'uploading'}
+        onInput={(event) => setName(event.currentTarget.value)}
+      />
+      <button class="btn btn-sm btn-primary" type="button" disabled={!file || status === 'uploading'} onClick={() => void upload()}>
+        {status === 'uploading' ? 'Laddar upp…' : 'Ladda upp video'}
+      </button>
+      {status === 'error' && <span class="od-download-error">{error}</span>}
+    </div>
   )
 }
