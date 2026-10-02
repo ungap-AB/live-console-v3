@@ -47,6 +47,8 @@ import type {
   ServerTimelineEvent,
   ServerTrashItem,
   ServerTrimJob,
+  ServerDownloadJob,
+  ServerUploadJob,
   ServerUser,
 } from './serverDtos'
 
@@ -90,6 +92,38 @@ async function pollTrimJob(jobId: string): Promise<ServerTrimJob> {
     }
     return job
   }
+}
+
+// Glesare poll-intervall än trimning — en MediaConvert-konvertering av en
+// hel sändning tar typiskt minuter, inte sekunder (UNG-58).
+async function pollDownloadJob(jobId: string): Promise<ServerDownloadJob> {
+  for (;;) {
+    const job = await api<ServerDownloadJob>(`/download-jobs/${jobId}`)
+    if (job.state === 'processing') {
+      await sleep(3000)
+      continue
+    }
+    if (job.state === 'error') {
+      throw new Error(job.error?.message ?? 'Nedladdningen kunde inte förberedas.')
+    }
+    return job
+  }
+}
+
+// Presignade S3-URL:er pekar inte mot live-server-v3 — ett rått PUT mot S3, inte
+// via api()-hjälparen. XHR i stället för fetch eftersom fetch saknar
+// uppladdningsframsteg, vilket en fil på flera GB behöver.
+function putFile(url: string, file: File, onProgress?: (fraction: number) => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', url)
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(event.loaded / event.total)
+    }
+    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Uppladdningen misslyckades (${xhr.status}).`)))
+    xhr.onerror = () => reject(new Error('Uppladdningen avbröts — kontrollera nätverksanslutningen.'))
+    xhr.send(file)
+  })
 }
 
 // ---- Dagordningar ----
@@ -157,7 +191,7 @@ function toProjectRef(project: ServerProject | undefined, kind: 'recording' | 'c
 // ---- Inspelningar och videoarkiv ----
 
 function toChapter(dto: ServerChapter): Chapter {
-  return { chapterId: dto.chapterId, kind: dto.kind as CueKind, label: dto.label, offsetSeconds: dto.offsetSeconds, sourceEventId: dto.sourceEventId ?? undefined }
+  return { chapterId: dto.chapterId, kind: dto.kind as CueKind, label: dto.label, offsetSeconds: dto.offsetSeconds, sourceEventId: dto.sourceEventId ?? undefined, synced: dto.synced ?? true, timing: dto.timing, anchorable: dto.anchorable }
 }
 
 function toProjectRecording(dto: ServerProjectRecording): ProjectRecording {
@@ -309,7 +343,7 @@ function toProjectLite(dto: ServerProject): Project {
       streamStartedAt: dto.technicalHealth.streamStartedAt,
       recordingState: dto.technicalHealth.recordingState as RecordingState | null,
     },
-    recording: dto.recording ? { id: dto.recording.id, state: dto.recording.state as RecordingState, hlsUrl: dto.recording.hlsUrl } : null,
+    recording: dto.recording ? { id: dto.recording.id, state: dto.recording.state as RecordingState, hlsUrl: dto.recording.hlsUrl, source: dto.recording.source } : null,
     publication: { state: dto.publication.state as PublicationState },
     publicationHistory: dto.publicationHistory.map((entry): PublicationHistory => ({
       id: entry.id,
@@ -534,6 +568,28 @@ export const httpClient: Client = {
       const fresh = await api<ServerRecording>(`/recordings/${done.recordingId}`)
       return fetchRecordingDetail(fresh)
     },
+    async download(id) {
+      const job = await api<ServerDownloadJob>(`/recordings/${id}/download`, { method: 'POST' })
+      if (job.state === 'done') return job
+      return pollDownloadJob(job.jobId)
+    },
+    async acceptUpload(id) {
+      await api<void>(`/recordings/${id}/accept-upload`, { method: 'POST' })
+    },
+    async rejectUpload(id) {
+      await api<void>(`/recordings/${id}/reject-upload`, { method: 'POST' })
+    },
+    async upload(file, projectId, name, onProgress) {
+      const init = await api<{ recordingId: string; uploadUrl: string }>('/recordings/upload', {
+        method: 'POST',
+        body: { fileName: file.name, projectId },
+      })
+      await putFile(init.uploadUrl, file, onProgress)
+      return api<ServerUploadJob>(`/recordings/${init.recordingId}/upload-complete`, {
+        method: 'POST',
+        body: { fileName: file.name, projectId, name },
+      })
+    },
   },
   channels: {
     async list(query) {
@@ -672,8 +728,13 @@ export const httpClient: Client = {
       return fetchPlayout(id)
     },
     async chapters(id) {
-      const response = await api<{ frozen: boolean; chapters: ServerChapter[]; readOnly?: boolean }>(`/projects/${id}/chapters`)
-      return response.chapters.map((chapter) => ({ ...toChapter(chapter), readOnly: response.readOnly }))
+      const response = await api<{ frozen: boolean; chapters: ServerChapter[]; readOnly?: boolean; syncState?: 'none' | 'pending' | 'confirmed' | null; anchorChapterId?: string | null }>(`/projects/${id}/chapters`)
+      return response.chapters.map((chapter) => ({
+        ...toChapter(chapter),
+        readOnly: response.readOnly,
+        syncState: response.syncState ?? undefined,
+        anchor: response.anchorChapterId === chapter.chapterId,
+      }))
     },
     async recordings(id) {
       const list = await api<ServerProjectRecording[]>(`/projects/${id}/recordings`)
@@ -816,6 +877,25 @@ export const httpClient: Client = {
     },
     async updateDraftChapter(id, chapterId, input) {
       await api<void>(`/projects/${id}/timeline-draft/chapters/${chapterId}`, { method: 'PATCH', body: input })
+    },
+    async syncChapters(id, anchorChapterId, anchorOffsetSeconds) {
+      const result = await api<{ synced: number; outsideVideo: number }>(`/projects/${id}/timeline-draft/sync`, {
+        method: 'POST',
+        body: { anchorChapterId, anchorOffsetSeconds },
+      })
+      return { synced: result.synced, outsideVideo: result.outsideVideo }
+    },
+    async importChapters(id, items) {
+      return api<{ positioned: number; clock: number; untimed: number; outsideVideo: number }>(`/projects/${id}/timeline-draft/import`, {
+        method: 'POST',
+        body: { items },
+      })
+    },
+    async confirmChapterSync(id) {
+      await api<void>(`/projects/${id}/timeline-draft/confirm-sync`, { method: 'POST' })
+    },
+    async addChapter(id, input) {
+      await api<unknown>(`/projects/${id}/timeline-draft/chapters`, { method: 'POST', body: input })
     },
     async deleteDraftChapter(id, chapterId) {
       await api<void>(`/projects/${id}/timeline-draft/chapters/${chapterId}`, { method: 'DELETE' })

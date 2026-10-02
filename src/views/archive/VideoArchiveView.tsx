@@ -46,6 +46,9 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   const [creating, setCreating] = useState(false)
   const [renaming, setRenaming] = useState<Recording | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [downloads, setDownloads] = useState<
+    Record<string, { status: 'processing' | 'ready' | 'error'; url?: string; message?: string }>
+  >({})
 
   useEffect(() => {
     if (resource.data) setRecordings(resource.data)
@@ -123,6 +126,29 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
     setConfirmTrash(null)
   }
 
+  // Jobbet (HLS → MP4 via MediaConvert, se UNG-58) kan ta flera minuter för
+  // en hel sändning — client.recordings.download pollar internt tills klart.
+  // Renderar en synlig länk istället för window.open(): ett popup-anrop så
+  // långt efter den ursprungliga klickgesten blockeras ofta tyst av
+  // webbläsaren (inte en direkt reaktion på användarens klick längre).
+  async function downloadRecording(recording: Recording) {
+    setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'processing' } }))
+    try {
+      const job = await client.recordings.download(recording.id)
+      if (job.url) {
+        setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'ready', url: job.url } }))
+      }
+    } catch (error) {
+      setDownloads((prev) => ({
+        ...prev,
+        [recording.id]: {
+          status: 'error',
+          message: error instanceof Error ? error.message : 'Nedladdningen kunde inte förberedas.',
+        },
+      }))
+    }
+  }
+
   return (
     <div class="view">
       <header>
@@ -180,7 +206,8 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
                     : trash(selected)
                 }
                 onRename={() => setRenaming(selected)}
-                onDownload={() => setToast(`Laddar ner ${selected.name}`)}
+                onDownload={() => downloadRecording(selected)}
+                download={downloads[selected.id]}
                 onOpenProject={() => selected.project && onOpenProject(selected.project.id)}
               />
             )
@@ -232,10 +259,11 @@ interface ArchiveDetailProps {
   onTrash: () => void
   onRename: () => void
   onDownload: () => void
+  download?: { status: 'processing' | 'ready' | 'error'; url?: string; message?: string }
   onOpenProject: () => void
 }
 
-function ArchiveDetail({ recording: r, chapters, onTrash, onRename, onDownload, onOpenProject }: ArchiveDetailProps) {
+function ArchiveDetail({ recording: r, chapters, onTrash, onRename, onDownload, download, onOpenProject }: ArchiveDetailProps) {
   const isOriginal = r.kind === 'original'
   const visibleChapterCount = chapters.filter((c) => isInRange(r, c)).length
 
@@ -279,9 +307,30 @@ function ArchiveDetail({ recording: r, chapters, onTrash, onRename, onDownload, 
           )}
         </div>
         <div class="tools">
-          <button class="btn btn-sm" type="button" onClick={onDownload}>
-            Ladda ner
-          </button>
+          {download?.status === 'processing' ? (
+            <button class="btn btn-sm" type="button" disabled>
+              Förbereder nedladdning…
+            </button>
+          ) : download?.status === 'ready' && download.url ? (
+            <span class="download-ready">
+              <a class="btn btn-sm" href={download.url} download>
+                Ladda ner {r.name}.mp4
+              </a>
+              <button class="btn btn-sm" type="button" onClick={onDownload}>
+                Förbered på nytt
+              </button>
+            </span>
+          ) : (
+            <button
+              class="btn btn-sm"
+              type="button"
+              onClick={onDownload}
+              title="Förbereder en nedladdningsbar fil (kan ta några minuter). Filen sparas i 7 dagar."
+            >
+              Ladda ner
+            </button>
+          )}
+          {download?.status === 'error' && <span class="download-error">{download.message}</span>}
           {r.project && (
             <button class="btn btn-sm" type="button" onClick={onOpenProject}>
               Gå till projekt

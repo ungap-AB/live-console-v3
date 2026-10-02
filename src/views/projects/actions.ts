@@ -8,7 +8,7 @@ export interface ProjectActions {
   rename: (name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText'>>) => Promise<boolean>
   setPoster: (file: File) => Promise<boolean>
   removePoster: () => Promise<boolean>
-  setVisibility: (visibility: Visibility) => void
+  setVisibility: (visibility: Visibility) => Promise<void>
   setPublicMode: (publicMode: PublicMode, afterReason?: AfterReason) => Promise<boolean>
   setAgenda: (agendaId: string | null) => Promise<void>
   setNameList: (namelistId: string | null) => void

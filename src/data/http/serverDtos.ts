@@ -81,6 +81,7 @@ export interface ServerRecordingRef {
   id: string
   state: string
   hlsUrl?: string
+  source?: string
   availabilityReason?: string
 }
 
@@ -179,6 +180,9 @@ export interface ServerChapter {
   label: string
   offsetSeconds: number
   sourceEventId?: string | null
+  synced?: boolean
+  timing?: 'positioned' | 'clock' | 'untimed'
+  anchorable?: boolean
 }
 
 // ---- Live-resurser ----
@@ -259,6 +263,21 @@ export interface ServerProjectRecording {
 export interface ServerTrimJob {
   jobId: string
   state: 'processing' | 'done' | 'failed'
+  recordingId?: string
+  error?: { code: string; message: string }
+}
+
+export interface ServerDownloadJob {
+  jobId: string
+  state: 'processing' | 'done' | 'error'
+  url?: string
+  expiresAt?: string
+  error?: { code: string; message: string }
+}
+
+export interface ServerUploadJob {
+  jobId: string
+  state: 'processing' | 'done' | 'error'
   recordingId?: string
   error?: { code: string; message: string }
 }

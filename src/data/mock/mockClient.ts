@@ -438,6 +438,53 @@ export const mockClient: Client = {
       }
       return delay(clone(trimmed))
     },
+    async download(id) {
+      const recording = recordings.find((r) => r.id === id)
+      if (!recording) throw new Error(`Inspelning ${id} finns inte`)
+      return delay({
+        jobId: `dj-${id}`,
+        state: 'done' as const,
+        url: `${recording.hlsUrl}?mock-download=1`,
+        expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
+      })
+    },
+    async acceptUpload(id) {
+      const accepted = recordings.find((r) => r.id === id)
+      const project = projects.find((p) => p.recording?.id === id)
+      if (!accepted || !project) throw new Error(`Inspelning ${id} finns inte`)
+      recordings = recordings.filter((r) => r.id === id || r.project?.id !== project.id)
+      project.recording = { ...project.recording!, state: 'recorded' }
+      return delay(undefined)
+    },
+    async rejectUpload(id) {
+      const project = projects.find((p) => p.recording?.id === id)
+      recordings = recordings.filter((r) => r.id !== id)
+      if (project) project.recording = null
+      return delay(undefined)
+    },
+    async upload(file, projectId, name, onProgress) {
+      const project = projects.find((p) => p.id === projectId)
+      if (!project) throw new Error(`Projektet ${projectId} finns inte`)
+      const id = `r${nextId++}`
+      const recording: Recording = {
+        id,
+        kind: 'original',
+        name: name ?? file.name,
+        createdAt: new Date().toISOString(),
+        durationSeconds: 0,
+        sizeBytes: file.size,
+        resolution: 'okänd',
+        source: 'upload',
+        hlsUrl: MOCK_ONDEMAND_HLS_URL,
+        project: { id: project.id, name: project.name, state: project.visibility },
+        segments: [],
+        chapters: [],
+      }
+      recordings = [...recordings, recording]
+      project.recording = { id, state: 'awaitingApproval', hlsUrl: recording.hlsUrl, source: 'upload' }
+      onProgress?.(1)
+      return delay({ jobId: `uj-${id}`, state: 'processing' as const, recordingId: id })
+    },
   },
   channels: {
     async list(query) {
@@ -1038,6 +1085,39 @@ export const mockClient: Client = {
       return delay(undefined)
     },
     async updateDraftChapter(_id, _chapterId, _input) {
+      return delay(undefined)
+    },
+    async syncChapters(_id, _anchorChapterId, _anchorOffsetSeconds) {
+      return delay({ synced: 0, outsideVideo: 0 })
+    },
+    async importChapters(id, items) {
+      const project = findProject(id)
+      const recording = recordings.find((r) => r.id === project.recording?.id)
+      if (!recording) throw new Error('Inspelningen finns inte')
+      recording.chapters = items.map((item) => ({
+        chapterId: `c${nextId++}`,
+        kind: item.kind,
+        label: item.label,
+        offsetSeconds: item.offsetSeconds ?? 0,
+        synced: item.offsetSeconds !== undefined,
+        timing: item.offsetSeconds !== undefined ? 'positioned' : item.clockUtc ? 'clock' : 'untimed',
+      }))
+      return delay({
+        positioned: items.filter((i) => i.offsetSeconds !== undefined).length,
+        clock: items.filter((i) => i.offsetSeconds === undefined && i.clockUtc).length,
+        untimed: items.filter((i) => i.offsetSeconds === undefined && !i.clockUtc).length,
+        outsideVideo: 0,
+      })
+    },
+    async confirmChapterSync(_id) {
+      return delay(undefined)
+    },
+    async addChapter(id, input) {
+      const project = findProject(id)
+      const recording = recordings.find((r) => r.id === project.recording?.id)
+      if (!recording) throw new Error('Inspelningen finns inte')
+      recording.chapters = [...recording.chapters, { chapterId: `c${nextId++}`, kind: input.kind, label: input.label, offsetSeconds: input.offsetSeconds, synced: true }]
+        .sort((a, b) => a.offsetSeconds - b.offsetSeconds)
       return delay(undefined)
     },
     async deleteDraftChapter(_id, _chapterId) {

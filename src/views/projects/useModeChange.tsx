@@ -14,10 +14,12 @@ export function useModeChange(project: Project, actions: ProjectActions, onAppli
     if (afterText !== undefined && afterText !== project.afterText) {
       if (!(await actions.rename(project.name, { afterText }))) return
     }
-    for (const step of modeChangePlan(from, to)) {
+    for (const step of modeChangePlan(from, to, project.publication.state === 'published')) {
       // Ett misslyckat steg avbryter resten; felet visas redan som toast.
       const ok =
-        step === 'publish'
+        step === 'close'
+          ? (await actions.setVisibility('closed'), true)
+          : step === 'publish'
           ? await actions.publish()
           : step === 'unpublish'
             ? await actions.unpublish()
@@ -31,7 +33,8 @@ export function useModeChange(project: Project, actions: ProjectActions, onAppli
 
   function selectMode(to: PublicMode) {
     if (to === project.publicMode) return
-    if (requiresConfirmation(project.publicMode, to)) setPending(to)
+    const unpublishedOndemand = project.publicMode === 'ondemand' && project.publication.state !== 'published'
+    if (requiresConfirmation(project.publicMode, to) && !(unpublishedOndemand && to === 'before')) setPending(to)
     else void apply(to)
   }
 

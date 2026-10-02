@@ -96,7 +96,7 @@ export type PublicMode = 'before' | 'live' | 'after' | 'ondemand'
 export type AfterReason = 'liveFinished' | 'ondemandUnpublished'
 export type RecordingReadiness = 'unknown' | 'recording' | 'processing' | 'ready' | 'published'
 export type ChannelState = 'none' | 'idle' | 'live'
-export type RecordingState = 'none' | 'recording' | 'processing' | 'recorded' | 'trimmed' | 'published'
+export type RecordingState = 'none' | 'recording' | 'processing' | 'awaitingApproval' | 'recorded' | 'trimmed' | 'published'
 
 export interface TrimDraftChapter {
   index: number
@@ -149,7 +149,7 @@ export interface Project {
   playerUrl: string
   channel: { id: string; state: ChannelState } | null
   technicalHealth: ProjectTechnicalHealth
-  recording: { id: string; state: RecordingState; hlsUrl?: string } | null
+  recording: { id: string; state: RecordingState; hlsUrl?: string; source?: string } | null
   publication: { state: PublicationState }
   publicationHistory: PublicationHistory[]
   capabilities: ProjectCapabilities
@@ -278,6 +278,32 @@ export interface Chapter {
   offsetSeconds: number
   sourceEventId?: string
   readOnly?: boolean
+  /** Falskt för importerade cues i en uppladdad video som ännu inte ankrats — saknar position och publiceras inte. */
+  synced?: boolean
+  /** Uppladdad video: förankringens läge för kapitellistan som helhet (samma värde på alla kapitel). */
+  syncState?: 'none' | 'pending' | 'confirmed'
+  /** Kapitlet operatören förankrade mot videon. */
+  anchor?: boolean
+  /** Hur kapitlets tid är känd: i videon (publiceras), klockslag (kräver förankring) eller ingen tid (stegas fram med Synk). */
+  timing?: 'positioned' | 'clock' | 'untimed'
+  /** Har ett ursprungligt klockslag och kan väljas som ankare. */
+  anchorable?: boolean
+}
+
+export interface ChapterImportItem {
+  kind: CueKind
+  label: string
+  /** Position i videon (sekunder) — kapitlet blir direkt synkat. */
+  offsetSeconds?: number
+  /** Klockslag i sändningen (ISO 8601, UTC) — kapitlet förankras. */
+  clockUtc?: string
+}
+
+export interface ChapterImportResult {
+  positioned: number
+  clock: number
+  untimed: number
+  outsideVideo: number
 }
 
 // En av projektets egna sändningar (även test-sändningar) — valbara i
@@ -315,6 +341,21 @@ export interface Recording {
 export interface TrimJob {
   jobId: string
   state: 'processing' | 'done' | 'failed'
+  recordingId?: string
+  error?: { code: string; message: string }
+}
+
+export interface DownloadJob {
+  jobId: string
+  state: 'processing' | 'done' | 'error'
+  url?: string
+  expiresAt?: string
+  error?: { code: string; message: string }
+}
+
+export interface UploadJob {
+  jobId: string
+  state: 'processing' | 'done' | 'error'
   recordingId?: string
   error?: { code: string; message: string }
 }

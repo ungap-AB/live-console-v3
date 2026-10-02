@@ -88,6 +88,17 @@ export interface Client {
     rename(id: string, name: string): Promise<Recording>
     trash(id: string): Promise<void>
     trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number }): Promise<Recording>
+    download(id: string): Promise<import('./types').DownloadJob>
+    /**
+     * UNG-55/56/57: laddar upp en videofil (presigned PUT mot S3) och startar HLS-transkodningen.
+     * Resolvar när transkodningen startat — inte när den är klar; servern slutför jobbet själv och
+     * projektets recording.state går från 'processing' till 'recorded'. Inspelningen hör alltid till ett projekt.
+     */
+    upload(file: File, projectId: string, name?: string, onProgress?: (fraction: number) => void): Promise<import('./types').UploadJob>
+    /** Godkänner den uppladdade filen: den ersätter projektets tidigare inspelningar (mjukraderas, återställs av admin från papperskorgen). */
+    acceptUpload(id: string): Promise<void>
+    /** Behåller de tidigare inspelningarna — den uppladdade filen ignoreras. */
+    rejectUpload(id: string): Promise<void>
   }
   channels: {
     list(query?: string): Promise<Channel[]>
@@ -165,6 +176,14 @@ export interface Client {
     updateTimelineEvent(id: string, eventId: string, input: { label?: string; offsetSeconds?: number }): Promise<TimelineEvent>
     deleteTimelineEvent(id: string, eventId: string): Promise<void>
     updateDraftChapter(id: string, chapterId: string, input: { label?: string; offsetSeconds?: number }): Promise<void>
+    /** Uppladdad video: förankrar kapitellistan — ankarkapitlet ligger vid anchorOffsetSeconds; redan förankrade kapitel flyttas lika mycket, övriga räknas efter sin tidsskillnad mot det. */
+    syncChapters(id: string, anchorChapterId: string, anchorOffsetSeconds: number): Promise<{ synced: number; outsideVideo: number }>
+    /** Lägger till ett eget kapitel på en videoposition (uppladdad video). */
+    addChapter(id: string, input: { kind: CueKind; label: string; offsetSeconds: number }): Promise<void>
+    /** Ersätter hela kapitellistan med en importerad lista (en källa åt gången). Tiden i varje rad avgör läget. */
+    importChapters(id: string, items: import('./types').ChapterImportItem[]): Promise<import('./types').ChapterImportResult>
+    /** Operatören litar på förankringen — hävs publiceringsspärren. */
+    confirmChapterSync(id: string): Promise<void>
     deleteDraftChapter(id: string, chapterId: string): Promise<void>
     updateChapterOffset(id: string, index: number, input: { offsetSeconds?: number; label?: string }): Promise<void>
     updatePublishedChapter(id: string, chapterId: string, input: { offsetSeconds?: number; label?: string }): Promise<void>

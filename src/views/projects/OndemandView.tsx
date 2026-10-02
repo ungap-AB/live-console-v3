@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Chapter, CueKind, Project, ProjectRecording, Recording } from '../../data/types'
-import { formatDateTime, formatHms } from '../../app/time'
+import type { Chapter, ChapterImportResult, CueKind, Project, ProjectRecording, Recording } from '../../data/types'
+import { formatBytes, formatDateTime, formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
+import { ChapterImportDialog } from './ChapterImportDialog'
 import { ProjectHeader } from './ProjectHeader'
 import { useModeChange } from './useModeChange'
 import { useLiveChannel } from './useLiveChannel'
@@ -62,9 +63,52 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [switchingRecording, setSwitchingRecording] = useState(false)
   const [showRecordingPicker, setShowRecordingPicker] = useState(false)
   const [pendingRecordingId, setPendingRecordingId] = useState<string | null>(null)
+  // UNG-58: nedladdning av original- och/eller trimmad inspelning — vanlig
+  // operatör har ingen tillgång till Videoarkivet där samma funktion redan
+  // finns, så den behövs här också. Nyckel = recording-id (original ELLER
+  // trim har olika id:n, så båda kan pollas oberoende av varandra).
+  const [downloads, setDownloads] = useState<
+    Record<string, { status: 'processing' | 'ready' | 'error'; url?: string; message?: string }>
+  >({})
+
+  // Misslyckad transkodning: servern tar bort inspelningsraden, så projektet går
+  // från "bearbetas" (upload) till ingen inspelning alls — berätta varför.
+  const [uploadFailed, setUploadFailed] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [guide, setGuide] = useState<{ step: 1 | 2 | 3; anchorId: string | null } | null>(null)
+  const [guideDismissed, setGuideDismissed] = useState(false)
+  const [showImport, setShowImport] = useState(false)
+  // Synk-knappen: vilket kapitel som står på tur, vilka som hoppats över och vilket som sattes senast.
+  const [stepTargetId, setStepTargetId] = useState<string | null>(null)
+  const [skippedIds, setSkippedIds] = useState<string[]>([])
+  const [lastSteppedId, setLastSteppedId] = useState<string | null>(null)
+  const [orderWarning, setOrderWarning] = useState<string | null>(null)
+  const [showUploadPanel, setShowUploadPanel] = useState(false)
+  const [uploadNote, setUploadNote] = useState('')
+  const [syncNote, setSyncNote] = useState('')
+  const wasUploadProcessing = useRef(false)
 
   const recordingId = p.recording?.id
   const recordingState = p.recording?.state
+
+  // Guiden för att förankra kapitellistan mot en uppladdad video startar själv när
+  // kapitel väntar på förankring, och återupptas i steg 3 om förankringen inte bekräftats.
+  useEffect(() => {
+    if (!projectChaptersLoaded || p.recording?.source !== 'upload') return
+    const state = projectChapters.find((chapter) => chapter.syncState)?.syncState
+    if (state === 'pending') {
+      setGuide((current) => current ?? { step: 3, anchorId: projectChapters.find((chapter) => chapter.anchor)?.chapterId ?? null })
+    } else if (state === 'none' && !guideDismissed && projectChapters.some((chapter) => chapter.timing === 'clock')) {
+      setGuide((current) => current ?? { step: 1, anchorId: null })
+    }
+  }, [projectChaptersLoaded, projectChapters, p.recording?.source, guideDismissed])
+
+  useEffect(() => {
+    const processing = p.recording?.state === 'processing' && p.recording.source === 'upload'
+    if (processing) setUploadFailed(false)
+    else if (wasUploadProcessing.current && !p.recording) setUploadFailed(true)
+    wasUploadProcessing.current = processing
+  }, [p.recording?.id, p.recording?.state])
 
   useEffect(() => {
     const active = recording
@@ -178,9 +222,203 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     ? []
     : projectChapters
   const chaptersReadOnly = chapters.some((chapter) => chapter.readOnly)
+  const syncState = chapters.find((chapter) => chapter.syncState)?.syncState
+  const hasImportedChapters = chapters.some((chapter) => chapter.anchorable)
+  const untimedChapters = chapters.filter((chapter) => chapter.timing === 'untimed')
+  const anchorChapter = guide?.anchorId ? chapters.find((chapter) => chapter.chapterId === guide.anchorId) : undefined
   const source = original ?? (recording?.kind === 'original' ? recording : null)
   const mockTrimDuration = source?.durationSeconds ?? 0
   const previewUrl = source?.hlsUrl ?? ''
+  // Uppladdning är bara aktuell innan något är publicerat — i Ondemand-läge utan
+  // publicering ("Ladda upp video" från Before) eller medan ingenting finns.
+  const awaitingApproval = p.recording?.state === 'awaitingApproval'
+  // En uppladdning som väntar på bearbetning eller godkännande spärrar allt annat.
+  const uploadPending = awaitingApproval || (recordingProcessing && p.recording?.source === 'upload')
+  const canUpload = p.publication.state !== 'published' && !broadcastInProgress && !recordingProcessing && !awaitingApproval
+  // Finns ingen inspelning är panelen öppen från början; annars bakom en knapp så att
+  // det vanliga flödet (trimma, publicera) inte störs.
+  const showUploadCard = canUpload && !source
+  const showUploadEntry = canUpload && !!source
+  const uploadedRecording = p.recording?.source === 'upload'
+  const stepperVisible = !!uploadedRecording && !awaitingApproval && !chaptersReadOnly && !guide && untimedChapters.length > 0
+  const stepTarget = chapters.find((chapter) => chapter.chapterId === stepTargetId)
+    ?? untimedChapters.find((chapter) => !skippedIds.includes(chapter.chapterId))
+    ?? untimedChapters[0]
+
+  // Jobbet (HLS → MP4 via MediaConvert, UNG-58) kan ta flera minuter för en
+  // hel sändning — client.recordings.download pollar internt tills klart.
+  // En synlig länk (inte window.open) — ett sent popup-anrop blockeras ofta
+  // tyst av webbläsaren efter en flerminuters väntan. Fungerar för BÅDE
+  // original och trimmad inspelning — id:t avgör vilken.
+  async function downloadRecording(recordingId: string) {
+    setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'processing' } }))
+    try {
+      const job = await client.recordings.download(recordingId)
+      if (job.url) setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'ready', url: job.url } }))
+    } catch (error) {
+      setDownloads((prev) => ({
+        ...prev,
+        [recordingId]: { status: 'error', message: error instanceof Error ? error.message : 'Nedladdningen kunde inte förberedas.' },
+      }))
+    }
+  }
+
+  async function cancelPendingUpload() {
+    if (!p.recording) return
+    setUploadNote('')
+    try {
+      await client.recordings.rejectUpload(p.recording.id)
+      await actions.refreshProject()
+    } catch (error) {
+      setUploadNote(error instanceof Error ? error.message : 'Uppladdningen kunde inte avbrytas.')
+    }
+  }
+
+  async function reloadChapters() {
+    const next = await client.projects.chapters(p.id)
+    setProjectChapters(next)
+    setChapterLabels({})
+    setProjectChaptersLoaded(true)
+  }
+
+  function startGuide() {
+    setGuideDismissed(false)
+    setSyncNote('')
+    setGuide({ step: 1, anchorId: null })
+  }
+
+  function closeGuide() {
+    setGuideDismissed(true)
+    setGuide(null)
+  }
+
+  function chooseAnchor(index: number) {
+    const chapter = chapters[index]
+    if (!chapter?.anchorable) return
+    setSyncNote('')
+    setGuide({ step: 2, anchorId: chapter.chapterId })
+    // Ett redan förankrat kapitel har en tid att utgå från — hoppa dit.
+    if (chapter.synced !== false) selectChapter(index)
+    else pausePreview()
+  }
+
+  function seekVideo(seconds: number) {
+    const video = previewVideoRef.current
+    if (!video) return
+    video.currentTime = seconds
+    setPreviewPosition(seconds)
+  }
+
+  async function applyAnchor(offsetSeconds: number) {
+    if (!guide?.anchorId) return false
+    setSyncing(true)
+    setSyncNote('')
+    try {
+      const result = await client.projects.syncChapters(p.id, guide.anchorId, offsetSeconds)
+      await reloadChapters()
+      setHasUnpublishedChanges(true)
+      if (result.outsideVideo > 0) {
+        setSyncNote(`${result.outsideVideo} kapitel hamnade utanför videon och är dolda tills de ryms — justera ankaret eller ta bort dem.`)
+      }
+      return true
+    } catch (error) {
+      setSyncNote(error instanceof Error ? error.message : 'Förankringen misslyckades.')
+      return false
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  async function anchorHere() {
+    if (await applyAnchor(Math.round(previewPosition))) setGuide((current) => (current ? { ...current, step: 3 } : current))
+  }
+
+  async function nudgeAnchor(deltaSeconds: number) {
+    const anchor = chapters.find((chapter) => chapter.chapterId === guide?.anchorId)
+    if (!anchor) return
+    const next = Math.max(0, anchor.offsetSeconds + deltaSeconds)
+    if (await applyAnchor(next)) seekVideo(next)
+  }
+
+  async function confirmAnchor() {
+    setSyncing(true)
+    try {
+      await client.projects.confirmChapterSync(p.id)
+      await reloadChapters()
+      setGuide(null)
+    } catch (error) {
+      setSyncNote(error instanceof Error ? error.message : 'Bekräftelsen misslyckades.')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  // Nästa kapitel utan tid efter det angivna, i listans ordning (utan de överhoppade).
+  function nextUntimedAfter(chapterId: string, skipped: string[]) {
+    const index = untimedChapters.findIndex((chapter) => chapter.chapterId === chapterId)
+    const rest = index >= 0 ? untimedChapters.slice(index + 1) : untimedChapters
+    return rest.find((chapter) => !skipped.includes(chapter.chapterId)) ?? null
+  }
+
+  async function stepHere() {
+    if (!stepTarget) return
+    const offset = Math.round(previewPosition)
+    const previous = chapters.find((chapter) => chapter.chapterId === lastSteppedId)
+    // Ett kapitel som hamnar före det förra är oftast ett misstag — kräv ett klick till.
+    if (previous && previous.chapterId !== stepTarget.chapterId && offset < previous.offsetSeconds && orderWarning !== stepTarget.chapterId) {
+      setOrderWarning(stepTarget.chapterId)
+      return
+    }
+    setSyncing(true)
+    setSyncNote('')
+    setOrderWarning(null)
+    try {
+      await client.projects.updateDraftChapter(p.id, stepTarget.chapterId, { offsetSeconds: offset })
+      const next = nextUntimedAfter(stepTarget.chapterId, skippedIds)
+      setLastSteppedId(stepTarget.chapterId)
+      setStepTargetId(next?.chapterId ?? null)
+      await reloadChapters()
+      setHasUnpublishedChanges(true)
+    } catch (error) {
+      setSyncNote(error instanceof Error ? error.message : 'Tiden kunde inte sättas.')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  function skipStep() {
+    if (!stepTarget) return
+    const skipped = [...skippedIds, stepTarget.chapterId]
+    setSkippedIds(skipped)
+    setOrderWarning(null)
+    setStepTargetId(nextUntimedAfter(stepTarget.chapterId, skipped)?.chapterId ?? null)
+  }
+
+  function undoStep() {
+    const previous = chapters.find((chapter) => chapter.chapterId === lastSteppedId)
+    if (!previous) return
+    setOrderWarning(null)
+    setStepTargetId(previous.chapterId)
+    seekVideo(previous.offsetSeconds)
+  }
+
+  async function onChaptersImported(result: ChapterImportResult) {
+    setShowImport(false)
+    setGuide(null)
+    setGuideDismissed(false)
+    setSkippedIds([])
+    setLastSteppedId(null)
+    setStepTargetId(null)
+    await reloadChapters()
+    setHasUnpublishedChanges(true)
+    setSyncNote(result.outsideVideo > 0 ? `${result.outsideVideo} kapitel låg efter videons slut och har ingen tid än.` : '')
+  }
+
+  async function addChapterHere(kind: CueKind, label: string) {
+    await client.projects.addChapter(p.id, { kind, label, offsetSeconds: Math.round(previewPosition) })
+    await reloadChapters()
+    setHasUnpublishedChanges(true)
+  }
 
   async function switchActiveRecording(recordingId: string) {
     setSwitchingRecording(true)
@@ -449,7 +687,10 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const draftDirty = trimDirty || Object.entries(chapterLabels).some(([index, label]) => label !== chapters[Number(index)]?.label)
   // Backend spärrar redan publish medan enkodern sänder (channel_live) — spärra
   // knappen här också så det inte ser ut som ett fungerande val.
-  const canPublishOndemand = !chaptersReadOnly && !broadcastInProgress && (isAfter || hasUnpublishedChanges || trimDirty)
+  // Ondemand utan publicering = uppladdad video som väntar på granskning (Before → Ondemand).
+  const stagedUpload = p.publicMode === 'ondemand' && p.publication.state !== 'published'
+    && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed')
+  const canPublishOndemand = !chaptersReadOnly && !broadcastInProgress && !uploadPending && syncState !== 'pending' && (isAfter || hasUnpublishedChanges || trimDirty || stagedUpload)
   const videoDuration = previewVideoRef.current?.duration || mockTrimDuration
   const canReturnToSaved = selectedChapter !== null && draftOffsets[selectedChapter] !== undefined
 
@@ -589,9 +830,20 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     </div>
                   ) : recordingProcessing ? (
                     <div class="od-broadcast-warning" role="status">
-                      <strong>Inspelningen bearbetas</strong>
-                      <span>Vänta tills inspelningen är klar innan du trimmar och publicerar ondemand.</span>
-                      {processingStuck && (
+                      <strong>{p.recording?.source === 'upload' ? 'Videon bearbetas' : 'Inspelningen bearbetas'}</strong>
+                      {p.recording?.source === 'upload' ? (
+                        <span>Videon konverteras för uppspelning, vilket kan ta några minuter beroende på längd. Du kan lämna sidan — bearbetningen fortsätter.</span>
+                      ) : (
+                        <span>Vänta tills inspelningen är klar innan du trimmar och publicerar ondemand.</span>
+                      )}
+                      {p.recording?.source === 'upload' && (
+                        <>
+                          <span>Övriga val är spärrade tills videon är klar eller uppladdningen avbryts.</span>
+                          <button class="btn btn-sm" type="button" onClick={() => void cancelPendingUpload()}>Avbryt uppladdningen</button>
+                          {uploadNote && <span class="od-download-error">{uploadNote}</span>}
+                        </>
+                      )}
+                      {processingStuck && p.recording?.source !== 'upload' && (
                         <>
                           <span>Det här tar ovanligt lång tid — sändningen kan ha varit för kort för att AWS skulle spara en inspelning.</span>
                           {isAfter && projectRecordings.length > 1 && (
@@ -604,7 +856,25 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
                   )}
                 </div>
-                {isAfter && projectRecordings.length > 1 && (
+                {!isAfter && source && !awaitingApproval && (
+                  <div class="od-download">
+                    <DownloadButton
+                      label="Ladda ner originalinspelning"
+                      fileName={`${p.name} (original)`}
+                      download={downloads[source.id]}
+                      onDownload={() => downloadRecording(source.id)}
+                    />
+                    {recording?.kind === 'trimmed' && (
+                      <DownloadButton
+                        label="Ladda ner trimmad version"
+                        fileName={`${p.name} (trimmad)`}
+                        download={downloads[recording.id]}
+                        onDownload={() => downloadRecording(recording.id)}
+                      />
+                    )}
+                  </div>
+                )}
+                {isAfter && projectRecordings.length > 1 && !uploadPending && (
                   <div class="od-recording-select">
                     <label>Sändning</label>
                     <span class="od-recording-current">
@@ -616,7 +886,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     </button>
                   </div>
                 )}
-                {isAfter && <div class={`od-selected-chapter${selectedChapter !== null && chapters[selectedChapter] ? ' has-selected-chapter' : ''}${broadcastInProgress || recordingProcessing ? ' is-broadcasting' : ''}`}>
+                {isAfter && !awaitingApproval && <div class={`od-selected-chapter${selectedChapter !== null && chapters[selectedChapter] ? ' has-selected-chapter' : ''}${broadcastInProgress || recordingProcessing ? ' is-broadcasting' : ''}`}>
                   {selectedChapter !== null && chapters[selectedChapter] ? (
                     <div class="od-selected-chapter-heading">
                       <button class="od-chapter-nav" type="button" aria-label="Föregående kapitel" title="Föregående kapitel" disabled={selectedChapter <= 0} onClick={() => selectChapter(selectedChapter - 1)}>
@@ -668,24 +938,124 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     </div>
                   </div>}
                 </div>}
+                {stepperVisible && stepTarget && (
+                  <SyncStepper
+                    target={stepTarget}
+                    remaining={untimedChapters.length}
+                    position={previewPosition}
+                    playing={previewPlaying}
+                    busy={syncing}
+                    canUndo={!!lastSteppedId}
+                    warning={orderWarning === stepTarget.chapterId}
+                    onSeekBy={seekBy}
+                    onTogglePlay={togglePreviewPlayback}
+                    onStep={() => void stepHere()}
+                    onSkip={skipStep}
+                    onUndo={undoStep}
+                  />
+                )}
+                {showUploadEntry && (showUploadPanel ? (
+                  <UploadPanel
+                    projectId={p.id}
+                    projectName={p.name}
+                    replacing
+                    failed={false}
+                    onCancel={() => setShowUploadPanel(false)}
+                    onUploaded={() => { setShowUploadPanel(false); void actions.refreshProject() }}
+                  />
+                ) : (
+                  <div class="od-download">
+                    <button class="btn btn-sm" type="button" onClick={() => setShowUploadPanel(true)}>Ladda upp video...</button>
+                  </div>
+                ))}
               </div>
+            )}
+            {awaitingApproval && (
+              <UploadApproval
+                recording={recording}
+                previous={projectRecordings}
+                onDone={() => void actions.refreshProject()}
+              />
+            )}
+            {showUploadCard && (
+              <UploadPanel
+                projectId={p.id}
+                projectName={p.name}
+                replacing={false}
+                failed={uploadFailed}
+                onUploaded={() => void actions.refreshProject()}
+              />
             )}
             <footer class="od-trim-footer">
             </footer>
           </section>
 
           <section class={`od-col od-chapters-col${chaptersReadOnly ? ' is-readonly' : ''}`} aria-labelledby="od-chapters-title">
-            {chaptersReadOnly && <p class="od-empty">Kapitel går att redigera först när inspelningen är klar</p>}
-            {chapters.length === 0 ? (
-              <p class="od-empty">Inga kapitel än. De skapas från det som spelades ut under sändningen.</p>
+            {awaitingApproval ? (
+              <p class="od-empty">Godkänn eller ignorera den uppladdade filen innan du arbetar med kapitlen.</p>
+            ) : chaptersReadOnly && p.recording && <p class="od-empty">Kapitel går att redigera först när inspelningen är klar</p>}
+            {guide && !awaitingApproval && !chaptersReadOnly && (
+              <AnchorGuide
+                step={guide.step}
+                anchorLabel={anchorChapter ? (chapterLabels[chapters.indexOf(anchorChapter)] ?? anchorChapter.label) : null}
+                anchorOffset={anchorChapter && anchorChapter.timing !== 'positioned' ? null : anchorChapter?.offsetSeconds ?? null}
+                position={previewPosition}
+                playing={previewPlaying}
+                busy={syncing}
+                onSeekBy={seekBy}
+                onTogglePlay={togglePreviewPlayback}
+                onChooseAgain={() => setGuide({ step: 1, anchorId: null })}
+                onAnchor={() => void anchorHere()}
+                onGoToAnchor={() => { if (anchorChapter) { seekVideo(anchorChapter.offsetSeconds); void previewVideoRef.current?.play().catch(() => undefined) } }}
+                onNudge={(delta) => void nudgeAnchor(delta)}
+                onConfirm={() => void confirmAnchor()}
+                onClose={closeGuide}
+              />
+            )}
+            {!guide && !awaitingApproval && !chaptersReadOnly && uploadedRecording && hasImportedChapters && !uploadPending && (
+              <div class="od-sync-status">
+                <span>
+                  {syncState === 'pending'
+                    ? 'Förankringen är inte bekräftad — publicering är spärrad.'
+                    : syncState === 'confirmed'
+                      ? 'Kapitlen är förankrade mot videon.'
+                      : 'Kapitlen från sändningen är inte förankrade mot videon.'}
+                </span>
+                <button
+                  class="btn btn-sm"
+                  type="button"
+                  onClick={() => (syncState === 'pending'
+                    ? setGuide({ step: 3, anchorId: chapters.find((chapter) => chapter.anchor)?.chapterId ?? null })
+                    : startGuide())}
+                >
+                  {syncState === 'pending' ? 'Fortsätt' : 'Förankra kapitel'}
+                </button>
+              </div>
+            )}
+            {syncNote && <p class="od-download-error">{syncNote}</p>}
+            {awaitingApproval ? null : chapters.length === 0 ? (
+              <p class="od-empty">
+                {uploadedRecording
+                  ? 'En uppladdad video har inga kapitel — de skapas från det som spelas ut under en livesändning.'
+                  : !p.recording
+                    ? 'Kapitel skapas från det som spelas ut under en livesändning.'
+                    : 'Inga kapitel än. De skapas från det som spelades ut under sändningen.'}
+              </p>
             ) : (
               <ul class="od-chapters">
                 {chapters.map((chapter, index) => (
                   <li
                     key={chapter.chapterId}
-                    class={`od-chapter-row${selectedChapter === index ? ' is-selected' : ''}`}
+                    class={`od-chapter-row${selectedChapter === index ? ' is-selected' : ''}${chapter.synced === false ? ' is-unsynced' : ''}${(guide?.step === 1 && chapter.anchorable) || stepperVisible ? ' is-pickable' : ''}${stepperVisible && stepTarget?.chapterId === chapter.chapterId ? ' is-step-target' : ''}${guide?.anchorId === chapter.chapterId ? ' is-anchor' : ''}`}
+                    onClick={(event) => {
+                      if ((event.target as HTMLElement).closest('button, input')) return
+                      if (guide?.step === 1) chooseAnchor(index)
+                      else if (stepperVisible) { setOrderWarning(null); setStepTargetId(chapter.chapterId) }
+                    }}
                   >
-                      {!chaptersReadOnly && <button
+                      {!chaptersReadOnly && guide?.anchorId === chapter.chapterId && <Icon name="anchor" size={16} />}
+                      {!chaptersReadOnly && chapter.synced === false && <span class="od-chapter-unsynced">{chapter.timing === 'untimed' ? 'Ingen tid' : 'Ej förankrad'}</span>}
+                      {!chaptersReadOnly && chapter.synced !== false && <button
                       class="od-chapter-play"
                       type="button"
                       aria-label={`Spela från ${chapter.label}`}
@@ -694,7 +1064,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     >
                       <Icon name="skip_next" size={16} />
                     </button>}
-                    {!chaptersReadOnly && <span class={`od-time${draftOffsets[index] !== undefined ? ' is-draft' : ''}`}>
+                    {!chaptersReadOnly && chapter.synced !== false && <span class={`od-time${draftOffsets[index] !== undefined ? ' is-draft' : ''}`}>
                       {formatHms(draftOffsets[index] ?? savedOffsets[index] ?? chapter.offsetSeconds)}
                     </span>}
                     {!chaptersReadOnly && editingChapter === index ? (
@@ -733,10 +1103,18 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 ))}
               </ul>
             )}
+            {uploadedRecording && !awaitingApproval && !chaptersReadOnly && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed') && (
+              <AddChapterForm position={previewPosition} onAdd={addChapterHere} />
+            )}
+            {uploadedRecording && !awaitingApproval && !chaptersReadOnly && p.publication.state !== 'published' && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed') && (
+              <div class="od-add-chapter">
+                <button class="btn btn-sm" type="button" onClick={() => setShowImport(true)}>Importera kapitel…</button>
+              </div>
+            )}
             <footer class="od-chapters-footer">
               {(isAfter || p.publicMode === 'ondemand') && (
                 <>
-                  {isAfter && <button class="btn btn-sm" type="button" disabled={chaptersReadOnly} onClick={() => setConfirmUndoAll(true)}>
+                  {isAfter && <button class="btn btn-sm" type="button" disabled={chaptersReadOnly || uploadPending} onClick={() => setConfirmUndoAll(true)}>
                     Ångra allt
                   </button>}
                   <button class="btn btn-sm btn-primary od-publish-button" type="button" disabled={!canPublishOndemand} onClick={() => setConfirmOndemand(true)}>
@@ -798,11 +1176,437 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
           </div>
         </Modal>
       )}
+      {showImport && (
+        <ChapterImportDialog
+          projectId={p.id}
+          agendaId={p.agendaId}
+          currentChapterCount={chapters.length}
+          onClose={() => setShowImport(false)}
+          onImported={(result) => void onChaptersImported(result)}
+        />
+      )}
       {publishing && (
         <Modal title="Publicerar ondemand" onClose={() => undefined}>
           <p>Förbereder video och publicerar ändringarna. Vänta tills publiceringen är klar.</p>
         </Modal>
       )}
+    </div>
+  )
+}
+
+interface DownloadButtonProps {
+  label: string
+  fileName: string
+  download?: { status: 'processing' | 'ready' | 'error'; url?: string; message?: string }
+  onDownload: () => void
+}
+
+// UNG-58: samma "Förbereder… → riktig länk"-mönster som Videoarkivets
+// nedladdningsknapp — utbrutet här eftersom original och trimmad version
+// nu båda använder det, se ovan.
+function DownloadButton({ label, fileName, download, onDownload }: DownloadButtonProps) {
+  if (download?.status === 'processing') {
+    return (
+      <button class="btn btn-sm" type="button" disabled>
+        Förbereder nedladdning…
+      </button>
+    )
+  }
+  if (download?.status === 'ready' && download.url) {
+    return (
+      <span class="od-download-ready">
+        <a class="btn btn-sm" href={download.url} download>
+          Ladda ner {fileName}.mp4
+        </a>
+        <button class="btn btn-sm" type="button" onClick={onDownload}>
+          Förbered på nytt
+        </button>
+      </span>
+    )
+  }
+  return (
+    <span>
+      <button
+        class="btn btn-sm"
+        type="button"
+        onClick={onDownload}
+        title="Förbereder en nedladdningsbar fil (kan ta några minuter). Filen sparas i 7 dagar."
+      >
+        {label}
+      </button>
+      {download?.status === 'error' && <span class="od-download-error">{download.message}</span>}
+    </span>
+  )
+}
+
+interface UploadPanelProps {
+  projectId: string
+  projectName: string
+  /** Det finns redan en (ännu opublicerad) video — kortet erbjuder då att ersätta den. */
+  replacing: boolean
+  failed: boolean
+  onUploaded: () => void
+  onCancel?: () => void
+}
+
+function withoutExtension(fileName: string): string {
+  const dot = fileName.lastIndexOf('.')
+  return dot > 0 ? fileName.slice(0, dot) : fileName
+}
+
+// UNG-55/56/57: direktuppladdning till S3 med framsteg, sedan startar servern
+// HLS-transkodningen. Inspelningar hör alltid till ett projekt (Anders,
+// 2026-10-01) — därför finns uppladdningen bara här, inte som fristående bibliotek.
+function UploadPanel({ projectId, projectName, replacing, failed, onUploaded, onCancel }: UploadPanelProps) {
+  const [file, setFile] = useState<File | null>(null)
+  const [name, setName] = useState('')
+  const [status, setStatus] = useState<'idle' | 'uploading' | 'error'>('idle')
+  const [progress, setProgress] = useState(0)
+  const [error, setError] = useState('')
+  const [dragging, setDragging] = useState(false)
+  const uploading = status === 'uploading'
+
+  // En flera GB stor uppladdning hänger på den här fliken tills den är klar.
+  useEffect(() => {
+    if (!uploading) return
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault()
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [uploading])
+
+  function choose(next: File | null) {
+    if (next && !next.type.startsWith('video/')) {
+      setError('Det där verkar inte vara en videofil.')
+      setStatus('error')
+      return
+    }
+    setFile(next)
+    setName(next ? withoutExtension(next.name) : '')
+    setStatus('idle')
+    setError('')
+  }
+
+  async function upload() {
+    if (!file) return
+    setStatus('uploading')
+    setProgress(0)
+    setError('')
+    try {
+      await client.recordings.upload(file, projectId, name.trim() || undefined, setProgress)
+      setStatus('idle')
+      setFile(null)
+      setName('')
+      onUploaded()
+    } catch (err) {
+      setStatus('error')
+      setError(err instanceof Error ? err.message : 'Uppladdningen misslyckades.')
+    }
+  }
+
+  return (
+    <div class="od-upload" aria-label="Ladda upp video">
+      <p class="od-upload-title">
+        {replacing ? 'Ladda upp en annan video i stället' : `Ladda upp en färdig video till ${projectName}`}
+      </p>
+      {replacing && <p class="od-empty">Nuvarande inspelning ersätts först när du har godkänt den uppladdade filen.</p>}
+      {failed && <p class="od-download-error">Bearbetningen av den uppladdade videon misslyckades. Försök igen, eller prova en annan fil.</p>}
+      <label
+        class={`od-dropzone${dragging ? ' is-dragging' : ''}${file ? ' has-file' : ''}${uploading ? ' is-disabled' : ''}`}
+        onDragOver={(event) => { event.preventDefault(); if (!uploading) setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(event) => {
+          event.preventDefault()
+          setDragging(false)
+          if (!uploading) choose(event.dataTransfer?.files?.[0] ?? null)
+        }}
+      >
+        <input
+          type="file"
+          accept="video/*"
+          aria-label="Välj videofil"
+          disabled={uploading}
+          onChange={(event) => choose(event.currentTarget.files?.[0] ?? null)}
+        />
+        <Icon name="upload_file" size={28} />
+        {file ? (
+          <span><strong>{file.name}</strong> · {formatBytes(file.size)}</span>
+        ) : (
+          <span>Dra hit en videofil, eller klicka för att välja</span>
+        )}
+      </label>
+      {file && (
+        <div class="od-upload-panel">
+          <input
+            type="text"
+            placeholder="Namn på inspelningen"
+            aria-label="Namn på inspelningen"
+            value={name}
+            disabled={uploading}
+            onInput={(event) => setName(event.currentTarget.value)}
+          />
+          <button class="btn btn-sm btn-primary" type="button" disabled={uploading} onClick={() => void upload()}>
+            {uploading ? 'Laddar upp…' : 'Ladda upp'}
+          </button>
+          {onCancel && !uploading && (
+            <button class="btn btn-sm" type="button" onClick={onCancel}>Avbryt</button>
+          )}
+        </div>
+      )}
+      {onCancel && !file && !uploading && (
+        <div class="od-upload-panel">
+          <button class="btn btn-sm" type="button" onClick={onCancel}>Avbryt</button>
+        </div>
+      )}
+      {uploading && (
+        <div class="od-upload-progress" role="status">
+          <progress value={progress} max={1} />
+          <span>{Math.round(progress * 100)} % — lämna inte sidan förrän uppladdningen är klar</span>
+        </div>
+      )}
+      {status === 'error' && <span class="od-download-error">{error}</span>}
+    </div>
+  )
+}
+
+interface UploadApprovalProps {
+  recording: Recording | null
+  /** Projektets tidigare inspelningar — raderas om filen godkänns. */
+  previous: ProjectRecording[]
+  onDone: () => void
+}
+
+function UploadApproval({ recording, previous, onDone }: UploadApprovalProps) {
+  const previousCount = previous.length
+  const [busy, setBusy] = useState<'accept' | 'reject' | null>(null)
+  const [error, setError] = useState('')
+  const [retentionDays, setRetentionDays] = useState<number | null>(null)
+
+  useEffect(() => {
+    client.trash.policy().then((policy) => setRetentionDays(policy.retentionDays)).catch(() => undefined)
+  }, [])
+
+  async function decide(action: 'accept' | 'reject') {
+    setBusy(action)
+    setError('')
+    try {
+      if (action === 'accept') await client.recordings.acceptUpload(recording!.id)
+      else await client.recordings.rejectUpload(recording!.id)
+      onDone()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Något gick fel.')
+      setBusy(null)
+    }
+  }
+
+  const grace = retentionDays ? ` och kan återställas av en administratör från Papperskorgen inom ${retentionDays} dagar` : ''
+  return (
+    <div class="od-upload" aria-label="Godkänn uppladdad video">
+      <p class="od-upload-title">Är det här rätt fil?</p>
+      {recording && (
+        <p class="od-empty">
+          <strong>{recording.name}</strong> · {formatHms(recording.durationSeconds)} · {recording.resolution} · {formatBytes(recording.sizeBytes)}
+        </p>
+      )}
+      <p class="od-empty">
+        Kontrollera i förhandsvisningen ovan. Du kan inte gå vidare med kapitel, trimning eller publicering förrän du valt.
+      </p>
+      {previousCount > 0 && (
+        <div class="od-empty">
+          <p class="od-empty">Om du använder filen raderas projektets tidigare inspelningar (och eventuella trimmade versioner){grace}:</p>
+          <ul>
+            {previous.map((item) => (
+              <li key={item.id}>{item.name} — {formatDateTime(item.startedAt)} · {formatHms(item.durationSeconds)}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div class="od-upload-panel">
+        <button class="btn btn-sm btn-primary" type="button" disabled={busy !== null || !recording} onClick={() => void decide('accept')}>
+          {busy === 'accept' ? 'Sparar…' : 'Använd den här filen'}
+        </button>
+        <button class="btn btn-sm" type="button" disabled={busy !== null || !recording} onClick={() => void decide('reject')}>
+          {previousCount > 0 ? 'Behåll tidigare — ignorera filen' : 'Ignorera filen'}
+        </button>
+      </div>
+      {error && <span class="od-download-error">{error}</span>}
+    </div>
+  )
+}
+
+interface AddChapterFormProps {
+  position: number
+  onAdd: (kind: CueKind, label: string) => Promise<void>
+}
+
+// Eget kapitel på nuvarande videoposition — för uppladdade videor, där inga
+// cues gjordes live (eller där några saknas).
+function AddChapterForm({ position, onAdd }: AddChapterFormProps) {
+  const [kind, setKind] = useState<CueKind>('agendaItem')
+  const [label, setLabel] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function add() {
+    if (!label.trim()) return
+    setBusy(true)
+    setError('')
+    try {
+      await onAdd(kind, label.trim())
+      setLabel('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Kapitlet kunde inte läggas till.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div class="od-add-chapter">
+      <select aria-label="Typ av kapitel" value={kind} disabled={busy} onChange={(event) => setKind(event.currentTarget.value as CueKind)}>
+        {(Object.keys(CHAPTER_KIND) as CueKind[]).map((value) => (
+          <option key={value} value={value}>{CHAPTER_KIND[value]}</option>
+        ))}
+      </select>
+      <input
+        type="text"
+        placeholder="Text för nytt kapitel"
+        aria-label="Text för nytt kapitel"
+        value={label}
+        disabled={busy}
+        onInput={(event) => setLabel(event.currentTarget.value)}
+        onKeyDown={(event) => { if (event.key === 'Enter') void add() }}
+      />
+      <button class="btn btn-sm" type="button" disabled={busy || !label.trim()} onClick={() => void add()}>
+        Lägg till vid {formatHms(Math.round(position))}
+      </button>
+      {error && <span class="od-download-error">{error}</span>}
+    </div>
+  )
+}
+
+interface AnchorGuideProps {
+  step: 1 | 2 | 3
+  anchorLabel: string | null
+  anchorOffset: number | null
+  position: number
+  playing: boolean
+  busy: boolean
+  onSeekBy: (seconds: number) => void
+  onTogglePlay: () => void
+  onChooseAgain: () => void
+  onAnchor: () => void
+  onGoToAnchor: () => void
+  onNudge: (deltaSeconds: number) => void
+  onConfirm: () => void
+  onClose: () => void
+}
+
+// Guidat flöde för att förankra kapitellistan mot en uppladdad video: välj ett kapitel,
+// spela fram till var det börjar, kontrollera ankaret. Ankarets kvalitet avgör — övriga
+// kapitel följer sändningens tider och finjusteras enskilt i listan.
+function AnchorGuide(props: AnchorGuideProps) {
+  const { step, anchorLabel, anchorOffset, position, playing, busy } = props
+  return (
+    <div class="od-guide" role="region" aria-label="Förankra kapitel">
+      <div class="od-guide-head">
+        <strong>Förankra kapitel · steg {step} av 3</strong>
+        <button class="btn btn-sm" type="button" onClick={props.onClose}>Stäng</button>
+      </div>
+      {step === 1 && (
+        <p class="od-empty">
+          <strong>Välj kapitel.</strong> Klicka på ett kapitel i listan vars start du tydligt hör eller ser i videon, till exempel första punkten.
+        </p>
+      )}
+      {step === 2 && (
+        <>
+          <p class="od-empty">
+            <strong>Spela fram till där ”{anchorLabel}” börjar</strong> i videon och klicka Förankra.
+          </p>
+          <PositionControls position={position} playing={playing} onSeekBy={props.onSeekBy} onTogglePlay={props.onTogglePlay} />
+          <div class="od-guide-controls">
+            <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={props.onAnchor}>
+              {busy ? 'Förankrar…' : 'Förankra'}
+            </button>
+            <button class="btn btn-sm" type="button" disabled={busy} onClick={props.onChooseAgain}>Välj annat kapitel</button>
+          </div>
+        </>
+      )}
+      {step === 3 && (
+        <>
+          <p class="od-empty">
+            <strong>Kontrollera ankaret</strong> ”{anchorLabel}”{anchorOffset !== null ? ` vid ${formatHms(anchorOffset)}` : ''}. Gå till ankaret, lyssna och justera. Justeringen flyttar alla kapitel. Övriga kapitel följer tiderna från sändningen — finjustera enskilda kapitel i listan vid behov.
+          </p>
+          <div class="od-guide-controls">
+            <button class="btn btn-sm" type="button" disabled={busy || anchorOffset === null} onClick={props.onGoToAnchor}>Gå till ankare</button>
+            <button class="btn btn-sm" type="button" disabled={busy} title="Flyttar alla kapitel" onClick={() => props.onNudge(-1)}>−1 s</button>
+            <button class="btn btn-sm" type="button" disabled={busy} title="Flyttar alla kapitel" onClick={() => props.onNudge(1)}>+1 s</button>
+          </div>
+          <div class="od-guide-controls">
+            <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={props.onConfirm}>Bekräfta ankaret</button>
+            <button class="btn btn-sm" type="button" disabled={busy} onClick={props.onChooseAgain}>Förankra om</button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+interface PositionControlsProps {
+  position: number
+  playing: boolean
+  onSeekBy: (seconds: number) => void
+  onTogglePlay: () => void
+}
+
+function PositionControls({ position, playing, onSeekBy, onTogglePlay }: PositionControlsProps) {
+  return (
+    <div class="od-guide-controls">
+      <button class="btn btn-sm" type="button" onClick={() => onSeekBy(-5)}>−5 s</button>
+      <button class="btn btn-sm" type="button" onClick={() => onSeekBy(-1)}>−1 s</button>
+      <button class="btn btn-sm" type="button" aria-label="Spela eller pausa" onClick={onTogglePlay}>
+        <Icon name={playing ? 'pause' : 'play_arrow'} size={18} />
+      </button>
+      <output>{formatHms(Math.round(position))}</output>
+      <button class="btn btn-sm" type="button" onClick={() => onSeekBy(1)}>+1 s</button>
+      <button class="btn btn-sm" type="button" onClick={() => onSeekBy(5)}>+5 s</button>
+    </div>
+  )
+}
+
+interface SyncStepperProps {
+  target: Chapter
+  remaining: number
+  position: number
+  playing: boolean
+  busy: boolean
+  canUndo: boolean
+  warning: boolean
+  onSeekBy: (seconds: number) => void
+  onTogglePlay: () => void
+  onStep: () => void
+  onSkip: () => void
+  onUndo: () => void
+}
+
+// Kapitel utan tid: spela videon och klicka Synka när nästa kapitel börjar — tiden sätts till
+// nuvarande position och nästa kapitel står på tur. Klicka på ett kapitel i listan för att välja ett annat.
+function SyncStepper(props: SyncStepperProps) {
+  const { target, remaining, position, playing, busy, canUndo, warning } = props
+  return (
+    <div class="od-guide" role="region" aria-label="Sätt tider på kapitlen">
+      <div class="od-guide-head">
+        <strong>Sätt tider på kapitlen · {remaining} kvar</strong>
+      </div>
+      <p class="od-empty">Nästa: <strong>{target.label}</strong></p>
+      <PositionControls position={position} playing={playing} onSeekBy={props.onSeekBy} onTogglePlay={props.onTogglePlay} />
+      {warning && <p class="od-download-error">Kapitlet hamnar före det förra. Klicka Synka igen om det är rätt.</p>}
+      <div class="od-guide-controls">
+        <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={props.onStep}>
+          {busy ? 'Sätter…' : `Synka här · ${formatHms(Math.round(position))}`}
+        </button>
+        <button class="btn btn-sm" type="button" disabled={busy} onClick={props.onSkip}>Hoppa över</button>
+        <button class="btn btn-sm" type="button" disabled={busy || !canUndo} onClick={props.onUndo}>Ångra förra</button>
+      </div>
     </div>
   )
 }
