@@ -15,6 +15,19 @@ export interface Domain extends DomainRef {
   contractEnd?: string
 }
 
+export interface CredentialLinkInfo {
+  valid: boolean
+  kind?: 'invite' | 'reset'
+  name?: string
+  email?: string
+}
+
+export interface CredentialLinkRedeemed {
+  pin: string
+  email: string
+  kind: 'invite' | 'reset'
+}
+
 export interface CurrentUser {
   id: string
   name: string

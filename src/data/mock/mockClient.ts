@@ -166,6 +166,13 @@ function toCurrentUser(user: UserAccount): CurrentUser {
 
 export const mockClient: Client = {
   auth: {
+    async credentialLinkInfo(token) {
+      return delay(token === 'ogiltig' ? { valid: false } : { valid: true, kind: 'invite' as const, name: 'Mock Användare', email: 'mock@example.test' })
+    },
+    async redeemCredentialLink(token) {
+      if (token === 'ogiltig') throw new Error('Länken är ogiltig, har gått ut eller har redan använts.')
+      return delay({ pin: '482913', email: 'mock@example.test', kind: 'invite' as const })
+    },
     async login(email, _pin) {
       const user = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase() && u.status === 'active')
       if (!user) throw new Error('Fel e-postadress eller PIN-kod.')
@@ -655,14 +662,14 @@ export const mockClient: Client = {
       if (input.email !== undefined) user.email = input.email
       return delay(clone(user))
     },
-    async sendInvitation(id, _pin) {
+    async sendInvitation(id) {
       const user = users.find((u) => u.id === id)
       if (!user) throw new Error(`Användare ${id} finns inte`)
       user.status = 'invited'
       return delay(clone(user))
     },
-    async resendInvite(id, pin) {
-      return this.sendInvitation(id, pin)
+    async resendInvite(id) {
+      return this.sendInvitation(id)
     },
     async sendPasswordReset() {
       return delay(undefined)

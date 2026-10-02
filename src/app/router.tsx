@@ -41,3 +41,22 @@ export function useRoute(): RouteKey {
 export function routeHref(route: RouteKey): string {
   return `#/${route}`
 }
+
+// Engångslänk från ett inbjudnings-/återställningsmejl: #/accept?token=… — fungerar även utloggad.
+function parseCredentialToken(): string | null {
+  const hash = window.location.hash.slice(1)
+  if (!hash.startsWith('/accept')) return null
+  return new URLSearchParams(hash.split('?')[1] ?? '').get('token')
+}
+
+export function useCredentialToken(): string | null {
+  const [token, setToken] = useState<string | null>(parseCredentialToken())
+
+  useEffect(() => {
+    const onHashChange = () => setToken(parseCredentialToken())
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
+  return token
+}
