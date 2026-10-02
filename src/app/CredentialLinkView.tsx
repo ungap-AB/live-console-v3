@@ -44,8 +44,8 @@ export function CredentialLinkView({ token, onDone }: CredentialLinkViewProps) {
   return (
     <div class="login-screen">
       <div class="login-card">
-        <img class="login-logo theme-light-only" src={logoLightUrl} alt="Ungap" />
-        <img class="login-logo theme-dark-only" src={logoDarkUrl} alt="Ungap" />
+        <img class="login-logo theme-light-only" src={logoLightUrl} alt="ungap" />
+        <img class="login-logo theme-dark-only" src={logoDarkUrl} alt="ungap" />
         {redeemed ? (
           <>
             <p class="login-sub">{invite ? 'Ditt konto är aktiverat' : 'Din nya PIN-kod'}</p>

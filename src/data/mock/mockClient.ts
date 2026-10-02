@@ -166,6 +166,9 @@ function toCurrentUser(user: UserAccount): CurrentUser {
 
 export const mockClient: Client = {
   auth: {
+    async requestPasswordReset(_email) {
+      return delay(undefined)
+    },
     async credentialLinkInfo(token) {
       return delay(token === 'ogiltig' ? { valid: false } : { valid: true, kind: 'invite' as const, name: 'Mock Användare', email: 'mock@example.test' })
     },

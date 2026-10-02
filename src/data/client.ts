@@ -45,6 +45,8 @@ export interface Client {
     login(email: string, pin: string): Promise<CurrentUser>
     me(): Promise<CurrentUser>
     logout(): Promise<void>
+    /** "Glömt PIN?": ber servern skicka ett återställningsmejl. Svarar likadant oavsett om adressen finns. */
+    requestPasswordReset(email: string): Promise<void>
     /** Engångslänken i ett inbjudnings-/återställningsmejl. Ändrar inget — är bara en kontroll av att länken fortfarande gäller. */
     credentialLinkInfo(token: string): Promise<import('./types').CredentialLinkInfo>
     /** Förbrukar länken och ger användaren en ny, server-genererad PIN (visas en gång). */
