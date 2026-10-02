@@ -181,6 +181,8 @@ export interface ServerChapter {
   offsetSeconds: number
   sourceEventId?: string | null
   synced?: boolean
+  timing?: 'positioned' | 'clock' | 'untimed'
+  anchorable?: boolean
 }
 
 // ---- Live-resurser ----

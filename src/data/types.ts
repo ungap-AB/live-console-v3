@@ -284,6 +284,26 @@ export interface Chapter {
   syncState?: 'none' | 'pending' | 'confirmed'
   /** Kapitlet operatören förankrade mot videon. */
   anchor?: boolean
+  /** Hur kapitlets tid är känd: i videon (publiceras), klockslag (kräver förankring) eller ingen tid (stegas fram med Synk). */
+  timing?: 'positioned' | 'clock' | 'untimed'
+  /** Har ett ursprungligt klockslag och kan väljas som ankare. */
+  anchorable?: boolean
+}
+
+export interface ChapterImportItem {
+  kind: CueKind
+  label: string
+  /** Position i videon (sekunder) — kapitlet blir direkt synkat. */
+  offsetSeconds?: number
+  /** Klockslag i sändningen (ISO 8601, UTC) — kapitlet förankras. */
+  clockUtc?: string
+}
+
+export interface ChapterImportResult {
+  positioned: number
+  clock: number
+  untimed: number
+  outsideVideo: number
 }
 
 // En av projektets egna sändningar (även test-sändningar) — valbara i

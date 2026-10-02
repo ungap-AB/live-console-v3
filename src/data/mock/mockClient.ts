@@ -1090,6 +1090,25 @@ export const mockClient: Client = {
     async syncChapters(_id, _anchorChapterId, _anchorOffsetSeconds) {
       return delay({ synced: 0, outsideVideo: 0 })
     },
+    async importChapters(id, items) {
+      const project = findProject(id)
+      const recording = recordings.find((r) => r.id === project.recording?.id)
+      if (!recording) throw new Error('Inspelningen finns inte')
+      recording.chapters = items.map((item) => ({
+        chapterId: `c${nextId++}`,
+        kind: item.kind,
+        label: item.label,
+        offsetSeconds: item.offsetSeconds ?? 0,
+        synced: item.offsetSeconds !== undefined,
+        timing: item.offsetSeconds !== undefined ? 'positioned' : item.clockUtc ? 'clock' : 'untimed',
+      }))
+      return delay({
+        positioned: items.filter((i) => i.offsetSeconds !== undefined).length,
+        clock: items.filter((i) => i.offsetSeconds === undefined && i.clockUtc).length,
+        untimed: items.filter((i) => i.offsetSeconds === undefined && !i.clockUtc).length,
+        outsideVideo: 0,
+      })
+    },
     async confirmChapterSync(_id) {
       return delay(undefined)
     },

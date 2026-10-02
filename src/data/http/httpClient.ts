@@ -191,7 +191,7 @@ function toProjectRef(project: ServerProject | undefined, kind: 'recording' | 'c
 // ---- Inspelningar och videoarkiv ----
 
 function toChapter(dto: ServerChapter): Chapter {
-  return { chapterId: dto.chapterId, kind: dto.kind as CueKind, label: dto.label, offsetSeconds: dto.offsetSeconds, sourceEventId: dto.sourceEventId ?? undefined, synced: dto.synced ?? true }
+  return { chapterId: dto.chapterId, kind: dto.kind as CueKind, label: dto.label, offsetSeconds: dto.offsetSeconds, sourceEventId: dto.sourceEventId ?? undefined, synced: dto.synced ?? true, timing: dto.timing, anchorable: dto.anchorable }
 }
 
 function toProjectRecording(dto: ServerProjectRecording): ProjectRecording {
@@ -884,6 +884,12 @@ export const httpClient: Client = {
         body: { anchorChapterId, anchorOffsetSeconds },
       })
       return { synced: result.synced, outsideVideo: result.outsideVideo }
+    },
+    async importChapters(id, items) {
+      return api<{ positioned: number; clock: number; untimed: number; outsideVideo: number }>(`/projects/${id}/timeline-draft/import`, {
+        method: 'POST',
+        body: { items },
+      })
     },
     async confirmChapterSync(id) {
       await api<void>(`/projects/${id}/timeline-draft/confirm-sync`, { method: 'POST' })

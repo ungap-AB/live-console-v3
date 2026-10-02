@@ -180,6 +180,8 @@ export interface Client {
     syncChapters(id: string, anchorChapterId: string, anchorOffsetSeconds: number): Promise<{ synced: number; outsideVideo: number }>
     /** Lägger till ett eget kapitel på en videoposition (uppladdad video). */
     addChapter(id: string, input: { kind: CueKind; label: string; offsetSeconds: number }): Promise<void>
+    /** Ersätter hela kapitellistan med en importerad lista (en källa åt gången). Tiden i varje rad avgör läget. */
+    importChapters(id: string, items: import('./types').ChapterImportItem[]): Promise<import('./types').ChapterImportResult>
     /** Operatören litar på förankringen — hävs publiceringsspärren. */
     confirmChapterSync(id: string): Promise<void>
     deleteDraftChapter(id: string, chapterId: string): Promise<void>

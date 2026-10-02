@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Chapter, CueKind, Project, ProjectRecording, Recording } from '../../data/types'
+import type { Chapter, ChapterImportResult, CueKind, Project, ProjectRecording, Recording } from '../../data/types'
 import { formatBytes, formatDateTime, formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
@@ -8,6 +8,7 @@ import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
+import { ChapterImportDialog } from './ChapterImportDialog'
 import { ProjectHeader } from './ProjectHeader'
 import { useModeChange } from './useModeChange'
 import { useLiveChannel } from './useLiveChannel'
@@ -76,6 +77,12 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [syncing, setSyncing] = useState(false)
   const [guide, setGuide] = useState<{ step: 1 | 2 | 3; anchorId: string | null } | null>(null)
   const [guideDismissed, setGuideDismissed] = useState(false)
+  const [showImport, setShowImport] = useState(false)
+  // Synk-knappen: vilket kapitel som står på tur, vilka som hoppats över och vilket som sattes senast.
+  const [stepTargetId, setStepTargetId] = useState<string | null>(null)
+  const [skippedIds, setSkippedIds] = useState<string[]>([])
+  const [lastSteppedId, setLastSteppedId] = useState<string | null>(null)
+  const [orderWarning, setOrderWarning] = useState<string | null>(null)
   const [showUploadPanel, setShowUploadPanel] = useState(false)
   const [uploadNote, setUploadNote] = useState('')
   const [syncNote, setSyncNote] = useState('')
@@ -91,7 +98,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     const state = projectChapters.find((chapter) => chapter.syncState)?.syncState
     if (state === 'pending') {
       setGuide((current) => current ?? { step: 3, anchorId: projectChapters.find((chapter) => chapter.anchor)?.chapterId ?? null })
-    } else if (state === 'none' && !guideDismissed && projectChapters.some((chapter) => chapter.synced === false)) {
+    } else if (state === 'none' && !guideDismissed && projectChapters.some((chapter) => chapter.timing === 'clock')) {
       setGuide((current) => current ?? { step: 1, anchorId: null })
     }
   }, [projectChaptersLoaded, projectChapters, p.recording?.source, guideDismissed])
@@ -216,7 +223,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     : projectChapters
   const chaptersReadOnly = chapters.some((chapter) => chapter.readOnly)
   const syncState = chapters.find((chapter) => chapter.syncState)?.syncState
-  const hasImportedChapters = chapters.some((chapter) => chapter.sourceEventId)
+  const hasImportedChapters = chapters.some((chapter) => chapter.anchorable)
+  const untimedChapters = chapters.filter((chapter) => chapter.timing === 'untimed')
   const anchorChapter = guide?.anchorId ? chapters.find((chapter) => chapter.chapterId === guide.anchorId) : undefined
   const source = original ?? (recording?.kind === 'original' ? recording : null)
   const mockTrimDuration = source?.durationSeconds ?? 0
@@ -232,6 +240,10 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const showUploadCard = canUpload && !source
   const showUploadEntry = canUpload && !!source
   const uploadedRecording = p.recording?.source === 'upload'
+  const stepperVisible = !!uploadedRecording && !awaitingApproval && !chaptersReadOnly && !guide && untimedChapters.length > 0
+  const stepTarget = chapters.find((chapter) => chapter.chapterId === stepTargetId)
+    ?? untimedChapters.find((chapter) => !skippedIds.includes(chapter.chapterId))
+    ?? untimedChapters[0]
 
   // Jobbet (HLS → MP4 via MediaConvert, UNG-58) kan ta flera minuter för en
   // hel sändning — client.recordings.download pollar internt tills klart.
@@ -282,7 +294,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
 
   function chooseAnchor(index: number) {
     const chapter = chapters[index]
-    if (!chapter?.sourceEventId) return
+    if (!chapter?.anchorable) return
     setSyncNote('')
     setGuide({ step: 2, anchorId: chapter.chapterId })
     // Ett redan förankrat kapitel har en tid att utgå från — hoppa dit.
@@ -339,6 +351,67 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     } finally {
       setSyncing(false)
     }
+  }
+
+  // Nästa kapitel utan tid efter det angivna, i listans ordning (utan de överhoppade).
+  function nextUntimedAfter(chapterId: string, skipped: string[]) {
+    const index = untimedChapters.findIndex((chapter) => chapter.chapterId === chapterId)
+    const rest = index >= 0 ? untimedChapters.slice(index + 1) : untimedChapters
+    return rest.find((chapter) => !skipped.includes(chapter.chapterId)) ?? null
+  }
+
+  async function stepHere() {
+    if (!stepTarget) return
+    const offset = Math.round(previewPosition)
+    const previous = chapters.find((chapter) => chapter.chapterId === lastSteppedId)
+    // Ett kapitel som hamnar före det förra är oftast ett misstag — kräv ett klick till.
+    if (previous && previous.chapterId !== stepTarget.chapterId && offset < previous.offsetSeconds && orderWarning !== stepTarget.chapterId) {
+      setOrderWarning(stepTarget.chapterId)
+      return
+    }
+    setSyncing(true)
+    setSyncNote('')
+    setOrderWarning(null)
+    try {
+      await client.projects.updateDraftChapter(p.id, stepTarget.chapterId, { offsetSeconds: offset })
+      const next = nextUntimedAfter(stepTarget.chapterId, skippedIds)
+      setLastSteppedId(stepTarget.chapterId)
+      setStepTargetId(next?.chapterId ?? null)
+      await reloadChapters()
+      setHasUnpublishedChanges(true)
+    } catch (error) {
+      setSyncNote(error instanceof Error ? error.message : 'Tiden kunde inte sättas.')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  function skipStep() {
+    if (!stepTarget) return
+    const skipped = [...skippedIds, stepTarget.chapterId]
+    setSkippedIds(skipped)
+    setOrderWarning(null)
+    setStepTargetId(nextUntimedAfter(stepTarget.chapterId, skipped)?.chapterId ?? null)
+  }
+
+  function undoStep() {
+    const previous = chapters.find((chapter) => chapter.chapterId === lastSteppedId)
+    if (!previous) return
+    setOrderWarning(null)
+    setStepTargetId(previous.chapterId)
+    seekVideo(previous.offsetSeconds)
+  }
+
+  async function onChaptersImported(result: ChapterImportResult) {
+    setShowImport(false)
+    setGuide(null)
+    setGuideDismissed(false)
+    setSkippedIds([])
+    setLastSteppedId(null)
+    setStepTargetId(null)
+    await reloadChapters()
+    setHasUnpublishedChanges(true)
+    setSyncNote(result.outsideVideo > 0 ? `${result.outsideVideo} kapitel låg efter videons slut och har ingen tid än.` : '')
   }
 
   async function addChapterHere(kind: CueKind, label: string) {
@@ -865,6 +938,22 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     </div>
                   </div>}
                 </div>}
+                {stepperVisible && stepTarget && (
+                  <SyncStepper
+                    target={stepTarget}
+                    remaining={untimedChapters.length}
+                    position={previewPosition}
+                    playing={previewPlaying}
+                    busy={syncing}
+                    canUndo={!!lastSteppedId}
+                    warning={orderWarning === stepTarget.chapterId}
+                    onSeekBy={seekBy}
+                    onTogglePlay={togglePreviewPlayback}
+                    onStep={() => void stepHere()}
+                    onSkip={skipStep}
+                    onUndo={undoStep}
+                  />
+                )}
                 {showUploadEntry && (showUploadPanel ? (
                   <UploadPanel
                     projectId={p.id}
@@ -909,7 +998,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
               <AnchorGuide
                 step={guide.step}
                 anchorLabel={anchorChapter ? (chapterLabels[chapters.indexOf(anchorChapter)] ?? anchorChapter.label) : null}
-                anchorOffset={anchorChapter?.synced === false ? null : anchorChapter?.offsetSeconds ?? null}
+                anchorOffset={anchorChapter && anchorChapter.timing !== 'positioned' ? null : anchorChapter?.offsetSeconds ?? null}
                 position={previewPosition}
                 playing={previewPlaying}
                 busy={syncing}
@@ -957,15 +1046,15 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 {chapters.map((chapter, index) => (
                   <li
                     key={chapter.chapterId}
-                    class={`od-chapter-row${selectedChapter === index ? ' is-selected' : ''}${chapter.synced === false ? ' is-unsynced' : ''}${guide?.step === 1 && chapter.sourceEventId ? ' is-pickable' : ''}${guide?.anchorId === chapter.chapterId ? ' is-anchor' : ''}`}
+                    class={`od-chapter-row${selectedChapter === index ? ' is-selected' : ''}${chapter.synced === false ? ' is-unsynced' : ''}${(guide?.step === 1 && chapter.anchorable) || stepperVisible ? ' is-pickable' : ''}${stepperVisible && stepTarget?.chapterId === chapter.chapterId ? ' is-step-target' : ''}${guide?.anchorId === chapter.chapterId ? ' is-anchor' : ''}`}
                     onClick={(event) => {
-                      if (guide?.step !== 1) return
                       if ((event.target as HTMLElement).closest('button, input')) return
-                      chooseAnchor(index)
+                      if (guide?.step === 1) chooseAnchor(index)
+                      else if (stepperVisible) { setOrderWarning(null); setStepTargetId(chapter.chapterId) }
                     }}
                   >
                       {!chaptersReadOnly && guide?.anchorId === chapter.chapterId && <Icon name="anchor" size={16} />}
-                      {!chaptersReadOnly && chapter.synced === false && <span class="od-chapter-unsynced">Ej förankrad</span>}
+                      {!chaptersReadOnly && chapter.synced === false && <span class="od-chapter-unsynced">{chapter.timing === 'untimed' ? 'Ingen tid' : 'Ej förankrad'}</span>}
                       {!chaptersReadOnly && chapter.synced !== false && <button
                       class="od-chapter-play"
                       type="button"
@@ -1016,6 +1105,11 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
             )}
             {uploadedRecording && !awaitingApproval && !chaptersReadOnly && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed') && (
               <AddChapterForm position={previewPosition} onAdd={addChapterHere} />
+            )}
+            {uploadedRecording && !awaitingApproval && !chaptersReadOnly && p.publication.state !== 'published' && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed') && (
+              <div class="od-add-chapter">
+                <button class="btn btn-sm" type="button" onClick={() => setShowImport(true)}>Importera kapitel…</button>
+              </div>
             )}
             <footer class="od-chapters-footer">
               {(isAfter || p.publicMode === 'ondemand') && (
@@ -1081,6 +1175,15 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
             </button>
           </div>
         </Modal>
+      )}
+      {showImport && (
+        <ChapterImportDialog
+          projectId={p.id}
+          agendaId={p.agendaId}
+          currentChapterCount={chapters.length}
+          onClose={() => setShowImport(false)}
+          onImported={(result) => void onChaptersImported(result)}
+        />
       )}
       {publishing && (
         <Modal title="Publicerar ondemand" onClose={() => undefined}>
@@ -1419,16 +1522,7 @@ function AnchorGuide(props: AnchorGuideProps) {
           <p class="od-empty">
             <strong>Spela fram till där ”{anchorLabel}” börjar</strong> i videon och klicka Förankra.
           </p>
-          <div class="od-guide-controls">
-            <button class="btn btn-sm" type="button" onClick={() => props.onSeekBy(-5)}>−5 s</button>
-            <button class="btn btn-sm" type="button" onClick={() => props.onSeekBy(-1)}>−1 s</button>
-            <button class="btn btn-sm" type="button" aria-label="Spela eller pausa" onClick={props.onTogglePlay}>
-              <Icon name={playing ? 'pause' : 'play_arrow'} size={18} />
-            </button>
-            <output>{formatHms(Math.round(position))}</output>
-            <button class="btn btn-sm" type="button" onClick={() => props.onSeekBy(1)}>+1 s</button>
-            <button class="btn btn-sm" type="button" onClick={() => props.onSeekBy(5)}>+5 s</button>
-          </div>
+          <PositionControls position={position} playing={playing} onSeekBy={props.onSeekBy} onTogglePlay={props.onTogglePlay} />
           <div class="od-guide-controls">
             <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={props.onAnchor}>
               {busy ? 'Förankrar…' : 'Förankra'}
@@ -1453,6 +1547,66 @@ function AnchorGuide(props: AnchorGuideProps) {
           </div>
         </>
       )}
+    </div>
+  )
+}
+
+interface PositionControlsProps {
+  position: number
+  playing: boolean
+  onSeekBy: (seconds: number) => void
+  onTogglePlay: () => void
+}
+
+function PositionControls({ position, playing, onSeekBy, onTogglePlay }: PositionControlsProps) {
+  return (
+    <div class="od-guide-controls">
+      <button class="btn btn-sm" type="button" onClick={() => onSeekBy(-5)}>−5 s</button>
+      <button class="btn btn-sm" type="button" onClick={() => onSeekBy(-1)}>−1 s</button>
+      <button class="btn btn-sm" type="button" aria-label="Spela eller pausa" onClick={onTogglePlay}>
+        <Icon name={playing ? 'pause' : 'play_arrow'} size={18} />
+      </button>
+      <output>{formatHms(Math.round(position))}</output>
+      <button class="btn btn-sm" type="button" onClick={() => onSeekBy(1)}>+1 s</button>
+      <button class="btn btn-sm" type="button" onClick={() => onSeekBy(5)}>+5 s</button>
+    </div>
+  )
+}
+
+interface SyncStepperProps {
+  target: Chapter
+  remaining: number
+  position: number
+  playing: boolean
+  busy: boolean
+  canUndo: boolean
+  warning: boolean
+  onSeekBy: (seconds: number) => void
+  onTogglePlay: () => void
+  onStep: () => void
+  onSkip: () => void
+  onUndo: () => void
+}
+
+// Kapitel utan tid: spela videon och klicka Synka när nästa kapitel börjar — tiden sätts till
+// nuvarande position och nästa kapitel står på tur. Klicka på ett kapitel i listan för att välja ett annat.
+function SyncStepper(props: SyncStepperProps) {
+  const { target, remaining, position, playing, busy, canUndo, warning } = props
+  return (
+    <div class="od-guide" role="region" aria-label="Sätt tider på kapitlen">
+      <div class="od-guide-head">
+        <strong>Sätt tider på kapitlen · {remaining} kvar</strong>
+      </div>
+      <p class="od-empty">Nästa: <strong>{target.label}</strong></p>
+      <PositionControls position={position} playing={playing} onSeekBy={props.onSeekBy} onTogglePlay={props.onTogglePlay} />
+      {warning && <p class="od-download-error">Kapitlet hamnar före det förra. Klicka Synka igen om det är rätt.</p>}
+      <div class="od-guide-controls">
+        <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={props.onStep}>
+          {busy ? 'Sätter…' : `Synka här · ${formatHms(Math.round(position))}`}
+        </button>
+        <button class="btn btn-sm" type="button" disabled={busy} onClick={props.onSkip}>Hoppa över</button>
+        <button class="btn btn-sm" type="button" disabled={busy || !canUndo} onClick={props.onUndo}>Ångra förra</button>
+      </div>
     </div>
   )
 }
