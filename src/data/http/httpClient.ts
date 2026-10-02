@@ -110,28 +110,20 @@ async function pollDownloadJob(jobId: string): Promise<ServerDownloadJob> {
   }
 }
 
-// Samma gleshet som nedladdning — HLS-transkodning via MediaConvert tar
-// typiskt minuter (UNG-55/56/57).
-async function pollUploadJob(jobId: string): Promise<ServerUploadJob> {
-  for (;;) {
-    const job = await api<ServerUploadJob>(`/upload-jobs/${jobId}`)
-    if (job.state === 'processing') {
-      await sleep(3000)
-      continue
+// Presignade S3-URL:er pekar inte mot live-server-v3 — ett rått PUT mot S3, inte
+// via api()-hjälparen. XHR i stället för fetch eftersom fetch saknar
+// uppladdningsframsteg, vilket en fil på flera GB behöver.
+function putFile(url: string, file: File, onProgress?: (fraction: number) => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', url)
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(event.loaded / event.total)
     }
-    if (job.state === 'error') {
-      throw new Error(job.error?.message ?? 'Uppladdningen kunde inte bearbetas.')
-    }
-    return job
-  }
-}
-
-// Presignade S3-URL:er pekar inte mot live-server-v3 — ett vanligt fetch-PUT
-// rakt mot S3, inte via api()-hjälparen (som alltid prependar BASE och sätter
-// JSON-content-type).
-async function putFile(url: string, file: File): Promise<void> {
-  const response = await fetch(url, { method: 'PUT', body: file })
-  if (!response.ok) throw new Error(`Uppladdningen misslyckades (${response.status}).`)
+    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Uppladdningen misslyckades (${xhr.status}).`)))
+    xhr.onerror = () => reject(new Error('Uppladdningen avbröts — kontrollera nätverksanslutningen.'))
+    xhr.send(file)
+  })
 }
 
 // ---- Dagordningar ----
@@ -351,7 +343,7 @@ function toProjectLite(dto: ServerProject): Project {
       streamStartedAt: dto.technicalHealth.streamStartedAt,
       recordingState: dto.technicalHealth.recordingState as RecordingState | null,
     },
-    recording: dto.recording ? { id: dto.recording.id, state: dto.recording.state as RecordingState, hlsUrl: dto.recording.hlsUrl } : null,
+    recording: dto.recording ? { id: dto.recording.id, state: dto.recording.state as RecordingState, hlsUrl: dto.recording.hlsUrl, source: dto.recording.source } : null,
     publication: { state: dto.publication.state as PublicationState },
     publicationHistory: dto.publicationHistory.map((entry): PublicationHistory => ({
       id: entry.id,
@@ -581,18 +573,16 @@ export const httpClient: Client = {
       if (job.state === 'done') return job
       return pollDownloadJob(job.jobId)
     },
-    async upload(file, projectId, name) {
+    async upload(file, projectId, name, onProgress) {
       const init = await api<{ recordingId: string; uploadUrl: string }>('/recordings/upload', {
         method: 'POST',
         body: { fileName: file.name, projectId },
       })
-      await putFile(init.uploadUrl, file)
-      const job = await api<ServerUploadJob>(`/recordings/${init.recordingId}/upload-complete`, {
+      await putFile(init.uploadUrl, file, onProgress)
+      return api<ServerUploadJob>(`/recordings/${init.recordingId}/upload-complete`, {
         method: 'POST',
         body: { fileName: file.name, projectId, name },
       })
-      if (job.state === 'done') return job
-      return pollUploadJob(job.jobId)
     },
   },
   channels: {

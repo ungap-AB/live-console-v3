@@ -106,12 +106,18 @@ export function confirmationCopy(from: PublicMode, to: PublicMode): Confirmation
 // Servern har egna vägar för publicering: PUT /public-mode byter bara läge,
 // medan publicera/avpublicera/återgå till live också hanterar inspelning,
 // kapitel och manifest. Därför avgör målet vilka steg som körs.
-export type ModeChangeStep = 'publish' | 'unpublish' | 'returnToLive' | 'setMode'
+export type ModeChangeStep = 'close' | 'publish' | 'unpublish' | 'returnToLive' | 'setMode'
 
-export function modeChangePlan(from: PublicMode, to: PublicMode): ModeChangeStep[] {
+export function modeChangePlan(from: PublicMode, to: PublicMode, published = true): ModeChangeStep[] {
   if (from === to) return []
+  // Before → Ondemand är "jag har en färdig video": gå till Ondemand-vyn för
+  // att ladda upp/granska, publicera inte något (publiken ska inte se något
+  // förrän operatören trycker Publicera). Stängd spelare krävs för trimning.
+  if (from === 'before' && to === 'ondemand') return ['close', 'setMode']
   if (to === 'ondemand') return ['publish']
   if (from === 'ondemand') {
+    // Uppladdad video som aldrig publicerats: inget att avpublicera.
+    if (to === 'before' && !published) return ['setMode']
     if (to === 'live') return ['returnToLive']
     if (to === 'after') return ['unpublish']
     return ['unpublish', 'setMode']

@@ -448,7 +448,7 @@ export const mockClient: Client = {
         expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
       })
     },
-    async upload(file, projectId, name) {
+    async upload(file, projectId, name, onProgress) {
       const project = projects.find((p) => p.id === projectId)
       if (!project) throw new Error(`Projektet ${projectId} finns inte`)
       const id = `r${nextId++}`
@@ -467,8 +467,9 @@ export const mockClient: Client = {
         chapters: [],
       }
       recordings = [...recordings, recording]
-      project.recording = { id, state: 'recorded', hlsUrl: recording.hlsUrl }
-      return delay({ jobId: `uj-${id}`, state: 'done' as const, recordingId: id })
+      project.recording = { id, state: 'recorded', hlsUrl: recording.hlsUrl, source: 'upload' }
+      onProgress?.(1)
+      return delay({ jobId: `uj-${id}`, state: 'processing' as const, recordingId: id })
     },
   },
   channels: {

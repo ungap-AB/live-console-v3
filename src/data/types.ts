@@ -149,7 +149,7 @@ export interface Project {
   playerUrl: string
   channel: { id: string; state: ChannelState } | null
   technicalHealth: ProjectTechnicalHealth
-  recording: { id: string; state: RecordingState; hlsUrl?: string } | null
+  recording: { id: string; state: RecordingState; hlsUrl?: string; source?: string } | null
   publication: { state: PublicationState }
   publicationHistory: PublicationHistory[]
   capabilities: ProjectCapabilities

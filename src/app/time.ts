@@ -19,6 +19,18 @@ export function formatGb(bytes: number): string {
   return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB'
 }
 
+// Väljer enhet efter storlek — formatGb visar 0.0 GB för allt under ~50 MB.
+export function formatBytes(bytes: number): string {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let value = bytes
+  let unit = 0
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024
+    unit++
+  }
+  return `${unit === 0 ? value : value.toFixed(value >= 100 ? 0 : 1)} ${units[unit]}`
+}
+
 export function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString('sv-SE', {
     day: 'numeric',

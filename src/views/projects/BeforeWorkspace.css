@@ -70,6 +70,10 @@
   color: var(--warn);
 }
 
+.bw-status .is-optional .material-symbols-outlined {
+  color: var(--ink-3);
+}
+
 .bw-status-text {
   display: flex;
   flex-direction: column;
@@ -163,8 +167,13 @@
   white-space: nowrap;
 }
 
-.bw-menu button:hover {
+.bw-menu button:hover:not(:disabled) {
   background: var(--accent-soft);
+}
+
+.bw-menu button:disabled {
+  color: var(--ink-3);
+  cursor: default;
 }
 
 .bw-menu button.is-danger {

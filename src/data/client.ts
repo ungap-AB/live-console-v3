@@ -89,8 +89,12 @@ export interface Client {
     trash(id: string): Promise<void>
     trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number }): Promise<Recording>
     download(id: string): Promise<import('./types').DownloadJob>
-    /** UNG-55/56/57: laddar upp en videofil (presigned PUT mot S3), startar HLS-transkodning och pollar tills klar. Inspelningen hör alltid till ett projekt. */
-    upload(file: File, projectId: string, name?: string): Promise<import('./types').UploadJob>
+    /**
+     * UNG-55/56/57: laddar upp en videofil (presigned PUT mot S3) och startar HLS-transkodningen.
+     * Resolvar när transkodningen startat — inte när den är klar; servern slutför jobbet själv och
+     * projektets recording.state går från 'processing' till 'recorded'. Inspelningen hör alltid till ett projekt.
+     */
+    upload(file: File, projectId: string, name?: string, onProgress?: (fraction: number) => void): Promise<import('./types').UploadJob>
   }
   channels: {
     list(query?: string): Promise<Channel[]>

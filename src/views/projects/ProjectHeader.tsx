@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
+import { useDismiss } from '../../app/useDismiss'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
@@ -99,21 +100,7 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
     window.open(iframeExampleUrl(), '_blank', 'noopener,noreferrer')
   }
 
-  useEffect(() => {
-    if (!showIframeMenu) return
-    function onDocMouseDown(e: MouseEvent) {
-      if (iframeMenuRef.current && !iframeMenuRef.current.contains(e.target as Node)) setShowIframeMenu(false)
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setShowIframeMenu(false)
-    }
-    document.addEventListener('mousedown', onDocMouseDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('mousedown', onDocMouseDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [showIframeMenu])
+  useDismiss(showIframeMenu, iframeMenuRef, () => setShowIframeMenu(false))
 
   useEffect(() => {
     if (!showPreview) return

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Chapter, CueKind, Project, ProjectRecording, Recording } from '../../data/types'
-import { formatDateTime, formatHms } from '../../app/time'
+import { formatBytes, formatDateTime, formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
@@ -70,8 +70,20 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     Record<string, { status: 'processing' | 'ready' | 'error'; url?: string; message?: string }>
   >({})
 
+  // Misslyckad transkodning: servern tar bort inspelningsraden, så projektet går
+  // från "bearbetas" (upload) till ingen inspelning alls — berätta varför.
+  const [uploadFailed, setUploadFailed] = useState(false)
+  const wasUploadProcessing = useRef(false)
+
   const recordingId = p.recording?.id
   const recordingState = p.recording?.state
+
+  useEffect(() => {
+    const processing = p.recording?.state === 'processing' && p.recording.source === 'upload'
+    if (processing) setUploadFailed(false)
+    else if (wasUploadProcessing.current && !p.recording) setUploadFailed(true)
+    wasUploadProcessing.current = processing
+  }, [p.recording?.id, p.recording?.state])
 
   useEffect(() => {
     const active = recording
@@ -188,6 +200,10 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const source = original ?? (recording?.kind === 'original' ? recording : null)
   const mockTrimDuration = source?.durationSeconds ?? 0
   const previewUrl = source?.hlsUrl ?? ''
+  // Uppladdning är bara aktuell innan något är publicerat — i Ondemand-läge utan
+  // publicering ("Ladda upp video" från Before) eller medan ingenting finns.
+  const showUploadCard = !isAfter && p.publication.state !== 'published' && !broadcastInProgress && !recordingProcessing
+  const uploadedRecording = p.recording?.source === 'upload'
 
   // Jobbet (HLS → MP4 via MediaConvert, UNG-58) kan ta flera minuter för en
   // hel sändning — client.recordings.download pollar internt tills klart.
@@ -474,7 +490,10 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const draftDirty = trimDirty || Object.entries(chapterLabels).some(([index, label]) => label !== chapters[Number(index)]?.label)
   // Backend spärrar redan publish medan enkodern sänder (channel_live) — spärra
   // knappen här också så det inte ser ut som ett fungerande val.
-  const canPublishOndemand = !chaptersReadOnly && !broadcastInProgress && (isAfter || hasUnpublishedChanges || trimDirty)
+  // Ondemand utan publicering = uppladdad video som väntar på granskning (Before → Ondemand).
+  const stagedUpload = p.publicMode === 'ondemand' && p.publication.state !== 'published'
+    && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed')
+  const canPublishOndemand = !chaptersReadOnly && !broadcastInProgress && (isAfter || hasUnpublishedChanges || trimDirty || stagedUpload)
   const videoDuration = previewVideoRef.current?.duration || mockTrimDuration
   const canReturnToSaved = selectedChapter !== null && draftOffsets[selectedChapter] !== undefined
 
@@ -614,9 +633,13 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     </div>
                   ) : recordingProcessing ? (
                     <div class="od-broadcast-warning" role="status">
-                      <strong>Inspelningen bearbetas</strong>
-                      <span>Vänta tills inspelningen är klar innan du trimmar och publicerar ondemand.</span>
-                      {processingStuck && (
+                      <strong>{p.recording?.source === 'upload' ? 'Videon bearbetas' : 'Inspelningen bearbetas'}</strong>
+                      {p.recording?.source === 'upload' ? (
+                        <span>Videon konverteras för uppspelning, vilket kan ta några minuter beroende på längd. Du kan lämna sidan — bearbetningen fortsätter.</span>
+                      ) : (
+                        <span>Vänta tills inspelningen är klar innan du trimmar och publicerar ondemand.</span>
+                      )}
+                      {processingStuck && p.recording?.source !== 'upload' && (
                         <>
                           <span>Det här tar ovanligt lång tid — sändningen kan ha varit för kort för att AWS skulle spara en inspelning.</span>
                           {isAfter && projectRecordings.length > 1 && (
@@ -713,20 +736,29 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 </div>}
               </div>
             )}
-            {!isAfter && !(source || previewUrl || broadcastInProgress || recordingProcessing) && (
-              <div class="od-upload" aria-label="Ladda upp video">
-                <p class="od-empty">Ingen sändning än. Ladda upp en färdig video för att visa den som ondemand.</p>
-                <UploadPanel projectId={p.id} projectName={p.name} onUploaded={() => void actions.refreshProject()} />
-              </div>
+            {showUploadCard && (
+              <UploadPanel
+                projectId={p.id}
+                projectName={p.name}
+                replacing={!!source}
+                failed={uploadFailed}
+                onUploaded={() => void actions.refreshProject()}
+              />
             )}
             <footer class="od-trim-footer">
             </footer>
           </section>
 
           <section class={`od-col od-chapters-col${chaptersReadOnly ? ' is-readonly' : ''}`} aria-labelledby="od-chapters-title">
-            {chaptersReadOnly && <p class="od-empty">Kapitel går att redigera först när inspelningen är klar</p>}
+            {chaptersReadOnly && p.recording && <p class="od-empty">Kapitel går att redigera först när inspelningen är klar</p>}
             {chapters.length === 0 ? (
-              <p class="od-empty">Inga kapitel än. De skapas från det som spelades ut under sändningen.</p>
+              <p class="od-empty">
+                {uploadedRecording
+                  ? 'En uppladdad video har inga kapitel — de skapas från det som spelas ut under en livesändning.'
+                  : !p.recording
+                    ? 'Kapitel skapas från det som spelas ut under en livesändning.'
+                    : 'Inga kapitel än. De skapas från det som spelades ut under sändningen.'}
+              </p>
             ) : (
               <ul class="od-chapters">
                 {chapters.map((chapter, index) => (
@@ -904,25 +936,56 @@ function DownloadButton({ label, fileName, download, onDownload }: DownloadButto
 interface UploadPanelProps {
   projectId: string
   projectName: string
+  /** Det finns redan en (ännu opublicerad) video — kortet erbjuder då att ersätta den. */
+  replacing: boolean
+  failed: boolean
   onUploaded: () => void
 }
 
-// UNG-55/56/57: laddar upp en videofil direkt till S3 (presigned PUT) och
-// startar HLS-transkodning. Inspelningar måste alltid höra till ett projekt
-// (Anders, 2026-10-01) — därför finns ingen fristående uppladdning längre,
-// bara den här, inne i projektets Ondemand-vy.
-function UploadPanel({ projectId, projectName, onUploaded }: UploadPanelProps) {
+function withoutExtension(fileName: string): string {
+  const dot = fileName.lastIndexOf('.')
+  return dot > 0 ? fileName.slice(0, dot) : fileName
+}
+
+// UNG-55/56/57: direktuppladdning till S3 med framsteg, sedan startar servern
+// HLS-transkodningen. Inspelningar hör alltid till ett projekt (Anders,
+// 2026-10-01) — därför finns uppladdningen bara här, inte som fristående bibliotek.
+function UploadPanel({ projectId, projectName, replacing, failed, onUploaded }: UploadPanelProps) {
   const [file, setFile] = useState<File | null>(null)
   const [name, setName] = useState('')
   const [status, setStatus] = useState<'idle' | 'uploading' | 'error'>('idle')
+  const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
+  const [dragging, setDragging] = useState(false)
+  const uploading = status === 'uploading'
+
+  // En flera GB stor uppladdning hänger på den här fliken tills den är klar.
+  useEffect(() => {
+    if (!uploading) return
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault()
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [uploading])
+
+  function choose(next: File | null) {
+    if (next && !next.type.startsWith('video/')) {
+      setError('Det där verkar inte vara en videofil.')
+      setStatus('error')
+      return
+    }
+    setFile(next)
+    setName(next ? withoutExtension(next.name) : '')
+    setStatus('idle')
+    setError('')
+  }
 
   async function upload() {
     if (!file) return
     setStatus('uploading')
+    setProgress(0)
     setError('')
     try {
-      await client.recordings.upload(file, projectId, name.trim() || undefined)
+      await client.recordings.upload(file, projectId, name.trim() || undefined, setProgress)
       setStatus('idle')
       setFile(null)
       setName('')
@@ -934,25 +997,56 @@ function UploadPanel({ projectId, projectName, onUploaded }: UploadPanelProps) {
   }
 
   return (
-    <div class="od-upload-panel">
-      <input
-        type="file"
-        accept="video/*"
-        aria-label="Välj videofil"
-        disabled={status === 'uploading'}
-        onChange={(event) => setFile(event.currentTarget.files?.[0] ?? null)}
-      />
-      <input
-        type="text"
-        placeholder={projectName}
-        aria-label="Namn på inspelningen"
-        value={name}
-        disabled={status === 'uploading'}
-        onInput={(event) => setName(event.currentTarget.value)}
-      />
-      <button class="btn btn-sm btn-primary" type="button" disabled={!file || status === 'uploading'} onClick={() => void upload()}>
-        {status === 'uploading' ? 'Laddar upp…' : 'Ladda upp video'}
-      </button>
+    <div class="od-upload" aria-label="Ladda upp video">
+      <p class="od-upload-title">
+        {replacing ? 'Ladda upp en annan video i stället' : `Ladda upp en färdig video till ${projectName}`}
+      </p>
+      {failed && <p class="od-download-error">Bearbetningen av den uppladdade videon misslyckades. Försök igen, eller prova en annan fil.</p>}
+      <label
+        class={`od-dropzone${dragging ? ' is-dragging' : ''}${file ? ' has-file' : ''}${uploading ? ' is-disabled' : ''}`}
+        onDragOver={(event) => { event.preventDefault(); if (!uploading) setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(event) => {
+          event.preventDefault()
+          setDragging(false)
+          if (!uploading) choose(event.dataTransfer?.files?.[0] ?? null)
+        }}
+      >
+        <input
+          type="file"
+          accept="video/*"
+          aria-label="Välj videofil"
+          disabled={uploading}
+          onChange={(event) => choose(event.currentTarget.files?.[0] ?? null)}
+        />
+        <Icon name="upload_file" size={28} />
+        {file ? (
+          <span><strong>{file.name}</strong> · {formatBytes(file.size)}</span>
+        ) : (
+          <span>Dra hit en videofil, eller klicka för att välja</span>
+        )}
+      </label>
+      {file && (
+        <div class="od-upload-panel">
+          <input
+            type="text"
+            placeholder="Namn på inspelningen"
+            aria-label="Namn på inspelningen"
+            value={name}
+            disabled={uploading}
+            onInput={(event) => setName(event.currentTarget.value)}
+          />
+          <button class="btn btn-sm btn-primary" type="button" disabled={uploading} onClick={() => void upload()}>
+            {uploading ? 'Laddar upp…' : 'Ladda upp'}
+          </button>
+        </div>
+      )}
+      {uploading && (
+        <div class="od-upload-progress" role="status">
+          <progress value={progress} max={1} />
+          <span>{Math.round(progress * 100)} % — lämna inte sidan förrän uppladdningen är klar</span>
+        </div>
+      )}
       {status === 'error' && <span class="od-download-error">{error}</span>}
     </div>
   )

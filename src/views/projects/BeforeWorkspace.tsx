@@ -1,6 +1,7 @@
-import { useState } from 'preact/hooks'
+import { useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { ChannelHealth, Project } from '../../data/types'
+import { useDismiss } from '../../app/useDismiss'
 import { useResource } from '../../app/useResource'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
@@ -8,6 +9,7 @@ import type { ProjectActions } from './actions'
 import { MeetingBindingModal } from './MeetingBindingModal'
 import { linkedResourceLabel } from './preparationLabels'
 import { PlayoutColumns } from './PlayoutColumns'
+import { useModeChange } from './useModeChange'
 import { useNameList } from './useNameList'
 import './BeforeWorkspace.css'
 
@@ -34,6 +36,7 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
   const [openPicker, setOpenPicker] = useState<'agenda' | 'namelist' | null>(null)
   const [notUsed, setNotUsed] = useState<string[]>([])
   const [showMeeting, setShowMeeting] = useState(false)
+  const { selectMode } = useModeChange(p, actions)
 
   const hasIngest = p.channel !== null
   const receivingSignal = health?.livePhase === 'live'
@@ -67,29 +70,23 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
     setOpenMenu((current) => current === label ? null : label)
   }
 
-  function actionMenu(label: string, actionsForItem: { label: string; onClick: () => void; danger?: boolean }[]) {
+  function actionMenu(label: string, actionsForItem: BwMenuItem[]) {
     return (
-      <div class="bw-menu-wrap">
-        <button class="bw-menu-button" type="button" aria-label={`Åtgärder för ${label}`} aria-expanded={openMenu === label} onClick={() => toggleMenu(label)}>
-          <Icon name="more_horiz" size={20} />
-        </button>
-        {openMenu === label && (
-          <div class="bw-menu" role="menu">
-            {actionsForItem.map((item) => (
-              <button key={item.label} class={item.danger ? 'is-danger' : ''} type="button" role="menuitem" onClick={item.onClick}>
-                {item.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <BwMenu
+        label={label}
+        items={actionsForItem}
+        open={openMenu === label}
+        onToggle={() => toggleMenu(label)}
+        onClose={() => setOpenMenu((current) => (current === label ? null : current))}
+      />
     )
   }
 
-  function preparationCard(label: string, value: string, ready: boolean, menu: preact.ComponentChildren) {
+  // optional: ett alternativ, inte ett obligatoriskt steg — neutral ikon i stället för kryssruta.
+  function preparationCard(label: string, value: string, ready: boolean, menu: preact.ComponentChildren, optional = false) {
     return (
-      <li key={label} class={ready ? 'is-ready' : 'is-pending'}>
-        <Icon name={ready ? 'check_circle' : 'radio_button_unchecked'} size={20} />
+      <li key={label} class={optional ? 'is-optional' : ready ? 'is-ready' : 'is-pending'}>
+        <Icon name={optional ? 'upload_file' : ready ? 'check_circle' : 'radio_button_unchecked'} size={20} />
         <span class="bw-status-text">
           <span class="bw-status-label">{label}</span>
           <span class="bw-status-value">
@@ -105,11 +102,9 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
   return (
     <div class="bw">
       <ul class="bw-status" aria-label="Status för förberedelser">
-        {preparationCard('Meeting', p.meetingBindingId ? 'Kopplad' : 'Ej kopplad', !!p.meetingBindingId, actionMenu('Meeting', [
-          { label: 'Koppla', onClick: () => { setOpenMenu(null); setShowMeeting(true) } },
-        ]))}
         {preparationCard('Dagordning', p.agendaId ? linkedResourceLabel(agendaResource.data) : 'Ej kopplad', !!p.agendaId, actionMenu('Dagordning', [
           { label: 'Koppla', onClick: () => { setOpenMenu(null); setOpenPicker('agenda') } },
+          { label: 'Koppla till Meeting...', onClick: () => { setOpenMenu(null); setShowMeeting(true) } },
           { label: 'Använd ej', onClick: () => { void actions.setAgenda(null); markNotUsed('Dagordning') } },
         ]))}
         {preparationCard('Namnlista', p.namelistId ? linkedResourceLabel(nameListResource.data) : 'Ej kopplad', !!p.namelistId, actionMenu('Namnlista', [
@@ -137,6 +132,14 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
           ] : []),
           ])}
         </>)}
+        {preparationCard('Ladda upp video', 'Valfritt – i stället för livesändning', false, actionMenu('Ladda upp video', [
+          {
+            label: 'Ladda upp...',
+            onClick: () => { setOpenMenu(null); selectMode('ondemand') },
+            disabled: receivingSignal,
+            title: receivingSignal ? 'Enkodern sänder just nu.' : undefined,
+          },
+        ]), true)}
       </ul>
 
       <PlayoutColumns project={p} actions={actions} openPicker={openPicker} onPickerClosed={() => setOpenPicker(null)} />
@@ -160,6 +163,43 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
           actions={actions}
           onClose={() => setShowMeeting(false)}
         />
+      )}
+    </div>
+  )
+}
+
+interface BwMenuItem {
+  label: string
+  onClick: () => void
+  danger?: boolean
+  disabled?: boolean
+  title?: string
+}
+
+interface BwMenuProps {
+  label: string
+  items: BwMenuItem[]
+  open: boolean
+  onToggle: () => void
+  onClose: () => void
+}
+
+function BwMenu({ label, items, open, onToggle, onClose }: BwMenuProps) {
+  const ref = useRef<HTMLDivElement>(null)
+  useDismiss(open, ref, onClose)
+  return (
+    <div class="bw-menu-wrap" ref={ref}>
+      <button class="bw-menu-button" type="button" aria-label={`Åtgärder för ${label}`} aria-expanded={open} onClick={onToggle}>
+        <Icon name="more_horiz" size={20} />
+      </button>
+      {open && (
+        <div class="bw-menu" role="menu">
+          {items.map((item) => (
+            <button key={item.label} class={item.danger ? 'is-danger' : ''} type="button" role="menuitem" disabled={item.disabled} title={item.title} onClick={item.onClick}>
+              {item.label}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   )

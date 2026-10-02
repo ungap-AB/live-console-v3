@@ -81,6 +81,7 @@ export interface ServerRecordingRef {
   id: string
   state: string
   hlsUrl?: string
+  source?: string
   availabilityReason?: string
 }
 

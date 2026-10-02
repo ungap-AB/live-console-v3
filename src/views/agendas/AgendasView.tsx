@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Agenda, AgendaItem, Project } from '../../data/types'
+import { useDismiss } from '../../app/useDismiss'
 import { useResource } from '../../app/useResource'
 import { SplitPane } from '../../components/SplitPane'
 import { StatusChip } from '../../components/StatusChip'
@@ -43,6 +44,8 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
   const [importText, setImportText] = useState('')
   const [importError, setImportError] = useState<string | null>(null)
   const [usedByOpen, setUsedByOpen] = useState(false)
+  const usedByRef = useRef<HTMLSpanElement>(null)
+  useDismiss(usedByOpen, usedByRef, () => setUsedByOpen(false))
   const [pdfItem, setPdfItem] = useState<AgendaItem | null>(null)
 
   const projectsResource = useResource(() => client.projects.list(), [])
@@ -304,7 +307,7 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
                         </button>
                       </span>
                     ) : (
-                      <span class="used-by">
+                      <span class="used-by" ref={usedByRef}>
                         <button class="used-by-link" type="button" onClick={() => setUsedByOpen((v) => !v)}>
                           Används i {selected.usedInProjects} projekt
                         </button>
