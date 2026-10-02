@@ -162,7 +162,7 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
 
   async function sendPasswordReset(user: UserAccount) {
     await client.users.sendPasswordReset(user.id)
-    setToast(`Återställningslänk skickad till ${user.email}. Länken hanteras utanför Ungap Live.`)
+    setToast(`Ett återställningsmejl har skickats till ${user.email}. Länken gäller i en timme.`)
   }
 
   function onInvited(user: UserAccount) {

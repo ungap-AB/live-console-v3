@@ -425,6 +425,9 @@ function toCurrentUser(dto: ServerCurrentUser): CurrentUser {
 
 export const httpClient: Client = {
   auth: {
+    async requestPasswordReset(email) {
+      await api<void>('/auth/password-reset', { method: 'POST', body: { email } })
+    },
     async credentialLinkInfo(token) {
       return api<CredentialLinkInfo>(`/auth/credential-links/${encodeURIComponent(token)}`)
     },

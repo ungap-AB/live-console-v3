@@ -154,3 +154,19 @@
   text-align: center;
   user-select: all;
 }
+
+.login-link {
+  align-self: center;
+  padding: 4px;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink-2);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.login-link:hover {
+  color: var(--ink);
+}

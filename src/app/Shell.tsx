@@ -102,8 +102,8 @@ export function Shell({ active, children, projectsNavAction, onLogout, currentUs
 
       <nav class={`rail ${navOpen ? 'open' : ''}`}>
         <div class="brand">
-          <img class="brand-logo theme-light-only" src={logoLightUrl} alt="Ungap" />
-          <img class="brand-logo theme-dark-only" src={logoDarkUrl} alt="Ungap" />
+          <img class="brand-logo theme-light-only" src={logoLightUrl} alt="ungap" />
+          <img class="brand-logo theme-dark-only" src={logoDarkUrl} alt="ungap" />
         </div>
 
         <div class="nav-groups">
