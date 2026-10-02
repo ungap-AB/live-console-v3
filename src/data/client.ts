@@ -176,10 +176,12 @@ export interface Client {
     updateTimelineEvent(id: string, eventId: string, input: { label?: string; offsetSeconds?: number }): Promise<TimelineEvent>
     deleteTimelineEvent(id: string, eventId: string): Promise<void>
     updateDraftChapter(id: string, chapterId: string, input: { label?: string; offsetSeconds?: number }): Promise<void>
-    /** Uppladdad video: ankrar alla osynkade kapitel — ankarkapitlet ligger vid anchorOffsetSeconds, övriga efter sin tidsskillnad mot det. */
+    /** Uppladdad video: förankrar kapitellistan — ankarkapitlet ligger vid anchorOffsetSeconds; redan förankrade kapitel flyttas lika mycket, övriga räknas efter sin tidsskillnad mot det. */
     syncChapters(id: string, anchorChapterId: string, anchorOffsetSeconds: number): Promise<{ synced: number; outsideVideo: number }>
     /** Lägger till ett eget kapitel på en videoposition (uppladdad video). */
     addChapter(id: string, input: { kind: CueKind; label: string; offsetSeconds: number }): Promise<void>
+    /** Operatören litar på förankringen — hävs publiceringsspärren. */
+    confirmChapterSync(id: string): Promise<void>
     deleteDraftChapter(id: string, chapterId: string): Promise<void>
     updateChapterOffset(id: string, index: number, input: { offsetSeconds?: number; label?: string }): Promise<void>
     updatePublishedChapter(id: string, chapterId: string, input: { offsetSeconds?: number; label?: string }): Promise<void>

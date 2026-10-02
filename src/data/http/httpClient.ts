@@ -728,8 +728,13 @@ export const httpClient: Client = {
       return fetchPlayout(id)
     },
     async chapters(id) {
-      const response = await api<{ frozen: boolean; chapters: ServerChapter[]; readOnly?: boolean }>(`/projects/${id}/chapters`)
-      return response.chapters.map((chapter) => ({ ...toChapter(chapter), readOnly: response.readOnly }))
+      const response = await api<{ frozen: boolean; chapters: ServerChapter[]; readOnly?: boolean; syncState?: 'none' | 'pending' | 'confirmed' | null; anchorChapterId?: string | null }>(`/projects/${id}/chapters`)
+      return response.chapters.map((chapter) => ({
+        ...toChapter(chapter),
+        readOnly: response.readOnly,
+        syncState: response.syncState ?? undefined,
+        anchor: response.anchorChapterId === chapter.chapterId,
+      }))
     },
     async recordings(id) {
       const list = await api<ServerProjectRecording[]>(`/projects/${id}/recordings`)
@@ -879,6 +884,9 @@ export const httpClient: Client = {
         body: { anchorChapterId, anchorOffsetSeconds },
       })
       return { synced: result.synced, outsideVideo: result.outsideVideo }
+    },
+    async confirmChapterSync(id) {
+      await api<void>(`/projects/${id}/timeline-draft/confirm-sync`, { method: 'POST' })
     },
     async addChapter(id, input) {
       await api<unknown>(`/projects/${id}/timeline-draft/chapters`, { method: 'POST', body: input })

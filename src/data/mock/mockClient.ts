@@ -1090,6 +1090,9 @@ export const mockClient: Client = {
     async syncChapters(_id, _anchorChapterId, _anchorOffsetSeconds) {
       return delay({ synced: 0, outsideVideo: 0 })
     },
+    async confirmChapterSync(_id) {
+      return delay(undefined)
+    },
     async addChapter(id, input) {
       const project = findProject(id)
       const recording = recordings.find((r) => r.id === project.recording?.id)

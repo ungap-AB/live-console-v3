@@ -74,6 +74,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   // från "bearbetas" (upload) till ingen inspelning alls — berätta varför.
   const [uploadFailed, setUploadFailed] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [guide, setGuide] = useState<{ step: 1 | 2 | 3; anchorId: string | null } | null>(null)
+  const [guideDismissed, setGuideDismissed] = useState(false)
   const [showUploadPanel, setShowUploadPanel] = useState(false)
   const [uploadNote, setUploadNote] = useState('')
   const [syncNote, setSyncNote] = useState('')
@@ -81,6 +83,18 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
 
   const recordingId = p.recording?.id
   const recordingState = p.recording?.state
+
+  // Guiden för att förankra kapitellistan mot en uppladdad video startar själv när
+  // kapitel väntar på förankring, och återupptas i steg 3 om förankringen inte bekräftats.
+  useEffect(() => {
+    if (!projectChaptersLoaded || p.recording?.source !== 'upload') return
+    const state = projectChapters.find((chapter) => chapter.syncState)?.syncState
+    if (state === 'pending') {
+      setGuide((current) => current ?? { step: 3, anchorId: projectChapters.find((chapter) => chapter.anchor)?.chapterId ?? null })
+    } else if (state === 'none' && !guideDismissed && projectChapters.some((chapter) => chapter.synced === false)) {
+      setGuide((current) => current ?? { step: 1, anchorId: null })
+    }
+  }, [projectChaptersLoaded, projectChapters, p.recording?.source, guideDismissed])
 
   useEffect(() => {
     const processing = p.recording?.state === 'processing' && p.recording.source === 'upload'
@@ -201,7 +215,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     ? []
     : projectChapters
   const chaptersReadOnly = chapters.some((chapter) => chapter.readOnly)
-  const unsyncedCount = chapters.filter((chapter) => chapter.synced === false).length
+  const syncState = chapters.find((chapter) => chapter.syncState)?.syncState
+  const hasImportedChapters = chapters.some((chapter) => chapter.sourceEventId)
+  const anchorChapter = guide?.anchorId ? chapters.find((chapter) => chapter.chapterId === guide.anchorId) : undefined
   const source = original ?? (recording?.kind === 'original' ? recording : null)
   const mockTrimDuration = source?.durationSeconds ?? 0
   const previewUrl = source?.hlsUrl ?? ''
@@ -253,20 +269,73 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     setProjectChaptersLoaded(true)
   }
 
-  // Ankare: kapitlet ligger vid nuvarande videoposition; övriga osynkade kapitel
-  // placeras efter sin tidsskillnad mot det. Osynkade kapitel publiceras inte.
-  async function syncFromChapter(chapter: Chapter) {
+  function startGuide() {
+    setGuideDismissed(false)
+    setSyncNote('')
+    setGuide({ step: 1, anchorId: null })
+  }
+
+  function closeGuide() {
+    setGuideDismissed(true)
+    setGuide(null)
+  }
+
+  function chooseAnchor(index: number) {
+    const chapter = chapters[index]
+    if (!chapter?.sourceEventId) return
+    setSyncNote('')
+    setGuide({ step: 2, anchorId: chapter.chapterId })
+    // Ett redan förankrat kapitel har en tid att utgå från — hoppa dit.
+    if (chapter.synced !== false) selectChapter(index)
+    else pausePreview()
+  }
+
+  function seekVideo(seconds: number) {
+    const video = previewVideoRef.current
+    if (!video) return
+    video.currentTime = seconds
+    setPreviewPosition(seconds)
+  }
+
+  async function applyAnchor(offsetSeconds: number) {
+    if (!guide?.anchorId) return false
     setSyncing(true)
     setSyncNote('')
     try {
-      const result = await client.projects.syncChapters(p.id, chapter.chapterId, Math.round(previewPosition))
+      const result = await client.projects.syncChapters(p.id, guide.anchorId, offsetSeconds)
       await reloadChapters()
       setHasUnpublishedChanges(true)
       if (result.outsideVideo > 0) {
-        setSyncNote(`${result.outsideVideo} kapitel hamnade utanför videon och är fortfarande osynkade — ta bort dem, eller synka mot ett annat kapitel.`)
+        setSyncNote(`${result.outsideVideo} kapitel hamnade utanför videon och är dolda tills de ryms — justera ankaret eller ta bort dem.`)
       }
+      return true
     } catch (error) {
-      setSyncNote(error instanceof Error ? error.message : 'Synkningen misslyckades.')
+      setSyncNote(error instanceof Error ? error.message : 'Förankringen misslyckades.')
+      return false
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  async function anchorHere() {
+    if (await applyAnchor(Math.round(previewPosition))) setGuide((current) => (current ? { ...current, step: 3 } : current))
+  }
+
+  async function nudgeAnchor(deltaSeconds: number) {
+    const anchor = chapters.find((chapter) => chapter.chapterId === guide?.anchorId)
+    if (!anchor) return
+    const next = Math.max(0, anchor.offsetSeconds + deltaSeconds)
+    if (await applyAnchor(next)) seekVideo(next)
+  }
+
+  async function confirmAnchor() {
+    setSyncing(true)
+    try {
+      await client.projects.confirmChapterSync(p.id)
+      await reloadChapters()
+      setGuide(null)
+    } catch (error) {
+      setSyncNote(error instanceof Error ? error.message : 'Bekräftelsen misslyckades.')
     } finally {
       setSyncing(false)
     }
@@ -548,7 +617,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   // Ondemand utan publicering = uppladdad video som väntar på granskning (Before → Ondemand).
   const stagedUpload = p.publicMode === 'ondemand' && p.publication.state !== 'published'
     && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed')
-  const canPublishOndemand = !chaptersReadOnly && !broadcastInProgress && !uploadPending && (isAfter || hasUnpublishedChanges || trimDirty || stagedUpload)
+  const canPublishOndemand = !chaptersReadOnly && !broadcastInProgress && !uploadPending && syncState !== 'pending' && (isAfter || hasUnpublishedChanges || trimDirty || stagedUpload)
   const videoDuration = previewVideoRef.current?.duration || mockTrimDuration
   const canReturnToSaved = selectedChapter !== null && draftOffsets[selectedChapter] !== undefined
 
@@ -744,20 +813,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     </button>
                   </div>
                 )}
-                {showUploadEntry && (showUploadPanel ? (
-                  <UploadPanel
-                    projectId={p.id}
-                    projectName={p.name}
-                    replacing
-                    failed={false}
-                    onCancel={() => setShowUploadPanel(false)}
-                    onUploaded={() => { setShowUploadPanel(false); void actions.refreshProject() }}
-                  />
-                ) : (
-                  <div class="od-download">
-                    <button class="btn btn-sm" type="button" onClick={() => setShowUploadPanel(true)}>Ladda upp video...</button>
-                  </div>
-                ))}
                 {isAfter && !awaitingApproval && <div class={`od-selected-chapter${selectedChapter !== null && chapters[selectedChapter] ? ' has-selected-chapter' : ''}${broadcastInProgress || recordingProcessing ? ' is-broadcasting' : ''}`}>
                   {selectedChapter !== null && chapters[selectedChapter] ? (
                     <div class="od-selected-chapter-heading">
@@ -810,6 +865,20 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     </div>
                   </div>}
                 </div>}
+                {showUploadEntry && (showUploadPanel ? (
+                  <UploadPanel
+                    projectId={p.id}
+                    projectName={p.name}
+                    replacing
+                    failed={false}
+                    onCancel={() => setShowUploadPanel(false)}
+                    onUploaded={() => { setShowUploadPanel(false); void actions.refreshProject() }}
+                  />
+                ) : (
+                  <div class="od-download">
+                    <button class="btn btn-sm" type="button" onClick={() => setShowUploadPanel(true)}>Ladda upp video...</button>
+                  </div>
+                ))}
               </div>
             )}
             {awaitingApproval && (
@@ -836,10 +905,43 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
             {awaitingApproval ? (
               <p class="od-empty">Godkänn eller ignorera den uppladdade filen innan du arbetar med kapitlen.</p>
             ) : chaptersReadOnly && p.recording && <p class="od-empty">Kapitel går att redigera först när inspelningen är klar</p>}
-            {unsyncedCount > 0 && !awaitingApproval && (
-              <p class="od-sync-banner" role="status">
-                {unsyncedCount} kapitel från sändningen saknar position i videon. Spela fram till där ett av dem börjar och klicka "Synka här" på det kapitlet — övriga placeras efter det. Osynkade kapitel publiceras inte.
-              </p>
+            {guide && !awaitingApproval && !chaptersReadOnly && (
+              <AnchorGuide
+                step={guide.step}
+                anchorLabel={anchorChapter ? (chapterLabels[chapters.indexOf(anchorChapter)] ?? anchorChapter.label) : null}
+                anchorOffset={anchorChapter?.synced === false ? null : anchorChapter?.offsetSeconds ?? null}
+                position={previewPosition}
+                playing={previewPlaying}
+                busy={syncing}
+                onSeekBy={seekBy}
+                onTogglePlay={togglePreviewPlayback}
+                onChooseAgain={() => setGuide({ step: 1, anchorId: null })}
+                onAnchor={() => void anchorHere()}
+                onGoToAnchor={() => { if (anchorChapter) { seekVideo(anchorChapter.offsetSeconds); void previewVideoRef.current?.play().catch(() => undefined) } }}
+                onNudge={(delta) => void nudgeAnchor(delta)}
+                onConfirm={() => void confirmAnchor()}
+                onClose={closeGuide}
+              />
+            )}
+            {!guide && !awaitingApproval && !chaptersReadOnly && uploadedRecording && hasImportedChapters && !uploadPending && (
+              <div class="od-sync-status">
+                <span>
+                  {syncState === 'pending'
+                    ? 'Förankringen är inte bekräftad — publicering är spärrad.'
+                    : syncState === 'confirmed'
+                      ? 'Kapitlen är förankrade mot videon.'
+                      : 'Kapitlen från sändningen är inte förankrade mot videon.'}
+                </span>
+                <button
+                  class="btn btn-sm"
+                  type="button"
+                  onClick={() => (syncState === 'pending'
+                    ? setGuide({ step: 3, anchorId: chapters.find((chapter) => chapter.anchor)?.chapterId ?? null })
+                    : startGuide())}
+                >
+                  {syncState === 'pending' ? 'Fortsätt' : 'Förankra kapitel'}
+                </button>
+              </div>
             )}
             {syncNote && <p class="od-download-error">{syncNote}</p>}
             {awaitingApproval ? null : chapters.length === 0 ? (
@@ -855,13 +957,15 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 {chapters.map((chapter, index) => (
                   <li
                     key={chapter.chapterId}
-                    class={`od-chapter-row${selectedChapter === index ? ' is-selected' : ''}${chapter.synced === false ? ' is-unsynced' : ''}`}
+                    class={`od-chapter-row${selectedChapter === index ? ' is-selected' : ''}${chapter.synced === false ? ' is-unsynced' : ''}${guide?.step === 1 && chapter.sourceEventId ? ' is-pickable' : ''}${guide?.anchorId === chapter.chapterId ? ' is-anchor' : ''}`}
+                    onClick={(event) => {
+                      if (guide?.step !== 1) return
+                      if ((event.target as HTMLElement).closest('button, input')) return
+                      chooseAnchor(index)
+                    }}
                   >
-                      {!chaptersReadOnly && chapter.synced === false && (
-                        <button class="btn btn-sm od-sync-button" type="button" disabled={syncing} title="Spela fram videon till där kapitlet börjar och klicka här" onClick={() => void syncFromChapter(chapter)}>
-                          Synka här · {formatHms(previewPosition)}
-                        </button>
-                      )}
+                      {!chaptersReadOnly && guide?.anchorId === chapter.chapterId && <Icon name="anchor" size={16} />}
+                      {!chaptersReadOnly && chapter.synced === false && <span class="od-chapter-unsynced">Ej förankrad</span>}
                       {!chaptersReadOnly && chapter.synced !== false && <button
                       class="od-chapter-play"
                       type="button"
@@ -1273,6 +1377,82 @@ function AddChapterForm({ position, onAdd }: AddChapterFormProps) {
         Lägg till vid {formatHms(Math.round(position))}
       </button>
       {error && <span class="od-download-error">{error}</span>}
+    </div>
+  )
+}
+
+interface AnchorGuideProps {
+  step: 1 | 2 | 3
+  anchorLabel: string | null
+  anchorOffset: number | null
+  position: number
+  playing: boolean
+  busy: boolean
+  onSeekBy: (seconds: number) => void
+  onTogglePlay: () => void
+  onChooseAgain: () => void
+  onAnchor: () => void
+  onGoToAnchor: () => void
+  onNudge: (deltaSeconds: number) => void
+  onConfirm: () => void
+  onClose: () => void
+}
+
+// Guidat flöde för att förankra kapitellistan mot en uppladdad video: välj ett kapitel,
+// spela fram till var det börjar, kontrollera ankaret. Ankarets kvalitet avgör — övriga
+// kapitel följer sändningens tider och finjusteras enskilt i listan.
+function AnchorGuide(props: AnchorGuideProps) {
+  const { step, anchorLabel, anchorOffset, position, playing, busy } = props
+  return (
+    <div class="od-guide" role="region" aria-label="Förankra kapitel">
+      <div class="od-guide-head">
+        <strong>Förankra kapitel · steg {step} av 3</strong>
+        <button class="btn btn-sm" type="button" onClick={props.onClose}>Stäng</button>
+      </div>
+      {step === 1 && (
+        <p class="od-empty">
+          <strong>Välj kapitel.</strong> Klicka på ett kapitel i listan vars start du tydligt hör eller ser i videon, till exempel första punkten.
+        </p>
+      )}
+      {step === 2 && (
+        <>
+          <p class="od-empty">
+            <strong>Spela fram till där ”{anchorLabel}” börjar</strong> i videon och klicka Förankra.
+          </p>
+          <div class="od-guide-controls">
+            <button class="btn btn-sm" type="button" onClick={() => props.onSeekBy(-5)}>−5 s</button>
+            <button class="btn btn-sm" type="button" onClick={() => props.onSeekBy(-1)}>−1 s</button>
+            <button class="btn btn-sm" type="button" aria-label="Spela eller pausa" onClick={props.onTogglePlay}>
+              <Icon name={playing ? 'pause' : 'play_arrow'} size={18} />
+            </button>
+            <output>{formatHms(Math.round(position))}</output>
+            <button class="btn btn-sm" type="button" onClick={() => props.onSeekBy(1)}>+1 s</button>
+            <button class="btn btn-sm" type="button" onClick={() => props.onSeekBy(5)}>+5 s</button>
+          </div>
+          <div class="od-guide-controls">
+            <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={props.onAnchor}>
+              {busy ? 'Förankrar…' : 'Förankra'}
+            </button>
+            <button class="btn btn-sm" type="button" disabled={busy} onClick={props.onChooseAgain}>Välj annat kapitel</button>
+          </div>
+        </>
+      )}
+      {step === 3 && (
+        <>
+          <p class="od-empty">
+            <strong>Kontrollera ankaret</strong> ”{anchorLabel}”{anchorOffset !== null ? ` vid ${formatHms(anchorOffset)}` : ''}. Gå till ankaret, lyssna och justera. Justeringen flyttar alla kapitel. Övriga kapitel följer tiderna från sändningen — finjustera enskilda kapitel i listan vid behov.
+          </p>
+          <div class="od-guide-controls">
+            <button class="btn btn-sm" type="button" disabled={busy || anchorOffset === null} onClick={props.onGoToAnchor}>Gå till ankare</button>
+            <button class="btn btn-sm" type="button" disabled={busy} title="Flyttar alla kapitel" onClick={() => props.onNudge(-1)}>−1 s</button>
+            <button class="btn btn-sm" type="button" disabled={busy} title="Flyttar alla kapitel" onClick={() => props.onNudge(1)}>+1 s</button>
+          </div>
+          <div class="od-guide-controls">
+            <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={props.onConfirm}>Bekräfta ankaret</button>
+            <button class="btn btn-sm" type="button" disabled={busy} onClick={props.onChooseAgain}>Förankra om</button>
+          </div>
+        </>
+      )}
     </div>
   )
 }

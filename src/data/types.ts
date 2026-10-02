@@ -280,6 +280,10 @@ export interface Chapter {
   readOnly?: boolean
   /** Falskt för importerade cues i en uppladdad video som ännu inte ankrats — saknar position och publiceras inte. */
   synced?: boolean
+  /** Uppladdad video: förankringens läge för kapitellistan som helhet (samma värde på alla kapitel). */
+  syncState?: 'none' | 'pending' | 'confirmed'
+  /** Kapitlet operatören förankrade mot videon. */
+  anchor?: boolean
 }
 
 // En av projektets egna sändningar (även test-sändningar) — valbara i
