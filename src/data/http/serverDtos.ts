@@ -180,6 +180,7 @@ export interface ServerChapter {
   label: string
   offsetSeconds: number
   sourceEventId?: string | null
+  synced?: boolean
 }
 
 // ---- Live-resurser ----

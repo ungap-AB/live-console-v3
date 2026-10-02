@@ -191,7 +191,7 @@ function toProjectRef(project: ServerProject | undefined, kind: 'recording' | 'c
 // ---- Inspelningar och videoarkiv ----
 
 function toChapter(dto: ServerChapter): Chapter {
-  return { chapterId: dto.chapterId, kind: dto.kind as CueKind, label: dto.label, offsetSeconds: dto.offsetSeconds, sourceEventId: dto.sourceEventId ?? undefined }
+  return { chapterId: dto.chapterId, kind: dto.kind as CueKind, label: dto.label, offsetSeconds: dto.offsetSeconds, sourceEventId: dto.sourceEventId ?? undefined, synced: dto.synced ?? true }
 }
 
 function toProjectRecording(dto: ServerProjectRecording): ProjectRecording {
@@ -573,6 +573,12 @@ export const httpClient: Client = {
       if (job.state === 'done') return job
       return pollDownloadJob(job.jobId)
     },
+    async acceptUpload(id) {
+      await api<void>(`/recordings/${id}/accept-upload`, { method: 'POST' })
+    },
+    async rejectUpload(id) {
+      await api<void>(`/recordings/${id}/reject-upload`, { method: 'POST' })
+    },
     async upload(file, projectId, name, onProgress) {
       const init = await api<{ recordingId: string; uploadUrl: string }>('/recordings/upload', {
         method: 'POST',
@@ -866,6 +872,16 @@ export const httpClient: Client = {
     },
     async updateDraftChapter(id, chapterId, input) {
       await api<void>(`/projects/${id}/timeline-draft/chapters/${chapterId}`, { method: 'PATCH', body: input })
+    },
+    async syncChapters(id, anchorChapterId, anchorOffsetSeconds) {
+      const result = await api<{ synced: number; outsideVideo: number }>(`/projects/${id}/timeline-draft/sync`, {
+        method: 'POST',
+        body: { anchorChapterId, anchorOffsetSeconds },
+      })
+      return { synced: result.synced, outsideVideo: result.outsideVideo }
+    },
+    async addChapter(id, input) {
+      await api<unknown>(`/projects/${id}/timeline-draft/chapters`, { method: 'POST', body: input })
     },
     async deleteDraftChapter(id, chapterId) {
       await api<void>(`/projects/${id}/timeline-draft/chapters/${chapterId}`, { method: 'DELETE' })

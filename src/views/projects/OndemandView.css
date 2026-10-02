@@ -892,3 +892,33 @@
     flex: none;
   }
 }
+
+.od-sync-banner {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  border: 1px dashed var(--warn);
+  border-radius: 8px;
+}
+
+.od-chapter-row.is-unsynced .od-chapter-label {
+  color: var(--ink-3);
+}
+
+.od-sync-button {
+  flex: none;
+}
+
+.od-add-chapter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+
+.od-add-chapter input[type='text'] {
+  flex: 1;
+  min-width: 140px;
+}

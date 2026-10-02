@@ -96,7 +96,7 @@ export type PublicMode = 'before' | 'live' | 'after' | 'ondemand'
 export type AfterReason = 'liveFinished' | 'ondemandUnpublished'
 export type RecordingReadiness = 'unknown' | 'recording' | 'processing' | 'ready' | 'published'
 export type ChannelState = 'none' | 'idle' | 'live'
-export type RecordingState = 'none' | 'recording' | 'processing' | 'recorded' | 'trimmed' | 'published'
+export type RecordingState = 'none' | 'recording' | 'processing' | 'awaitingApproval' | 'recorded' | 'trimmed' | 'published'
 
 export interface TrimDraftChapter {
   index: number
@@ -278,6 +278,8 @@ export interface Chapter {
   offsetSeconds: number
   sourceEventId?: string
   readOnly?: boolean
+  /** Falskt för importerade cues i en uppladdad video som ännu inte ankrats — saknar position och publiceras inte. */
+  synced?: boolean
 }
 
 // En av projektets egna sändningar (även test-sändningar) — valbara i

@@ -448,6 +448,20 @@ export const mockClient: Client = {
         expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
       })
     },
+    async acceptUpload(id) {
+      const accepted = recordings.find((r) => r.id === id)
+      const project = projects.find((p) => p.recording?.id === id)
+      if (!accepted || !project) throw new Error(`Inspelning ${id} finns inte`)
+      recordings = recordings.filter((r) => r.id === id || r.project?.id !== project.id)
+      project.recording = { ...project.recording!, state: 'recorded' }
+      return delay(undefined)
+    },
+    async rejectUpload(id) {
+      const project = projects.find((p) => p.recording?.id === id)
+      recordings = recordings.filter((r) => r.id !== id)
+      if (project) project.recording = null
+      return delay(undefined)
+    },
     async upload(file, projectId, name, onProgress) {
       const project = projects.find((p) => p.id === projectId)
       if (!project) throw new Error(`Projektet ${projectId} finns inte`)
@@ -467,7 +481,7 @@ export const mockClient: Client = {
         chapters: [],
       }
       recordings = [...recordings, recording]
-      project.recording = { id, state: 'recorded', hlsUrl: recording.hlsUrl, source: 'upload' }
+      project.recording = { id, state: 'awaitingApproval', hlsUrl: recording.hlsUrl, source: 'upload' }
       onProgress?.(1)
       return delay({ jobId: `uj-${id}`, state: 'processing' as const, recordingId: id })
     },
@@ -1071,6 +1085,17 @@ export const mockClient: Client = {
       return delay(undefined)
     },
     async updateDraftChapter(_id, _chapterId, _input) {
+      return delay(undefined)
+    },
+    async syncChapters(_id, _anchorChapterId, _anchorOffsetSeconds) {
+      return delay({ synced: 0, outsideVideo: 0 })
+    },
+    async addChapter(id, input) {
+      const project = findProject(id)
+      const recording = recordings.find((r) => r.id === project.recording?.id)
+      if (!recording) throw new Error('Inspelningen finns inte')
+      recording.chapters = [...recording.chapters, { chapterId: `c${nextId++}`, kind: input.kind, label: input.label, offsetSeconds: input.offsetSeconds, synced: true }]
+        .sort((a, b) => a.offsetSeconds - b.offsetSeconds)
       return delay(undefined)
     },
     async deleteDraftChapter(_id, _chapterId) {

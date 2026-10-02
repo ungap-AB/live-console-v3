@@ -95,6 +95,10 @@ export interface Client {
      * projektets recording.state går från 'processing' till 'recorded'. Inspelningen hör alltid till ett projekt.
      */
     upload(file: File, projectId: string, name?: string, onProgress?: (fraction: number) => void): Promise<import('./types').UploadJob>
+    /** Godkänner den uppladdade filen: den ersätter projektets tidigare inspelningar (mjukraderas, återställs av admin från papperskorgen). */
+    acceptUpload(id: string): Promise<void>
+    /** Behåller de tidigare inspelningarna — den uppladdade filen ignoreras. */
+    rejectUpload(id: string): Promise<void>
   }
   channels: {
     list(query?: string): Promise<Channel[]>
@@ -172,6 +176,10 @@ export interface Client {
     updateTimelineEvent(id: string, eventId: string, input: { label?: string; offsetSeconds?: number }): Promise<TimelineEvent>
     deleteTimelineEvent(id: string, eventId: string): Promise<void>
     updateDraftChapter(id: string, chapterId: string, input: { label?: string; offsetSeconds?: number }): Promise<void>
+    /** Uppladdad video: ankrar alla osynkade kapitel — ankarkapitlet ligger vid anchorOffsetSeconds, övriga efter sin tidsskillnad mot det. */
+    syncChapters(id: string, anchorChapterId: string, anchorOffsetSeconds: number): Promise<{ synced: number; outsideVideo: number }>
+    /** Lägger till ett eget kapitel på en videoposition (uppladdad video). */
+    addChapter(id: string, input: { kind: CueKind; label: string; offsetSeconds: number }): Promise<void>
     deleteDraftChapter(id: string, chapterId: string): Promise<void>
     updateChapterOffset(id: string, index: number, input: { offsetSeconds?: number; label?: string }): Promise<void>
     updatePublishedChapter(id: string, chapterId: string, input: { offsetSeconds?: number; label?: string }): Promise<void>
