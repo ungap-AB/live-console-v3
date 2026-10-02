@@ -5,7 +5,6 @@ import { useResource } from '../../app/useResource'
 import { StatusChip } from '../../components/StatusChip'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Modal } from '../../components/Modal'
-import { CopyField } from '../../components/CopyField'
 import { OverflowMenu } from '../../components/OverflowMenu'
 import { RenameModal } from '../../components/RenameModal'
 import { Toast } from '../../components/Toast'
@@ -554,54 +553,13 @@ interface InviteDialogProps {
 function InviteDialog({ domain, user, resend, onCancel, onSent }: InviteDialogProps) {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [pin] = useState(() => String(Math.floor(100000 + Math.random() * 900000)))
-
-  const canSend = !sending
-  // Länken är till ungap Presenter självt (inte en fejkad separat
-  // inbjudningssida) — den öppnar bara inloggningen som redan finns.
-  const link = `${window.location.origin}${window.location.pathname}`
-  const message = `Hej${user.name.trim() ? ' ' + user.name.trim() : ''}!\n\nDu har blivit inbjuden att skapa ett konto på ungap Presenter för ${domain.org} (${domain.host}).\n\nGå till länken nedan och logga in. Använd uppgifterna nedan vid inloggningen:\n${link}\n\nE-post: ${user.email}\nPIN-kod vid inloggning: ${pin}\n\nLänken slutar gälla om 14 dagar. Om du inte förväntade dig det här meddelandet kan du bortse från det.`
-
-  async function copyMessage(value: string): Promise<boolean> {
-    const fallbackCopy = () => {
-      const field = document.createElement('textarea')
-      field.value = value
-      field.setAttribute('readonly', '')
-      field.style.position = 'fixed'
-      field.style.left = '-9999px'
-      document.body.appendChild(field)
-      field.select()
-      const copied = document.execCommand('copy')
-      document.body.removeChild(field)
-      return copied
-    }
-
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(value)
-        return true
-      }
-      return fallbackCopy()
-    } catch {
-      return fallbackCopy()
-    }
-  }
 
   async function send() {
-    if (!canSend) return
+    if (sending) return
     setSending(true)
     setError(null)
     try {
-      const copyPromise = copyMessage(message)
-      const [updated, copied] = await Promise.all([
-        resend ? client.users.resendInvite(user.id, pin) : client.users.sendInvitation(user.id, pin),
-        copyPromise,
-      ])
-      if (!copied) {
-        setError('Inbjudan skickades, men texten kunde inte kopieras.')
-        setSending(false)
-        return
-      }
+      const updated = await (resend ? client.users.resendInvite(user.id) : client.users.sendInvitation(user.id))
       onSent(updated)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kunde inte skicka inbjudan.')
@@ -615,44 +573,29 @@ function InviteDialog({ domain, user, resend, onCancel, onSent }: InviteDialogPr
         <div class="invite-fields">
           <label>
             E-post
-            <input
-              class="rename-input"
-              type="email"
-              readOnly
-              value={user.email}
-              placeholder="namn@exempel.se"
-              autoFocus
-            />
+            <input class="rename-input" type="email" readOnly value={user.email} />
           </label>
           <label>
             Namn
-            <input
-              class="rename-input"
-              readOnly
-              value={user.name}
-              placeholder="För- och efternamn"
-            />
+            <input class="rename-input" readOnly value={user.name} />
           </label>
-            <label>
-              Behörighet
-              <input class="rename-input" readOnly value={user.roles.map((r) => ROLES[r].label).join(', ')} />
-            </label>
+          <label>
+            Behörighet
+            <input class="rename-input" readOnly value={user.roles.map((r) => ROLES[r].label).join(', ')} />
+          </label>
         </div>
-
-        <label class="invite-message-label">Meddelande till mottagaren</label>
-        <textarea class="invite-message" readOnly rows={7} value={message} />
-
-        <CopyField label="Länk" value={link} monospace />
-        <CopyField label="PIN-kod vid inloggning" value={pin} monospace />
-
+        <p class="note">
+          Ett välkomstmejl med en engångslänk skickas till {user.email}. Länken gäller i 7 dagar. När mottagaren klickar på den skapas en personlig PIN-kod som visas en enda gång.
+          {resend && ' En ny inbjudan ersätter den tidigare: den gamla länken och PIN-koden slutar gälla.'}
+        </p>
         {error && <p class="note warn">{error}</p>}
       </div>
       <div class="modal-actions">
         <button class="btn btn-sm" type="button" onClick={onCancel}>
           Avbryt
         </button>
-        <button class="btn btn-sm btn-primary" type="button" disabled={!canSend} onClick={send}>
-          {sending ? 'Skickar…' : 'Skicka'}
+        <button class="btn btn-sm btn-primary" type="button" disabled={sending} onClick={() => void send()}>
+          {sending ? 'Skickar…' : 'Skicka inbjudan'}
         </button>
       </div>
     </Modal>

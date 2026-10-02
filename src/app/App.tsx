@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../data'
 import type { CurrentUser } from '../data/types'
-import { routeHref, useRoute } from './router'
+import { routeHref, useCredentialToken, useRoute } from './router'
 import { Shell } from './Shell'
+import { CredentialLinkView } from './CredentialLinkView'
 import { LoginView } from './LoginView'
 import { ProjectsView, parseProjectScreen, type ProjectScreen } from '../views/projects/ProjectsView'
 import { AgendasView } from '../views/agendas/AgendasView'
@@ -17,6 +18,9 @@ type AuthState = { status: 'loading' } | { status: 'anon' } | { status: 'authed'
 
 export function App() {
   const route = useRoute()
+  const credentialToken = useCredentialToken()
+  // E-posten från en aktiverad inbjudan/återställning förifylls på inloggningen.
+  const [loginEmail, setLoginEmail] = useState<string | null>(null)
   const [auth, setAuth] = useState<AuthState>({ status: 'loading' })
 
   // Försök återuppta en aktiv session — misslyckas tyst till anon om ingen
@@ -87,8 +91,20 @@ export function App() {
     }
   }, [auth.status, routeAllowed, route])
 
+  // Engångslänk från ett mejl (inbjudan/återställning) går före allt annat, även när någon är inloggad.
+  if (credentialToken) {
+    return (
+      <CredentialLinkView
+        token={credentialToken}
+        onDone={(email) => {
+          setLoginEmail(email)
+          window.location.hash = '#/'
+        }}
+      />
+    )
+  }
   if (auth.status === 'loading') return <div class="login-screen">Laddar…</div>
-  if (auth.status === 'anon') return <LoginView onLogin={login} />
+  if (auth.status === 'anon') return <LoginView onLogin={login} initialEmail={loginEmail ?? ''} />
 
   // Genvägen till det öppna projektets vy vinner när man står på en annan sida.
   // "+ Nytt" visas bara när Projekt-vyn faktiskt visar projektlistan — inte när

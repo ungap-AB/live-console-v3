@@ -45,6 +45,10 @@ export interface Client {
     login(email: string, pin: string): Promise<CurrentUser>
     me(): Promise<CurrentUser>
     logout(): Promise<void>
+    /** Engångslänken i ett inbjudnings-/återställningsmejl. Ändrar inget — är bara en kontroll av att länken fortfarande gäller. */
+    credentialLinkInfo(token: string): Promise<import('./types').CredentialLinkInfo>
+    /** Förbrukar länken och ger användaren en ny, server-genererad PIN (visas en gång). */
+    redeemCredentialLink(token: string): Promise<import('./types').CredentialLinkRedeemed>
   }
   agendas: {
     list(query?: string): Promise<Agenda[]>
@@ -128,8 +132,9 @@ export interface Client {
     listByDomain(domainId: string, query?: string): Promise<UserAccount[]>
     get(id: string): Promise<UserAccount | undefined>
     update(id: string, input: { name?: string; email?: string }): Promise<UserAccount>
-    sendInvitation(id: string, pin: string): Promise<UserAccount>
-    resendInvite(id: string, pin: string): Promise<UserAccount>
+    /** Skickar ett välkomstmejl med en engångslänk (7 dagar); PIN skapas av servern när mottagaren klickar på länken. */
+    sendInvitation(id: string): Promise<UserAccount>
+    resendInvite(id: string): Promise<UserAccount>
     sendPasswordReset(id: string): Promise<void>
     setRoles(id: string, roles: Role[]): Promise<UserAccount>
     disable(id: string): Promise<UserAccount>

@@ -7,10 +7,11 @@ import './LoginView.css'
 
 interface LoginViewProps {
   onLogin: (user: CurrentUser) => void
+  initialEmail?: string
 }
 
-export function LoginView({ onLogin }: LoginViewProps) {
-  const [email, setEmail] = useState('')
+export function LoginView({ onLogin, initialEmail = '' }: LoginViewProps) {
+  const [email, setEmail] = useState(initialEmail)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -45,7 +46,7 @@ export function LoginView({ onLogin }: LoginViewProps) {
             type="email"
             required
             value={email}
-            autoFocus
+            autoFocus={!initialEmail}
             onInput={(e) => setEmail(e.currentTarget.value)}
           />
         </label>
@@ -56,6 +57,7 @@ export function LoginView({ onLogin }: LoginViewProps) {
             type="password"
             required
             inputMode="numeric"
+            autoFocus={!!initialEmail}
             value={pin}
             onInput={(e) => setPin(e.currentTarget.value)}
           />

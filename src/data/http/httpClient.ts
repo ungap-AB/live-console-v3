@@ -6,6 +6,8 @@ import type {
   ChannelState,
   Chapter,
   CueKind,
+  CredentialLinkInfo,
+  CredentialLinkRedeemed,
   CurrentUser,
   LivePhase,
   MeetingSummary,
@@ -423,6 +425,12 @@ function toCurrentUser(dto: ServerCurrentUser): CurrentUser {
 
 export const httpClient: Client = {
   auth: {
+    async credentialLinkInfo(token) {
+      return api<CredentialLinkInfo>(`/auth/credential-links/${encodeURIComponent(token)}`)
+    },
+    async redeemCredentialLink(token) {
+      return api<CredentialLinkRedeemed>(`/auth/credential-links/${encodeURIComponent(token)}/redeem`, { method: 'POST' })
+    },
     async login(email, pin) {
       const dto = await api<ServerLoginResponse>('/auth/login', { method: 'POST', body: { email, pin } })
       setAuthToken(dto.token)
@@ -687,12 +695,12 @@ export const httpClient: Client = {
       await api<ServerUser>(`/users/${id}`, { method: 'PATCH', body: input })
       return fetchUserDetail(id)
     },
-    async sendInvitation(id, pin) {
-      const dto = await api<ServerUser>(`/users/${id}/invitations`, { method: 'POST', body: { pin } })
+    async sendInvitation(id) {
+      const dto = await api<ServerUser>(`/users/${id}/invitations`, { method: 'POST' })
       return toUserSummary(dto)
     },
-    async resendInvite(id, pin) {
-      const dto = await api<ServerUser>(`/invitations/${id}/resend`, { method: 'POST', body: { pin } })
+    async resendInvite(id) {
+      const dto = await api<ServerUser>(`/invitations/${id}/resend`, { method: 'POST' })
       return toUserSummary(dto)
     },
     async sendPasswordReset(id) {

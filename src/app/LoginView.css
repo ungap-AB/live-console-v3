@@ -137,3 +137,20 @@
   border-color: #e4e8ee;
   opacity: 1;
 }
+
+.login-note {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.login-pin-reveal {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  user-select: all;
+}
