@@ -3,6 +3,7 @@ import { client } from '../../data'
 import type { Chapter, CueKind, Recording } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { SplitPane } from '../../components/SplitPane'
+import { JobProgress } from '../../components/JobProgress'
 import { StatusChip } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
 import { OverflowMenu } from '../../components/OverflowMenu'
@@ -47,7 +48,7 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   const [renaming, setRenaming] = useState<Recording | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [downloads, setDownloads] = useState<
-    Record<string, { status: 'processing' | 'ready' | 'error'; url?: string; message?: string }>
+    Record<string, { status: 'processing' | 'ready' | 'error'; url?: string; message?: string; progress?: number; phase?: string }>
   >({})
 
   useEffect(() => {
@@ -134,7 +135,8 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   async function downloadRecording(recording: Recording) {
     setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'processing' } }))
     try {
-      const job = await client.recordings.download(recording.id)
+      const job = await client.recordings.download(recording.id, (progress, phase) =>
+        setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'processing', progress, phase } })))
       if (job.url) {
         setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'ready', url: job.url } }))
       }
@@ -259,7 +261,7 @@ interface ArchiveDetailProps {
   onTrash: () => void
   onRename: () => void
   onDownload: () => void
-  download?: { status: 'processing' | 'ready' | 'error'; url?: string; message?: string }
+  download?: { status: 'processing' | 'ready' | 'error'; url?: string; message?: string; progress?: number; phase?: string }
   onOpenProject: () => void
 }
 
@@ -308,9 +310,7 @@ function ArchiveDetail({ recording: r, chapters, onTrash, onRename, onDownload, 
         </div>
         <div class="tools">
           {download?.status === 'processing' ? (
-            <button class="btn btn-sm" type="button" disabled>
-              Förbereder nedladdning…
-            </button>
+            <JobProgress progress={download.progress} phase={download.phase ?? 'QUEUED'} />
           ) : download?.status === 'ready' && download.url ? (
             <span class="download-ready">
               <a class="btn btn-sm" href={download.url} download>

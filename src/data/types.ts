@@ -162,7 +162,7 @@ export interface Project {
   playerUrl: string
   channel: { id: string; state: ChannelState } | null
   technicalHealth: ProjectTechnicalHealth
-  recording: { id: string; state: RecordingState; hlsUrl?: string; source?: string } | null
+  recording: { id: string; state: RecordingState; hlsUrl?: string; source?: string; progress?: number; phase?: string } | null
   publication: { state: PublicationState }
   publicationHistory: PublicationHistory[]
   capabilities: ProjectCapabilities
@@ -364,6 +364,8 @@ export interface DownloadJob {
   url?: string
   expiresAt?: string
   error?: { code: string; message: string }
+  progress?: number
+  phase?: string
 }
 
 export interface UploadJob {
