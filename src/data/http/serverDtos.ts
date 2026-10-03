@@ -130,6 +130,8 @@ export interface ServerProject {
   ondemandText: string
   posterUrl?: string | null
   textPlacement?: string
+  muxEnabled?: boolean
+  muxEnvKey?: string | null
   visibility: string
   publicMode: string
   afterReason: string | null
@@ -221,6 +223,7 @@ export interface ServerChannelHealth {
   framerate?: number
   lastFrameSecondsAgo?: number
   streamStartedAt?: string
+  viewerCount?: number | null
 }
 
 export interface ServerChannelQuota {
@@ -327,6 +330,7 @@ export interface ServerDomain {
   userCount: number
   contractStart?: string
   contractEnd?: string
+  muxEnvKey?: string | null
 }
 
 export interface ServerActivityEntry {

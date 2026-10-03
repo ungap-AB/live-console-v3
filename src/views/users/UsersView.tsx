@@ -185,12 +185,13 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
     setCreatingDomain(false)
   }
 
-  async function saveDomain(org: string, contractStart: string, contractEnd: string) {
+  async function saveDomain(org: string, contractStart: string, contractEnd: string, muxEnvKey: string) {
     if (!viewingDomain) return
     const updated = await client.domains.update(viewingDomain.id, {
       org,
       contractStart,
       contractEnd,
+      muxEnvKey,
     })
     setDomains((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
     setViewingDomain(updated)
@@ -605,7 +606,7 @@ function InviteDialog({ domain, user, resend, onCancel, onSent }: InviteDialogPr
 interface DomainDetailsDialogProps {
   domain: Domain
   onClose: () => void
-  onSave: (org: string, contractStart: string, contractEnd: string) => Promise<void>
+  onSave: (org: string, contractStart: string, contractEnd: string, muxEnvKey: string) => Promise<void>
   onRequestDelete: () => void
 }
 
@@ -613,9 +614,11 @@ function DomainDetailsDialog({ domain, onClose, onSave, onRequestDelete }: Domai
   const [org, setOrg] = useState(domain.org)
   const [contractStart, setContractStart] = useState(domain.contractStart?.slice(0, 10) ?? '')
   const [contractEnd, setContractEnd] = useState(domain.contractEnd?.slice(0, 10) ?? '')
+  const [muxEnvKey, setMuxEnvKey] = useState(domain.muxEnvKey ?? '')
   const [saving, setSaving] = useState(false)
   const dirty = org.trim().length > 0 && (
     org.trim() !== domain.org ||
+    muxEnvKey.trim() !== (domain.muxEnvKey ?? '') ||
     contractStart !== (domain.contractStart?.slice(0, 10) ?? '') ||
     contractEnd !== (domain.contractEnd?.slice(0, 10) ?? '')
   )
@@ -624,7 +627,7 @@ function DomainDetailsDialog({ domain, onClose, onSave, onRequestDelete }: Domai
     if (!dirty || !contractStart || !contractEnd || contractEnd < contractStart) return
     setSaving(true)
     try {
-      await onSave(org.trim(), `${contractStart}T00:00:00.000Z`, `${contractEnd}T00:00:00.000Z`)
+      await onSave(org.trim(), `${contractStart}T00:00:00.000Z`, `${contractEnd}T00:00:00.000Z`, muxEnvKey.trim())
     } finally {
       setSaving(false)
     }
@@ -689,6 +692,15 @@ function DomainDetailsDialog({ domain, onClose, onSave, onRequestDelete }: Domai
         </label>
       </div>
       {contractStart && contractEnd && contractEnd < contractStart && <p class="note warn">Slutdatum måste vara efter startdatum.</p>}
+      <label class="domain-org-field">
+        Mux env key (kundens eget Mux-konto)
+        <input
+          class="rename-input"
+          value={muxEnvKey}
+          placeholder="Lämna tomt för ungaps standardnyckel"
+          onInput={(e) => setMuxEnvKey(e.currentTarget.value)}
+        />
+      </label>
       <div class="grid">
         <div>
           <div class="k">Användare</div>

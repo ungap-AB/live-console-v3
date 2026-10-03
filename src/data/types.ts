@@ -13,6 +13,8 @@ export interface Domain extends DomainRef {
   userCount: number
   contractStart?: string
   contractEnd?: string
+  /** Kundens egen Mux env key (UNG-20). Saknas den gäller plattformens standardnyckel. */
+  muxEnvKey?: string | null
 }
 
 export interface CredentialLinkInfo {
@@ -157,6 +159,10 @@ export interface Project {
   posterUrl?: string | null
   /** Var texterna ovan placeras i spelarens videofönster (UNG-96). En placering för alla fyra. */
   textPlacement: TextPlacement
+  /** Spelaren skickar uppspelningsmätning till Mux (UNG-20). */
+  muxEnabled: boolean
+  /** Nyckeln mätningen skulle använda (domänens egen, annars standardnyckeln). Skrivskyddad. */
+  muxEnvKey?: string | null
   visibility: Visibility
   publicMode: PublicMode
   afterReason: AfterReason | null
@@ -270,6 +276,8 @@ export interface ChannelHealth {
   framerate?: number
   lastFrameSecondsAgo?: number
   streamStartedAt?: string
+  /** Samtidiga tittare enligt IVS (UNG-22). Saknas när siffran inte är känd. */
+  viewerCount?: number
 }
 
 export interface ChannelQuota {

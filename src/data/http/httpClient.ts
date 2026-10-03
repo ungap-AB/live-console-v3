@@ -325,6 +325,8 @@ function toProjectLite(dto: ServerProject): Project {
     ondemandText: dto.ondemandText ?? '',
     posterUrl: dto.posterUrl ?? null,
     textPlacement: toTextPlacement(dto.textPlacement),
+    muxEnabled: dto.muxEnabled ?? false,
+    muxEnvKey: dto.muxEnvKey ?? null,
     visibility: dto.visibility as Visibility,
     publicMode: dto.publicMode as PublicMode,
     afterReason: dto.afterReason as AfterReason | null,
@@ -678,6 +680,7 @@ export const httpClient: Client = {
         framerate: dto.framerate,
         lastFrameSecondsAgo: dto.lastFrameSecondsAgo,
         streamStartedAt: dto.streamStartedAt,
+        viewerCount: dto.viewerCount ?? undefined,
       } satisfies ChannelHealth
     },
     async getStreamKey(id) {

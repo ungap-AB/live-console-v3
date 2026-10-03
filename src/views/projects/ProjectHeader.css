@@ -407,3 +407,15 @@
   font-size: 13px;
   color: var(--ink-2);
 }
+
+/* UNG-22: antal samtidiga tittare bredvid signalstatusen. */
+.pv-viewers {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}

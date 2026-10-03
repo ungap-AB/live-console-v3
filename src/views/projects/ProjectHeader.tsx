@@ -168,6 +168,9 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
               ? { label: 'Ingen signal', tone: 'warn' }
               : { label: 'Väntar på signal', tone: 'warn' }
 
+  // UNG-22: bara medan strömmen är live och IVS har gett en siffra.
+  const viewerCount = health?.state?.toLowerCase() === 'live' && typeof health.viewerCount === 'number' ? health.viewerCount : null
+
   const prevEncoderLabelRef = useRef(encoderStatus.label)
 
   useEffect(() => {
@@ -240,6 +243,12 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
           <span class="pv-encoder-dot" aria-hidden="true" />
           <span>{encoderStatus.label}</span>
         </div>
+        {viewerCount !== null && (
+          <div class="pv-viewers" role="status" title="Samtidiga tittare enligt IVS. Siffran är en uppskattning med några sekunders fördröjning.">
+            <Icon name="visibility" size={17} />
+            <span>{viewerCount.toLocaleString('sv-SE')} tittare</span>
+          </div>
+        )}
         <button
           class="pv-ingest-button"
           type="button"
