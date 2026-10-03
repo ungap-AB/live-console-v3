@@ -193,7 +193,7 @@ export interface Client {
     setActiveRecording(id: string, recordingId: string): Promise<Project>
     touchPlayout(id: string): Promise<void>
     create(input: { name: string }): Promise<Project>
-    rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText' | 'textPlacement' | 'muxEnabled'>>): Promise<Project>
+    rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText' | 'textPlacement' | 'muxEnabled' | 'muxRespectDoNotTrack'>>): Promise<Project>
     trash(id: string): Promise<void>
     /** Laddar upp spelarens poster (JPG/PNG/WebP, högst 5 MB). Ersätter en tidigare poster. */
     /** Laddar upp undertexter (WebVTT) för den trimmade, publicerade inspelningen. Ersätter en tidigare fil. */

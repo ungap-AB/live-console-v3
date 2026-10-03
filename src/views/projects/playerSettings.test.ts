@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { POSTER_MAX_BYTES, PLAYER_TEXT_FIELDS, TEXT_PLACEMENT_OPTIONS, changedSettings, changedTexts, textsOf, validatePosterFile } from './playerSettings.ts'
 
-const project = { beforeText: 'a', liveText: '', afterText: 'c', ondemandText: '', textPlacement: 'middle' as const, muxEnabled: false }
+const project = { beforeText: 'a', liveText: '', afterText: 'c', ondemandText: '', textPlacement: 'middle' as const, muxEnabled: false, muxRespectDoNotTrack: false }
 
 test('alla fyra lägen har ett textfält, i visningsordning', () => {
   assert.deepEqual(PLAYER_TEXT_FIELDS.map((f) => f.key), ['beforeText', 'liveText', 'afterText', 'ondemandText'])
@@ -42,12 +42,13 @@ test('textplaceringen har tre lägen i visningsordning, med mitten som standard 
 })
 
 test('changedSettings tar med placeringen bara när den ändrats, tillsammans med ändrade texter', () => {
-  assert.equal(changedSettings(project, textsOf(project), 'middle', false), null)
-  assert.deepEqual(changedSettings(project, textsOf(project), 'top', false), { textPlacement: 'top' })
+  assert.equal(changedSettings(project, textsOf(project), 'middle', false, false), null)
+  assert.deepEqual(changedSettings(project, textsOf(project), 'top', false, false), { textPlacement: 'top' })
   assert.deepEqual(
-    changedSettings(project, { ...textsOf(project), liveText: 'Snart live' }, 'bottom', false),
+    changedSettings(project, { ...textsOf(project), liveText: 'Snart live' }, 'bottom', false, false),
     { liveText: 'Snart live', textPlacement: 'bottom' },
   )
-  assert.deepEqual(changedSettings(project, { ...textsOf(project), afterText: 'Slut' }, 'middle', false), { afterText: 'Slut' })
-  assert.deepEqual(changedSettings(project, textsOf(project), 'middle', true), { muxEnabled: true })
+  assert.deepEqual(changedSettings(project, { ...textsOf(project), afterText: 'Slut' }, 'middle', false, false), { afterText: 'Slut' })
+  assert.deepEqual(changedSettings(project, textsOf(project), 'middle', true, false), { muxEnabled: true })
+  assert.deepEqual(changedSettings(project, textsOf(project), 'middle', false, true), { muxRespectDoNotTrack: true })
 })

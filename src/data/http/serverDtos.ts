@@ -132,6 +132,7 @@ export interface ServerProject {
   textPlacement?: string
   muxEnabled?: boolean
   muxEnvKey?: string | null
+  muxRespectDoNotTrack?: boolean
   visibility: string
   publicMode: string
   afterReason: string | null
