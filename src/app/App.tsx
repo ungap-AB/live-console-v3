@@ -13,6 +13,7 @@ import { AgendasView } from '../views/agendas/AgendasView'
 import { NameListsView } from '../views/namelists/NameListsView'
 import { LiveResourcesView } from '../views/resources/LiveResourcesView'
 import { VideoArchiveView } from '../views/archive/VideoArchiveView'
+import { SharesView } from '../views/shares/SharesView'
 import { TrashView } from '../views/trash/TrashView'
 import { UsersView } from '../views/users/UsersView'
 import { readStoredSelection, storeSelection } from './selectionStorage'
@@ -106,7 +107,7 @@ export function App() {
   }, [authed])
 
   const isRootAdmin = auth.status === 'authed' && auth.user.roles.includes('rootAdmin')
-  const routeAllowed = isRootAdmin || ['projects', 'agendas', 'namelists', 'trash'].includes(route)
+  const routeAllowed = isRootAdmin || ['projects', 'agendas', 'namelists', 'shares', 'trash'].includes(route)
 
   useEffect(() => {
     if (auth.status === 'authed' && !routeAllowed) {
@@ -183,6 +184,7 @@ export function App() {
       )}
       {routeAllowed && route === 'live' && <LiveResourcesView />}
       {routeAllowed && route === 'archive' && <VideoArchiveView onOpenProject={openProject} />}
+      {routeAllowed && route === 'shares' && <SharesView />}
       {routeAllowed && route === 'trash' && <TrashView />}
       {routeAllowed && route === 'users' && isRootAdmin && (
         <UsersView currentDomainId={auth.user.domain.id} canManageDomains={isRootAdmin} />

@@ -386,6 +386,55 @@ export interface MediaJob {
   startedByName?: string
 }
 
+// UNG-80 steg 4: operatörens delningar av nedladdningar (loggen sparas tolv månader efter utgång).
+export interface ShareItem {
+  id: string
+  recordingId: string
+  name: string
+  downloadCount: number
+  lastDownloadedAtUtc?: string
+}
+
+export interface ShareEvent {
+  kind: 'created' | 'downloaded' | 'revoked' | 'mail_failed'
+  occurredAtUtc: string
+  detail?: string
+}
+
+export interface Share {
+  id: string
+  status: 'active' | 'expired' | 'revoked'
+  createdByName: string
+  createdAtUtc: string
+  expiresAtUtc: string
+  message?: string
+  recipients: string[]
+  items: ShareItem[]
+  revokedAtUtc?: string
+  revokedByName?: string
+  /** Ingår bara i detaljvyn (get/revoke). */
+  events?: ShareEvent[]
+}
+
+export interface ShareInput {
+  recordingIds: string[]
+  recipients: string[]
+  message?: string
+}
+
+export interface ShareRecipientResult {
+  address: string
+  sent: boolean
+  errorCode?: string
+}
+
+export interface CreatedShare {
+  share: Share
+  /** Visas bara här: servern sparar bara en hash av token och kan inte visa länken igen. */
+  link: string
+  recipients: ShareRecipientResult[]
+}
+
 // UNG-80 steg 4: det mottagaren ser på den publika delningssidan. Övriga fält än status finns bara för 'active'.
 export interface PublicShareItem {
   id: string

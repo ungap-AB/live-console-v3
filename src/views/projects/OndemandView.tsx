@@ -10,6 +10,7 @@ import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import { Icon } from '../../components/Icon'
 import { JobProgress } from '../../components/JobProgress'
 import { NotifyCheckbox } from '../../components/NotifyCheckbox'
+import { ShareDialog } from '../../components/ShareDialog'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ChapterImportDialog } from './ChapterImportDialog'
@@ -71,6 +72,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   // operatör har ingen tillgång till Videoarkivet där samma funktion redan
   // finns, så den behövs här också. Nyckel = recording-id (original ELLER
   // trim har olika id:n). Servern kör jobbet; framsteget visas i jobbfältet (UNG-80).
+  const [shareRecordingId, setShareRecordingId] = useState<string | null>(null)
   const [downloads, setDownloads] = useState<
     Record<string, { status: 'starting' | 'queued' | 'ready' | 'error'; url?: string; message?: string }>
   >({})
@@ -876,6 +878,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       fileName={`${p.name} (original)`}
                       download={downloads[source.id]}
                       onDownload={() => downloadRecording(source.id)}
+                      onShare={() => setShareRecordingId(source.id)}
                     />
                     {recording?.kind === 'trimmed' && (
                       <DownloadButton
@@ -883,7 +886,11 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                         fileName={`${p.name} (trimmad)`}
                         download={downloads[recording.id]}
                         onDownload={() => downloadRecording(recording.id)}
+                        onShare={() => setShareRecordingId(recording.id)}
                       />
+                    )}
+                    {shareRecordingId && (
+                      <ShareDialog initialRecordingId={shareRecordingId} onClose={() => setShareRecordingId(null)} />
                     )}
                   </div>
                 )}
@@ -1212,12 +1219,14 @@ interface DownloadButtonProps {
   fileName: string
   download?: { status: 'starting' | 'queued' | 'ready' | 'error'; url?: string; message?: string }
   onDownload: () => void
+  /** Delar den färdiga filen via en länk (visas när filen är klar). */
+  onShare?: () => void
 }
 
 // UNG-58: samma "Förbereder… → riktig länk"-mönster som Videoarkivets
 // nedladdningsknapp — utbrutet här eftersom original och trimmad version
 // nu båda använder det, se ovan.
-function DownloadButton({ label, fileName, download, onDownload }: DownloadButtonProps) {
+function DownloadButton({ label, fileName, download, onDownload, onShare }: DownloadButtonProps) {
   if (download?.status === 'starting') {
     return <button class="btn btn-sm" type="button" disabled>Startar…</button>
   }
@@ -1240,6 +1249,11 @@ function DownloadButton({ label, fileName, download, onDownload }: DownloadButto
         <button class="btn btn-sm" type="button" onClick={onDownload}>
           Förbered på nytt
         </button>
+        {onShare && (
+          <button class="btn btn-sm" type="button" onClick={onShare}>
+            Dela…
+          </button>
+        )}
       </span>
     )
   }
