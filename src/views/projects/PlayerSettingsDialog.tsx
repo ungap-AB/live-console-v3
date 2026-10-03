@@ -28,6 +28,7 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
   const [placement, setPlacement] = useState<TextPlacement>(project.textPlacement)
   const [activeTextField, setActiveTextField] = useState<PlayerTextKey>(PLAYER_TEXT_FIELDS[0].key)
   const [muxEnabled, setMuxEnabled] = useState(project.muxEnabled)
+  const [muxRespectDnt, setMuxRespectDnt] = useState(project.muxRespectDoNotTrack)
   const [posterFile, setPosterFile] = useState<File | null>(null)
   const [posterRemoved, setPosterRemoved] = useState(false)
   const [posterError, setPosterError] = useState<string | null>(null)
@@ -41,7 +42,7 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
   // Exempeltexten i förhandsvisningen: den valda flikens text, annars spelarens standardtext eller ett exempel.
   const activeField = PLAYER_TEXT_FIELDS.find((field) => field.key === activeTextField) ?? PLAYER_TEXT_FIELDS[0]
   const previewText = texts[activeField.key].trim() || activeField.fallback || 'Exempeltext'
-  const changed = changedSettings(project, texts, placement, muxEnabled)
+  const changed = changedSettings(project, texts, placement, muxEnabled, muxRespectDnt)
   const dirty = changed !== null || posterFile !== null || (posterRemoved && Boolean(project.posterUrl))
 
   function choosePoster(file: File | undefined) {
@@ -203,6 +204,16 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
           />
           <span>Mät uppspelning med Mux</span>
         </label>
+        <label class="ps-switch">
+          <input
+            type="checkbox"
+            checked={muxRespectDnt}
+            disabled={!muxEnabled}
+            onChange={(e) => setMuxRespectDnt((e.target as HTMLInputElement).checked)}
+          />
+          <span>Respektera tittarens "Do Not Track"</span>
+        </label>
+        <span class="ps-help">Av som standard: alla visningar mäts. Slås det på mäts inte tittare vars webbläsare har Do Not Track aktiverat.</span>
         <label class="ps-mux-key">
           <span class="ps-placement-label">Mux env key</span>
           <input type="text" readOnly value={project.muxEnvKey ?? ''} placeholder="Ingen nyckel konfigurerad" aria-label="Mux env key (skrivskyddad)" />

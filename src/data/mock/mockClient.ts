@@ -808,6 +808,7 @@ export const mockClient: Client = {
         ondemandText: '',
         textPlacement: 'middle',
         muxEnabled: false,
+        muxRespectDoNotTrack: false,
         muxEnvKey: 'os3srhrpsr4mfcc3tdlv25lo3',
         visibility: 'closed',
         publicMode: 'before',

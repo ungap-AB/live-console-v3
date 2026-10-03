@@ -163,6 +163,8 @@ export interface Project {
   muxEnabled: boolean
   /** Nyckeln mätningen skulle använda (domänens egen, annars standardnyckeln). Skrivskyddad. */
   muxEnvKey?: string | null
+  /** Respektera tittarens "Do Not Track". Av som standard: mätningen är anonym och cookiefri. */
+  muxRespectDoNotTrack: boolean
   visibility: Visibility
   publicMode: PublicMode
   afterReason: AfterReason | null

@@ -327,6 +327,7 @@ function toProjectLite(dto: ServerProject): Project {
     textPlacement: toTextPlacement(dto.textPlacement),
     muxEnabled: dto.muxEnabled ?? false,
     muxEnvKey: dto.muxEnvKey ?? null,
+    muxRespectDoNotTrack: dto.muxRespectDoNotTrack ?? false,
     visibility: dto.visibility as Visibility,
     publicMode: dto.publicMode as PublicMode,
     afterReason: dto.afterReason as AfterReason | null,
