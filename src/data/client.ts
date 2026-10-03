@@ -188,6 +188,9 @@ export interface Client {
     rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText' | 'textPlacement'>>): Promise<Project>
     trash(id: string): Promise<void>
     /** Laddar upp spelarens poster (JPG/PNG/WebP, högst 5 MB). Ersätter en tidigare poster. */
+    /** Laddar upp undertexter (WebVTT) för den trimmade, publicerade inspelningen. Ersätter en tidigare fil. */
+    setCaptions(id: string, file: File): Promise<import('./types').ProjectCaptions>
+    removeCaptions(id: string): Promise<void>
     setPoster(id: string, file: File): Promise<Project>
     removePoster(id: string): Promise<Project>
     setVisibility(id: string, visibility: Visibility): Promise<Project>

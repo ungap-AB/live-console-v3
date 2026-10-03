@@ -18,6 +18,7 @@ import type {
   OperationCapability,
   Project,
   ProjectRecording,
+  ProjectCaptions,
   PublicMode,
   PublicShare,
   AfterReason,
@@ -336,7 +337,7 @@ function toProjectLite(dto: ServerProject): Project {
       streamStartedAt: dto.technicalHealth.streamStartedAt,
       recordingState: dto.technicalHealth.recordingState as RecordingState | null,
     },
-    recording: dto.recording ? { id: dto.recording.id, state: dto.recording.state as RecordingState, hlsUrl: dto.recording.hlsUrl, source: dto.recording.source, progress: dto.recording.progress, phase: dto.recording.phase } : null,
+    recording: dto.recording ? { id: dto.recording.id, state: dto.recording.state as RecordingState, hlsUrl: dto.recording.hlsUrl, source: dto.recording.source, progress: dto.recording.progress, phase: dto.recording.phase, captions: dto.recording.captions ?? null } : null,
     publication: { state: dto.publication.state as PublicationState },
     publicationHistory: dto.publicationHistory.map((entry): PublicationHistory => ({
       id: entry.id,
@@ -787,6 +788,14 @@ export const httpClient: Client = {
     async rename(id, name, texts) {
       const dto = await api<ServerProject>(`/projects/${id}`, { method: 'PATCH', body: { name, ...texts } })
       return toProjectFull(dto)
+    },
+    async setCaptions(id, file) {
+      const body = new FormData()
+      body.append('file', file, file.name)
+      return api<ProjectCaptions>(`/projects/${id}/captions`, { method: 'PUT', body })
+    },
+    async removeCaptions(id) {
+      await api<void>(`/projects/${id}/captions`, { method: 'DELETE' })
     },
     async setPoster(id, file) {
       const body = new FormData()

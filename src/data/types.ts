@@ -164,7 +164,7 @@ export interface Project {
   playerUrl: string
   channel: { id: string; state: ChannelState } | null
   technicalHealth: ProjectTechnicalHealth
-  recording: { id: string; state: RecordingState; hlsUrl?: string; source?: string; progress?: number; phase?: string } | null
+  recording: { id: string; state: RecordingState; hlsUrl?: string; source?: string; progress?: number; phase?: string; captions?: ProjectCaptions | null } | null
   publication: { state: PublicationState }
   publicationHistory: PublicationHistory[]
   capabilities: ProjectCapabilities
@@ -323,6 +323,17 @@ export interface ChapterImportResult {
 
 // En av projektets egna sändningar (även test-sändningar) — valbara i
 // Ondemand-vyns "Sändning"-dropdown, se ProjectRecordingDto på servern.
+// UNG-94: undertexten (WebVTT) för uppspelningsinspelningen, uppladdad av operatören.
+export interface ProjectCaptions {
+  language: string
+  label: string
+  cueCount: number
+  /** Sluttiden för den sista repliken — för att kunna varna om filen inte hör till den publicerade videon. */
+  lastCueEndSeconds: number
+  uploadedAt: string
+  url: string
+}
+
 export interface ProjectRecording {
   id: string
   name: string
