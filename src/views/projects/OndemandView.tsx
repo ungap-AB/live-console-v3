@@ -11,6 +11,7 @@ import { Icon } from '../../components/Icon'
 import { JobProgress } from '../../components/JobProgress'
 import { NotifyCheckbox } from '../../components/NotifyCheckbox'
 import { ShareDialog } from '../../components/ShareDialog'
+import { CaptionsPanel } from './CaptionsPanel'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ChapterImportDialog } from './ChapterImportDialog'
@@ -893,6 +894,14 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       <ShareDialog initialRecordingId={shareRecordingId} onClose={() => setShareRecordingId(null)} />
                     )}
                   </div>
+                )}
+                {(p.recording?.state === 'recorded' || p.recording?.state === 'trimmed' || p.recording?.state === 'published') && !awaitingApproval && !uploadPending && (
+                  <CaptionsPanel
+                    projectId={p.id}
+                    captions={p.recording.captions ?? null}
+                    videoDurationSeconds={recording?.durationSeconds}
+                    onChanged={() => void actions.refreshProject()}
+                  />
                 )}
                 {isAfter && projectRecordings.length > 1 && !uploadPending && (
                   <div class="od-recording-select">

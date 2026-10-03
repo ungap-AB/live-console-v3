@@ -807,6 +807,13 @@ export const mockClient: Client = {
       if (texts) Object.assign(p, texts)
       return delay(projectSnapshot(p))
     },
+    // Undertexter finns bara mot riktig backend.
+    async setCaptions() {
+      throw new Error('Undertexter finns inte i mock-läget')
+    },
+    async removeCaptions() {
+      throw new Error('Undertexter finns inte i mock-läget')
+    },
     async setPoster(id, file) {
       const p = findProject(id)
       p.posterUrl = URL.createObjectURL(file)
