@@ -128,6 +128,7 @@ export interface ServerProject {
   afterText: string
   ondemandText: string
   posterUrl?: string | null
+  textPlacement?: string
   visibility: string
   publicMode: string
   afterReason: string | null

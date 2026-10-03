@@ -6,11 +6,13 @@ import {
   MAX_PLAYER_TEXT_LENGTH,
   PLAYER_TEXT_FIELDS,
   POSTER_ACCEPTED_TYPES,
-  changedTexts,
+  TEXT_PLACEMENT_OPTIONS,
+  changedSettings,
   textsOf,
   validatePosterFile,
 } from './playerSettings'
 import type { PlayerTextKey } from './playerSettings'
+import type { TextPlacement } from '../../data/types'
 import './PlayerSettingsDialog.css'
 
 interface PlayerSettingsDialogProps {
@@ -23,6 +25,7 @@ interface PlayerSettingsDialogProps {
 // operatören bekräftar, och en vald bild förhandsvisas lokalt tills dess.
 export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettingsDialogProps) {
   const [texts, setTexts] = useState(() => textsOf(project))
+  const [placement, setPlacement] = useState<TextPlacement>(project.textPlacement)
   const [activeTextField, setActiveTextField] = useState<PlayerTextKey>(PLAYER_TEXT_FIELDS[0].key)
   const [posterFile, setPosterFile] = useState<File | null>(null)
   const [posterRemoved, setPosterRemoved] = useState(false)
@@ -34,7 +37,10 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
   useEffect(() => () => { if (localPreview) URL.revokeObjectURL(localPreview) }, [localPreview])
 
   const shownPoster = posterRemoved ? null : localPreview ?? project.posterUrl ?? null
-  const changed = changedTexts(project, texts)
+  // Exempeltexten i förhandsvisningen: den valda flikens text, annars spelarens standardtext eller ett exempel.
+  const activeField = PLAYER_TEXT_FIELDS.find((field) => field.key === activeTextField) ?? PLAYER_TEXT_FIELDS[0]
+  const previewText = texts[activeField.key].trim() || activeField.fallback || 'Exempeltext'
+  const changed = changedSettings(project, texts, placement)
   const dirty = changed !== null || posterFile !== null || (posterRemoved && Boolean(project.posterUrl))
 
   function choosePoster(file: File | undefined) {
@@ -128,14 +134,35 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
             <span class="ps-help">{field.when}</span>
           </div>
         ))}
+
+        <div class="ps-placement">
+          <span id="ps-placement-label" class="ps-placement-label">Placering i videofönstret</span>
+          <div class="ps-seg" role="radiogroup" aria-labelledby="ps-placement-label">
+            {TEXT_PLACEMENT_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={placement === option.value}
+                class={`ps-seg-option${placement === option.value ? ' active' : ''}`}
+                onClick={() => setPlacement(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <span class="ps-help">Gäller alla fyra texterna. Välj överkant eller underkant om posterns grafik ligger i mitten.</span>
+        </div>
       </section>
 
       <section class="ps-section">
         <h3>Poster</h3>
         <p class="ps-help">Bilden visas i spelaren när ingen video spelas, t.ex. före sändningen och när inspelningen inte är klar.</p>
-        <div class="ps-poster" aria-label="Förhandsvisning av poster">
+        <div class="ps-poster" aria-label="Förhandsvisning av poster och text">
           {shownPoster ? <img src={shownPoster} alt="Poster" /> : <span>Ingen poster</span>}
+          <span class={`ps-poster-text ps-poster-text-${placement}`}>{previewText}</span>
         </div>
+        <p class="ps-help">Förhandsvisningen visar vald placering med texten från den valda fliken.</p>
         <div class="ps-poster-actions">
           <input
             ref={fileInput}

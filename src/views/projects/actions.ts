@@ -5,7 +5,7 @@ export interface ProjectActions {
   refreshProject: () => Promise<void>
   refreshPlayout: () => Promise<void>
   /** Metoderna som returnerar boolean resolvar true när anropet lyckades (fel visas som toast). */
-  rename: (name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText'>>) => Promise<boolean>
+  rename: (name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText' | 'textPlacement'>>) => Promise<boolean>
   setPoster: (file: File) => Promise<boolean>
   removePoster: () => Promise<boolean>
   setVisibility: (visibility: Visibility) => Promise<void>
