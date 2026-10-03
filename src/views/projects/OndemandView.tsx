@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Chapter, ChapterImportResult, CueKind, Project, ProjectRecording, Recording } from '../../data/types'
+import { notifyJobsChanged, openJobTray } from '../../app/jobsBus'
 import { formatBytes, formatDateTime, formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
@@ -67,9 +68,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   // UNG-58: nedladdning av original- och/eller trimmad inspelning — vanlig
   // operatör har ingen tillgång till Videoarkivet där samma funktion redan
   // finns, så den behövs här också. Nyckel = recording-id (original ELLER
-  // trim har olika id:n, så båda kan pollas oberoende av varandra).
+  // trim har olika id:n). Servern kör jobbet; framsteget visas i jobbfältet (UNG-80).
   const [downloads, setDownloads] = useState<
-    Record<string, { status: 'processing' | 'ready' | 'error'; url?: string; message?: string; progress?: number; phase?: string }>
+    Record<string, { status: 'starting' | 'queued' | 'ready' | 'error'; url?: string; message?: string }>
   >({})
 
   // Misslyckad transkodning: servern tar bort inspelningsraden, så projektet går
@@ -252,11 +253,16 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   // tyst av webbläsaren efter en flerminuters väntan. Fungerar för BÅDE
   // original och trimmad inspelning — id:t avgör vilken.
   async function downloadRecording(recordingId: string) {
-    setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'processing' } }))
+    setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'starting' } }))
     try {
-      const job = await client.recordings.download(recordingId, (progress, phase) =>
-        setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'processing', progress, phase } })))
-      if (job.url) setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'ready', url: job.url } }))
+      const job = await client.recordings.startDownload(recordingId)
+      if (job.url) {
+        setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'ready', url: job.url } }))
+      } else {
+        // Servern kör jobbet; framsteget visas i jobbfältet och en toast säger till när filen är klar.
+        setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'queued' } }))
+        notifyJobsChanged()
+      }
     } catch (error) {
       setDownloads((prev) => ({
         ...prev,
@@ -1202,7 +1208,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
 interface DownloadButtonProps {
   label: string
   fileName: string
-  download?: { status: 'processing' | 'ready' | 'error'; url?: string; message?: string; progress?: number; phase?: string }
+  download?: { status: 'starting' | 'queued' | 'ready' | 'error'; url?: string; message?: string }
   onDownload: () => void
 }
 
@@ -1210,8 +1216,18 @@ interface DownloadButtonProps {
 // nedladdningsknapp — utbrutet här eftersom original och trimmad version
 // nu båda använder det, se ovan.
 function DownloadButton({ label, fileName, download, onDownload }: DownloadButtonProps) {
-  if (download?.status === 'processing') {
-    return <JobProgress progress={download.progress} phase={download.phase ?? 'QUEUED'} />
+  if (download?.status === 'starting') {
+    return <button class="btn btn-sm" type="button" disabled>Startar…</button>
+  }
+  if (download?.status === 'queued') {
+    return (
+      <span class="od-download-ready">
+        <span>Nedladdningen förbereds. Du får en avisering när den är klar.</span>
+        <button class="btn btn-sm" type="button" onClick={openJobTray}>
+          Visa jobb
+        </button>
+      </span>
+    )
   }
   if (download?.status === 'ready' && download.url) {
     return (

@@ -368,6 +368,29 @@ export interface DownloadJob {
   phase?: string
 }
 
+// UNG-80 steg 2: ett mediajobb i jobbfältet (servern äger slutförandet, se MediaJobObserver).
+export interface MediaJob {
+  id: string
+  kind: 'download' | 'upload'
+  state: 'processing' | 'done' | 'error'
+  recordingId: string
+  projectId?: string
+  projectName?: string
+  recordingName?: string
+  progress?: number
+  phase?: string
+  errorMessage?: string
+  createdAtUtc: string
+  completedAtUtc?: string
+  startedByUserId?: string
+  startedByName?: string
+}
+
+export interface DownloadLink {
+  url: string
+  expiresAt: string
+}
+
 export interface UploadJob {
   jobId: string
   state: 'processing' | 'done' | 'error'

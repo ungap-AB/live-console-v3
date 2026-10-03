@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Chapter, CueKind, Recording } from '../../data/types'
+import { notifyJobsChanged, openJobTray } from '../../app/jobsBus'
 import { useResource } from '../../app/useResource'
 import { SplitPane } from '../../components/SplitPane'
-import { JobProgress } from '../../components/JobProgress'
 import { StatusChip } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
 import { OverflowMenu } from '../../components/OverflowMenu'
@@ -48,7 +48,7 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   const [renaming, setRenaming] = useState<Recording | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [downloads, setDownloads] = useState<
-    Record<string, { status: 'processing' | 'ready' | 'error'; url?: string; message?: string; progress?: number; phase?: string }>
+    Record<string, { status: 'starting' | 'queued' | 'ready' | 'error'; url?: string; message?: string }>
   >({})
 
   useEffect(() => {
@@ -133,12 +133,15 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   // långt efter den ursprungliga klickgesten blockeras ofta tyst av
   // webbläsaren (inte en direkt reaktion på användarens klick längre).
   async function downloadRecording(recording: Recording) {
-    setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'processing' } }))
+    setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'starting' } }))
     try {
-      const job = await client.recordings.download(recording.id, (progress, phase) =>
-        setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'processing', progress, phase } })))
+      const job = await client.recordings.startDownload(recording.id)
       if (job.url) {
         setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'ready', url: job.url } }))
+      } else {
+        // Servern kör jobbet; framsteget visas i jobbfältet och en toast säger till när filen är klar.
+        setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'queued' } }))
+        notifyJobsChanged()
       }
     } catch (error) {
       setDownloads((prev) => ({
@@ -261,7 +264,7 @@ interface ArchiveDetailProps {
   onTrash: () => void
   onRename: () => void
   onDownload: () => void
-  download?: { status: 'processing' | 'ready' | 'error'; url?: string; message?: string; progress?: number; phase?: string }
+  download?: { status: 'starting' | 'queued' | 'ready' | 'error'; url?: string; message?: string }
   onOpenProject: () => void
 }
 
@@ -309,8 +312,15 @@ function ArchiveDetail({ recording: r, chapters, onTrash, onRename, onDownload, 
           )}
         </div>
         <div class="tools">
-          {download?.status === 'processing' ? (
-            <JobProgress progress={download.progress} phase={download.phase ?? 'QUEUED'} />
+          {download?.status === 'starting' ? (
+            <button class="btn btn-sm" type="button" disabled>Startar…</button>
+          ) : download?.status === 'queued' ? (
+            <span class="download-ready">
+              <span>Nedladdningen förbereds. Du får en avisering när den är klar.</span>
+              <button class="btn btn-sm" type="button" onClick={openJobTray}>
+                Visa jobb
+              </button>
+            </span>
           ) : download?.status === 'ready' && download.url ? (
             <span class="download-ready">
               <a class="btn btn-sm" href={download.url} download>

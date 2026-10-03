@@ -9,6 +9,7 @@ import type {
   CredentialLinkInfo,
   CredentialLinkRedeemed,
   CurrentUser,
+  DownloadLink,
   LivePhase,
   MeetingSummary,
   MeetingTopic,
@@ -50,6 +51,7 @@ import type {
   ServerTrashItem,
   ServerTrimJob,
   ServerDownloadJob,
+  ServerMediaJob,
   ServerUploadJob,
   ServerUser,
 } from './serverDtos'
@@ -91,23 +93,6 @@ async function pollTrimJob(jobId: string): Promise<ServerTrimJob> {
     }
     if (job.state === 'failed') {
       throw new Error(job.error?.message ?? 'Trimningen misslyckades.')
-    }
-    return job
-  }
-}
-
-// Glesare poll-intervall än trimning — en MediaConvert-konvertering av en
-// hel sändning tar typiskt minuter, inte sekunder (UNG-58).
-async function pollDownloadJob(jobId: string, onProgress?: (progress?: number, phase?: string) => void): Promise<ServerDownloadJob> {
-  for (;;) {
-    const job = await api<ServerDownloadJob>(`/download-jobs/${jobId}`)
-    if (job.state === 'processing') {
-      onProgress?.(job.progress, job.phase)
-      await sleep(3000)
-      continue
-    }
-    if (job.state === 'error') {
-      throw new Error(job.error?.message ?? 'Nedladdningen kunde inte förberedas.')
     }
     return job
   }
@@ -580,11 +565,8 @@ export const httpClient: Client = {
       const fresh = await api<ServerRecording>(`/recordings/${done.recordingId}`)
       return fetchRecordingDetail(fresh)
     },
-    async download(id, onProgress) {
-      const job = await api<ServerDownloadJob>(`/recordings/${id}/download`, { method: 'POST' })
-      if (job.state === 'done') return job
-      onProgress?.(job.progress, job.phase)
-      return pollDownloadJob(job.jobId, onProgress)
+    startDownload(id) {
+      return api<ServerDownloadJob>(`/recordings/${id}/download`, { method: 'POST' })
     },
     async acceptUpload(id) {
       await api<void>(`/recordings/${id}/accept-upload`, { method: 'POST' })
@@ -602,6 +584,14 @@ export const httpClient: Client = {
         method: 'POST',
         body: { fileName: file.name, projectId, name },
       })
+    },
+  },
+  jobs: {
+    async list() {
+      return api<ServerMediaJob[]>('/jobs')
+    },
+    downloadLink(id) {
+      return api<DownloadLink>(`/jobs/${id}/download-link`)
     },
   },
   channels: {

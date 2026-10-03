@@ -61,3 +61,13 @@ export function formatShortDate(iso: string): string {
   if (d.toDateString() === new Date().toDateString()) return 'idag'
   return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })
 }
+
+// "nyss", "5 min sedan", "2 tim sedan", annars datum — för jobbfältet.
+export function formatAgo(iso: string): string {
+  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000)
+  if (minutes < 1) return 'nyss'
+  if (minutes < 60) return `${minutes} min sedan`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} tim sedan`
+  return formatShortDate(iso)
+}

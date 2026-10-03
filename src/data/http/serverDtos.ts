@@ -279,6 +279,23 @@ export interface ServerDownloadJob {
   phase?: string
 }
 
+export interface ServerMediaJob {
+  id: string
+  kind: 'download' | 'upload'
+  state: 'processing' | 'done' | 'error'
+  recordingId: string
+  projectId?: string
+  projectName?: string
+  recordingName?: string
+  progress?: number
+  phase?: string
+  errorMessage?: string
+  createdAtUtc: string
+  completedAtUtc?: string
+  startedByUserId?: string
+  startedByName?: string
+}
+
 export interface ServerUploadJob {
   jobId: string
   state: 'processing' | 'done' | 'error'

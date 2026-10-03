@@ -1,9 +1,13 @@
 import type { ComponentChildren } from 'preact'
-import { useEffect, useState } from 'preact/hooks'
+import { useCallback, useEffect, useState } from 'preact/hooks'
 import { client } from '../data'
-import type { Domain, Role, UserAccount } from '../data/types'
+import type { Domain, MediaJob, Role, UserAccount } from '../data/types'
 import { Modal } from '../components/Modal'
 import { Icon } from '../components/Icon'
+import { JobTray } from '../components/JobTray'
+import { Toast } from '../components/Toast'
+import { downloadJobFile } from './jobActions'
+import { useJobs } from './useJobs'
 import { formatDate } from './time'
 import { routeHref, type RouteKey } from './router'
 import { getStoredThemePreference, setThemePreference, type ThemePreference } from './theme'
@@ -55,16 +59,32 @@ interface ShellProps {
   /** Kontextuell knapp bredvid "Projekt" i navmenyn — "+ Ny" i listläge, "Livesändning"/"Ondemand" när ett projekt är öppet. Null döljer knappen (t.ex. på andra vyer). */
   projectsNavAction: { label: string; onClick: () => void } | null
   onLogout: () => void
+  /** Öppnar ett projekt i Projekt-vyn (jobbfältets "Öppna projektet"). */
+  onOpenProject: (projectId: string) => void
   currentUserId: string
   currentUserRoles: Role[]
   contentLocked?: boolean
 }
 
-export function Shell({ active, children, projectsNavAction, onLogout, currentUserId, currentUserRoles, contentLocked = false }: ShellProps) {
+interface ShellToast {
+  message: string
+  actionLabel?: string
+  onAction?: () => void
+}
+
+export function Shell({ active, children, projectsNavAction, onLogout, onOpenProject, currentUserId, currentUserRoles, contentLocked = false }: ShellProps) {
   const [navOpen, setNavOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null)
   const [currentDomain, setCurrentDomain] = useState<Domain | null>(null)
   const [showAccount, setShowAccount] = useState(false)
+  const [toast, setToast] = useState<ShellToast | null>(null)
+  // Stabil referens: Toasten startar om sin timer när onDismiss byter identitet, och jobbfältet renderar om ofta.
+  const dismissToast = useCallback(() => setToast(null), [])
+  // Toast när ett jobb jag startat blir klart; jobbfältet visar alla domänens jobb.
+  const jobs = useJobs((job) => {
+    if (job.startedByUserId !== currentUserId) return
+    setToast(describeFinishedJob(job, onOpenProject, (message) => setToast({ message })))
+  })
   const isRootAdmin = currentUserRoles.includes('rootAdmin')
   const visibleGroups = NAV_GROUPS
     .map((group) => ({
@@ -138,6 +158,8 @@ export function Shell({ active, children, projectsNavAction, onLogout, currentUs
           ))}
         </div>
 
+        <JobTray jobs={jobs} onOpenProject={onOpenProject} />
+
         <div class="nav-user">
           <div class="nav-user-identity">
             <Icon name="account_circle" size={28} />
@@ -175,8 +197,43 @@ export function Shell({ active, children, projectsNavAction, onLogout, currentUs
       )}
 
       <main class={`outlet${contentLocked ? ' content-locked' : ''}`}>{children}</main>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          actionLabel={toast.actionLabel}
+          onAction={toast.onAction}
+          onDismiss={dismissToast}
+          durationMs={10000}
+        />
+      )}
     </div>
   )
+}
+
+function describeFinishedJob(
+  job: MediaJob,
+  onOpenProject: (projectId: string) => void,
+  showMessage: (message: string) => void,
+): ShellToast {
+  const name = job.projectName ?? job.recordingName ?? 'inspelningen'
+  if (job.state === 'error') {
+    return { message: `${job.kind === 'download' ? 'Nedladdningen' : 'Bearbetningen'} av ${name} misslyckades.` }
+  }
+  if (job.kind === 'download') {
+    return {
+      message: `Nedladdningen av ${name} är klar.`,
+      actionLabel: 'Ladda ner',
+      onAction: () => {
+        downloadJobFile(job).catch((error) => showMessage(error instanceof Error ? error.message : 'Nedladdningen misslyckades.'))
+      },
+    }
+  }
+  return {
+    message: `Videon för ${name} är bearbetad och väntar på granskning.`,
+    actionLabel: job.projectId ? 'Öppna projektet' : undefined,
+    onAction: job.projectId ? () => onOpenProject(job.projectId!) : undefined,
+  }
 }
 
 interface MyAccountDialogProps {
