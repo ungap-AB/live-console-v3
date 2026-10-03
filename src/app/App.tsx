@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../data'
 import type { CurrentUser } from '../data/types'
+import { openJobTray } from './jobsBus'
+import { parseProjectLink } from './projectLink'
 import { routeHref, useCredentialToken, useRoute } from './router'
 import { Shell } from './Shell'
 import { CredentialLinkView } from './CredentialLinkView'
@@ -81,6 +83,25 @@ export function App() {
   // det räcker att konsumera det en gång vid montering (se onInitialSelectionConsumed).
   const [pendingAgendaId, setPendingAgendaId] = useState<string | null>(null)
   const [pendingNameListId, setPendingNameListId] = useState<string | null>(null)
+
+  // Djuplänk från ett jobbmejl (#/projects/{id}[?jobs=1]): öppna projektet/jobbfältet och byt sedan hashen till
+  // den vanliga projektvyn, så länken inte körs om. Väntar på inloggning — hashen finns kvar under inloggningen.
+  const authed = auth.status === 'authed'
+  useEffect(() => {
+    if (!authed) return
+    function followLink() {
+      const link = parseProjectLink(window.location.hash)
+      if (!link) return
+      if (link.projectId) openProject(link.projectId)
+      else window.location.hash = routeHref('projects')
+      if (link.openJobs) openJobTray()
+    }
+    followLink()
+    window.addEventListener('hashchange', followLink)
+    return () => window.removeEventListener('hashchange', followLink)
+    // openProject läser bara stabila setters
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed])
 
   const isRootAdmin = auth.status === 'authed' && auth.user.roles.includes('rootAdmin')
   const routeAllowed = isRootAdmin || ['projects', 'agendas', 'namelists', 'trash'].includes(route)

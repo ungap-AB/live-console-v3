@@ -2,8 +2,10 @@ import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Chapter, CueKind, Recording } from '../../data/types'
 import { notifyJobsChanged, openJobTray } from '../../app/jobsBus'
+import { readNotifyByEmail } from '../../app/notifyPreference'
 import { useResource } from '../../app/useResource'
 import { SplitPane } from '../../components/SplitPane'
+import { NotifyCheckbox } from '../../components/NotifyCheckbox'
 import { StatusChip } from '../../components/StatusChip'
 import { CopyField } from '../../components/CopyField'
 import { OverflowMenu } from '../../components/OverflowMenu'
@@ -135,7 +137,7 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   async function downloadRecording(recording: Recording) {
     setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'starting' } }))
     try {
-      const job = await client.recordings.startDownload(recording.id)
+      const job = await client.recordings.startDownload(recording.id, { notifyByEmail: readNotifyByEmail() })
       if (job.url) {
         setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'ready', url: job.url } }))
       } else {
@@ -340,6 +342,7 @@ function ArchiveDetail({ recording: r, chapters, onTrash, onRename, onDownload, 
               Ladda ner
             </button>
           )}
+          {download?.status !== 'queued' && download?.status !== 'starting' && download?.status !== 'ready' && <NotifyCheckbox />}
           {download?.status === 'error' && <span class="download-error">{download.message}</span>}
           {r.project && (
             <button class="btn btn-sm" type="button" onClick={onOpenProject}>
