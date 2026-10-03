@@ -1,0 +1,71 @@
+.login-card.shared-card {
+  width: min(560px, 92vw);
+}
+
+.shared-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.shared-message {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--surface-3);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.shared-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.shared-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 10px 12px;
+  color: var(--ink);
+}
+
+.shared-row + .shared-row {
+  border-top: 1px solid var(--line);
+}
+
+.shared-row .material-symbols-outlined {
+  flex: none;
+  color: var(--ink-3);
+}
+
+.shared-name {
+  flex: 1;
+  min-width: 160px;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
+.shared-size {
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+
+.shared-error {
+  flex-basis: 100%;
+  color: var(--warn);
+  font-size: 12.5px;
+}
+
+.shared-note {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 12.5px;
+}

@@ -496,6 +496,13 @@ export const mockClient: Client = {
       return delay({ jobId: `uj-${id}`, state: 'processing' as const, recordingId: id })
     },
   },
+  publicDownloads: {
+    // Delningar finns bara mot riktig backend.
+    lookup: () => delay({ status: 'unknown' as const }),
+    link: async () => {
+      throw new Error('Delningar finns inte i mock-läget')
+    },
+  },
   jobs: {
     // Mocken har inga bakgrundsjobb — nedladdningen är klar direkt (se recordings.startDownload).
     list: () => delay([]),

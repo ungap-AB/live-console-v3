@@ -3,9 +3,10 @@ import { client } from '../data'
 import type { CurrentUser } from '../data/types'
 import { openJobTray } from './jobsBus'
 import { parseProjectLink } from './projectLink'
-import { routeHref, useCredentialToken, useRoute } from './router'
+import { routeHref, useCredentialToken, useRoute, useShareToken } from './router'
 import { Shell } from './Shell'
 import { CredentialLinkView } from './CredentialLinkView'
+import { SharedDownloadsView } from './SharedDownloadsView'
 import { LoginView } from './LoginView'
 import { ProjectsView, parseProjectScreen, type ProjectScreen } from '../views/projects/ProjectsView'
 import { AgendasView } from '../views/agendas/AgendasView'
@@ -21,6 +22,7 @@ type AuthState = { status: 'loading' } | { status: 'anon' } | { status: 'authed'
 export function App() {
   const route = useRoute()
   const credentialToken = useCredentialToken()
+  const shareToken = useShareToken()
   // E-posten från en aktiverad inbjudan/återställning förifylls på inloggningen.
   const [loginEmail, setLoginEmail] = useState<string | null>(null)
   const [auth, setAuth] = useState<AuthState>({ status: 'loading' })
@@ -111,6 +113,9 @@ export function App() {
       window.location.hash = routeHref('projects')
     }
   }, [auth.status, routeAllowed, route])
+
+  // Delningslänk (UNG-80 steg 4): publik sida utan inloggning, även om en operatör råkar vara inloggad i webbläsaren.
+  if (shareToken) return <SharedDownloadsView token={shareToken} />
 
   // Engångslänk från ett mejl (inbjudan/återställning) går före allt annat, även när någon är inloggad.
   if (credentialToken) {

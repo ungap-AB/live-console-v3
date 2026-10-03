@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'preact/hooks'
+import { parseShareToken } from './shareLink'
 
 export type RouteKey =
   | 'projects'
@@ -47,6 +48,18 @@ function parseCredentialToken(): string | null {
   const hash = window.location.hash.slice(1)
   if (!hash.startsWith('/accept')) return null
   return new URLSearchParams(hash.split('?')[1] ?? '').get('token')
+}
+
+export function useShareToken(): string | null {
+  const [token, setToken] = useState<string | null>(() => parseShareToken(window.location.hash))
+
+  useEffect(() => {
+    const onHashChange = () => setToken(parseShareToken(window.location.hash))
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
+  return token
 }
 
 export function useCredentialToken(): string | null {
