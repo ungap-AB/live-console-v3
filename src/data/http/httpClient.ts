@@ -621,6 +621,9 @@ export const httpClient: Client = {
     async list() {
       return api<ServerMediaJob[]>('/jobs')
     },
+    cancel(id) {
+      return api<ServerMediaJob>(`/jobs/${id}/cancel`, { method: 'POST' })
+    },
     downloadLink(id) {
       return api<DownloadLink>(`/jobs/${id}/download-link`)
     },

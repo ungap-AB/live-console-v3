@@ -16,8 +16,8 @@ interface Candidate {
 }
 
 interface ShareDialogProps {
-  /** Filen som är förvald (där "Dela…" klickades). */
-  initialRecordingId?: string
+  /** Filerna som är förvalda (där "Dela…" klickades, eller de som valts i Jobb-vyn). */
+  initialRecordingIds?: string[]
   onClose: () => void
   /** Anropas när delningen skapats, så att listor bakom dialogen kan hämtas om. */
   onShared?: () => void
@@ -42,9 +42,9 @@ function candidatesFrom(jobs: MediaJob[]): Candidate[] {
 
 // UNG-80 steg 4: dela en eller flera färdiga nedladdningar via en länk som gäller i sju dagar. Mottagarna får ett
 // mejl, och länken visas här en gång så att operatören kan skicka den själv. Delningen loggas och kan återkallas.
-export function ShareDialog({ initialRecordingId, onClose, onShared }: ShareDialogProps) {
+export function ShareDialog({ initialRecordingIds, onClose, onShared }: ShareDialogProps) {
   const [candidates, setCandidates] = useState<Candidate[] | null>(null)
-  const [selected, setSelected] = useState<string[]>(initialRecordingId ? [initialRecordingId] : [])
+  const [selected, setSelected] = useState<string[]>(initialRecordingIds ?? [])
   const [recipientsText, setRecipientsText] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
@@ -57,16 +57,16 @@ export function ShareDialog({ initialRecordingId, onClose, onShared }: ShareDial
       (jobs) => {
         if (cancelled) return
         const list = candidatesFrom(jobs)
-        // Filen man klickade på ska alltid gå att välja, även om jobbraden hunnit rensas — servern kontrollerar den ändå.
-        if (initialRecordingId && !list.some((c) => c.recordingId === initialRecordingId)) {
-          list.unshift({ recordingId: initialRecordingId, name: 'Vald inspelning' })
+        // Filerna man valt ska alltid gå att välja, även om jobbraden hunnit rensas — servern kontrollerar dem ändå.
+        for (const id of initialRecordingIds ?? []) {
+          if (!list.some((c) => c.recordingId === id)) list.unshift({ recordingId: id, name: 'Vald inspelning' })
         }
         setCandidates(list)
       },
       () => { if (!cancelled) setCandidates([]) },
     )
     return () => { cancelled = true }
-  }, [initialRecordingId])
+  }, [initialRecordingIds?.join('|')])
 
   const { valid, invalid } = parseRecipients(recipientsText)
   const tooMany = valid.length > MAX_RECIPIENTS

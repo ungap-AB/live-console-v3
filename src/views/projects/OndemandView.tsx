@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Chapter, ChapterImportResult, CueKind, Project, ProjectRecording, Recording } from '../../data/types'
-import { notifyJobsChanged, openJobTray } from '../../app/jobsBus'
+import { notifyJobsChanged, openJobsView } from '../../app/jobsBus'
 import { readNotifyByEmail } from '../../app/notifyPreference'
 import { formatBytes, formatDateTime, formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
@@ -891,7 +891,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       />
                     )}
                     {shareRecordingId && (
-                      <ShareDialog initialRecordingId={shareRecordingId} onClose={() => setShareRecordingId(null)} />
+                      <ShareDialog initialRecordingIds={[shareRecordingId]} onClose={() => setShareRecordingId(null)} />
                     )}
                   </div>
                 )}
@@ -1243,7 +1243,7 @@ function DownloadButton({ label, fileName, download, onDownload, onShare }: Down
     return (
       <span class="od-download-ready">
         <span>Nedladdningen förbereds. Du får en avisering när den är klar.</span>
-        <button class="btn btn-sm" type="button" onClick={openJobTray}>
+        <button class="btn btn-sm" type="button" onClick={openJobsView}>
           Visa jobb
         </button>
       </span>
