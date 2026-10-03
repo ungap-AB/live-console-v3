@@ -152,6 +152,7 @@ export function App() {
       projectsNavAction={projectsNavAction}
       onLogout={logout}
       onOpenProject={openProject}
+      onOpenProjectList={() => setActiveProjectId(null)}
       currentUserId={auth.user.id}
       currentUserRoles={auth.user.roles}
     >
