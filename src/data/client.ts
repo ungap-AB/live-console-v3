@@ -185,7 +185,7 @@ export interface Client {
     setActiveRecording(id: string, recordingId: string): Promise<Project>
     touchPlayout(id: string): Promise<void>
     create(input: { name: string }): Promise<Project>
-    rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText'>>): Promise<Project>
+    rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText' | 'textPlacement'>>): Promise<Project>
     trash(id: string): Promise<void>
     /** Laddar upp spelarens poster (JPG/PNG/WebP, högst 5 MB). Ersätter en tidigare poster. */
     setPoster(id: string, file: File): Promise<Project>

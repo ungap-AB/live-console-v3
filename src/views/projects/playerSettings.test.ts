@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { POSTER_MAX_BYTES, PLAYER_TEXT_FIELDS, changedTexts, textsOf, validatePosterFile } from './playerSettings.ts'
+import { POSTER_MAX_BYTES, PLAYER_TEXT_FIELDS, TEXT_PLACEMENT_OPTIONS, changedSettings, changedTexts, textsOf, validatePosterFile } from './playerSettings.ts'
 
-const project = { beforeText: 'a', liveText: '', afterText: 'c', ondemandText: '' }
+const project = { beforeText: 'a', liveText: '', afterText: 'c', ondemandText: '', textPlacement: 'middle' as const }
 
 test('alla fyra lägen har ett textfält, i visningsordning', () => {
   assert.deepEqual(PLAYER_TEXT_FIELDS.map((f) => f.key), ['beforeText', 'liveText', 'afterText', 'ondemandText'])
@@ -34,4 +34,19 @@ test('validatePosterFile avvisar fel typ, tom fil och för stor fil', () => {
   assert.match(validatePosterFile({ type: 'image/gif', size: 10 })!, /JPG/)
   assert.match(validatePosterFile({ type: 'image/png', size: 0 })!, /tom/)
   assert.match(validatePosterFile({ type: 'image/png', size: POSTER_MAX_BYTES + 1 })!, /5 MB/)
+})
+
+test('textplaceringen har tre lägen i visningsordning, med mitten som standard för nya projekt', () => {
+  assert.deepEqual(TEXT_PLACEMENT_OPTIONS.map((option) => option.value), ['top', 'middle', 'bottom'])
+  assert.deepEqual(TEXT_PLACEMENT_OPTIONS.map((option) => option.label), ['Överkant', 'Mitten', 'Underkant'])
+})
+
+test('changedSettings tar med placeringen bara när den ändrats, tillsammans med ändrade texter', () => {
+  assert.equal(changedSettings(project, textsOf(project), 'middle'), null)
+  assert.deepEqual(changedSettings(project, textsOf(project), 'top'), { textPlacement: 'top' })
+  assert.deepEqual(
+    changedSettings(project, { ...textsOf(project), liveText: 'Snart live' }, 'bottom'),
+    { liveText: 'Snart live', textPlacement: 'bottom' },
+  )
+  assert.deepEqual(changedSettings(project, { ...textsOf(project), afterText: 'Slut' }, 'middle'), { afterText: 'Slut' })
 })

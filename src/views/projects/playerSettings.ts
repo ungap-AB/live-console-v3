@@ -1,4 +1,4 @@
-import type { Project } from '../../data/types'
+import type { Project, TextPlacement } from '../../data/types'
 
 export type PlayerTextKey = 'beforeText' | 'liveText' | 'afterText' | 'ondemandText'
 export type PlayerTexts = Record<PlayerTextKey, string>
@@ -22,6 +22,13 @@ export const PLAYER_TEXT_FIELDS: PlayerTextField[] = [
 
 export const MAX_PLAYER_TEXT_LENGTH = 500
 
+// UNG-96: var texterna placeras i videofönstret. En placering för alla fyra, så texten inte konkurrerar med posterns grafik.
+export const TEXT_PLACEMENT_OPTIONS: { value: TextPlacement; label: string }[] = [
+  { value: 'top', label: 'Överkant' },
+  { value: 'middle', label: 'Mitten' },
+  { value: 'bottom', label: 'Underkant' },
+]
+
 export const POSTER_MAX_BYTES = 5 * 1024 * 1024
 export const POSTER_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
@@ -41,6 +48,19 @@ export function changedTexts(project: Pick<Project, PlayerTextKey>, draft: Playe
   for (const field of PLAYER_TEXT_FIELDS) {
     if (draft[field.key] !== current[field.key]) changed[field.key] = draft[field.key]
   }
+  return Object.keys(changed).length > 0 ? changed : null
+}
+
+export type PlayerSettingsChanges = Partial<PlayerTexts> & { textPlacement?: TextPlacement }
+
+/** Texter och placering som ändrats mot projektet, eller null om inget ändrats. */
+export function changedSettings(
+  project: Pick<Project, PlayerTextKey | 'textPlacement'>,
+  texts: PlayerTexts,
+  placement: TextPlacement,
+): PlayerSettingsChanges | null {
+  const changed: PlayerSettingsChanges = { ...changedTexts(project, texts) }
+  if (placement !== project.textPlacement) changed.textPlacement = placement
   return Object.keys(changed).length > 0 ? changed : null
 }
 

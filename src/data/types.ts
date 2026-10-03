@@ -155,6 +155,8 @@ export interface Project {
   ondemandText: string
   /** Publik URL till spelarens poster (visas när ingen video spelas), eller null. */
   posterUrl?: string | null
+  /** Var texterna ovan placeras i spelarens videofönster (UNG-96). En placering för alla fyra. */
+  textPlacement: TextPlacement
   visibility: Visibility
   publicMode: PublicMode
   afterReason: AfterReason | null
@@ -450,6 +452,8 @@ export interface PublicShare {
   expiresAtUtc?: string
   items?: PublicShareItem[]
 }
+
+export type TextPlacement = 'top' | 'middle' | 'bottom'
 
 export interface DownloadLink {
   url: string

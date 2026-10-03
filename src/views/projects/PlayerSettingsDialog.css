@@ -70,6 +70,7 @@
 }
 
 .ps-poster {
+  position: relative;
   margin-top: 12px;
   aspect-ratio: 16 / 9;
   width: min(360px, 100%);
@@ -104,4 +105,75 @@
   margin: 0 0 6px;
   font-size: 12.5px;
   color: var(--danger, #c0392b);
+}
+
+.ps-placement {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.ps-placement-label {
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.ps-seg {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.ps-seg-option {
+  border: 0;
+  background: var(--panel);
+  padding: 7px 15px;
+  color: var(--ink-2);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ps-seg-option + .ps-seg-option {
+  border-left: 1px solid var(--line);
+}
+
+.ps-seg-option.active {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+/* Exempeltexten över posterförhandsvisningen, på samma ställe som i spelaren. */
+.ps-poster-text {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  z-index: 1;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.75);
+  white-space: pre-line;
+}
+
+.ps-poster-text-top {
+  top: 8%;
+}
+
+.ps-poster-text-middle {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.ps-poster-text-bottom {
+  bottom: 8%;
 }

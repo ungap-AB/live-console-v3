@@ -779,6 +779,7 @@ export const mockClient: Client = {
         liveText: '',
         afterText: '',
         ondemandText: '',
+        textPlacement: 'middle',
         visibility: 'closed',
         publicMode: 'before',
         afterReason: null,

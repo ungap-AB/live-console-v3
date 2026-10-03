@@ -32,6 +32,7 @@ import type {
   UserAccount,
   Visibility,
 } from '../types'
+import { toTextPlacement } from '../textPlacement'
 import { ApiError, api, setAuthToken } from './fetchJson'
 import type {
   ServerAgenda,
@@ -322,6 +323,7 @@ function toProjectLite(dto: ServerProject): Project {
     afterText: dto.afterText ?? '',
     ondemandText: dto.ondemandText ?? '',
     posterUrl: dto.posterUrl ?? null,
+    textPlacement: toTextPlacement(dto.textPlacement),
     visibility: dto.visibility as Visibility,
     publicMode: dto.publicMode as PublicMode,
     afterReason: dto.afterReason as AfterReason | null,
