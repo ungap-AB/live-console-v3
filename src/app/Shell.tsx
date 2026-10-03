@@ -164,7 +164,7 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
           ))}
         </div>
 
-        <JobTray jobs={jobs} onOpenProject={onOpenProject} />
+        <JobTray jobs={jobs} userId={currentUserId} onOpenProject={onOpenProject} />
 
         <div class="nav-user">
           <div class="nav-user-identity">
