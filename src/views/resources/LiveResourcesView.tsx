@@ -331,6 +331,8 @@ function ResourceDetail({ channel: c, health, onRotateKey, onOpenProject, onTear
                 <dd>{health.resolution ?? ''}</dd>
                 <dt>Senaste bild</dt>
                 <dd>{(health.lastFrameSecondsAgo ?? 0).toLocaleString('sv-SE')} s sedan</dd>
+                <dt>Tittare</dt>
+                <dd>{typeof health.viewerCount === 'number' ? health.viewerCount.toLocaleString('sv-SE') : '–'}</dd>
                 <dt>Sänder sedan</dt>
                 <dd>{health.streamStartedAt ? formatDateTime(health.streamStartedAt) : ''}</dd>
               </dl>

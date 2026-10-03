@@ -27,6 +27,7 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
   const [texts, setTexts] = useState(() => textsOf(project))
   const [placement, setPlacement] = useState<TextPlacement>(project.textPlacement)
   const [activeTextField, setActiveTextField] = useState<PlayerTextKey>(PLAYER_TEXT_FIELDS[0].key)
+  const [muxEnabled, setMuxEnabled] = useState(project.muxEnabled)
   const [posterFile, setPosterFile] = useState<File | null>(null)
   const [posterRemoved, setPosterRemoved] = useState(false)
   const [posterError, setPosterError] = useState<string | null>(null)
@@ -40,7 +41,7 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
   // Exempeltexten i förhandsvisningen: den valda flikens text, annars spelarens standardtext eller ett exempel.
   const activeField = PLAYER_TEXT_FIELDS.find((field) => field.key === activeTextField) ?? PLAYER_TEXT_FIELDS[0]
   const previewText = texts[activeField.key].trim() || activeField.fallback || 'Exempeltext'
-  const changed = changedSettings(project, texts, placement)
+  const changed = changedSettings(project, texts, placement, muxEnabled)
   const dirty = changed !== null || posterFile !== null || (posterRemoved && Boolean(project.posterUrl))
 
   function choosePoster(file: File | undefined) {
@@ -186,6 +187,27 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
         </div>
         {posterError && <p class="ps-error" role="alert">{posterError}</p>}
         <p class="ps-help">JPG, PNG eller WebP, högst 5 MB. Rekommenderat format 16:9, t.ex. 1920×1080.</p>
+      </section>
+
+      <section class="ps-section">
+        <h3>Uppspelningsmätning</h3>
+        <p class="ps-help">
+          Spelaren skickar anonym uppspelningsdata (kvalitet, buffring och fel) till Mux, till hjälp vid felsökning. Inga cookies används
+          och tittarna identifieras inte.
+        </p>
+        <label class="ps-switch">
+          <input
+            type="checkbox"
+            checked={muxEnabled}
+            onChange={(e) => setMuxEnabled((e.target as HTMLInputElement).checked)}
+          />
+          <span>Mät uppspelning med Mux</span>
+        </label>
+        <label class="ps-mux-key">
+          <span class="ps-placement-label">Mux env key</span>
+          <input type="text" readOnly value={project.muxEnvKey ?? ''} placeholder="Ingen nyckel konfigurerad" aria-label="Mux env key (skrivskyddad)" />
+        </label>
+        <span class="ps-help">Nyckeln ställs in per domän av en administratör. Utan egen nyckel används ungaps standardnyckel.</span>
       </section>
     </Modal>
   )

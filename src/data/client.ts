@@ -164,7 +164,8 @@ export interface Client {
   domains: {
     list(): Promise<Domain[]>
     create(input: { host: string; org: string }): Promise<Domain>
-    update(id: string, input: { org: string; contractStart?: string; contractEnd?: string }): Promise<Domain>
+    /** muxEnvKey: tom sträng tar bort kundens egen nyckel (standardnyckeln gäller då); utelämnad lämnar den oförändrad. */
+    update(id: string, input: { org: string; contractStart?: string; contractEnd?: string; muxEnvKey?: string }): Promise<Domain>
     remove(id: string): Promise<void>
     createUser(domainId: string, input: { email: string; name: string; roles: Role[] }): Promise<UserAccount>
   }
@@ -192,7 +193,7 @@ export interface Client {
     setActiveRecording(id: string, recordingId: string): Promise<Project>
     touchPlayout(id: string): Promise<void>
     create(input: { name: string }): Promise<Project>
-    rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText' | 'textPlacement'>>): Promise<Project>
+    rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText' | 'textPlacement' | 'muxEnabled'>>): Promise<Project>
     trash(id: string): Promise<void>
     /** Laddar upp spelarens poster (JPG/PNG/WebP, högst 5 MB). Ersätter en tidigare poster. */
     /** Laddar upp undertexter (WebVTT) för den trimmade, publicerade inspelningen. Ersätter en tidigare fil. */

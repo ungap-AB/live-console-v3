@@ -51,16 +51,18 @@ export function changedTexts(project: Pick<Project, PlayerTextKey>, draft: Playe
   return Object.keys(changed).length > 0 ? changed : null
 }
 
-export type PlayerSettingsChanges = Partial<PlayerTexts> & { textPlacement?: TextPlacement }
+export type PlayerSettingsChanges = Partial<PlayerTexts> & { textPlacement?: TextPlacement; muxEnabled?: boolean }
 
-/** Texter och placering som ändrats mot projektet, eller null om inget ändrats. */
+/** Texter, placering och mätning som ändrats mot projektet, eller null om inget ändrats. */
 export function changedSettings(
-  project: Pick<Project, PlayerTextKey | 'textPlacement'>,
+  project: Pick<Project, PlayerTextKey | 'textPlacement' | 'muxEnabled'>,
   texts: PlayerTexts,
   placement: TextPlacement,
+  muxEnabled: boolean,
 ): PlayerSettingsChanges | null {
   const changed: PlayerSettingsChanges = { ...changedTexts(project, texts) }
   if (placement !== project.textPlacement) changed.textPlacement = placement
+  if (muxEnabled !== project.muxEnabled) changed.muxEnabled = muxEnabled
   return Object.keys(changed).length > 0 ? changed : null
 }
 

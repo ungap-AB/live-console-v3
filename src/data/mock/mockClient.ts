@@ -627,6 +627,7 @@ export const mockClient: Client = {
         framerate: 50,
         lastFrameSecondsAgo: 0.4,
         streamStartedAt: channel.lastUsedAt ?? channel.createdAt,
+        viewerCount: 12,
       })
     },
     async getStreamKey(id) {
@@ -667,6 +668,7 @@ export const mockClient: Client = {
       const domain = domains.find((d) => d.id === id)
       if (!domain) throw new Error(`Domänen ${id} finns inte.`)
       domain.org = input.org
+      if (input.muxEnvKey !== undefined) domain.muxEnvKey = input.muxEnvKey.trim() || null
       if (input.contractStart !== undefined) domain.contractStart = input.contractStart
       if (input.contractEnd !== undefined) domain.contractEnd = input.contractEnd
       if (domain.contractStart && domain.contractEnd && domain.contractEnd < domain.contractStart) {
@@ -805,6 +807,8 @@ export const mockClient: Client = {
         afterText: '',
         ondemandText: '',
         textPlacement: 'middle',
+        muxEnabled: false,
+        muxEnvKey: 'os3srhrpsr4mfcc3tdlv25lo3',
         visibility: 'closed',
         publicMode: 'before',
         afterReason: null,

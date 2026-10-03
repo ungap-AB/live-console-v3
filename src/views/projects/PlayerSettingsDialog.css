@@ -177,3 +177,24 @@
 .ps-poster-text-bottom {
   bottom: 8%;
 }
+
+/* UNG-20: uppspelningsmätning. */
+.ps-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.ps-mux-key {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 360px;
+}
+
+.ps-mux-key input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
