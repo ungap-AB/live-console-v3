@@ -4,9 +4,11 @@ import { client } from '../data'
 import type { Domain, MediaJob, Role, UserAccount } from '../data/types'
 import { Modal } from '../components/Modal'
 import { Icon } from '../components/Icon'
-import { JobTray } from '../components/JobTray'
+import { JobStatusBlock } from '../components/JobStatusBlock'
 import { Toast } from '../components/Toast'
 import { downloadJobFile } from './jobActions'
+import { JobsContext } from './jobsContext'
+import { countNewFinished, readJobsSeenAt, storeJobsSeenAt } from './jobsSeen'
 import { useJobs } from './useJobs'
 import { formatDate } from './time'
 import { routeHref, type RouteKey } from './router'
@@ -33,7 +35,7 @@ const NAV_GROUPS: NavGroup[] = [
       { route: 'projects', label: 'Projekt', icon: 'folder_open' },
       { route: 'agendas', label: 'Dagordningar', icon: 'event_note' },
       { route: 'namelists', label: 'Namnlistor', icon: 'group' },
-      { route: 'shares', label: 'Nedladdningar', icon: 'download' },
+      { route: 'jobs', label: 'Jobb', icon: 'task_alt' },
     ],
   },
   {
@@ -85,14 +87,32 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
   const dismissToast = useCallback(() => setToast(null), [])
   // Toast när ett jobb jag startat blir klart; jobbfältet visar alla domänens jobb.
   const jobs = useJobs((job) => {
-    if (job.startedByUserId !== currentUserId) return
+    // Ett jobb jag själv avbrutit ska inte ge någon toast.
+    if (job.startedByUserId !== currentUserId || job.state === 'canceled') return
     setToast(describeFinishedJob(job, onOpenProject, (message) => setToast({ message })))
   })
+  // UNG-100: "nya" klara jobb = de som blivit klara sedan senaste besöket i Jobb. Första gången sätts tidpunkten till nu,
+  // så redan klara jobb inte blinkar fram som nya.
+  const [seenAt, setSeenAt] = useState(() => {
+    const stored = readJobsSeenAt(currentUserId)
+    if (stored !== null) return stored
+    const now = Date.now()
+    storeJobsSeenAt(currentUserId, now)
+    return now
+  })
+  useEffect(() => {
+    if (active !== 'jobs') return
+    const now = Date.now()
+    setSeenAt(now)
+    storeJobsSeenAt(currentUserId, now)
+  }, [active, jobs, currentUserId])
+  const activeJobs = jobs.filter((job) => job.state === 'processing').length
+  const newFinished = active === 'jobs' ? 0 : countNewFinished(jobs, seenAt)
   const isRootAdmin = currentUserRoles.includes('rootAdmin')
   const visibleGroups = NAV_GROUPS
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => isRootAdmin || ['projects', 'agendas', 'namelists', 'shares', 'trash'].includes(item.route)),
+      items: group.items.filter((item) => isRootAdmin || ['projects', 'agendas', 'namelists', 'jobs', 'trash'].includes(item.route)),
     }))
     .filter((group) => group.items.length > 0)
 
@@ -145,6 +165,8 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
                   >
                     <Icon name={item.icon} size={18} />
                     {item.label}
+                    {item.route === 'jobs' && activeJobs > 0 && <span class="nav-badge nav-badge-active" title={`${activeJobs} pågår`}>{activeJobs}</span>}
+                    {item.route === 'jobs' && activeJobs === 0 && newFinished > 0 && <span class="nav-badge nav-badge-new" title={`${newFinished} klara`}>{newFinished}</span>}
                   </a>
                   {item.route === 'projects' && projectsNavAction && (
                     <button
@@ -164,7 +186,7 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
           ))}
         </div>
 
-        <JobTray jobs={jobs} userId={currentUserId} onOpenProject={onOpenProject} />
+        <JobStatusBlock jobs={jobs} newFinished={newFinished} />
 
         <div class="nav-user">
           <div class="nav-user-identity">
@@ -202,7 +224,9 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
         />
       )}
 
-      <main class={`outlet${contentLocked ? ' content-locked' : ''}`}>{children}</main>
+      <main class={`outlet${contentLocked ? ' content-locked' : ''}`}>
+        <JobsContext.Provider value={jobs}>{children}</JobsContext.Provider>
+      </main>
 
       {toast && (
         <Toast

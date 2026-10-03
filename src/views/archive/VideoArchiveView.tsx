@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Chapter, CueKind, Recording } from '../../data/types'
-import { notifyJobsChanged, openJobTray } from '../../app/jobsBus'
+import { notifyJobsChanged, openJobsView } from '../../app/jobsBus'
 import { readNotifyByEmail } from '../../app/notifyPreference'
 import { useResource } from '../../app/useResource'
 import { SplitPane } from '../../components/SplitPane'
@@ -319,7 +319,7 @@ function ArchiveDetail({ recording: r, chapters, onTrash, onRename, onDownload, 
           ) : download?.status === 'queued' ? (
             <span class="download-ready">
               <span>Nedladdningen förbereds. Du får en avisering när den är klar.</span>
-              <button class="btn btn-sm" type="button" onClick={openJobTray}>
+              <button class="btn btn-sm" type="button" onClick={openJobsView}>
                 Visa jobb
               </button>
             </span>

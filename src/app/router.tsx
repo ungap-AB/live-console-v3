@@ -7,7 +7,7 @@ export type RouteKey =
   | 'namelists'
   | 'live'
   | 'archive'
-  | 'shares'
+  | 'jobs'
   | 'trash'
   | 'users'
 
@@ -17,7 +17,7 @@ const KNOWN_ROUTES: RouteKey[] = [
   'namelists',
   'live',
   'archive',
-  'shares',
+  'jobs',
   'trash',
   'users',
 ]

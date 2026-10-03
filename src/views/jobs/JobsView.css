@@ -1,0 +1,159 @@
+.jobs-body {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 920px;
+  padding: 18px 22px 40px;
+}
+
+.jobs-body h2 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.jobs-help,
+.jobs-empty,
+.jobs-note {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.jobs-error {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--warn);
+}
+
+.jobs-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.jobs-row + .jobs-row {
+  border-top: 1px solid var(--line);
+}
+
+.jobs-row-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+}
+
+.jobs-row-main > .material-symbols-outlined {
+  flex: none;
+  margin-top: 2px;
+  color: var(--ink-3);
+}
+
+.jobs-check,
+.jobs-check-space {
+  flex: none;
+  width: 16px;
+  margin-top: 3px;
+}
+
+.jobs-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.jobs-title {
+  font-weight: 600;
+  font-size: 13.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jobs-meta {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.jobs-text .job-progress {
+  display: flex;
+  margin-top: 4px;
+  max-width: 360px;
+}
+
+.jobs-text .job-progress progress {
+  flex: 1;
+  width: auto;
+}
+
+.jobs-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.jobs-share-chip {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.jobs-shares {
+  padding: 2px 14px 14px 44px;
+}
+
+.jobs-share + .jobs-share {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.jobs-share-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.jobs-quote {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--surface-3);
+  font-size: 13px;
+  white-space: pre-line;
+}
+
+.jobs-share dl {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 6px 12px;
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+
+.jobs-share dt {
+  color: var(--ink-3);
+}
+
+.jobs-share dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.jobs-share dd ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.jobs-time {
+  color: var(--ink-3);
+  font-size: 12px;
+  margin-right: 6px;
+}

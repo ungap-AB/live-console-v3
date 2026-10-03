@@ -1,0 +1,71 @@
+.job-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.job-block:hover {
+  background: var(--surface-3);
+}
+
+.job-block-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.job-block-head .material-symbols-outlined {
+  flex: none;
+  color: var(--ink-3);
+}
+
+.job-block-label {
+  flex: 1;
+}
+
+.job-block-new {
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.job-block-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.job-block-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.job-block .job-progress {
+  display: flex;
+  font-size: 11.5px;
+}
+
+.job-block .job-progress progress {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+
+.job-block-more {
+  font-size: 11.5px;
+  color: var(--ink-3);
+}

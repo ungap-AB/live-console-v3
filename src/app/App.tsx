@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../data'
 import type { CurrentUser } from '../data/types'
-import { openJobTray } from './jobsBus'
 import { parseProjectLink } from './projectLink'
 import { routeHref, useCredentialToken, useRoute, useShareToken } from './router'
 import { Shell } from './Shell'
@@ -13,7 +12,7 @@ import { AgendasView } from '../views/agendas/AgendasView'
 import { NameListsView } from '../views/namelists/NameListsView'
 import { LiveResourcesView } from '../views/resources/LiveResourcesView'
 import { VideoArchiveView } from '../views/archive/VideoArchiveView'
-import { SharesView } from '../views/shares/SharesView'
+import { JobsView } from '../views/jobs/JobsView'
 import { TrashView } from '../views/trash/TrashView'
 import { UsersView } from '../views/users/UsersView'
 import { readStoredSelection, storeSelection } from './selectionStorage'
@@ -87,17 +86,17 @@ export function App() {
   const [pendingAgendaId, setPendingAgendaId] = useState<string | null>(null)
   const [pendingNameListId, setPendingNameListId] = useState<string | null>(null)
 
-  // Djuplänk från ett jobbmejl (#/projects/{id}[?jobs=1]): öppna projektet/jobbfältet och byt sedan hashen till
-  // den vanliga projektvyn, så länken inte körs om. Väntar på inloggning — hashen finns kvar under inloggningen.
+  // Djuplänk från ett jobbmejl (#/projects/{id}[?jobs=1]): ?jobs=1 öppnar Jobb-vyn (UNG-100), annars öppnas projektet, och
+  // hashen byts sedan så länken inte körs om. Väntar på inloggning — hashen finns kvar under inloggningen.
   const authed = auth.status === 'authed'
   useEffect(() => {
     if (!authed) return
     function followLink() {
       const link = parseProjectLink(window.location.hash)
       if (!link) return
-      if (link.projectId) openProject(link.projectId)
+      if (link.openJobs) window.location.hash = routeHref('jobs')
+      else if (link.projectId) openProject(link.projectId)
       else window.location.hash = routeHref('projects')
-      if (link.openJobs) openJobTray()
     }
     followLink()
     window.addEventListener('hashchange', followLink)
@@ -107,7 +106,7 @@ export function App() {
   }, [authed])
 
   const isRootAdmin = auth.status === 'authed' && auth.user.roles.includes('rootAdmin')
-  const routeAllowed = isRootAdmin || ['projects', 'agendas', 'namelists', 'shares', 'trash'].includes(route)
+  const routeAllowed = isRootAdmin || ['projects', 'agendas', 'namelists', 'jobs', 'trash'].includes(route)
 
   useEffect(() => {
     if (auth.status === 'authed' && !routeAllowed) {
@@ -185,7 +184,7 @@ export function App() {
       )}
       {routeAllowed && route === 'live' && <LiveResourcesView />}
       {routeAllowed && route === 'archive' && <VideoArchiveView onOpenProject={openProject} />}
-      {routeAllowed && route === 'shares' && <SharesView />}
+      {routeAllowed && route === 'jobs' && <JobsView onOpenProject={openProject} />}
       {routeAllowed && route === 'trash' && <TrashView />}
       {routeAllowed && route === 'users' && isRootAdmin && (
         <UsersView currentDomainId={auth.user.domain.id} canManageDomains={isRootAdmin} />

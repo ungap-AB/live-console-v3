@@ -385,7 +385,7 @@ export interface DownloadJob {
 export interface MediaJob {
   id: string
   kind: 'download' | 'upload'
-  state: 'processing' | 'done' | 'error'
+  state: 'processing' | 'done' | 'error' | 'canceled'
   recordingId: string
   projectId?: string
   projectName?: string

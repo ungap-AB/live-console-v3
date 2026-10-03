@@ -519,6 +519,9 @@ export const mockClient: Client = {
   jobs: {
     // Mocken har inga bakgrundsjobb — nedladdningen är klar direkt (se recordings.startDownload).
     list: () => delay([]),
+    cancel: async (id) => {
+      throw new Error(`Jobb ${id} finns inte`)
+    },
     downloadLink: async (id) => {
       throw new Error(`Jobb ${id} finns inte`)
     },

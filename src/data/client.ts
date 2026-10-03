@@ -134,6 +134,8 @@ export interface Client {
   jobs: {
     /** Domänens pågående och senaste mediajobb (nedladdning/uppladdning), nyast först. */
     list(): Promise<import('./types').MediaJob[]>
+    /** Avbryter ett pågående jobb (UNG-100). Avvisas om jobbet hunnit bli klart. */
+    cancel(id: string): Promise<import('./types').MediaJob>
     /** Färsk länk till ett klart nedladdningsjobb. Startar aldrig ett nytt jobb — avvisas om filen gått ut. */
     downloadLink(id: string): Promise<import('./types').DownloadLink>
   }
