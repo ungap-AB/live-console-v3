@@ -8,6 +8,7 @@ import type {
   CueKind,
   CredentialLinkInfo,
   CredentialLinkRedeemed,
+  CreatedShare,
   CurrentUser,
   DownloadLink,
   LivePhase,
@@ -26,6 +27,7 @@ import type {
   PublicationState,
   Recording,
   RecordingState,
+  Share,
   TimelineEvent,
   UserAccount,
   Visibility,
@@ -588,6 +590,20 @@ export const httpClient: Client = {
         method: 'POST',
         body: { fileName: file.name, projectId, name, notifyByEmail: options?.notifyByEmail ?? false },
       })
+    },
+  },
+  shares: {
+    create(input) {
+      return api<CreatedShare>('/shares', { method: 'POST', body: input })
+    },
+    list() {
+      return api<Share[]>('/shares')
+    },
+    get(id) {
+      return api<Share>(`/shares/${id}`)
+    },
+    revoke(id) {
+      return api<Share>(`/shares/${id}/revoke`, { method: 'POST' })
     },
   },
   publicDownloads: {

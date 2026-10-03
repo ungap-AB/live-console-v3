@@ -33,6 +33,7 @@ const NAV_GROUPS: NavGroup[] = [
       { route: 'projects', label: 'Projekt', icon: 'folder_open' },
       { route: 'agendas', label: 'Dagordningar', icon: 'event_note' },
       { route: 'namelists', label: 'Namnlistor', icon: 'group' },
+      { route: 'shares', label: 'Nedladdningar', icon: 'download' },
     ],
   },
   {
@@ -89,7 +90,7 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
   const visibleGroups = NAV_GROUPS
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => isRootAdmin || ['projects', 'agendas', 'namelists', 'trash'].includes(item.route)),
+      items: group.items.filter((item) => isRootAdmin || ['projects', 'agendas', 'namelists', 'shares', 'trash'].includes(item.route)),
     }))
     .filter((group) => group.items.length > 0)
 

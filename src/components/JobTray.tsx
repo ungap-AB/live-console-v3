@@ -5,6 +5,7 @@ import { onOpenJobTray } from '../app/jobsBus'
 import { formatAgo } from '../app/time'
 import { useDismiss } from '../app/useDismiss'
 import { Icon } from './Icon'
+import { ShareDialog } from './ShareDialog'
 import { JobProgress } from './JobProgress'
 import './JobTray.css'
 
@@ -19,6 +20,7 @@ export function JobTray({ jobs, onOpenProject }: JobTrayProps) {
   const [open, setOpen] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [shareFor, setShareFor] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   useDismiss(open, ref, () => setOpen(false))
   useEffect(() => onOpenJobTray(() => setOpen(true)), [])
@@ -40,6 +42,7 @@ export function JobTray({ jobs, onOpenProject }: JobTrayProps) {
 
   return (
     <div class="job-tray" ref={ref}>
+      {shareFor && <ShareDialog initialRecordingId={shareFor} onClose={() => setShareFor(null)} />}
       <button
         class="job-tray-toggle"
         type="button"
@@ -71,6 +74,16 @@ export function JobTray({ jobs, onOpenProject }: JobTrayProps) {
                   <div class="job-row-actions">
                     <button class="btn btn-sm" type="button" disabled={busyId === job.id} onClick={() => void download(job)}>
                       Ladda ner
+                    </button>
+                    <button
+                      class="btn btn-sm"
+                      type="button"
+                      onClick={() => {
+                        setOpen(false)
+                        setShareFor(job.recordingId)
+                      }}
+                    >
+                      Dela…
                     </button>
                   </div>
                 )}

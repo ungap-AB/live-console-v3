@@ -496,6 +496,19 @@ export const mockClient: Client = {
       return delay({ jobId: `uj-${id}`, state: 'processing' as const, recordingId: id })
     },
   },
+  shares: {
+    // Delningar finns bara mot riktig backend.
+    create: async () => {
+      throw new Error('Delningar finns inte i mock-läget')
+    },
+    list: () => delay([]),
+    get: async () => {
+      throw new Error('Delningar finns inte i mock-läget')
+    },
+    revoke: async () => {
+      throw new Error('Delningar finns inte i mock-läget')
+    },
+  },
   publicDownloads: {
     // Delningar finns bara mot riktig backend.
     lookup: () => delay({ status: 'unknown' as const }),

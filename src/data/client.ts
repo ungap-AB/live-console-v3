@@ -116,6 +116,15 @@ export interface Client {
     /** Behåller de tidigare inspelningarna — den uppladdade filen ignoreras. */
     rejectUpload(id: string): Promise<void>
   }
+  shares: {
+    /** Delar färdiga nedladdningar via en länk utan inloggning (7 dagar). Mejlar mottagarna. */
+    create(input: import('./types').ShareInput): Promise<import('./types').CreatedShare>
+    list(): Promise<import('./types').Share[]>
+    /** Detaljvy med logg. */
+    get(id: string): Promise<import('./types').Share>
+    /** Återkallar direkt för nya klick (en redan utfärdad nedladdningslänk lever kvar i högst 15 minuter). */
+    revoke(id: string): Promise<import('./types').Share>
+  }
   /** Publika delningssidan (UNG-80 steg 4): fungerar utan inloggning, token kommer ur länkens fragment. */
   publicDownloads: {
     lookup(token: string): Promise<import('./types').PublicShare>
