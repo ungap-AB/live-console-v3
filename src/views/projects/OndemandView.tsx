@@ -8,10 +8,12 @@ import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { Icon } from '../../components/Icon'
-import { JobProgress } from '../../components/JobProgress'
 import { NotifyCheckbox } from '../../components/NotifyCheckbox'
 import { ShareDialog } from '../../components/ShareDialog'
-import { CaptionsPanel } from './CaptionsPanel'
+import { VideoStatusRow } from './VideoStatusRow'
+import { VideoActionsDialog } from './VideoActionsDialog'
+import { UploadPanel } from './UploadPanel'
+import { isExternalSource, isOperatorSupplied } from './recordingSource'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ChapterImportDialog } from './ChapterImportDialog'
@@ -90,7 +92,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [skippedIds, setSkippedIds] = useState<string[]>([])
   const [lastSteppedId, setLastSteppedId] = useState<string | null>(null)
   const [orderWarning, setOrderWarning] = useState<string | null>(null)
-  const [showUploadPanel, setShowUploadPanel] = useState(false)
+  const [showVideoDialog, setShowVideoDialog] = useState(false)
   const [uploadNote, setUploadNote] = useState('')
   const [syncNote, setSyncNote] = useState('')
   const wasUploadProcessing = useRef(false)
@@ -101,7 +103,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   // Guiden för att förankra kapitellistan mot en uppladdad video startar själv när
   // kapitel väntar på förankring, och återupptas i steg 3 om förankringen inte bekräftats.
   useEffect(() => {
-    if (!projectChaptersLoaded || p.recording?.source !== 'upload') return
+    if (!projectChaptersLoaded || !isOperatorSupplied(p.recording?.source)) return
     const state = projectChapters.find((chapter) => chapter.syncState)?.syncState
     if (state === 'pending') {
       setGuide((current) => current ?? { step: 3, anchorId: projectChapters.find((chapter) => chapter.anchor)?.chapterId ?? null })
@@ -240,13 +242,21 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   // publicering ("Ladda upp video" från Before) eller medan ingenting finns.
   const awaitingApproval = p.recording?.state === 'awaitingApproval'
   // En uppladdning som väntar på bearbetning eller godkännande spärrar allt annat.
-  const uploadPending = awaitingApproval || (recordingProcessing && p.recording?.source === 'upload')
+  const uploadPending = awaitingApproval || (recordingProcessing && isOperatorSupplied(p.recording?.source))
   const canUpload = p.publication.state !== 'published' && !broadcastInProgress && !recordingProcessing && !awaitingApproval
   // Finns ingen inspelning är panelen öppen från början; annars bakom en knapp så att
   // det vanliga flödet (trimma, publicera) inte störs.
   const showUploadCard = canUpload && !source
-  const showUploadEntry = canUpload && !!source
-  const uploadedRecording = p.recording?.source === 'upload'
+  const uploadedRecording = isOperatorSupplied(p.recording?.source)
+  // UNG-102: en extern HLS-adress kopieras inte — den kan inte trimmas och inte laddas ned som MP4.
+  const externalVideo = isExternalSource(p.recording?.source)
+  const recordingReady = p.recording?.state === 'recorded' || p.recording?.state === 'trimmed' || p.recording?.state === 'published'
+  const captionsEnabled = recordingReady && !awaitingApproval && !uploadPending
+  const uploadBlockedReason = p.publication.state === 'published'
+    ? 'Projektet är publicerat. Ta tillbaka publiceringen om du vill byta video.'
+    : broadcastInProgress
+      ? 'En sändning pågår. Vänta tills den är avslutad.'
+      : 'En video bearbetas eller väntar på ditt godkännande. Slutför det först.'
   const stepperVisible = !!uploadedRecording && !awaitingApproval && !chaptersReadOnly && !guide && untimedChapters.length > 0
   const stepTarget = chapters.find((chapter) => chapter.chapterId === stepTargetId)
     ?? untimedChapters.find((chapter) => !skippedIds.includes(chapter.chapterId))
@@ -835,6 +845,11 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
           <section class="od-col" aria-label="Trimning">
             {(source || previewUrl || broadcastInProgress || recordingProcessing) && (
               <div class="od-mock-trim" aria-label={isAfter ? 'Trimning' : 'Trim-förhandsvisning'}>
+                <VideoStatusRow
+                  recording={p.recording}
+                  actionsAvailable={captionsEnabled || canUpload}
+                  onOpenActions={() => setShowVideoDialog(true)}
+                />
                 <div class="od-trim-preview">
                   {broadcastInProgress ? (
                     <div class="od-broadcast-warning" role="status">
@@ -847,7 +862,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       {p.recording?.source === 'upload' ? (
                         <>
                           <span>Videon konverteras för uppspelning, vilket kan ta några minuter beroende på längd. Du kan lämna sidan — bearbetningen fortsätter.</span>
-                          <JobProgress progress={p.recording?.progress} phase={p.recording?.phase ?? 'QUEUED'} />
                         </>
                       ) : (
                         <span>Vänta tills inspelningen är klar innan du trimmar och publicerar ondemand.</span>
@@ -872,7 +886,10 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
                   )}
                 </div>
-                {!isAfter && source && !awaitingApproval && (
+                {!isAfter && source && !awaitingApproval && externalVideo && (
+                  <p class="od-empty">Videon ligger på en extern adress och kan inte laddas ned som MP4 förrän den kopierats till ungap.</p>
+                )}
+                {!isAfter && source && !awaitingApproval && !externalVideo && (
                   <div class="od-download">
                     <DownloadButton
                       label="Ladda ner originalinspelning"
@@ -894,14 +911,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       <ShareDialog initialRecordingIds={[shareRecordingId]} onClose={() => setShareRecordingId(null)} />
                     )}
                   </div>
-                )}
-                {(p.recording?.state === 'recorded' || p.recording?.state === 'trimmed' || p.recording?.state === 'published') && !awaitingApproval && !uploadPending && (
-                  <CaptionsPanel
-                    projectId={p.id}
-                    captions={p.recording.captions ?? null}
-                    videoDurationSeconds={recording?.durationSeconds}
-                    onChanged={() => void actions.refreshProject()}
-                  />
                 )}
                 {isAfter && projectRecordings.length > 1 && !uploadPending && (
                   <div class="od-recording-select">
@@ -935,10 +944,10 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                   )}
                   {!chaptersReadOnly && <div class="od-time-controls" aria-label="Videoposition">
                     <div class="od-trim-in-group">
-                      <button class="od-trim-go-button od-trim-go-in" type="button" aria-label="Gå till trimningens start" title="Gå till IN" disabled={!isAfter} onClick={goToTrimIn}>
+                      <button class="od-trim-go-button od-trim-go-in" type="button" aria-label="Gå till trimningens start" title="Gå till IN" disabled={!isAfter || externalVideo} onClick={goToTrimIn}>
                         <Icon name="skip_previous" size={18} />
                       </button>
-                      <button class="od-trim-boundary-button od-trim-in" type="button" disabled={!isAfter} onClick={setTrimIn}>IN</button>
+                      <button class="od-trim-boundary-button od-trim-in" type="button" disabled={!isAfter || externalVideo} onClick={setTrimIn}>IN</button>
                     </div>
                     <div class="od-controls-middle">
                       <button class="btn btn-sm" type="button" disabled={selectedChapter === null || previewPosition <= 0} onClick={() => seekBy(-10)}>−10 s</button>
@@ -948,8 +957,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       <button class="btn btn-sm" type="button" disabled={selectedChapter === null || previewPosition >= videoDuration} onClick={() => seekBy(10)}>+10 s</button>
                     </div>
                     <div class="od-trim-out-group">
-                      <button class="od-trim-boundary-button od-trim-out" type="button" disabled={!isAfter} onClick={setTrimOut}>OUT</button>
-                      <button class="od-trim-go-button od-trim-go-out" type="button" aria-label="Gå till trimningens slut" title="Gå till OUT" disabled={!isAfter} onClick={goToTrimOut}>
+                      <button class="od-trim-boundary-button od-trim-out" type="button" disabled={!isAfter || externalVideo} onClick={setTrimOut}>OUT</button>
+                      <button class="od-trim-go-button od-trim-go-out" type="button" aria-label="Gå till trimningens slut" title="Gå till OUT" disabled={!isAfter || externalVideo} onClick={goToTrimOut}>
                         <Icon name="skip_next" size={18} />
                       </button>
                     </div>
@@ -983,20 +992,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     onUndo={undoStep}
                   />
                 )}
-                {showUploadEntry && (showUploadPanel ? (
-                  <UploadPanel
-                    projectId={p.id}
-                    projectName={p.name}
-                    replacing
-                    failed={false}
-                    onCancel={() => setShowUploadPanel(false)}
-                    onUploaded={() => { setShowUploadPanel(false); void actions.refreshProject() }}
-                  />
-                ) : (
-                  <div class="od-download">
-                    <button class="btn btn-sm" type="button" onClick={() => setShowUploadPanel(true)}>Ladda upp video...</button>
-                  </div>
-                ))}
+                {externalVideo && !awaitingApproval && !chaptersReadOnly && (
+                  <p class="od-empty">Videon ligger på en extern adress och kan inte trimmas. Kapitlen tidsätts som för en uppladdad video, med guiden.</p>
+                )}
               </div>
             )}
             {awaitingApproval && (
@@ -1013,6 +1011,20 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 replacing={false}
                 failed={uploadFailed}
                 onUploaded={() => void actions.refreshProject()}
+              />
+            )}
+            {showVideoDialog && (
+              <VideoActionsDialog
+                projectId={p.id}
+                projectName={p.name}
+                captionsEnabled={captionsEnabled}
+                captions={p.recording?.captions ?? null}
+                videoDurationSeconds={recording?.durationSeconds}
+                uploadEnabled={canUpload}
+                uploadBlockedReason={uploadBlockedReason}
+                replacing={!!source}
+                onChanged={() => void actions.refreshProject()}
+                onClose={() => setShowVideoDialog(false)}
               />
             )}
             <footer class="od-trim-footer">
@@ -1282,136 +1294,6 @@ function DownloadButton({ label, fileName, download, onDownload, onShare }: Down
   )
 }
 
-interface UploadPanelProps {
-  projectId: string
-  projectName: string
-  /** Det finns redan en (ännu opublicerad) video — kortet erbjuder då att ersätta den. */
-  replacing: boolean
-  failed: boolean
-  onUploaded: () => void
-  onCancel?: () => void
-}
-
-function withoutExtension(fileName: string): string {
-  const dot = fileName.lastIndexOf('.')
-  return dot > 0 ? fileName.slice(0, dot) : fileName
-}
-
-// UNG-55/56/57: direktuppladdning till S3 med framsteg, sedan startar servern
-// HLS-transkodningen. Inspelningar hör alltid till ett projekt (Anders,
-// 2026-10-01) — därför finns uppladdningen bara här, inte som fristående bibliotek.
-function UploadPanel({ projectId, projectName, replacing, failed, onUploaded, onCancel }: UploadPanelProps) {
-  const [file, setFile] = useState<File | null>(null)
-  const [name, setName] = useState('')
-  const [status, setStatus] = useState<'idle' | 'uploading' | 'error'>('idle')
-  const [progress, setProgress] = useState(0)
-  const [error, setError] = useState('')
-  const [dragging, setDragging] = useState(false)
-  const uploading = status === 'uploading'
-
-  // En flera GB stor uppladdning hänger på den här fliken tills den är klar.
-  useEffect(() => {
-    if (!uploading) return
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault()
-    window.addEventListener('beforeunload', warn)
-    return () => window.removeEventListener('beforeunload', warn)
-  }, [uploading])
-
-  function choose(next: File | null) {
-    if (next && !next.type.startsWith('video/')) {
-      setError('Det där verkar inte vara en videofil.')
-      setStatus('error')
-      return
-    }
-    setFile(next)
-    setName(next ? withoutExtension(next.name) : '')
-    setStatus('idle')
-    setError('')
-  }
-
-  async function upload() {
-    if (!file) return
-    setStatus('uploading')
-    setProgress(0)
-    setError('')
-    try {
-      await client.recordings.upload(file, projectId, name.trim() || undefined, setProgress, { notifyByEmail: readNotifyByEmail() })
-      setStatus('idle')
-      setFile(null)
-      setName('')
-      onUploaded()
-    } catch (err) {
-      setStatus('error')
-      setError(err instanceof Error ? err.message : 'Uppladdningen misslyckades.')
-    }
-  }
-
-  return (
-    <div class="od-upload" aria-label="Ladda upp video">
-      <p class="od-upload-title">
-        {replacing ? 'Ladda upp en annan video i stället' : `Ladda upp en färdig video till ${projectName}`}
-      </p>
-      {replacing && <p class="od-empty">Nuvarande inspelning ersätts först när du har godkänt den uppladdade filen.</p>}
-      {failed && <p class="od-download-error">Bearbetningen av den uppladdade videon misslyckades. Försök igen, eller prova en annan fil.</p>}
-      <label
-        class={`od-dropzone${dragging ? ' is-dragging' : ''}${file ? ' has-file' : ''}${uploading ? ' is-disabled' : ''}`}
-        onDragOver={(event) => { event.preventDefault(); if (!uploading) setDragging(true) }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(event) => {
-          event.preventDefault()
-          setDragging(false)
-          if (!uploading) choose(event.dataTransfer?.files?.[0] ?? null)
-        }}
-      >
-        <input
-          type="file"
-          accept="video/*"
-          aria-label="Välj videofil"
-          disabled={uploading}
-          onChange={(event) => choose(event.currentTarget.files?.[0] ?? null)}
-        />
-        <Icon name="upload_file" size={28} />
-        {file ? (
-          <span><strong>{file.name}</strong> · {formatBytes(file.size)}</span>
-        ) : (
-          <span>Dra hit en videofil, eller klicka för att välja</span>
-        )}
-      </label>
-      {file && (
-        <div class="od-upload-panel">
-          <input
-            type="text"
-            placeholder="Namn på inspelningen"
-            aria-label="Namn på inspelningen"
-            value={name}
-            disabled={uploading}
-            onInput={(event) => setName(event.currentTarget.value)}
-          />
-          <button class="btn btn-sm btn-primary" type="button" disabled={uploading} onClick={() => void upload()}>
-            {uploading ? 'Laddar upp…' : 'Ladda upp'}
-          </button>
-          <NotifyCheckbox disabled={uploading} />
-          {onCancel && !uploading && (
-            <button class="btn btn-sm" type="button" onClick={onCancel}>Avbryt</button>
-          )}
-        </div>
-      )}
-      {onCancel && !file && !uploading && (
-        <div class="od-upload-panel">
-          <button class="btn btn-sm" type="button" onClick={onCancel}>Avbryt</button>
-        </div>
-      )}
-      {uploading && (
-        <div class="od-upload-progress" role="status">
-          <progress value={progress} max={1} />
-          <span>{Math.round(progress * 100)} % — lämna inte sidan förrän uppladdningen är klar</span>
-        </div>
-      )}
-      {status === 'error' && <span class="od-download-error">{error}</span>}
-    </div>
-  )
-}
-
 interface UploadApprovalProps {
   recording: Recording | null
   /** Projektets tidigare inspelningar — raderas om filen godkänns. */
@@ -1448,7 +1330,7 @@ function UploadApproval({ recording, previous, onDone }: UploadApprovalProps) {
       <p class="od-upload-title">Är det här rätt fil?</p>
       {recording && (
         <p class="od-empty">
-          <strong>{recording.name}</strong> · {formatHms(recording.durationSeconds)} · {recording.resolution} · {formatBytes(recording.sizeBytes)}
+          <strong>{recording.name}</strong> · {formatHms(recording.durationSeconds)} · {recording.resolution}{recording.sizeBytes > 0 ? ` · ${formatBytes(recording.sizeBytes)}` : ''}
         </p>
       )}
       <p class="od-empty">

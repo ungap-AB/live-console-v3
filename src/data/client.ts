@@ -111,6 +111,11 @@ export interface Client {
       onProgress?: (fraction: number) => void,
       options?: { notifyByEmail?: boolean },
     ): Promise<import('./types').UploadJob>
+    /**
+     * UNG-102: kopplar en HLS-adress i stället för att ladda upp en fil. Servern läser bara metadata ur spellistan och
+     * avvisar ogiltiga eller onåbara adresser med ett tydligt fel. Videon väntar sedan på godkännande som en uppladdad fil.
+     */
+    connectExternalHls(projectId: string, hlsUrl: string, name?: string): Promise<void>
     /** Godkänner den uppladdade filen: den ersätter projektets tidigare inspelningar (mjukraderas, återställs av admin från papperskorgen). */
     acceptUpload(id: string): Promise<void>
     /** Behåller de tidigare inspelningarna — den uppladdade filen ignoreras. */

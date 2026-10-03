@@ -1,0 +1,63 @@
+.video-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 40px;
+  padding: 4px 6px 4px 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.video-status-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.video-status-info .job-progress {
+  flex: 1;
+  max-width: 360px;
+}
+
+.video-status-more {
+  flex: none;
+}
+
+.video-actions-dialog .mbody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.video-actions-dialog .captions-panel {
+  margin-top: 0;
+}
+
+.video-actions-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.video-actions-note.is-busy {
+  border-color: var(--warn);
+  color: var(--ink);
+}
+
+.od-hls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
