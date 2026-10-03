@@ -62,6 +62,8 @@ interface ShellProps {
   onLogout: () => void
   /** Öppnar ett projekt i Projekt-vyn (jobbfältets "Öppna projektet"). */
   onOpenProject: (projectId: string) => void
+  /** "Projekt" i menyn: tillbaka till projektlistan, även om ett projekt är öppet (UNG-18). */
+  onOpenProjectList: () => void
   currentUserId: string
   currentUserRoles: Role[]
   contentLocked?: boolean
@@ -73,7 +75,7 @@ interface ShellToast {
   onAction?: () => void
 }
 
-export function Shell({ active, children, projectsNavAction, onLogout, onOpenProject, currentUserId, currentUserRoles, contentLocked = false }: ShellProps) {
+export function Shell({ active, children, projectsNavAction, onLogout, onOpenProject, onOpenProjectList, currentUserId, currentUserRoles, contentLocked = false }: ShellProps) {
   const [navOpen, setNavOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null)
   const [currentDomain, setCurrentDomain] = useState<Domain | null>(null)
@@ -136,7 +138,10 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
                   <a
                     href={routeHref(item.route)}
                     class={`nav-item ${active === item.route ? 'sel' : ''}`}
-                    onClick={() => setNavOpen(false)}
+                    onClick={() => {
+                      setNavOpen(false)
+                      if (item.route === 'projects') onOpenProjectList()
+                    }}
                   >
                     <Icon name={item.icon} size={18} />
                     {item.label}
