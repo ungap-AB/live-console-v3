@@ -94,7 +94,8 @@ export interface Client {
     rename(id: string, name: string): Promise<Recording>
     trash(id: string): Promise<void>
     trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number }): Promise<Recording>
-    download(id: string): Promise<import('./types').DownloadJob>
+    /** Förbereder en MP4 (servern kör jobbet). onProgress rapporterar procent och fas medan det pågår. */
+    download(id: string, onProgress?: (progress?: number, phase?: string) => void): Promise<import('./types').DownloadJob>
     /**
      * UNG-55/56/57: laddar upp en videofil (presigned PUT mot S3) och startar HLS-transkodningen.
      * Resolvar när transkodningen startat — inte när den är klar; servern slutför jobbet själv och

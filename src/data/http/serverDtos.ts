@@ -82,6 +82,8 @@ export interface ServerRecordingRef {
   state: string
   hlsUrl?: string
   source?: string
+  progress?: number
+  phase?: string
   availabilityReason?: string
 }
 
@@ -273,6 +275,8 @@ export interface ServerDownloadJob {
   url?: string
   expiresAt?: string
   error?: { code: string; message: string }
+  progress?: number
+  phase?: string
 }
 
 export interface ServerUploadJob {

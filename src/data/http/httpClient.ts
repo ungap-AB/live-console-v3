@@ -98,10 +98,11 @@ async function pollTrimJob(jobId: string): Promise<ServerTrimJob> {
 
 // Glesare poll-intervall än trimning — en MediaConvert-konvertering av en
 // hel sändning tar typiskt minuter, inte sekunder (UNG-58).
-async function pollDownloadJob(jobId: string): Promise<ServerDownloadJob> {
+async function pollDownloadJob(jobId: string, onProgress?: (progress?: number, phase?: string) => void): Promise<ServerDownloadJob> {
   for (;;) {
     const job = await api<ServerDownloadJob>(`/download-jobs/${jobId}`)
     if (job.state === 'processing') {
+      onProgress?.(job.progress, job.phase)
       await sleep(3000)
       continue
     }
@@ -345,7 +346,7 @@ function toProjectLite(dto: ServerProject): Project {
       streamStartedAt: dto.technicalHealth.streamStartedAt,
       recordingState: dto.technicalHealth.recordingState as RecordingState | null,
     },
-    recording: dto.recording ? { id: dto.recording.id, state: dto.recording.state as RecordingState, hlsUrl: dto.recording.hlsUrl, source: dto.recording.source } : null,
+    recording: dto.recording ? { id: dto.recording.id, state: dto.recording.state as RecordingState, hlsUrl: dto.recording.hlsUrl, source: dto.recording.source, progress: dto.recording.progress, phase: dto.recording.phase } : null,
     publication: { state: dto.publication.state as PublicationState },
     publicationHistory: dto.publicationHistory.map((entry): PublicationHistory => ({
       id: entry.id,
@@ -579,10 +580,11 @@ export const httpClient: Client = {
       const fresh = await api<ServerRecording>(`/recordings/${done.recordingId}`)
       return fetchRecordingDetail(fresh)
     },
-    async download(id) {
+    async download(id, onProgress) {
       const job = await api<ServerDownloadJob>(`/recordings/${id}/download`, { method: 'POST' })
       if (job.state === 'done') return job
-      return pollDownloadJob(job.jobId)
+      onProgress?.(job.progress, job.phase)
+      return pollDownloadJob(job.jobId, onProgress)
     },
     async acceptUpload(id) {
       await api<void>(`/recordings/${id}/accept-upload`, { method: 'POST' })

@@ -448,7 +448,7 @@ export const mockClient: Client = {
       }
       return delay(clone(trimmed))
     },
-    async download(id) {
+    async download(id, _onProgress) {
       const recording = recordings.find((r) => r.id === id)
       if (!recording) throw new Error(`Inspelning ${id} finns inte`)
       return delay({

@@ -6,6 +6,7 @@ import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { Icon } from '../../components/Icon'
+import { JobProgress } from '../../components/JobProgress'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ChapterImportDialog } from './ChapterImportDialog'
@@ -68,7 +69,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   // finns, så den behövs här också. Nyckel = recording-id (original ELLER
   // trim har olika id:n, så båda kan pollas oberoende av varandra).
   const [downloads, setDownloads] = useState<
-    Record<string, { status: 'processing' | 'ready' | 'error'; url?: string; message?: string }>
+    Record<string, { status: 'processing' | 'ready' | 'error'; url?: string; message?: string; progress?: number; phase?: string }>
   >({})
 
   // Misslyckad transkodning: servern tar bort inspelningsraden, så projektet går
@@ -253,7 +254,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   async function downloadRecording(recordingId: string) {
     setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'processing' } }))
     try {
-      const job = await client.recordings.download(recordingId)
+      const job = await client.recordings.download(recordingId, (progress, phase) =>
+        setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'processing', progress, phase } })))
       if (job.url) setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'ready', url: job.url } }))
     } catch (error) {
       setDownloads((prev) => ({
@@ -832,7 +834,10 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     <div class="od-broadcast-warning" role="status">
                       <strong>{p.recording?.source === 'upload' ? 'Videon bearbetas' : 'Inspelningen bearbetas'}</strong>
                       {p.recording?.source === 'upload' ? (
-                        <span>Videon konverteras för uppspelning, vilket kan ta några minuter beroende på längd. Du kan lämna sidan — bearbetningen fortsätter.</span>
+                        <>
+                          <span>Videon konverteras för uppspelning, vilket kan ta några minuter beroende på längd. Du kan lämna sidan — bearbetningen fortsätter.</span>
+                          <JobProgress progress={p.recording?.progress} phase={p.recording?.phase ?? 'QUEUED'} />
+                        </>
                       ) : (
                         <span>Vänta tills inspelningen är klar innan du trimmar och publicerar ondemand.</span>
                       )}
@@ -1197,7 +1202,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
 interface DownloadButtonProps {
   label: string
   fileName: string
-  download?: { status: 'processing' | 'ready' | 'error'; url?: string; message?: string }
+  download?: { status: 'processing' | 'ready' | 'error'; url?: string; message?: string; progress?: number; phase?: string }
   onDownload: () => void
 }
 
@@ -1206,11 +1211,7 @@ interface DownloadButtonProps {
 // nu båda använder det, se ovan.
 function DownloadButton({ label, fileName, download, onDownload }: DownloadButtonProps) {
   if (download?.status === 'processing') {
-    return (
-      <button class="btn btn-sm" type="button" disabled>
-        Förbereder nedladdning…
-      </button>
-    )
+    return <JobProgress progress={download.progress} phase={download.phase ?? 'QUEUED'} />
   }
   if (download?.status === 'ready' && download.url) {
     return (
