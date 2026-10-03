@@ -472,6 +472,28 @@ export const mockClient: Client = {
       if (project) project.recording = null
       return delay(undefined)
     },
+    async connectExternalHls(projectId, hlsUrl, name) {
+      const project = projects.find((p) => p.id === projectId)
+      if (!project) throw new Error(`Projektet ${projectId} finns inte`)
+      const id = `r${nextId++}`
+      const recording: Recording = {
+        id,
+        kind: 'original',
+        name: name?.trim() || 'Extern video',
+        createdAt: new Date().toISOString(),
+        durationSeconds: 3600,
+        sizeBytes: 0,
+        resolution: '1280x720',
+        source: 'external',
+        hlsUrl,
+        project: { id: project.id, name: project.name, state: project.visibility },
+        segments: [],
+        chapters: [],
+      }
+      recordings = [...recordings, recording]
+      project.recording = { id, state: 'awaitingApproval', hlsUrl, source: 'external' }
+      return delay(undefined)
+    },
     async upload(file, projectId, name, onProgress) {
       const project = projects.find((p) => p.id === projectId)
       if (!project) throw new Error(`Projektet ${projectId} finns inte`)

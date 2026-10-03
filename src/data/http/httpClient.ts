@@ -583,6 +583,9 @@ export const httpClient: Client = {
     async rejectUpload(id) {
       await api<void>(`/recordings/${id}/reject-upload`, { method: 'POST' })
     },
+    async connectExternalHls(projectId, hlsUrl, name) {
+      await api<ServerRecording>('/recordings/external', { method: 'POST', body: { projectId, hlsUrl, name } })
+    },
     async upload(file, projectId, name, onProgress, options) {
       const init = await api<{ recordingId: string; uploadUrl: string }>('/recordings/upload', {
         method: 'POST',

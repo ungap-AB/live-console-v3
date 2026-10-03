@@ -1,4 +1,4 @@
-import { useRef, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { ProjectCaptions } from '../../data/types'
 import { formatDateTime } from '../../app/time'
@@ -13,17 +13,25 @@ interface CaptionsPanelProps {
   videoDurationSeconds?: number
   /** Anropas när undertexten laddats upp eller tagits bort, så projektet kan hämtas om. */
   onChanged: () => void
+  /** Anropas när en filöverföring startar/slutar, så att en omgivande dialog kan stå kvar under tiden. */
+  onBusyChange?: (busy: boolean) => void
 }
 
 // UNG-94: undertexter (WebVTT) för den inspelning som publiceras: den trimmade versionen om du trimmat, annars
 // originalet. Filen skapas i ett externt verktyg och laddas upp här; tiderna ska räknas från den publicerade videons start. Spelaren visar undertexten via
 // webbläsarens egna undertextmeny, av tills tittaren väljer.
-export function CaptionsPanel({ projectId, captions, videoDurationSeconds, onChanged }: CaptionsPanelProps) {
+export function CaptionsPanel({ projectId, captions, videoDurationSeconds, onChanged, onBusyChange }: CaptionsPanelProps) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [justUploaded, setJustUploaded] = useState<ProjectCaptions | null>(null)
   const [confirmRemove, setConfirmRemove] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    onBusyChange?.(busy)
+  }, [busy])
+
+  useEffect(() => () => onBusyChange?.(false), [])
 
   async function upload(file: File | undefined) {
     if (!file) return

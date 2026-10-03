@@ -9,6 +9,8 @@ interface ModalProps {
   children: ComponentChildren
   footer?: ComponentChildren
   wide?: boolean
+  /** Spärrar ✕ och Esc medan något pågår som inte får avbrytas (t.ex. en filöverföring). */
+  closeDisabled?: boolean
   /** Extra klass på .mbody, för vyer som behöver egen flex-layout (t.ex. TrimDialog). */
   bodyClassName?: string
   className?: string
@@ -18,14 +20,14 @@ interface ModalProps {
   onDrop?: (event: DragEvent) => void
 }
 
-export function Modal({ title, subtitle, onClose, children, footer, wide = false, bodyClassName, className, onDragEnter, onDragOver, onDragLeave, onDrop }: ModalProps) {
+export function Modal({ title, subtitle, onClose, children, footer, wide = false, closeDisabled = false, bodyClassName, className, onDragEnter, onDragOver, onDragLeave, onDrop }: ModalProps) {
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape' && !closeDisabled) onClose()
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  }, [onClose, closeDisabled])
 
   return (
     <div class="scrim">
@@ -44,7 +46,7 @@ export function Modal({ title, subtitle, onClose, children, footer, wide = false
             <h2>{title}</h2>
             {subtitle && <div class="msub">{subtitle}</div>}
           </div>
-          <button class="ib" type="button" onClick={onClose} aria-label="Stäng">
+          <button class="ib" type="button" onClick={onClose} disabled={closeDisabled} aria-label="Stäng" title={closeDisabled ? 'Vänta tills överföringen är klar' : undefined}>
             ✕
           </button>
         </div>
