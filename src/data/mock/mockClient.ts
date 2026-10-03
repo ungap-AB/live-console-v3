@@ -448,7 +448,7 @@ export const mockClient: Client = {
       }
       return delay(clone(trimmed))
     },
-    async download(id, _onProgress) {
+    async startDownload(id) {
       const recording = recordings.find((r) => r.id === id)
       if (!recording) throw new Error(`Inspelning ${id} finns inte`)
       return delay({
@@ -494,6 +494,13 @@ export const mockClient: Client = {
       project.recording = { id, state: 'awaitingApproval', hlsUrl: recording.hlsUrl, source: 'upload' }
       onProgress?.(1)
       return delay({ jobId: `uj-${id}`, state: 'processing' as const, recordingId: id })
+    },
+  },
+  jobs: {
+    // Mocken har inga bakgrundsjobb — nedladdningen är klar direkt (se recordings.startDownload).
+    list: () => delay([]),
+    downloadLink: async (id) => {
+      throw new Error(`Jobb ${id} finns inte`)
     },
   },
   channels: {

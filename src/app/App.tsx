@@ -124,6 +124,7 @@ export function App() {
       active={route}
       projectsNavAction={projectsNavAction}
       onLogout={logout}
+      onOpenProject={openProject}
       currentUserId={auth.user.id}
       currentUserRoles={auth.user.roles}
     >

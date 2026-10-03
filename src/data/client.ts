@@ -94,8 +94,11 @@ export interface Client {
     rename(id: string, name: string): Promise<Recording>
     trash(id: string): Promise<void>
     trim(id: string, range: { startOffsetSeconds: number; endOffsetSeconds: number }): Promise<Recording>
-    /** Förbereder en MP4 (servern kör jobbet). onProgress rapporterar procent och fas medan det pågår. */
-    download(id: string, onProgress?: (progress?: number, phase?: string) => void): Promise<import('./types').DownloadJob>
+    /**
+     * Startar förberedelsen av en MP4 och resolvar direkt (servern kör jobbet, se jobbfältet). Finns en färdig
+     * fil resolvar den med state 'done' och url; annars med state 'processing'.
+     */
+    startDownload(id: string): Promise<import('./types').DownloadJob>
     /**
      * UNG-55/56/57: laddar upp en videofil (presigned PUT mot S3) och startar HLS-transkodningen.
      * Resolvar när transkodningen startat — inte när den är klar; servern slutför jobbet själv och
@@ -106,6 +109,12 @@ export interface Client {
     acceptUpload(id: string): Promise<void>
     /** Behåller de tidigare inspelningarna — den uppladdade filen ignoreras. */
     rejectUpload(id: string): Promise<void>
+  }
+  jobs: {
+    /** Domänens pågående och senaste mediajobb (nedladdning/uppladdning), nyast först. */
+    list(): Promise<import('./types').MediaJob[]>
+    /** Färsk länk till ett klart nedladdningsjobb. Startar aldrig ett nytt jobb — avvisas om filen gått ut. */
+    downloadLink(id: string): Promise<import('./types').DownloadLink>
   }
   channels: {
     list(query?: string): Promise<Channel[]>
