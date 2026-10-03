@@ -386,6 +386,22 @@ export interface MediaJob {
   startedByName?: string
 }
 
+// UNG-80 steg 4: det mottagaren ser på den publika delningssidan. Övriga fält än status finns bara för 'active'.
+export interface PublicShareItem {
+  id: string
+  name: string
+  sizeBytes?: number
+  available: boolean
+}
+
+export interface PublicShare {
+  status: 'active' | 'expired' | 'revoked' | 'unknown'
+  senderName?: string
+  message?: string
+  expiresAtUtc?: string
+  items?: PublicShareItem[]
+}
+
 export interface DownloadLink {
   url: string
   expiresAt: string

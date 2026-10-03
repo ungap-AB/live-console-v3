@@ -18,6 +18,7 @@ import type {
   Project,
   ProjectRecording,
   PublicMode,
+  PublicShare,
   AfterReason,
   RecordingReadiness,
   PublicationHistory,
@@ -587,6 +588,14 @@ export const httpClient: Client = {
         method: 'POST',
         body: { fileName: file.name, projectId, name, notifyByEmail: options?.notifyByEmail ?? false },
       })
+    },
+  },
+  publicDownloads: {
+    lookup(token) {
+      return api<PublicShare>('/public/downloads/lookup', { method: 'POST', body: { token } })
+    },
+    link(token, itemId) {
+      return api<DownloadLink>('/public/downloads/link', { method: 'POST', body: { token, itemId } })
     },
   },
   jobs: {

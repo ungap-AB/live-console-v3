@@ -116,6 +116,12 @@ export interface Client {
     /** Behåller de tidigare inspelningarna — den uppladdade filen ignoreras. */
     rejectUpload(id: string): Promise<void>
   }
+  /** Publika delningssidan (UNG-80 steg 4): fungerar utan inloggning, token kommer ur länkens fragment. */
+  publicDownloads: {
+    lookup(token: string): Promise<import('./types').PublicShare>
+    /** En färsk kortlivad länk till en fil i delningen. Avvisas om delningen inte är giltig eller filen gått ut. */
+    link(token: string, itemId: string): Promise<import('./types').DownloadLink>
+  }
   jobs: {
     /** Domänens pågående och senaste mediajobb (nedladdning/uppladdning), nyast först. */
     list(): Promise<import('./types').MediaJob[]>
