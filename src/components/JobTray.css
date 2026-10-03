@@ -113,3 +113,51 @@
 .job-row .job-progress {
   display: flex;
 }
+
+.job-tray-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+.job-tray-empty {
+  margin: 0;
+  padding: 14px 12px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.job-row-dismiss {
+  margin-left: auto;
+  flex: none;
+}
+
+.job-row.dismissed {
+  opacity: 0.6;
+}
+
+.job-tray-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+}
+
+.job-tray-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  text-decoration: underline;
+  cursor: pointer;
+}
