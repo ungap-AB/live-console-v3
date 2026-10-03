@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Chapter, ChapterImportResult, CueKind, Project, ProjectRecording, Recording } from '../../data/types'
 import { notifyJobsChanged, openJobTray } from '../../app/jobsBus'
+import { readNotifyByEmail } from '../../app/notifyPreference'
 import { formatBytes, formatDateTime, formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { Icon } from '../../components/Icon'
 import { JobProgress } from '../../components/JobProgress'
+import { NotifyCheckbox } from '../../components/NotifyCheckbox'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ChapterImportDialog } from './ChapterImportDialog'
@@ -255,7 +257,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   async function downloadRecording(recordingId: string) {
     setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'starting' } }))
     try {
-      const job = await client.recordings.startDownload(recordingId)
+      const job = await client.recordings.startDownload(recordingId, { notifyByEmail: readNotifyByEmail() })
       if (job.url) {
         setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'ready', url: job.url } }))
       } else {
@@ -1242,7 +1244,7 @@ function DownloadButton({ label, fileName, download, onDownload }: DownloadButto
     )
   }
   return (
-    <span>
+    <span class="od-download-start">
       <button
         class="btn btn-sm"
         type="button"
@@ -1251,6 +1253,7 @@ function DownloadButton({ label, fileName, download, onDownload }: DownloadButto
       >
         {label}
       </button>
+      <NotifyCheckbox />
       {download?.status === 'error' && <span class="od-download-error">{download.message}</span>}
     </span>
   )
@@ -1309,7 +1312,7 @@ function UploadPanel({ projectId, projectName, replacing, failed, onUploaded, on
     setProgress(0)
     setError('')
     try {
-      await client.recordings.upload(file, projectId, name.trim() || undefined, setProgress)
+      await client.recordings.upload(file, projectId, name.trim() || undefined, setProgress, { notifyByEmail: readNotifyByEmail() })
       setStatus('idle')
       setFile(null)
       setName('')
@@ -1364,6 +1367,7 @@ function UploadPanel({ projectId, projectName, replacing, failed, onUploaded, on
           <button class="btn btn-sm btn-primary" type="button" disabled={uploading} onClick={() => void upload()}>
             {uploading ? 'Laddar upp…' : 'Ladda upp'}
           </button>
+          <NotifyCheckbox disabled={uploading} />
           {onCancel && !uploading && (
             <button class="btn btn-sm" type="button" onClick={onCancel}>Avbryt</button>
           )}

@@ -98,13 +98,19 @@ export interface Client {
      * Startar förberedelsen av en MP4 och resolvar direkt (servern kör jobbet, se jobbfältet). Finns en färdig
      * fil resolvar den med state 'done' och url; annars med state 'processing'.
      */
-    startDownload(id: string): Promise<import('./types').DownloadJob>
+    startDownload(id: string, options?: { notifyByEmail?: boolean }): Promise<import('./types').DownloadJob>
     /**
      * UNG-55/56/57: laddar upp en videofil (presigned PUT mot S3) och startar HLS-transkodningen.
      * Resolvar när transkodningen startat — inte när den är klar; servern slutför jobbet själv och
      * projektets recording.state går från 'processing' till 'recorded'. Inspelningen hör alltid till ett projekt.
      */
-    upload(file: File, projectId: string, name?: string, onProgress?: (fraction: number) => void): Promise<import('./types').UploadJob>
+    upload(
+      file: File,
+      projectId: string,
+      name?: string,
+      onProgress?: (fraction: number) => void,
+      options?: { notifyByEmail?: boolean },
+    ): Promise<import('./types').UploadJob>
     /** Godkänner den uppladdade filen: den ersätter projektets tidigare inspelningar (mjukraderas, återställs av admin från papperskorgen). */
     acceptUpload(id: string): Promise<void>
     /** Behåller de tidigare inspelningarna — den uppladdade filen ignoreras. */

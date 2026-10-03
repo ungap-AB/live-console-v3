@@ -565,8 +565,11 @@ export const httpClient: Client = {
       const fresh = await api<ServerRecording>(`/recordings/${done.recordingId}`)
       return fetchRecordingDetail(fresh)
     },
-    startDownload(id) {
-      return api<ServerDownloadJob>(`/recordings/${id}/download`, { method: 'POST' })
+    startDownload(id, options) {
+      return api<ServerDownloadJob>(`/recordings/${id}/download`, {
+        method: 'POST',
+        body: { notifyByEmail: options?.notifyByEmail ?? false },
+      })
     },
     async acceptUpload(id) {
       await api<void>(`/recordings/${id}/accept-upload`, { method: 'POST' })
@@ -574,7 +577,7 @@ export const httpClient: Client = {
     async rejectUpload(id) {
       await api<void>(`/recordings/${id}/reject-upload`, { method: 'POST' })
     },
-    async upload(file, projectId, name, onProgress) {
+    async upload(file, projectId, name, onProgress, options) {
       const init = await api<{ recordingId: string; uploadUrl: string }>('/recordings/upload', {
         method: 'POST',
         body: { fileName: file.name, projectId },
@@ -582,7 +585,7 @@ export const httpClient: Client = {
       await putFile(init.uploadUrl, file, onProgress)
       return api<ServerUploadJob>(`/recordings/${init.recordingId}/upload-complete`, {
         method: 'POST',
-        body: { fileName: file.name, projectId, name },
+        body: { fileName: file.name, projectId, name, notifyByEmail: options?.notifyByEmail ?? false },
       })
     },
   },
