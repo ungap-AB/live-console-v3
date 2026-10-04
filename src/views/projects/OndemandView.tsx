@@ -14,6 +14,7 @@ import { VideoStatusRow } from './VideoStatusRow'
 import { VideoActionsDialog } from './VideoActionsDialog'
 import { UploadPanel } from './UploadPanel'
 import { isExternalSource, isOperatorSupplied } from './recordingSource'
+import { chapterGroupInfo, collapsibleGroupIds, visibleChapters } from './chapterGroups'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ChapterImportDialog } from './ChapterImportDialog'
@@ -93,6 +94,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [lastSteppedId, setLastSteppedId] = useState<string | null>(null)
   const [orderWarning, setOrderWarning] = useState<string | null>(null)
   const [showVideoDialog, setShowVideoDialog] = useState(false)
+  // UNG-103: punkter vars talare är hopfällda (chapterId för punkten).
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set())
   const [uploadNote, setUploadNote] = useState('')
   const [syncNote, setSyncNote] = useState('')
   const wasUploadProcessing = useRef(false)
@@ -261,6 +264,41 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const stepTarget = chapters.find((chapter) => chapter.chapterId === stepTargetId)
     ?? untimedChapters.find((chapter) => !skippedIds.includes(chapter.chapterId))
     ?? untimedChapters[0]
+
+  // UNG-103: talarna kan fällas ihop under sin punkt. Ett kapitel som redigeras hålls alltid synligt.
+  const groupInfo = chapterGroupInfo(chapters)
+  const collapsibleIds = collapsibleGroupIds(chapters)
+  const editedChapterId = editingChapter !== null ? chapters[editingChapter]?.chapterId : null
+  const visibleFlags = visibleChapters(chapters, collapsedGroups, [editedChapterId])
+  const allCollapsed = collapsibleIds.length > 0 && collapsibleIds.every((id) => collapsedGroups.has(id))
+  const noneCollapsed = collapsibleIds.every((id) => !collapsedGroups.has(id))
+  const revealIds = [chapters[selectedChapter ?? -1]?.chapterId, guide?.anchorId, stepperVisible ? stepTarget?.chapterId : null]
+
+  // UNG-103: väljs eller förankras ett kapitel i en hopfälld punkt fälls punkten ut så kapitlet syns.
+  const revealKey = revealIds.join('|')
+  useEffect(() => {
+    const groups = new Set<string>()
+    for (const id of revealIds) {
+      const index = id ? chapters.findIndex((chapter) => chapter.chapterId === id) : -1
+      const groupId = index >= 0 ? groupInfo[index].groupId : null
+      if (groupId) groups.add(groupId)
+    }
+    if (![...groups].some((groupId) => collapsedGroups.has(groupId))) return
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      groups.forEach((groupId) => next.delete(groupId))
+      return next
+    })
+  }, [revealKey])
+
+  function toggleGroup(groupId: string) {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(groupId)) next.delete(groupId)
+      else next.add(groupId)
+      return next
+    })
+  }
 
   // Jobbet (HLS → MP4 via MediaConvert, UNG-58) kan ta flera minuter för en
   // hel sändning — client.recordings.download pollar internt tills klart.
@@ -1074,6 +1112,16 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
               </div>
             )}
             {syncNote && <p class="od-download-error">{syncNote}</p>}
+            {!awaitingApproval && collapsibleIds.length > 0 && (
+              <div class="od-chapters-toolbar">
+                <button class="btn btn-sm" type="button" disabled={allCollapsed} onClick={() => setCollapsedGroups(new Set(collapsibleIds))}>
+                  Dölj alla talare
+                </button>
+                <button class="btn btn-sm" type="button" disabled={noneCollapsed} onClick={() => setCollapsedGroups(new Set())}>
+                  Visa alla talare
+                </button>
+              </div>
+            )}
             {awaitingApproval ? null : chapters.length === 0 ? (
               <p class="od-empty">
                 {uploadedRecording
@@ -1084,16 +1132,28 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
               </p>
             ) : (
               <ul class="od-chapters">
-                {chapters.map((chapter, index) => (
+                {chapters.map((chapter, index) => visibleFlags[index] ? (
                   <li
                     key={chapter.chapterId}
-                    class={`od-chapter-row${selectedChapter === index ? ' is-selected' : ''}${chapter.synced === false ? ' is-unsynced' : ''}${(guide?.step === 1 && chapter.anchorable) || stepperVisible ? ' is-pickable' : ''}${stepperVisible && stepTarget?.chapterId === chapter.chapterId ? ' is-step-target' : ''}${guide?.anchorId === chapter.chapterId ? ' is-anchor' : ''}`}
+                    class={`od-chapter-row kind-${chapter.kind}${groupInfo[index].isHeader ? ' is-group-header' : ''}${selectedChapter === index ? ' is-selected' : ''}${chapter.synced === false ? ' is-unsynced' : ''}${(guide?.step === 1 && chapter.anchorable) || stepperVisible ? ' is-pickable' : ''}${stepperVisible && stepTarget?.chapterId === chapter.chapterId ? ' is-step-target' : ''}${guide?.anchorId === chapter.chapterId ? ' is-anchor' : ''}`}
                     onClick={(event) => {
                       if ((event.target as HTMLElement).closest('button, input')) return
                       if (guide?.step === 1) chooseAnchor(index)
                       else if (stepperVisible) { setOrderWarning(null); setStepTargetId(chapter.chapterId) }
                     }}
                   >
+                      {groupInfo[index].isHeader && groupInfo[index].childCount > 0 && (
+                        <button
+                          class="od-chapter-toggle"
+                          type="button"
+                          aria-expanded={!collapsedGroups.has(chapter.chapterId)}
+                          aria-label={`${collapsedGroups.has(chapter.chapterId) ? 'Visa' : 'Dölj'} talare under ${chapterLabels[index] ?? chapter.label}`}
+                          title={collapsedGroups.has(chapter.chapterId) ? 'Visa talare' : 'Dölj talare'}
+                          onClick={() => toggleGroup(chapter.chapterId)}
+                        >
+                          <Icon name={collapsedGroups.has(chapter.chapterId) ? 'chevron_right' : 'expand_more'} size={18} />
+                        </button>
+                      )}
                       {!chaptersReadOnly && guide?.anchorId === chapter.chapterId && <Icon name="anchor" size={16} />}
                       {!chaptersReadOnly && chapter.synced === false && <span class="od-chapter-unsynced">{chapter.timing === 'untimed' ? 'Ingen tid' : 'Ej förankrad'}</span>}
                       {!chaptersReadOnly && chapter.synced !== false && <button
@@ -1129,6 +1189,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       </span>
                     )}
                     <span class="od-chapter-kind">{CHAPTER_KIND[chapter.kind]}</span>
+                    {groupInfo[index].isHeader && groupInfo[index].childCount > 0 && collapsedGroups.has(chapter.chapterId) && (
+                      <span class="od-chapter-count">{groupInfo[index].childCount} talare</span>
+                    )}
                     {!chaptersReadOnly && (p.publicMode === 'ondemand' || p.publicMode === 'after') && (
                       deletingChapter === index ? (
                         <button class="od-chapter-delete is-confirm" type="button" aria-label={`Bekräfta radering av ${chapter.label}`} title="Bekräfta radering" onClick={() => void deleteChapter(index)}>
@@ -1141,7 +1204,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       )
                     )}
                   </li>
-                ))}
+                ) : null)}
               </ul>
             )}
             {uploadedRecording && !awaitingApproval && !chaptersReadOnly && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed') && (

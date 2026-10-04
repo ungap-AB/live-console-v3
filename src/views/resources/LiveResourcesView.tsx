@@ -11,6 +11,7 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
 import { EditIcon } from '../../components/icons'
 import { formatDateTime } from '../../app/time'
+import { errorMessage, runOptimistic } from '../../app/optimistic'
 
 const STALE_DAYS = 30
 
@@ -87,15 +88,23 @@ export function LiveResourcesView() {
     setCreating(true)
   }
 
-  async function renameChannel(channel: Channel, label: string) {
-    try {
-      const updated = await client.channels.rename(channel.id, label)
-      setChannels((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
-    } catch (err) {
-      setToast(err instanceof Error ? err.message : 'Kunde inte byta namn.')
-    } finally {
-      setRenaming(null)
-    }
+  // UNG-105: det nya namnet visas direkt; vid fel återställs det och en toast visar felet.
+  function patchChannelLabel(id: string, label: string) {
+    setChannels((prev) => prev.map((c) => (c.id === id ? { ...c, label } : c)))
+  }
+
+  function renameChannel(channel: Channel, label: string) {
+    setRenaming(null)
+    void runOptimistic({
+      key: `channel:${channel.id}`,
+      apply: () => {
+        patchChannelLabel(channel.id, label)
+        return () => patchChannelLabel(channel.id, channel.label)
+      },
+      request: () => client.channels.rename(channel.id, label),
+      onSuccess: (updated) => setChannels((prev) => prev.map((c) => (c.id === updated.id ? updated : c))),
+      onError: (err) => setToast(errorMessage(err, 'Kunde inte byta namn.')),
+    })
   }
 
   async function rotateKey(channel: Channel) {

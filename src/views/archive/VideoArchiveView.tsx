@@ -15,6 +15,7 @@ import { Toast } from '../../components/Toast'
 import { EditIcon } from '../../components/icons'
 import { formatDateTime, formatGb, formatHms } from '../../app/time'
 import './VideoArchiveView.css'
+import { errorMessage, runOptimistic } from '../../app/optimistic'
 
 function kindLabel(kind: CueKind): string {
   if (kind === 'agendaItem') return 'Ärende'
@@ -113,13 +114,31 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
 
   // Draften från createRecording (id "local-…") finns bara i lokal state,
   // aldrig hos client/backend — försök inte spara den dit.
-  async function renameRecording(recording: Recording, name: string) {
-    const updated = recording.id.startsWith('local-')
-      ? { ...recording, name }
-      : await client.recordings.rename(recording.id, name)
-    setRecordings((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
-    setDetail((prev) => (prev && prev.recording.id === updated.id ? { ...prev, recording: updated } : prev))
+  // UNG-105: det nya namnet visas direkt; vid fel återställs det och en toast visar felet.
+  function patchRecordingName(id: string, name: string) {
+    setRecordings((prev) => prev.map((r) => (r.id === id ? { ...r, name } : r)))
+    setDetail((prev) => (prev && prev.recording.id === id ? { ...prev, recording: { ...prev.recording, name } } : prev))
+  }
+
+  function renameRecording(recording: Recording, name: string) {
     setRenaming(null)
+    if (recording.id.startsWith('local-')) {
+      patchRecordingName(recording.id, name)
+      return
+    }
+    void runOptimistic({
+      key: `recording:${recording.id}`,
+      apply: () => {
+        patchRecordingName(recording.id, name)
+        return () => patchRecordingName(recording.id, recording.name)
+      },
+      request: () => client.recordings.rename(recording.id, name),
+      onSuccess: (updated) => {
+        setRecordings((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+        setDetail((prev) => (prev && prev.recording.id === updated.id ? { ...prev, recording: updated } : prev))
+      },
+      onError: (err) => setToast(errorMessage(err, 'Kunde inte byta namn.')),
+    })
   }
 
   async function trash(recording: Recording) {

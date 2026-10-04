@@ -11,6 +11,8 @@ import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { SearchIcon, EditIcon } from '../../components/icons'
 import { readStoredSelection, storeSelection } from '../../app/selectionStorage'
+import { errorMessage, runOptimistic } from '../../app/optimistic'
+import { Toast } from '../../components/Toast'
 import './NameListsView.css'
 
 function formatDate(iso: string): string {
@@ -60,6 +62,7 @@ export function NameListsView({ selectionScope, initialSelectedId, onInitialSele
     [selectedId],
   )
   const [selected, setSelected] = useState<NameList | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
     setSelected(detailResource.data ?? null)
@@ -91,11 +94,38 @@ export function NameListsView({ selectionScope, initialSelectedId, onInitialSele
     setCreating(false)
   }
 
-  async function confirmRename(name: string) {
+  // UNG-105: det nya namnet visas direkt; vid fel återställs det och en toast visar felet.
+  function patchListName(id: string, name: string) {
+    setSelected((prev) => (prev && prev.id === id ? { ...prev, name } : prev))
+    setNamelists((prev) => prev.map((n) => (n.id === id ? { ...n, name } : n)))
+  }
+
+  // Serverns svar ersätter bara om listan fortfarande är den som visas.
+  function applyServerList(next: NameList) {
+    setSelected((prev) => (prev && prev.id === next.id ? next : prev))
+    setNamelists((prev) =>
+      prev.map((n) =>
+        n.id === next.id
+          ? { ...n, name: next.name, description: next.description, personCount: next.people.length, usedInProjects: next.usedInProjects, changedAt: next.changedAt }
+          : n,
+      ),
+    )
+  }
+
+  function confirmRename(name: string) {
     if (!renaming) return
-    const updated = await client.namelists.update(renaming.id, { name })
-    replaceSelected(updated)
+    const list = renaming
     setRenaming(null)
+    void runOptimistic({
+      key: `namelist:${list.id}`,
+      apply: () => {
+        patchListName(list.id, name)
+        return () => patchListName(list.id, list.name)
+      },
+      request: () => client.namelists.update(list.id, { name }),
+      onSuccess: applyServerList,
+      onError: (err) => setToast(errorMessage(err, 'Kunde inte byta namn.')),
+    })
   }
 
   async function duplicate(list: NameList) {
@@ -120,9 +150,25 @@ export function NameListsView({ selectionScope, initialSelectedId, onInitialSele
     return updated.people[updated.people.length - 1].id
   }
 
+  function patchPersonName(listId: string, personId: string, name: string) {
+    setSelected((prev) =>
+      prev && prev.id === listId ? { ...prev, people: prev.people.map((p) => (p.id === personId ? { ...p, name } : p)) } : prev,
+    )
+  }
+
   async function renamePerson(list: NameList, personId: string, name: string) {
-    const updated = await client.namelists.updatePerson(list.id, personId, { name })
-    replaceSelected(updated)
+    const previous = list.people.find((p) => p.id === personId)?.name
+    if (previous === undefined) return
+    await runOptimistic({
+      key: `person:${list.id}:${personId}`,
+      apply: () => {
+        patchPersonName(list.id, personId, name)
+        return () => patchPersonName(list.id, personId, previous)
+      },
+      request: () => client.namelists.updatePerson(list.id, personId, { name }),
+      onSuccess: applyServerList,
+      onError: (err) => setToast(errorMessage(err, 'Kunde inte byta namn.')),
+    })
   }
 
   async function removePerson(list: NameList, personId: string) {
@@ -376,6 +422,7 @@ export function NameListsView({ selectionScope, initialSelectedId, onInitialSele
           {importError && <p class="form-error">{importError}</p>}
         </Modal>
       )}
+      {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   )
 }

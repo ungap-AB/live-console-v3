@@ -63,6 +63,10 @@
 
   --surface-2: #f1f4f8;
   --surface-3: #e8ecf1;
+  /* UNG-103: kapiteltyper i kapitellistan (blått för punkter, lila för talare; rött och grönt är reserverade). */
+  --chapter-item: #2f5fd0;
+  --chapter-person: #8a3fb0;
+  --chapter-exclamation: #8b95a1;
 
   --sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --mono: 'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, Consolas, monospace;
@@ -131,6 +135,9 @@
 
     --surface-2: #262b36;
     --surface-3: #2f3542;
+    --chapter-item: #7fa3ff;
+    --chapter-person: #cf9bea;
+    --chapter-exclamation: #8b95a1;
 
     color-scheme: dark;
   }
@@ -192,6 +199,9 @@
 
   --surface-2: #262b36;
   --surface-3: #2f3542;
+  --chapter-item: #7fa3ff;
+  --chapter-person: #cf9bea;
+  --chapter-exclamation: #8b95a1;
 
   color-scheme: dark;
 }

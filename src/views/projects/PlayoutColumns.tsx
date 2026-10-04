@@ -9,6 +9,8 @@ import { Modal } from '../../components/Modal'
 import { OverflowMenu } from '../../components/OverflowMenu'
 import { CheckIcon, PdfIcon, PlayIcon, StopIcon } from '../../components/icons'
 import { formatHms } from '../../app/time'
+import { errorMessage, runOptimistic } from '../../app/optimistic'
+import { Toast } from '../../components/Toast'
 import type { ProjectActions } from './actions'
 import { useNameList } from './useNameList'
 import './PlayoutColumns.css'
@@ -37,6 +39,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
 
   // Lokal, muterbar kopia så att redigering här uppdaterar UI:t direkt.
   const [agenda, setAgenda] = useState<Agenda | null>(null)
+  const [renameError, setRenameError] = useState<string | null>(null)
   const [nameList, setNameList] = useState<NameList | null>(null)
   useEffect(() => setAgenda(agendaResource.data ?? null), [agendaResource.data])
   useEffect(() => setNameList(nameListResource.data ?? null), [nameListResource.data])
@@ -67,8 +70,25 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
     return updated.items[updated.items.length - 1].id
   }
 
+  // UNG-105: ändrat namn visas direkt; vid fel återställs det och en toast visar felet.
+  function patchAgendaItemTitle(agendaId: string, itemId: string, title: string) {
+    setAgenda((prev) => (prev && prev.id === agendaId ? { ...prev, items: prev.items.map((it) => (it.id === itemId ? { ...it, title } : it)) } : prev))
+  }
+
   async function renameAgendaItem(itemId: string, title: string) {
-    setAgenda(await client.agendas.updateItem(agenda!.id, itemId, { title }))
+    const current = agenda
+    const previous = current?.items.find((it) => it.id === itemId)?.title
+    if (!current || previous === undefined) return
+    await runOptimistic({
+      key: `agendaitem:${current.id}:${itemId}`,
+      apply: () => {
+        patchAgendaItemTitle(current.id, itemId, title)
+        return () => patchAgendaItemTitle(current.id, itemId, previous)
+      },
+      request: () => client.agendas.updateItem(current.id, itemId, { title }),
+      onSuccess: (updated) => setAgenda((prev) => (prev && prev.id === updated.id ? updated : prev)),
+      onError: (err) => setRenameError(errorMessage(err, 'Kunde inte byta namn.')),
+    })
   }
 
   async function removeAgendaItem(itemId: string) {
@@ -86,8 +106,24 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
     return updated.people[updated.people.length - 1].id
   }
 
+  function patchPersonName(listId: string, personId: string, name: string) {
+    setNameList((prev) => (prev && prev.id === listId ? { ...prev, people: prev.people.map((pe) => (pe.id === personId ? { ...pe, name } : pe)) } : prev))
+  }
+
   async function renamePerson(personId: string, name: string) {
-    setNameList(await client.namelists.updatePerson(nameList!.id, personId, { name }))
+    const current = nameList
+    const previous = current?.people.find((pe) => pe.id === personId)?.name
+    if (!current || previous === undefined) return
+    await runOptimistic({
+      key: `person:${current.id}:${personId}`,
+      apply: () => {
+        patchPersonName(current.id, personId, name)
+        return () => patchPersonName(current.id, personId, previous)
+      },
+      request: () => client.namelists.updatePerson(current.id, personId, { name }),
+      onSuccess: (updated) => setNameList((prev) => (prev && prev.id === updated.id ? updated : prev)),
+      onError: (err) => setRenameError(errorMessage(err, 'Kunde inte byta namn.')),
+    })
   }
 
   async function removePerson(personId: string) {
@@ -408,6 +444,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
           {importError && <p class="form-error">{importError}</p>}
         </Modal>
       )}
+      {renameError && <Toast message={renameError} onDismiss={() => setRenameError(null)} />}
     </>
   )
 }

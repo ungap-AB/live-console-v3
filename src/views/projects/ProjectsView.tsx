@@ -8,6 +8,7 @@ import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
 import { formatShortDate } from '../../app/time'
+import { errorMessage, runOptimistic } from '../../app/optimistic'
 import { Livesandning } from './Livesandning'
 import { OndemandView } from './OndemandView'
 import { MODE_LABEL } from './projectMode'
@@ -123,6 +124,28 @@ export function ProjectsView({
     setProjects((prev) => prev.map((p) => (p.id === next.id ? next : p)))
   }
 
+  function patchProject(id: string, patch: Partial<Project>) {
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
+  }
+
+  // UNG-105: nytt namn (och texter) syns direkt; vid fel återställs de och en toast visar felet.
+  function renameProject(project: Project, name: string, texts?: Parameters<ProjectActions['rename']>[1]): Promise<boolean> {
+    const before: Partial<Project> = { name: project.name }
+    for (const key of Object.keys(texts ?? {}) as (keyof NonNullable<typeof texts>)[]) {
+      Object.assign(before, { [key]: project[key] })
+    }
+    return runOptimistic({
+      key: `project:${project.id}`,
+      apply: () => {
+        patchProject(project.id, { name, ...texts })
+        return () => patchProject(project.id, before)
+      },
+      request: () => client.projects.rename(project.id, name, texts),
+      onSuccess: replace,
+      onError: (err) => setToast(errorMessage(err)),
+    })
+  }
+
   function updateProjectPlayout(projectId: string, update: (playout: PlayoutState) => PlayoutState) {
     setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, playout: update(p.playout) } : p)))
   }
@@ -192,11 +215,7 @@ export function ProjectsView({
         throw err
       }
     },
-    rename: (name: string, texts) =>
-      attempt(async () => {
-        if (!selected) return
-        replace(await client.projects.rename(selected.id, name, texts))
-      }),
+    rename: (name: string, texts) => (selected ? renameProject(selected, name, texts) : Promise.resolve(true)),
     setPoster: (file: File) =>
       attempt(async () => {
         if (!selected) return
@@ -486,12 +505,11 @@ export function ProjectsView({
         <RenameModal
           initialValue={renaming.name}
           onCancel={() => setRenaming(null)}
-          onSave={(name) =>
-            withErrorToast(async () => {
-              replace(await client.projects.rename(renaming.id, name))
-              setRenaming(null)
-            })
-          }
+          onSave={(name) => {
+            const project = renaming
+            setRenaming(null)
+            void renameProject(project, name)
+          }}
         />
       )}
 
