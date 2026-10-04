@@ -14,6 +14,8 @@ import { PdfAttachmentsModal } from '../../components/PdfAttachmentsModal'
 import { PlusIcon, EditIcon } from '../../components/icons'
 import { PdfIcon } from '../../components/icons'
 import { readStoredSelection, storeSelection } from '../../app/selectionStorage'
+import { errorMessage, runOptimistic } from '../../app/optimistic'
+import { Toast } from '../../components/Toast'
 import './AgendasView.css'
 
 function formatDate(iso: string): string {
@@ -70,6 +72,7 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
     [selectedId],
   )
   const [selected, setSelected] = useState<Agenda | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
     setSelected(detailResource.data ?? null)
@@ -108,11 +111,38 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
     setCreating(false)
   }
 
-  async function confirmRename(name: string) {
+  // UNG-105: det nya namnet visas direkt; vid fel återställs det och en toast visar felet.
+  function patchAgendaName(id: string, name: string) {
+    setSelected((prev) => (prev && prev.id === id ? { ...prev, name } : prev))
+    setAgendas((prev) => prev.map((x) => (x.id === id ? { ...x, name } : x)))
+  }
+
+  // Serverns svar ersätter bara om dagordningen fortfarande är den som visas.
+  function applyServerAgenda(next: Agenda) {
+    setSelected((prev) => (prev && prev.id === next.id ? next : prev))
+    setAgendas((prev) =>
+      prev.map((x) =>
+        x.id === next.id
+          ? { ...x, name: next.name, description: next.description, itemCount: next.items.length, usedInProjects: next.usedInProjects, changedAt: next.changedAt, isTemplate: next.isTemplate }
+          : x,
+      ),
+    )
+  }
+
+  function confirmRename(name: string) {
     if (!renaming) return
-    const updated = await client.agendas.update(renaming.id, { name })
-    replaceSelected(updated)
+    const agenda = renaming
     setRenaming(null)
+    void runOptimistic({
+      key: `agenda:${agenda.id}`,
+      apply: () => {
+        patchAgendaName(agenda.id, name)
+        return () => patchAgendaName(agenda.id, agenda.name)
+      },
+      request: () => client.agendas.update(agenda.id, { name }),
+      onSuccess: applyServerAgenda,
+      onError: (err) => setToast(errorMessage(err, 'Kunde inte byta namn.')),
+    })
   }
 
   async function duplicate(agenda: Agenda) {
@@ -439,6 +469,7 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
           onClose={() => setPdfItem(null)}
         />
       )}
+      {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   )
 }

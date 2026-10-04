@@ -11,6 +11,7 @@ import { Toast } from '../../components/Toast'
 import { EditIcon } from '../../components/icons'
 import { formatDate, formatDateTime } from '../../app/time'
 import './UsersView.css'
+import { errorMessage, runOptimistic } from '../../app/optimistic'
 
 const ROLES: Record<Role, { label: string; description: string }> = {
   rootAdmin: { label: 'Root-administratör', description: 'Hanterar hela installationen och alla domäner.' },
@@ -120,12 +121,24 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
     }
   }
 
-  async function renameUser(user: UserAccount, name: string) {
-    await withErrorToast(async () => {
-      const updated = await client.users.update(user.id, { name })
-      replace(updated)
-    })
+  // UNG-105: det nya namnet visas direkt; vid fel återställs det och en toast visar felet.
+  function patchUserName(id: string, name: string) {
+    setSelectedUserDetail((prev) => (prev && prev.id === id ? { ...prev, name } : prev))
+    setDomainUsers((prev) => prev.map((u) => (u.id === id ? { ...u, name } : u)))
+  }
+
+  function renameUser(user: UserAccount, name: string) {
     setRenamingUser(null)
+    void runOptimistic({
+      key: `user:${user.id}`,
+      apply: () => {
+        patchUserName(user.id, name)
+        return () => patchUserName(user.id, user.name)
+      },
+      request: () => client.users.update(user.id, { name }),
+      onSuccess: replace,
+      onError: (err) => setToast(errorMessage(err)),
+    })
   }
 
   async function toggleRole(user: UserAccount, role: Role, checked: boolean) {

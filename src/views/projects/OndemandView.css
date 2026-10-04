@@ -1020,3 +1020,66 @@
   flex-wrap: wrap;
   gap: 6px 12px;
 }
+
+/* UNG-103: punkter och talare i kapitellistan. Färgen förstärker bara — typen står också som text i raden. */
+.od-chapters li.kind-agendaItem {
+  border-left: 4px solid var(--chapter-item);
+  background: color-mix(in srgb, var(--chapter-item) 8%, var(--surface-2));
+  font-weight: 600;
+}
+
+.od-chapters li.kind-person {
+  margin-left: 20px;
+  border-left: 4px solid var(--chapter-person);
+  background: color-mix(in srgb, var(--chapter-person) 7%, var(--surface-2));
+}
+
+.od-chapters li.kind-exclamation {
+  margin-left: 20px;
+  border-left: 4px solid var(--chapter-exclamation);
+}
+
+.od-chapters li.kind-person .od-chapter-kind,
+.od-chapters li.kind-exclamation .od-chapter-kind {
+  font-weight: 400;
+}
+
+.od-chapters li.kind-agendaItem .od-chapter-kind {
+  color: var(--chapter-item);
+  font-weight: 600;
+}
+
+.od-chapters li.kind-person .od-chapter-kind {
+  color: var(--chapter-person);
+}
+
+.od-chapter-toggle {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.od-chapter-toggle:hover {
+  background: var(--accent-soft);
+}
+
+.od-chapter-count {
+  flex: none;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-2);
+}
+
+.od-chapters-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
