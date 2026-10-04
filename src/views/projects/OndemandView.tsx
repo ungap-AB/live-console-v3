@@ -12,6 +12,9 @@ import { NotifyCheckbox } from '../../components/NotifyCheckbox'
 import { ShareDialog } from '../../components/ShareDialog'
 import { VideoStatusRow } from './VideoStatusRow'
 import { VideoActionsDialog } from './VideoActionsDialog'
+import { PublishProgressDialog } from './PublishProgressDialog'
+import { buildPublishSteps } from './publishProgress'
+import type { PublishStep, PublishStepKey } from './publishProgress'
 import { UploadPanel } from './UploadPanel'
 import { isExternalSource, isOperatorSupplied } from './recordingSource'
 import { chapterGroupInfo, collapsibleGroupIds, visibleChapters } from './chapterGroups'
@@ -67,6 +70,11 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [confirmOndemand, setConfirmOndemand] = useState(false)
   const [confirmUndoAll, setConfirmUndoAll] = useState(false)
   const [publishing, setPublishing] = useState(false)
+  const [publishSteps, setPublishSteps] = useState<PublishStep[]>([])
+  const [publishStep, setPublishStep] = useState<PublishStepKey>('publish')
+  // Kapitel som hämtas om (efter publicering) medan den förra listan fortfarande visas.
+  const [chaptersRefreshing, setChaptersRefreshing] = useState(false)
+  const chaptersProjectRef = useRef<string | null>(null)
   const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false)
   const [projectRecordings, setProjectRecordings] = useState<ProjectRecording[]>([])
   const [switchingRecording, setSwitchingRecording] = useState(false)
@@ -164,17 +172,27 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       setProjectChaptersLoaded(false)
       return
     }
-    setProjectChaptersLoaded(false)
+    // UNG-106: byter vi projekt töms listan; annars (nytt läge eller ny inspelning) ligger den förra kvar tills den nya är hämtad,
+    // så att kapitelområdet inte blir tomt och ser ut som ett fel.
+    if (chaptersProjectRef.current !== p.id) {
+      chaptersProjectRef.current = p.id
+      setProjectChapters([])
+      setProjectChaptersLoaded(false)
+    } else {
+      setChaptersRefreshing(true)
+    }
     client.projects.chapters(p.id).then((nextChapters) => {
       if (!cancelled) {
         setProjectChapters(nextChapters)
         setChapterLabels({})
         setProjectChaptersLoaded(true)
+        setChaptersRefreshing(false)
       }
     }).catch(() => {
       if (!cancelled) {
         setProjectChapters([])
         setProjectChaptersLoaded(true)
+        setChaptersRefreshing(false)
       }
     })
     return () => {
@@ -755,21 +773,46 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const videoDuration = previewVideoRef.current?.duration || mockTrimDuration
   const canReturnToSaved = selectedChapter !== null && draftOffsets[selectedChapter] !== undefined
 
+  // Hämtar kapitlen direkt (och väntar in dem) så att publiceringsdialogen kan stå kvar tills listan är på plats.
+  async function reloadChaptersNow() {
+    setChaptersRefreshing(true)
+    try {
+      const next = await client.projects.chapters(p.id)
+      setProjectChapters(next)
+      setChapterLabels({})
+      setProjectChaptersLoaded(true)
+    } catch {
+      // Den vanliga hämtningen (och pollningen) tar över.
+    } finally {
+      setChaptersRefreshing(false)
+    }
+  }
+
   async function publishWithTrim() {
     setConfirmOndemand(false)
+    const willTrim = trimDirty && !!p.recording
+    setPublishSteps(buildPublishSteps({ saveDraft: draftDirty, trim: willTrim }))
+    setPublishStep(draftDirty ? 'save' : willTrim ? 'trim' : 'publish')
     setPublishing(true)
     try {
       if (draftDirty) await saveTrimDraft()
-      if (trimDirty && p.recording) {
+      let published = false
+      if (willTrim) {
+        setPublishStep('trim')
         if (!(await actions.trim({ startOffsetSeconds: mockTrimStart, endOffsetSeconds: mockTrimEnd }))) return
         await actions.refreshProject()
-        if (await actions.publish()) setHasUnpublishedChanges(false)
-        return
-      }
-      if (p.recording) {
-        if (await actions.publish()) setHasUnpublishedChanges(false)
+        setPublishStep('publish')
+        published = await actions.publish()
+      } else if (p.recording) {
+        setPublishStep('publish')
+        published = await actions.publish()
       } else if (await actions.setPublicMode('ondemand')) {
         actions.setVisibility('open')
+      }
+      if (published) {
+        setHasUnpublishedChanges(false)
+        setPublishStep('chapters')
+        await reloadChaptersNow()
       }
     } finally {
       setPublishing(false)
@@ -1122,7 +1165,11 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 </button>
               </div>
             )}
-            {awaitingApproval ? null : chapters.length === 0 ? (
+            {awaitingApproval ? null : !projectChaptersLoaded ? (
+              <p class="od-empty od-chapters-loading" role="status">
+                <progress aria-hidden="true" /> Hämtar kapitel…
+              </p>
+            ) : chapters.length === 0 ? (
               <p class="od-empty">
                 {uploadedRecording
                   ? 'En uppladdad video har inga kapitel — de skapas från det som spelas ut under en livesändning.'
@@ -1131,6 +1178,12 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     : 'Inga kapitel än. De skapas från det som spelades ut under sändningen.'}
               </p>
             ) : (
+              <>
+              {chaptersRefreshing && (
+                <p class="od-empty od-chapters-loading" role="status">
+                  <progress aria-hidden="true" /> Uppdaterar kapitel…
+                </p>
+              )}
               <ul class="od-chapters">
                 {chapters.map((chapter, index) => visibleFlags[index] ? (
                   <li
@@ -1206,6 +1259,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                   </li>
                 ) : null)}
               </ul>
+              </>
             )}
             {uploadedRecording && !awaitingApproval && !chaptersReadOnly && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed') && (
               <AddChapterForm position={previewPosition} onAdd={addChapterHere} />
@@ -1289,11 +1343,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
           onImported={(result) => void onChaptersImported(result)}
         />
       )}
-      {publishing && (
-        <Modal title="Publicerar ondemand" onClose={() => undefined}>
-          <p>Förbereder video och publicerar ändringarna. Vänta tills publiceringen är klar.</p>
-        </Modal>
-      )}
+      {publishing && <PublishProgressDialog steps={publishSteps} activeKey={publishStep} />}
     </div>
   )
 }

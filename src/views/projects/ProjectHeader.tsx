@@ -9,6 +9,7 @@ import { Clock } from '../../components/Clock'
 import type { Channel, ChannelHealth, Project } from '../../data/types'
 import type { ProjectActions } from './actions'
 import { useModeChange } from './useModeChange'
+import { useModeSwitching } from './useModeSwitching'
 import { MODES, MODE_LABEL } from './projectMode'
 import { IngestInfo } from './IngestInfo'
 import { PlayerSettingsDialog } from './PlayerSettingsDialog'
@@ -38,6 +39,9 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
   const { selectMode, dialog: modeDialog } = useModeChange(p, actions)
+  // UNG-107: läget som håller på att bytas till visas som valt direkt, med en snurra, tills servern har svarat.
+  const switchingTo = useModeSwitching(p.id)
+  const shownMode = switchingTo ?? p.publicMode
   const [closingIngestInfo, setClosingIngestInfo] = useState(false)
   const [confirmTeardown, setConfirmTeardown] = useState<'manual' | 'encoderStopped' | null>(null)
   const [copied, setCopied] = useState(false)
@@ -323,16 +327,24 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
               <button
                 key={mode}
                 type="button"
-                class={`pv-seg-btn${mode === 'live' ? ' is-live' : ''}`}
-                aria-pressed={p.publicMode === mode}
-                disabled={mode === 'before' && p.publicMode === 'live'}
+                class={`pv-seg-btn${mode === 'live' ? ' is-live' : ''}${switchingTo === mode ? ' is-switching' : ''}`}
+                aria-pressed={shownMode === mode}
+                aria-busy={switchingTo === mode ? true : undefined}
+                disabled={switchingTo !== null || (mode === 'before' && p.publicMode === 'live')}
                 title={mode === 'before' && p.publicMode === 'live' ? 'Gå till After innan Before — ett avbrutet test granskas alltid där först.' : undefined}
                 onClick={() => (onModeSelect ? onModeSelect(mode) : selectMode(mode))}
               >
                 {MODE_LABEL[mode]}
+                {switchingTo === mode && <span class="pv-spinner" aria-hidden="true" />}
               </button>
             ))}
           </div>
+          {switchingTo !== null && (
+            <div class="pv-switching" role="status">
+              <span class="pv-spinner" aria-hidden="true" />
+              <span>Byter till {MODE_LABEL[switchingTo]}…</span>
+            </div>
+          )}
         </div>
 
         <div class="pv-field pv-link-field">

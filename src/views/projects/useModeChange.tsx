@@ -3,36 +3,47 @@ import type { Project, PublicMode } from '../../data/types'
 import type { ProjectActions } from './actions'
 import { ModeChangeDialog } from './ModeChangeDialog'
 import { afterReasonFor, modeChangePlan, requiresConfirmation } from './projectMode'
+import { beginModeSwitch, currentModeSwitch, endModeSwitch } from './modeSwitch'
 
 // Gemensam lägeshantering för headern och genvägarna i vyerna: bekräftelse
 // där den krävs, sparande av After-meddelandet och rätt serveranrop per byte.
 export function useModeChange(project: Project, actions: ProjectActions, onApplied?: (from: PublicMode, to: PublicMode) => void | Promise<void>) {
   const [pending, setPending] = useState<PublicMode | null>(null)
 
+  // UNG-107: den klickade knappen visas som vald direkt och en snurra visas tills servern har svarat (se modeSwitch.ts).
+  // Misslyckas något steg hämtas projektet om, så knapparna visar det läge servern faktiskt står i.
   async function apply(to: PublicMode, afterText?: string) {
     const from = project.publicMode
-    if (afterText !== undefined && afterText !== project.afterText) {
-      if (!(await actions.rename(project.name, { afterText }))) return
+    if (!beginModeSwitch(project.id, to)) return
+    let completed = false
+    try {
+      if (afterText !== undefined && afterText !== project.afterText) {
+        if (!(await actions.rename(project.name, { afterText }))) return
+      }
+      for (const step of modeChangePlan(from, to, project.publication.state === 'published')) {
+        // Ett misslyckat steg avbryter resten; felet visas redan som toast.
+        const ok =
+          step === 'close'
+            ? (await actions.setVisibility('closed'), true)
+            : step === 'publish'
+            ? await actions.publish()
+            : step === 'unpublish'
+              ? await actions.unpublish()
+              : step === 'returnToLive'
+                ? await actions.returnToLive()
+                : await actions.setPublicMode(to, afterReasonFor(from, to))
+        if (!ok) return
+      }
+      completed = true
+      await onApplied?.(from, to)
+    } finally {
+      if (!completed) await actions.refreshProject().catch(() => undefined)
+      endModeSwitch(project.id)
     }
-    for (const step of modeChangePlan(from, to, project.publication.state === 'published')) {
-      // Ett misslyckat steg avbryter resten; felet visas redan som toast.
-      const ok =
-        step === 'close'
-          ? (await actions.setVisibility('closed'), true)
-          : step === 'publish'
-          ? await actions.publish()
-          : step === 'unpublish'
-            ? await actions.unpublish()
-            : step === 'returnToLive'
-              ? await actions.returnToLive()
-              : await actions.setPublicMode(to, afterReasonFor(from, to))
-      if (!ok) return
-    }
-    await onApplied?.(from, to)
   }
 
   function selectMode(to: PublicMode) {
-    if (to === project.publicMode) return
+    if (to === project.publicMode || currentModeSwitch(project.id) !== null) return
     const unpublishedOndemand = project.publicMode === 'ondemand' && project.publication.state !== 'published'
     if (requiresConfirmation(project.publicMode, to) && !(unpublishedOndemand && to === 'before')) setPending(to)
     else void apply(to)

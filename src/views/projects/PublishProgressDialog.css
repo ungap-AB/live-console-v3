@@ -1,0 +1,55 @@
+.publish-steps {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.publish-step {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+.publish-step.is-active {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.publish-step.is-done {
+  color: var(--ink-2);
+}
+
+.publish-step-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 20px;
+}
+
+.publish-step-icon progress {
+  width: 22px;
+  height: 8px;
+}
+
+.publish-step-state {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.publish-elapsed {
+  margin: 0 0 4px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.publish-note {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
