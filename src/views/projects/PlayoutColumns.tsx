@@ -302,7 +302,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                             actions.clear('agendaItem')
                           }
                           else {
-                            actions.clear('person')
+                            // Servern döljer namnet från förra punkten i samma anrop (UNG-112).
                             actions.cue('agendaItem', it.id, it.title)
                           }
                         }}

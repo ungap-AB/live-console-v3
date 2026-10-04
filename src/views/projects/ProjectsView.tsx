@@ -322,22 +322,31 @@ export function ProjectsView({
         offsetSeconds,
       }
 
+      // Servern döljer namnet som visades för förra punkten i samma anrop (UNG-112); spegla det här så
+      // vyn inte visar den gamla talaren som aktiv tills projektet laddas om.
+      const hideId = `${tempId}-hide`
+      const hideNameEvent: TimelineEvent | null = kind === 'agendaItem' && project.playout.currentPersonId
+        ? { id: hideId, kind: 'person', refId: null, label: 'Rensat', occurredAt: optimisticEvent.occurredAt, offsetSeconds }
+        : null
+      const isOptimistic = (e: TimelineEvent) => e.id === tempId || e.id === hideId
+
       // Optimistisk uppdatering — inget behov av att vänta på eller hämta om
       // hela projektet. Servern är sanningen i bakgrunden; vi rättar till
       // eller rullar tillbaka om anropet faktiskt misslyckas.
-      updateProjectPlayout(project.id, (playout) => derivePlayoutState([...playout.timeline, optimisticEvent]))
+      updateProjectPlayout(project.id, (playout) =>
+        derivePlayoutState([...playout.timeline, ...(hideNameEvent ? [hideNameEvent] : []), optimisticEvent]))
 
       client.projects.cue(project.id, kind, refId, label).then(
         (realEvent) => {
           if (realEvent.kind !== kind || realEvent.refId !== refId) {
-            updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => e.id !== tempId)))
+            updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => !isOptimistic(e))))
             setToast('Backend bekräftade inte den klickade punkten.')
             return
           }
           updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId ? realEvent : e))))
         },
         (err) => {
-          updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => e.id !== tempId)))
+          updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => !isOptimistic(e))))
           setToast(err instanceof Error ? err.message : 'Kunde inte spela ut.')
         },
       )

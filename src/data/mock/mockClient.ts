@@ -1119,7 +1119,14 @@ export const mockClient: Client = {
         offsetSeconds,
       }
       p.playout.timeline = [...p.playout.timeline, event]
-      if (kind === 'agendaItem') p.playout.currentAgendaItemId = refId
+      if (kind === 'agendaItem') {
+        p.playout.currentAgendaItemId = refId
+        // Som servern: en ny punkt döljer namnet från förra punkten i samma anrop.
+        if (p.playout.currentPersonId) {
+          p.playout.timeline = [...p.playout.timeline, { id: `ev${nextId++}`, kind: 'person', refId: null, label: 'Rensat', occurredAt: event.occurredAt, offsetSeconds }]
+          p.playout.currentPersonId = null
+        }
+      }
       else p.playout.currentPersonId = refId
       return delay(clone(event))
     },
