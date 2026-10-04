@@ -2,7 +2,6 @@ import { client } from '../../data'
 import type { Channel, ChannelHealth, Project, TimelineEvent } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { formatHms, formatLocalTime } from '../../app/time'
-import { useLayoutEffect, useRef, useState } from 'preact/hooks'
 import type { ProjectActions } from './actions'
 import { PlayoutColumns } from './PlayoutColumns'
 import { usePlayoutTestbed } from './playoutTestbed'
@@ -26,12 +25,6 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
   )
   const nameListResource = useNameList(p)
   const phase = health?.livePhase
-  const agendaPanelRef = useRef<HTMLDivElement>(null)
-  const agendaValueRef = useRef<HTMLSpanElement>(null)
-  const personPanelRef = useRef<HTMLDivElement>(null)
-  const personValueRef = useRef<HTMLSpanElement>(null)
-  const [nowPanelMinHeight, setNowPanelMinHeight] = useState<number | null>(null)
-  const [layoutWidth, setLayoutWidth] = useState(() => window.innerWidth)
 
   const nowItem =
     p.playout.currentAgendaItem?.label ??
@@ -52,47 +45,6 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
   const expectedEndAt = testbed.state.startedAt
     ? new Date(testbed.state.startedAt.getTime() + testbed.state.durationSeconds * 1000).toISOString()
     : null
-
-  useLayoutEffect(() => {
-    const measurements = [
-      { panel: agendaPanelRef.current, value: agendaValueRef.current, labels: agendaResource.data?.items.map((item) => item.title) ?? [] },
-      { panel: personPanelRef.current, value: personValueRef.current, labels: nameListResource.data?.people.map((person) => person.name) ?? [] },
-    ].filter((entry) => entry.panel && entry.value && entry.labels.length > 0) as { panel: HTMLDivElement; value: HTMLSpanElement; labels: string[] }[]
-    if (measurements.length === 0) return
-
-    const heights = measurements.map(({ panel, value, labels }) => {
-      const valueRow = value.parentElement
-      const actionButton = valueRow?.querySelector('button')
-      const width = (valueRow?.clientWidth ?? value.clientWidth) - (actionButton?.clientWidth ?? 0) - 8
-      if (width <= 0) return 0
-      const style = getComputedStyle(value)
-      const probe = document.createElement('span')
-      probe.style.position = 'absolute'
-      probe.style.visibility = 'hidden'
-      probe.style.pointerEvents = 'none'
-      probe.style.width = `${width}px`
-      probe.style.font = style.font
-      probe.style.lineHeight = style.lineHeight
-      probe.style.fontWeight = style.fontWeight
-      probe.style.whiteSpace = 'normal'
-      probe.style.overflowWrap = 'anywhere'
-      probe.textContent = labels.filter(Boolean).reduce((longest, label) => label.length > longest.length ? label : longest, '')
-      document.body.appendChild(probe)
-      const panelStyle = getComputedStyle(panel)
-      const height = Math.ceil(probe.getBoundingClientRect().height)
-        + parseFloat(panelStyle.paddingTop) + parseFloat(panelStyle.paddingBottom)
-        + parseFloat(panelStyle.borderTopWidth) + parseFloat(panelStyle.borderBottomWidth)
-      document.body.removeChild(probe)
-      return height
-    })
-    setNowPanelMinHeight(Math.max(...heights))
-  }, [agendaResource.data?.items, nameListResource.data?.people, layoutWidth, nowItem, nowSpeaker])
-
-  useLayoutEffect(() => {
-    const handleResize = () => setLayoutWidth(window.innerWidth)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
 
   const panels: { key: string; label: string; value: string | null; occurredAt: string | null; clearLabel: string; onClear: () => void }[] = [
     { key: 'item', label: 'Aktuell punkt', value: nowItem, occurredAt: currentAgendaEvent?.occurredAt ?? null, clearLabel: 'Rensa ärende i bild', onClear: () => actions.clear('agendaItem') },
@@ -145,29 +97,55 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
 
       <div class="lw-now">
         {panels.map((panel) => (
-          <div
+          <NowPanel
             key={panel.key}
-            ref={panel.key === 'item' ? agendaPanelRef : panel.key === 'person' ? personPanelRef : undefined}
-            class={`lw-now-panel${panel.value ? ' is-active' : ''}`}
-            style={nowPanelMinHeight ? { minHeight: `${nowPanelMinHeight}px` } : undefined}
-          >
-            {panel.label && <span class="lw-now-label">{panel.label}</span>}
-            <span class="lw-now-value">
-              <span ref={panel.key === 'item' ? agendaValueRef : panel.key === 'person' ? personValueRef : undefined}>
-                <span>{panel.value ?? '–'}</span>
-                {panel.occurredAt && <small class="lw-now-time">{formatLocalTime(panel.occurredAt)}</small>}
-              </span>
-              {panel.value && (
-                <button class="pv-icon-btn" type="button" aria-label={panel.clearLabel} title={panel.clearLabel} onClick={panel.onClear}>
-                  ✕
-                </button>
-              )}
-            </span>
-          </div>
+            label={panel.label}
+            value={panel.value}
+            occurredAt={panel.occurredAt}
+            clearLabel={panel.clearLabel}
+            onClear={panel.onClear}
+          />
         ))}
       </div>
 
       <PlayoutColumns project={p} actions={actions} live />
+    </div>
+  )
+}
+
+interface NowPanelProps {
+  label: string
+  value: string | null
+  occurredAt: string | null
+  clearLabel: string
+  onClear: () => void
+}
+
+// Rutan har fast storlek från start — den får aldrig ändras när något spelas ut eller rensas, annars hoppar
+// listorna under och operatören riskerar att klicka fel. Därför är layouten alltid densamma: etikett, två
+// rader text (längre kläms med "…", hela texten finns som tooltip), en tidsrad och en plats för ✕-knappen.
+// Tidsraden och knappen är kvar men osynliga när inget är aktivt, så ingenting i rutan visas/döljs på ett
+// sätt som påverkar höjden. Höjderna sätts i LiveWorkspace.css.
+function NowPanel({ label, value, occurredAt, clearLabel, onClear }: NowPanelProps) {
+  return (
+    <div class={`lw-now-panel${value ? ' is-active' : ''}`}>
+      <span class="lw-now-label">{label}</span>
+      <span class="lw-now-value">
+        <span class="lw-now-text">
+          <span class="lw-now-title" title={value ?? undefined}>{value ?? '–'}</span>
+          <small class="lw-now-time">{occurredAt ? formatLocalTime(occurredAt) : ''}</small>
+        </span>
+        <button
+          class="pv-icon-btn"
+          type="button"
+          style={value ? undefined : { visibility: 'hidden' }}
+          aria-label={clearLabel}
+          title={clearLabel}
+          onClick={onClear}
+        >
+          ✕
+        </button>
+      </span>
     </div>
   )
 }

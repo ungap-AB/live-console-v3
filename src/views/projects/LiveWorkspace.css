@@ -169,6 +169,7 @@
   justify-content: space-between;
   gap: 8px;
   font-size: 17px;
+  line-height: 22px;
   font-weight: 600;
 }
 
@@ -176,12 +177,25 @@
   min-width: 0;
 }
 
+/* Fast höjd: två rader titel + tidsrad (rutan blir lika hög med eller utan text, tid och ✕-knapp). */
+.lw-now-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  height: 44px; /* 2 × line-height */
+}
+
 .lw-now-time {
   display: block;
+  height: 16px;
   margin-top: 4px;
   color: var(--ink-2);
   font-family: var(--mono);
   font-size: 12px;
+  line-height: 16px;
   font-weight: 400;
 }
 
