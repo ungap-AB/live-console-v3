@@ -170,9 +170,25 @@ function visibilityLabel(state: string): string {
   return state === 'open' ? 'Öppen för publik' : 'Stängd'
 }
 
+// UNG-109: en inspelnings eller kanals projekt (namn och läge) slås upp ur projektlistan. Varje uppslagning hämtade förut hela listan
+// på nytt, också strax efter att vyn själv hämtat den. Svaret återanvänds nu en kort stund (och delas av samtidiga anrop), och
+// projektlistan som vyn hämtar fyller på det.
+const PROJECT_REF_TTL_MS = 3000
+let projectRefCache: { at: number; promise: Promise<Map<string, ServerProject>> } | null = null
+
+function rememberProjectRefs(promise: Promise<ServerProject[]>): Promise<Map<string, ServerProject>> {
+  const mapped = promise.then((list) => new Map(list.map((p) => [p.id, p] as [string, ServerProject])))
+  const entry = { at: Date.now(), promise: mapped }
+  projectRefCache = entry
+  mapped.catch(() => {
+    if (projectRefCache === entry) projectRefCache = null
+  })
+  return mapped
+}
+
 async function projectRefMap(): Promise<Map<string, ServerProject>> {
-  const list = await api<ServerProject[]>('/projects')
-  return new Map(list.map((p) => [p.id, p]))
+  if (projectRefCache && Date.now() - projectRefCache.at < PROJECT_REF_TTL_MS) return projectRefCache.promise
+  return rememberProjectRefs(api<ServerProject[]>('/projects'))
 }
 
 function toProjectRef(project: ServerProject | undefined, kind: 'recording' | 'channel'): ProjectRef | null {
@@ -761,7 +777,10 @@ export const httpClient: Client = {
   },
   projects: {
     async list(query) {
-      const items = await api<ServerProject[]>('/projects', { query: { q: query } })
+      const request = api<ServerProject[]>('/projects', { query: { q: query } })
+      // En obegränsad lista (utan sökfråga) fyller på uppslagningen ovan, så ett följande inspelningsanrop slipper hämta den igen.
+      if (!query) void rememberProjectRefs(request).catch(() => undefined)
+      const items = await request
       return items.map(toProjectLite)
     },
     async get(id) {
