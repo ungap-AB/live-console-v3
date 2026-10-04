@@ -1,5 +1,6 @@
 import { client } from '../../data'
 import type { Channel, ChannelHealth, Project, TimelineEvent } from '../../data/types'
+import { useIsRootAdmin } from '../../app/currentUserContext'
 import { useResource } from '../../app/useResource'
 import { formatHms, formatLocalTime } from '../../app/time'
 import type { ProjectActions } from './actions'
@@ -19,6 +20,8 @@ interface LiveWorkspaceProps {
 // Ren sändningskontroll för läget Live.
 export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProps) {
   const testbed = usePlayoutTestbed(p, actions)
+  // Testbädden är ett verktyg för oss (root admin), inte för operatörer.
+  const isRootAdmin = useIsRootAdmin()
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
     [p.agendaId],
@@ -75,7 +78,7 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
         </div>
       )}
 
-      <section class="lw-testbed" aria-label="Testbädd">
+      {isRootAdmin && <section class="lw-testbed" aria-label="Testbädd">
         <div>
           <strong>Testbädd</strong>
           {testbed.state.running ? (
@@ -93,7 +96,7 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
         {testbed.state.totalSteps > 0 && !testbed.state.running && (
           <output>{formatHms(testbed.state.durationSeconds)}</output>
         )}
-      </section>
+      </section>}
 
       <div class="lw-now">
         {panels.map((panel) => (

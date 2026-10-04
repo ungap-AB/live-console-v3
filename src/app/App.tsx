@@ -16,6 +16,7 @@ import { JobsView } from '../views/jobs/JobsView'
 import { TrashView } from '../views/trash/TrashView'
 import { UsersView } from '../views/users/UsersView'
 import { readStoredSelection, storeSelection } from './selectionStorage'
+import { IsRootAdminContext } from './currentUserContext'
 
 type AuthState = { status: 'loading' } | { status: 'anon' } | { status: 'authed'; user: CurrentUser }
 
@@ -146,6 +147,7 @@ export function App() {
         : null
 
   return (
+    <IsRootAdminContext.Provider value={isRootAdmin}>
     <Shell
       active={route}
       projectsNavAction={projectsNavAction}
@@ -190,5 +192,6 @@ export function App() {
         <UsersView currentDomainId={auth.user.domain.id} canManageDomains={isRootAdmin} />
       )}
     </Shell>
+    </IsRootAdminContext.Provider>
   )
 }
