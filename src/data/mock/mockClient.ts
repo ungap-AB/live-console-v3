@@ -856,6 +856,18 @@ export const mockClient: Client = {
     async discardCaptionDraft() {
       throw new Error('Automatiska undertexter finns inte i mock-läget')
     },
+    async getCaptionMaster() {
+      throw new Error('Undertextredigeraren finns inte i mock-läget')
+    },
+    async saveCaptionMaster() {
+      throw new Error('Undertextredigeraren finns inte i mock-läget')
+    },
+    async listCaptionVersions() {
+      throw new Error('Undertextredigeraren finns inte i mock-läget')
+    },
+    async restoreCaptionVersion() {
+      throw new Error('Undertextredigeraren finns inte i mock-läget')
+    },
     async downloadCaptionDraft() {
       throw new Error('Automatiska undertexter finns inte i mock-läget')
     },

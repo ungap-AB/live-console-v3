@@ -204,7 +204,12 @@ export interface Client {
     /** Startar automatisk undertextning. Ett redan pågående jobb för inspelningen återanvänds. */
     generateCaptions(id: string, notifyByEmail: boolean): Promise<import('./types').CaptionGeneration>
     /** Godkänner utkastet: det publiceras som projektets undertext (samma väg som en uppladdad VTT-fil). */
-    approveCaptionDraft(id: string): Promise<import('./types').CaptionGeneration>
+    approveCaptionDraft(id: string, version?: number): Promise<import('./types').CaptionGeneration>
+    /** UNG-138: mastern som radlista. Spara med den version du utgick från (409 om någon annan hunnit före). */
+    getCaptionMaster(id: string): Promise<import('./types').CaptionMaster>
+    saveCaptionMaster(id: string, input: { ifVersion: number; cues: { start: number; end: number; text: string }[] }): Promise<import('./types').CaptionMaster>
+    listCaptionVersions(id: string): Promise<import('./types').CaptionVersionInfo[]>
+    restoreCaptionVersion(id: string, version: number, ifVersion: number): Promise<import('./types').CaptionMaster>
     discardCaptionDraft(id: string): Promise<void>
     /** Sparar utkastets VTT-fil via webbläsaren. */
     downloadCaptionDraft(id: string): Promise<void>

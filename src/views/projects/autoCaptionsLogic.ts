@@ -41,7 +41,18 @@ export function estimatedWaitText(videoDurationSeconds: number | undefined): str
   return minutes <= 1 ? 'någon minut' : `ungefär ${minutes} minuter`
 }
 
-/** Varför utkastet inte går att godkänna (annars null). */
+/**
+ * Varför utkastet inte går att godkänna (annars null). Stale gäller bara äldre utkast som skapades på den trimmade videons
+ * tidslinje (före mastern på originalets tidslinje): de kan inte räknas om och ska ersättas av en ny generering.
+ */
 export function approveBlockedReason(draft: Pick<CaptionDraft, 'stale'>): string | null {
-  return draft.stale ? 'Utkastet gjordes för en tidigare version av videon (den har trimmats om). Skapa nya undertexter.' : null
+  return draft.stale ? 'Utkastet är skapat på ett äldre sätt och kan inte godkännas eller redigeras. Skapa nya undertexter.' : null
+}
+
+export type DraftState = 'unreviewed' | 'published' | 'changed'
+
+/** Utkastets läge: aldrig publicerat, publicerat och oförändrat, eller publicerat med ändringar som inte är publicerade. */
+export function draftState(draft: Pick<CaptionDraft, 'approvedAtUtc' | 'unpublishedChanges'>): DraftState {
+  if (!draft.approvedAtUtc) return 'unreviewed'
+  return draft.unpublishedChanges ? 'changed' : 'published'
 }
