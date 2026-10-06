@@ -9,6 +9,7 @@ import './CaptionsPanel.css'
 
 interface CaptionsPanelProps {
   projectId: string
+  projectName?: string
   captions: ProjectCaptions | null
   /** Längden på den publicerade videon, för att varna om undertexten inte hör till den. */
   videoDurationSeconds?: number
@@ -21,7 +22,7 @@ interface CaptionsPanelProps {
 // UNG-94: undertexter (WebVTT) för den inspelning som publiceras: den trimmade versionen om du trimmat, annars
 // originalet. Filen skapas i ett externt verktyg och laddas upp här; tiderna ska räknas från den publicerade videons start. Spelaren visar undertexten via
 // webbläsarens egna undertextmeny, av tills tittaren väljer.
-export function CaptionsPanel({ projectId, captions, videoDurationSeconds, onChanged, onBusyChange }: CaptionsPanelProps) {
+export function CaptionsPanel({ projectId, projectName, captions, videoDurationSeconds, onChanged, onBusyChange }: CaptionsPanelProps) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [justUploaded, setJustUploaded] = useState<ProjectCaptions | null>(null)
@@ -77,6 +78,7 @@ export function CaptionsPanel({ projectId, captions, videoDurationSeconds, onCha
       <h3>Undertexter</h3>
       <AutoCaptions
         projectId={projectId}
+        projectName={projectName}
         videoDurationSeconds={videoDurationSeconds}
         published={shown}
         onChanged={onChanged}

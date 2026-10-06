@@ -4,11 +4,12 @@ import type { CaptionGeneration, ProjectCaptions } from '../../data/types'
 import { formatDateTime, formatHms } from '../../app/time'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { JobProgress } from '../../components/JobProgress'
-import { captionsLengthWarning } from './captionsCheck'
-import { approveBlockedReason, autoCaptionsPhase, estimatedWaitText, groupCorrections } from './autoCaptionsLogic'
+import { CaptionEditor } from './CaptionEditor'
+import { approveBlockedReason, autoCaptionsPhase, draftState, estimatedWaitText, groupCorrections } from './autoCaptionsLogic'
 
 interface AutoCaptionsProps {
   projectId: string
+  projectName?: string
   /** Längden på den publicerade videon, för att varna om utkastet inte hör till den. */
   videoDurationSeconds?: number
   /** Redan publicerade undertexter (uppladdade eller godkända), för att varna innan de ersätts. */
@@ -23,12 +24,13 @@ const POLL_MS = 4000
 // UNG-126: automatiska undertexter. Operatören startar en generering (MediaConvert tar fram ljudet, en undertextmotor
 // transkriberar), följer framsteget, granskar utkastet och godkänner det — först då syns det för tittarna. Rättningarna
 // (namn och termer som ersatts) visas så de går att kontrollera. Den råa texten sparas alltid på servern.
-export function AutoCaptions({ projectId, videoDurationSeconds, published, onChanged, onBusyChange }: AutoCaptionsProps) {
+export function AutoCaptions({ projectId, projectName = '', videoDurationSeconds, published, onChanged, onBusyChange }: AutoCaptionsProps) {
   const [generation, setGeneration] = useState<CaptionGeneration | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notify, setNotify] = useState(false)
   const [confirm, setConfirm] = useState<'approve' | 'discard' | 'cancel' | null>(null)
+  const [editing, setEditing] = useState(false)
   const alive = useRef(true)
 
   useEffect(() => {
@@ -76,7 +78,7 @@ export function AutoCaptions({ projectId, videoDurationSeconds, published, onCha
   const approve = () =>
     run(async () => {
       setConfirm(null)
-      setGeneration(await client.projects.approveCaptionDraft(projectId))
+      setGeneration(await client.projects.approveCaptionDraft(projectId, generation?.draft?.version))
       onChanged()
     }, 'Utkastet kunde inte godkännas.')
   const discard = () =>
@@ -122,9 +124,9 @@ export function AutoCaptions({ projectId, videoDurationSeconds, published, onCha
       {phase === 'draft' && draft && (
         <DraftView
           draft={draft}
-          videoDurationSeconds={videoDurationSeconds}
           busy={busy}
           canGenerate={generation.canGenerate}
+          onEdit={() => setEditing(true)}
           onApprove={() => setConfirm('approve')}
           onDiscard={() => setConfirm('discard')}
           onDownload={download}
@@ -147,6 +149,18 @@ export function AutoCaptions({ projectId, videoDurationSeconds, published, onCha
 
       {error && <p class="captions-error" role="alert">{error}</p>}
 
+      {editing && (
+        <CaptionEditor
+          projectId={projectId}
+          projectName={projectName}
+          onClose={() => {
+            setEditing(false)
+            void refresh()
+          }}
+          onSaved={() => void refresh()}
+        />
+      )}
+
       {confirm === 'approve' && (
         <ConfirmModal title="Godkänna och publicera undertexterna?" confirmLabel="Godkänn och publicera" onCancel={() => setConfirm(null)} onConfirm={() => void approve()}>
           <p>
@@ -157,7 +171,10 @@ export function AutoCaptions({ projectId, videoDurationSeconds, published, onCha
       )}
       {confirm === 'discard' && (
         <ConfirmModal title="Kassera utkastet?" confirmLabel="Kassera" danger onCancel={() => setConfirm(null)} onConfirm={() => void discard()}>
-          <p>Utkastet och den råa texten raderas. Publicerade undertexter påverkas inte. Du kan skapa nya när som helst.</p>
+          <p>
+            Utkastet, den råa texten och alla versioner raderas. Publicerade undertexter ligger kvar, men följer inte längre med om videon
+            trimmas om. Du kan skapa nya när som helst.
+          </p>
         </ConfirmModal>
       )}
       {confirm === 'cancel' && (
@@ -181,29 +198,31 @@ function StartButton({ busy, disabled, label, onStart }: { busy: boolean; disabl
 
 interface DraftViewProps {
   draft: NonNullable<CaptionGeneration['draft']>
-  videoDurationSeconds?: number
   busy: boolean
   canGenerate: boolean
+  onEdit: () => void
   onApprove: () => void
   onDiscard: () => void
   onDownload: () => void
   onRegenerate: () => void
 }
 
-function DraftView({ draft, videoDurationSeconds, busy, canGenerate, onApprove, onDiscard, onDownload, onRegenerate }: DraftViewProps) {
+function DraftView({ draft, busy, canGenerate, onEdit, onApprove, onDiscard, onDownload, onRegenerate }: DraftViewProps) {
   const blocked = approveBlockedReason(draft)
-  const lengthWarning = draft.stale ? null : captionsLengthWarning(draft, videoDurationSeconds)
   const groups = groupCorrections(draft.corrections)
-  const approved = Boolean(draft.approvedAtUtc)
+  const state = draftState(draft)
+  const heading =
+    state === 'unreviewed' ? 'Automatiskt genererat, ej granskat' : state === 'changed' ? 'Publicerat, men med ändringar som inte är publicerade' : 'Godkänt och publicerat'
 
   return (
     <>
       <p class="captions-current">
-        <strong>{approved ? 'Godkänt och publicerat' : 'Automatiskt genererat, ej granskat'}</strong> · {draft.cueCount.toLocaleString('sv-SE')} repliker ·
-        skapat {formatDateTime(draft.createdAtUtc)}
-        {approved && draft.approvedAtUtc ? ` · godkänt ${formatDateTime(draft.approvedAtUtc)}` : ''}
+        <strong>{heading}</strong> · {draft.cueCount.toLocaleString('sv-SE')} repliker · skapat {formatDateTime(draft.createdAtUtc)}
+        {draft.version && draft.version > 1 ? ` · version ${draft.version}` : ''}
+        {state !== 'unreviewed' && draft.approvedAtUtc ? ` · godkänt ${formatDateTime(draft.approvedAtUtc)}` : ''}
       </p>
-      {!approved && <p class="captions-help">Utkastet syns inte för tittarna förrän du godkänner det.</p>}
+      {state === 'unreviewed' && <p class="captions-help">Utkastet syns inte för tittarna förrän du godkänner det. Det gäller hela inspelningen, och den trimmade delen publiceras.</p>}
+      {state === 'changed' && <p class="captions-help">Tittarna ser den senast godkända versionen tills du godkänner de nya ändringarna.</p>}
       {groups.length > 0 && (
         <details class="captions-corrections">
           <summary>Maskinella rättningar ({draft.corrections.length})</summary>
@@ -222,9 +241,11 @@ function DraftView({ draft, videoDurationSeconds, busy, canGenerate, onApprove, 
         </details>
       )}
       {blocked && <p class="captions-warning" role="alert">{blocked}</p>}
-      {lengthWarning && <p class="captions-warning" role="alert">{lengthWarning}</p>}
       <div class="captions-actions">
-        {!approved && (
+        <button class="btn btn-sm" type="button" disabled={busy || Boolean(blocked)} onClick={onEdit}>
+          Redigera…
+        </button>
+        {state !== 'published' && (
           <button class="btn btn-sm btn-primary" type="button" disabled={busy || Boolean(blocked)} onClick={onApprove}>
             Godkänn och publicera
           </button>
@@ -239,9 +260,10 @@ function DraftView({ draft, videoDurationSeconds, busy, canGenerate, onApprove, 
           Kassera
         </button>
       </div>
-      {!approved && (
+      {state === 'unreviewed' && (
         <p class="captions-help">
-          Vill du rätta något? Ladda ner filen, redigera den i ett valfritt verktyg och ladda upp den nedan, så ersätter den utkastet.
+          Vill du rätta något kan du redigera här, eller ladda ner filen, redigera den i ett valfritt verktyg och ladda upp den nedan, så
+          ersätter den utkastet.
         </p>
       )}
     </>

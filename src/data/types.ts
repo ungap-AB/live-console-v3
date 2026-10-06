@@ -365,6 +365,50 @@ export interface CaptionDraft {
   stale: boolean
   approvedAtUtc?: string
   corrections: CaptionCorrection[]
+  /** Arbetskopians version (ökar vid varje sparning) och den version som senast publicerades. */
+  version?: number
+  publishedVersion?: number
+  /** Arbetskopian har ändrats sedan den senast publicerades (eller har aldrig publicerats). */
+  unpublishedChanges?: boolean
+  updatedAtUtc?: string
+  updatedByName?: string
+}
+
+/** UNG-138: en replik i undertextmastern. Tider i sekunder på ORIGINALinspelningens tidslinje. */
+export interface CaptionCue {
+  id: number
+  start: number
+  end: number
+  /** Text med radbrytningar (\n) för en eller två rader. */
+  text: string
+}
+
+export interface CaptionMaster {
+  recordingId: string
+  language: string
+  version: number
+  publishedVersion?: number
+  updatedAtUtc: string
+  updatedByName?: string
+  cues: CaptionCue[]
+  /** Redigeraren spelar originalet, eftersom tiderna ligger på dess tidslinje. */
+  originalHlsUrl?: string
+  originalDurationSeconds: number
+  /** Den del av originalet som publiceras (trimmen), i originalets tid. Saknas om projektet inte är trimmat. */
+  publishedStartSeconds?: number
+  publishedEndSeconds?: number
+  /** Äldre utkast på trimmad tidslinje: kan inte redigeras, skapa nya undertexter. */
+  legacy: boolean
+}
+
+export interface CaptionVersionInfo {
+  version: number
+  createdAtUtc: string
+  createdByName?: string
+  reason: 'generated' | 'edit' | 'restore'
+  cueCount: number
+  published: boolean
+  current: boolean
 }
 
 /** Senaste genereringen för projektet: jobbet (om något), utkastet (om något) och om en ny generering kan startas. */

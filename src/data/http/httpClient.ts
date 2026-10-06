@@ -19,6 +19,8 @@ import type {
   Project,
   ProjectRecording,
   CaptionGeneration,
+  CaptionMaster,
+  CaptionVersionInfo,
   ProjectCaptions,
   PublicMode,
   PublicShare,
@@ -833,8 +835,20 @@ export const httpClient: Client = {
     generateCaptions(id, notifyByEmail) {
       return api<CaptionGeneration>(`/projects/${id}/captions/generate`, { method: 'POST', query: { notifyByEmail: notifyByEmail ? 'true' : undefined } })
     },
-    approveCaptionDraft(id) {
-      return api<CaptionGeneration>(`/projects/${id}/captions/draft/approve`, { method: 'POST' })
+    approveCaptionDraft(id, version) {
+      return api<CaptionGeneration>(`/projects/${id}/captions/draft/approve`, { method: 'POST', query: { version } })
+    },
+    getCaptionMaster(id) {
+      return api<CaptionMaster>(`/projects/${id}/captions/master`)
+    },
+    saveCaptionMaster(id, input) {
+      return api<CaptionMaster>(`/projects/${id}/captions/master`, { method: 'PUT', body: input })
+    },
+    listCaptionVersions(id) {
+      return api<CaptionVersionInfo[]>(`/projects/${id}/captions/versions`)
+    },
+    restoreCaptionVersion(id, version, ifVersion) {
+      return api<CaptionMaster>(`/projects/${id}/captions/versions/${version}/restore`, { method: 'POST', body: { ifVersion } })
     },
     async discardCaptionDraft(id) {
       await api<void>(`/projects/${id}/captions/draft`, { method: 'DELETE' })

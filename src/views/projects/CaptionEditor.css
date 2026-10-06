@@ -1,0 +1,262 @@
+.ce-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.ce-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ce-title h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.ce-sub {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.ce-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ce-follow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+}
+
+.ce-dirty {
+  min-width: 130px;
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.ce-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.ce-banner.ce-error {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-bottom: 1px solid var(--warn-line);
+}
+
+.ce-banner.ce-warn {
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.ce-loading {
+  padding: 24px;
+  color: var(--ink-3);
+}
+
+.ce-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(380px, 42%) 1fr;
+}
+
+.ce-video {
+  padding: 12px 16px;
+  border-right: 1px solid var(--line-soft);
+  overflow-y: auto;
+}
+
+.ce-stage {
+  position: relative;
+  background: #000;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.ce-stage video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+
+.ce-overlay {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  transform: translateX(-50%);
+  max-width: 90%;
+  padding: 3px 10px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 17px;
+  line-height: 1.35;
+  text-align: center;
+  white-space: pre-line;
+  pointer-events: none;
+}
+
+.ce-help {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.ce-error-text {
+  margin: 8px 0 0;
+  color: var(--warn);
+  font-size: 12.5px;
+}
+
+.ce-list-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.ce-list-head,
+.ce-row {
+  display: grid;
+  grid-template-columns: 44px 104px 104px 66px 1fr;
+  align-items: stretch;
+}
+
+.ce-list-head {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.ce-list-head span {
+  padding: 0 8px;
+}
+
+.ce-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.ce-spacer {
+  position: relative;
+}
+
+.ce-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-bottom: 1px solid var(--line-soft);
+  box-sizing: border-box;
+}
+
+.ce-row.is-active {
+  background: var(--surface-2);
+  box-shadow: inset 3px 0 0 var(--focus);
+}
+
+.ce-row.is-outside {
+  opacity: 0.45;
+}
+
+.ce-row.is-edge .ce-num::after {
+  content: '•';
+  margin-left: 2px;
+  color: var(--warn);
+}
+
+.ce-row.is-changed {
+  box-shadow: inset 3px 0 0 var(--warn);
+}
+
+.ce-row.is-active.is-changed {
+  box-shadow: inset 3px 0 0 var(--warn);
+}
+
+.ce-time {
+  padding: 8px;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: inherit;
+}
+
+button.ce-time {
+  cursor: pointer;
+}
+
+button.ce-time:hover {
+  background: var(--surface-3);
+}
+
+.ce-static {
+  color: var(--ink-3);
+}
+
+.ce-text {
+  position: relative;
+  padding: 6px 8px;
+  min-width: 0;
+}
+
+.ce-text textarea {
+  width: 100%;
+  height: 44px;
+  box-sizing: border-box;
+  resize: none;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.3;
+  color: var(--field-fg);
+  background: var(--field-bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.ce-text textarea:focus {
+  outline: 2px solid var(--focus);
+  outline-offset: -1px;
+}
+
+.ce-row.has-warning textarea {
+  border-color: var(--warn);
+}
+
+.ce-counters {
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.ce-counters .is-over {
+  color: var(--warn);
+  font-weight: 600;
+}

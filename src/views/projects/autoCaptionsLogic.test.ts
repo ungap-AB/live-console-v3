@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { CaptionDraft, MediaJob } from '../../data/types.ts'
-import { approveBlockedReason, autoCaptionsPhase, estimatedWaitText, groupCorrections } from './autoCaptionsLogic.ts'
+import { approveBlockedReason, autoCaptionsPhase, draftState, estimatedWaitText, groupCorrections } from './autoCaptionsLogic.ts'
 
 function job(state: MediaJob['state'], createdAtUtc = '2026-10-06T10:00:00Z'): MediaJob {
   return { id: 'cj1', kind: 'captions', state, recordingId: 'r1', createdAtUtc }
@@ -49,7 +49,14 @@ test('väntetiden följer videons längd och blir aldrig under två minuter', ()
   assert.equal(estimatedWaitText(7200), 'ungefär 10 minuter')
 })
 
-test('ett inaktuellt utkast får inte godkännas', () => {
-  assert.match(approveBlockedReason({ stale: true }) ?? '', /trimmats om/)
+test('ett äldre utkast (på trimmad tidslinje) får inte godkännas', () => {
+  assert.match(approveBlockedReason({ stale: true }) ?? '', /äldre sätt/)
   assert.equal(approveBlockedReason({ stale: false }), null)
+})
+
+test('utkastets läge: ogranskat, publicerat eller publicerat med ändringar', () => {
+  assert.equal(draftState({}), 'unreviewed')
+  assert.equal(draftState({ approvedAtUtc: '2026-10-06T10:00:00Z', unpublishedChanges: false }), 'published')
+  assert.equal(draftState({ approvedAtUtc: '2026-10-06T10:00:00Z', unpublishedChanges: true }), 'changed')
+  assert.equal(draftState({ unpublishedChanges: true }), 'unreviewed')
 })

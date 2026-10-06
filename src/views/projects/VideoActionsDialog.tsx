@@ -42,6 +42,7 @@ export function VideoActionsDialog({
       {captionsEnabled ? (
         <CaptionsPanel
           projectId={projectId}
+          projectName={projectName}
           captions={captions}
           videoDurationSeconds={videoDurationSeconds}
           onChanged={onChanged}
