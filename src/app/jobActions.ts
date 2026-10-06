@@ -21,6 +21,6 @@ export function startBrowserDownload(url: string): void {
 }
 
 export function jobTitle(job: MediaJob): string {
-  const what = job.kind === 'download' ? 'Nedladdning' : 'Uppladdning'
+  const what = job.kind === 'download' ? 'Nedladdning' : job.kind === 'captions' ? 'Undertexter' : 'Uppladdning'
   return `${what} · ${job.projectName ?? job.recordingName ?? 'okänd inspelning'}`
 }

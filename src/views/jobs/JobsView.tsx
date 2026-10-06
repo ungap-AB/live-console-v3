@@ -143,7 +143,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
           ) : (
             <span class="jobs-check-space" aria-hidden="true" />
           )}
-          <Icon name={job.kind === 'download' ? 'download' : 'upload'} size={18} />
+          <Icon name={job.kind === 'download' ? 'download' : job.kind === 'captions' ? 'subtitles' : 'upload'} size={18} />
           <div class="jobs-text">
             <div class="jobs-title">{jobTitle(job)}</div>
             <div class="jobs-meta">
@@ -173,7 +173,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
                 <button class="btn btn-sm" type="button" onClick={() => setShareDialog([job.recordingId])}>Dela…</button>
               </>
             )}
-            {job.kind === 'upload' && job.state === 'done' && job.projectId && (
+            {(job.kind === 'upload' || job.kind === 'captions') && job.state === 'done' && job.projectId && (
               <button class="btn btn-sm" type="button" onClick={() => onOpenProject(job.projectId!)}>Öppna projektet</button>
             )}
           </div>
@@ -281,7 +281,9 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
           <p>
             {cancelTarget.kind === 'download'
               ? 'Förberedelsen av nedladdningen stoppas. Du kan starta en ny när som helst.'
-              : 'Bearbetningen av videon stoppas och den uppladdade filen tas bort från projektet. Du kan ladda upp den igen.'}
+              : cancelTarget.kind === 'captions'
+                ? 'Skapandet av undertexter stoppas och inget utkast sparas. Du kan starta det igen när som helst.'
+                : 'Bearbetningen av videon stoppas och den uppladdade filen tas bort från projektet. Du kan ladda upp den igen.'}
           </p>
         </ConfirmModal>
       )}

@@ -69,3 +69,16 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
 
   return payload as T
 }
+
+// Hämtar en fil bakom inloggning (en vanlig länk skickar ingen Authorization-header).
+export async function apiBlob(path: string): Promise<Blob> {
+  const headers: Record<string, string> = {}
+  if (authToken) headers['Authorization'] = `Bearer ${authToken}`
+  const response = await fetch(buildUrl(path), { headers })
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null)
+    const error = (payload as { error?: { code?: string; message?: string } } | null)?.error
+    throw new ApiError(error?.code ?? 'unknown_error', error?.message ?? `Serverfel (${response.status}).`)
+  }
+  return response.blob()
+}

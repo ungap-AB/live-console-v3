@@ -4,6 +4,12 @@ const PHASE_LABEL: Record<string, string> = {
   PROBING: 'Läser filen',
   TRANSCODING: 'Konverterar',
   UPLOADING: 'Sparar resultatet',
+  // Undertextjobb (UNG-124): ljudet görs av MediaConvert, sedan tar en undertextmotor över.
+  AUDIO: 'Förbereder ljudet',
+  DOWNLOADING: 'Hämtar ljudet',
+  PREPARING: 'Förbereder transkriberingen',
+  TRANSCRIBING: 'Transkriberar',
+  PROCESSING: 'Rättar och bygger undertexter',
 }
 
 export function jobPhaseLabel(phase?: string | null): string {
