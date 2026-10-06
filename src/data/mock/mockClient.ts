@@ -844,6 +844,21 @@ export const mockClient: Client = {
     async removeCaptions() {
       throw new Error('Undertexter finns inte i mock-läget')
     },
+    async getCaptionGeneration() {
+      return delay({ canGenerate: false })
+    },
+    async generateCaptions() {
+      throw new Error('Automatiska undertexter finns inte i mock-läget')
+    },
+    async approveCaptionDraft() {
+      throw new Error('Automatiska undertexter finns inte i mock-läget')
+    },
+    async discardCaptionDraft() {
+      throw new Error('Automatiska undertexter finns inte i mock-läget')
+    },
+    async downloadCaptionDraft() {
+      throw new Error('Automatiska undertexter finns inte i mock-läget')
+    },
     async setPoster(id, file) {
       const p = findProject(id)
       p.posterUrl = URL.createObjectURL(file)

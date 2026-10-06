@@ -18,6 +18,7 @@ import type {
   OperationCapability,
   Project,
   ProjectRecording,
+  CaptionGeneration,
   ProjectCaptions,
   PublicMode,
   PublicShare,
@@ -34,7 +35,7 @@ import type {
   Visibility,
 } from '../types'
 import { toTextPlacement } from '../textPlacement'
-import { ApiError, api, setAuthToken } from './fetchJson'
+import { ApiError, api, apiBlob, setAuthToken } from './fetchJson'
 import type {
   ServerAgenda,
   ServerAgendaListItem,
@@ -825,6 +826,29 @@ export const httpClient: Client = {
     },
     async removeCaptions(id) {
       await api<void>(`/projects/${id}/captions`, { method: 'DELETE' })
+    },
+    getCaptionGeneration(id) {
+      return api<CaptionGeneration>(`/projects/${id}/captions/generation`)
+    },
+    generateCaptions(id, notifyByEmail) {
+      return api<CaptionGeneration>(`/projects/${id}/captions/generate`, { method: 'POST', query: { notifyByEmail: notifyByEmail ? 'true' : undefined } })
+    },
+    approveCaptionDraft(id) {
+      return api<CaptionGeneration>(`/projects/${id}/captions/draft/approve`, { method: 'POST' })
+    },
+    async discardCaptionDraft(id) {
+      await api<void>(`/projects/${id}/captions/draft`, { method: 'DELETE' })
+    },
+    async downloadCaptionDraft(id) {
+      const blob = await apiBlob(`/projects/${id}/captions/draft.vtt`)
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `undertexter-${id}.vtt`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 10_000)
     },
     async setPoster(id, file) {
       const body = new FormData()

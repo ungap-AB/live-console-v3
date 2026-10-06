@@ -3,6 +3,7 @@ import { client } from '../../data'
 import type { ProjectCaptions } from '../../data/types'
 import { formatDateTime } from '../../app/time'
 import { ConfirmModal } from '../../components/ConfirmModal'
+import { AutoCaptions } from './AutoCaptions'
 import { captionsLengthWarning, validateCaptionFile } from './captionsCheck'
 import './CaptionsPanel.css'
 
@@ -25,11 +26,12 @@ export function CaptionsPanel({ projectId, captions, videoDurationSeconds, onCha
   const [error, setError] = useState('')
   const [justUploaded, setJustUploaded] = useState<ProjectCaptions | null>(null)
   const [confirmRemove, setConfirmRemove] = useState(false)
+  const [autoBusy, setAutoBusy] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    onBusyChange?.(busy)
-  }, [busy])
+    onBusyChange?.(busy || autoBusy)
+  }, [busy, autoBusy])
 
   useEffect(() => () => onBusyChange?.(false), [])
 
@@ -73,6 +75,14 @@ export function CaptionsPanel({ projectId, captions, videoDurationSeconds, onCha
   return (
     <section class="captions-panel" aria-label="Undertexter">
       <h3>Undertexter</h3>
+      <AutoCaptions
+        projectId={projectId}
+        videoDurationSeconds={videoDurationSeconds}
+        published={shown}
+        onChanged={onChanged}
+        onBusyChange={setAutoBusy}
+      />
+      <h4>Egen fil</h4>
       <input
         ref={fileInput}
         class="captions-file"

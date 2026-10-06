@@ -287,7 +287,7 @@ export interface ServerDownloadJob {
 
 export interface ServerMediaJob {
   id: string
-  kind: 'download' | 'upload'
+  kind: 'download' | 'upload' | 'captions'
   state: 'processing' | 'done' | 'error' | 'canceled'
   recordingId: string
   projectId?: string

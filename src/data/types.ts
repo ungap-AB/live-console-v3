@@ -344,6 +344,36 @@ export interface ProjectCaptions {
   url: string
 }
 
+// UNG-126: en maskinell rättning i ett undertextutkast (namn/term som ersatts), så den går att granska.
+export interface CaptionCorrection {
+  /** Sekunder från videons start där rättningen gjordes. */
+  time: number
+  original: string
+  replacement: string
+  similarity: number
+}
+
+// UNG-126: ett maskingenererat undertextutkast. Inte publicerat och syns inte för tittarna förrän operatören godkänt det.
+export interface CaptionDraft {
+  recordingId: string
+  language: string
+  createdAtUtc: string
+  cueCount: number
+  lastCueEndSeconds: number
+  audioSeconds: number
+  /** Utkastet hör till en tidigare version av inspelningen (projektet har trimmats om sedan det skapades). */
+  stale: boolean
+  approvedAtUtc?: string
+  corrections: CaptionCorrection[]
+}
+
+/** Senaste genereringen för projektet: jobbet (om något), utkastet (om något) och om en ny generering kan startas. */
+export interface CaptionGeneration {
+  job?: MediaJob
+  draft?: CaptionDraft
+  canGenerate: boolean
+}
+
 export interface ProjectRecording {
   id: string
   name: string
@@ -394,7 +424,7 @@ export interface DownloadJob {
 // UNG-80 steg 2: ett mediajobb i jobbfältet (servern äger slutförandet, se MediaJobObserver).
 export interface MediaJob {
   id: string
-  kind: 'download' | 'upload'
+  kind: 'download' | 'upload' | 'captions'
   state: 'processing' | 'done' | 'error' | 'canceled'
   recordingId: string
   projectId?: string

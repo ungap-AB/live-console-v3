@@ -199,6 +199,15 @@ export interface Client {
     /** Laddar upp undertexter (WebVTT) för den trimmade, publicerade inspelningen. Ersätter en tidigare fil. */
     setCaptions(id: string, file: File): Promise<import('./types').ProjectCaptions>
     removeCaptions(id: string): Promise<void>
+    /** UNG-126: senaste automatiska genereringen (jobb + utkast) för projektets uppspelningsinspelning. */
+    getCaptionGeneration(id: string): Promise<import('./types').CaptionGeneration>
+    /** Startar automatisk undertextning. Ett redan pågående jobb för inspelningen återanvänds. */
+    generateCaptions(id: string, notifyByEmail: boolean): Promise<import('./types').CaptionGeneration>
+    /** Godkänner utkastet: det publiceras som projektets undertext (samma väg som en uppladdad VTT-fil). */
+    approveCaptionDraft(id: string): Promise<import('./types').CaptionGeneration>
+    discardCaptionDraft(id: string): Promise<void>
+    /** Sparar utkastets VTT-fil via webbläsaren. */
+    downloadCaptionDraft(id: string): Promise<void>
     setPoster(id: string, file: File): Promise<Project>
     removePoster(id: string): Promise<Project>
     setVisibility(id: string, visibility: Visibility): Promise<Project>

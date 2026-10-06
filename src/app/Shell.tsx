@@ -248,7 +248,15 @@ function describeFinishedJob(
 ): ShellToast {
   const name = job.projectName ?? job.recordingName ?? 'inspelningen'
   if (job.state === 'error') {
-    return { message: `${job.kind === 'download' ? 'Nedladdningen' : 'Bearbetningen'} av ${name} misslyckades.` }
+    const what = job.kind === 'download' ? 'Nedladdningen' : job.kind === 'captions' ? 'Undertexterna' : 'Bearbetningen'
+    return { message: `${what} för ${name} misslyckades.` }
+  }
+  if (job.kind === 'captions') {
+    return {
+      message: `Undertextutkastet för ${name} är klart och väntar på granskning.`,
+      actionLabel: job.projectId ? 'Öppna projektet' : undefined,
+      onAction: job.projectId ? () => onOpenProject(job.projectId!) : undefined,
+    }
   }
   if (job.kind === 'download') {
     return {
