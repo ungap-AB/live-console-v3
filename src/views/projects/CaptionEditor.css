@@ -90,6 +90,8 @@
   background: #000;
   border-radius: 6px;
   overflow: hidden;
+  /* Gör cqw (procent av bildens bredd) användbart för undertexten nedan. */
+  container-type: inline-size;
 }
 
 .ce-stage video {
@@ -104,11 +106,12 @@
   left: 50%;
   bottom: 14%;
   transform: translateX(-50%);
-  max-width: 90%;
-  padding: 3px 10px;
+  /* Teckenstorleken följer bildens bredd (42 tecken ryms på en rad även i en smal ruta); breddgränsen är nästan hela bilden. */
+  max-width: 97%;
+  padding: 2px 0.5em;
   background: rgba(0, 0, 0, 0.72);
   color: #fff;
-  font-size: 17px;
+  font-size: clamp(11px, 3.6cqw, 24px);
   line-height: 1.35;
   text-align: center;
   white-space: pre-line;
@@ -137,7 +140,7 @@
 .ce-list-head,
 .ce-row {
   display: grid;
-  grid-template-columns: 44px 104px 104px 66px 1fr;
+  grid-template-columns: 44px 104px 1fr;
   align-items: stretch;
 }
 

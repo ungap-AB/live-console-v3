@@ -156,6 +156,16 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     revealRow(activeIndex)
   }, [activeIndex, follow, playing])
 
+  // "Följ med" slås av när operatören själv scrollar (hjul, touch eller drag i rullningslisten), inte av vår egen scroll.
+  // Slås den på igen hoppar listan direkt till den rad som spelas.
+  function stopFollowing() {
+    setFollow(false)
+  }
+
+  useEffect(() => {
+    if (follow && activeIndex >= 0) revealRow(activeIndex)
+  }, [follow])
+
   function setText(index: number, text: string) {
     setCues((current) => current.map((cue, position) => (position === index ? { ...cue, text } : cue)))
   }
@@ -295,9 +305,19 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
 
           <section class="ce-list-wrap" aria-label="Repliker">
             <div class="ce-list-head" aria-hidden="true">
-              <span>#</span><span>Start</span><span>Slut</span><span>Längd</span><span>Text</span>
+              <span>#</span><span>Start</span><span>Text</span>
             </div>
-            <div class="ce-list" ref={listRef} onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}>
+            <div
+              class="ce-list"
+              ref={listRef}
+              onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+              onWheel={stopFollowing}
+              onTouchMove={stopFollowing}
+              onPointerDown={(event) => {
+                // Ett tryck direkt på listan (inte på en rad) är ett drag i rullningslisten.
+                if (event.target === event.currentTarget) stopFollowing()
+              }}
+            >
               <div class="ce-spacer" style={{ height: `${cues.length * ROW_HEIGHT}px` }}>
                 {cues.slice(first, last).map((cue, offset) => {
                   const index = first + offset
@@ -313,9 +333,14 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                   return (
                     <div key={cue.id} class={classes} style={{ top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}>
                       <button class="ce-time ce-num" type="button" title="Spela den här repliken" onClick={() => seekTo(cue.start, true)}>{index + 1}</button>
-                      <button class="ce-time" type="button" title="Spela den här repliken" onClick={() => seekTo(cue.start, true)}>{formatCueTime(cue.start)}</button>
-                      <span class="ce-time ce-static">{formatCueTime(cue.end)}</span>
-                      <span class="ce-time ce-static">{(cue.end - cue.start).toFixed(3)}</span>
+                      <button
+                        class="ce-time"
+                        type="button"
+                        title={`Spela den här repliken (${formatCueTime(cue.start)}–${formatCueTime(cue.end)}, ${(cue.end - cue.start).toFixed(1)} s)`}
+                        onClick={() => seekTo(cue.start, true)}
+                      >
+                        {formatCueTime(cue.start)}
+                      </button>
                       <div class="ce-text">
                         <textarea
                           ref={(element) => {
