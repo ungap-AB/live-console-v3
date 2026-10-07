@@ -307,6 +307,32 @@ button.ce-time:hover {
   border-radius: 4px;
 }
 
+.ce-text textarea {
+  padding-right: 34px; /* plats för spela-knappen */
+}
+
+.ce-playbtn {
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  display: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: #fff;
+  background: var(--focus);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.ce-row:hover .ce-playbtn,
+.ce-row.is-selected .ce-playbtn,
+.ce-row.is-active .ce-playbtn {
+  display: grid;
+}
+
 .ce-text textarea:focus {
   outline: 2px solid var(--focus);
   outline-offset: -1px;

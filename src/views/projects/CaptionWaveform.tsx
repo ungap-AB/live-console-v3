@@ -88,6 +88,7 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     const emphasisedBoundary = grabbed ?? hovered.current
     // Den valda replikens gräns är den efter den (där orden flödar vidare till nästa replik); den sista repliken har ingen och använder sin start.
     const endBoundary = selectedIndex + 1 < cues.length ? selectedIndex + 1 : selectedIndex
+    const activeEnd = activeIndex >= 0 ? (activeIndex + 1 < cues.length ? activeIndex + 1 : activeIndex) : -1
 
     // Bandets bakgrund, och den valda repliken som ett svagt fält mellan sin gräns och nästa.
     ctx.fillStyle = surface
@@ -134,12 +135,11 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     for (const span of spans) {
       const y = span.y0
       if (y < -4 || y > height + 4) continue
-      const strong = span.index === endBoundary || span.index === emphasisedBoundary
-      const own = span.index === selectedIndex && !strong // den valda replikens egen start: tydlig men inte det som är i fokus
+      const strong = span.index === endBoundary || span.index === activeEnd || span.index === emphasisedBoundary
       const dragged = span.index === grabbed
-      ctx.fillStyle = strong || own ? focus : quiet
-      ctx.globalAlpha = strong ? 1 : own ? 0.8 : 0.55
-      const thickness = dragged ? 3 : strong ? 2 : own ? 1.5 : 1
+      ctx.fillStyle = strong ? focus : quiet
+      ctx.globalAlpha = strong ? 1 : 0.55
+      const thickness = dragged ? 3 : strong ? 2 : 1
       ctx.fillRect(0, y - thickness / 2, BAND_WIDTH, thickness)
       if (strong) {
         ctx.beginPath()
@@ -159,11 +159,10 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     for (let index = firstRow; index <= lastRow; index++) {
       const { band, row } = link(index)
       if (band < -30 || band > height + 30) continue // utanför fönstret (fokusläge): ingen linje
-      const strong = index === endBoundary || index === emphasisedBoundary
-      const own = index === selectedIndex && !strong
-      ctx.globalAlpha = strong ? 1 : own ? 0.8 : 0.4
-      ctx.strokeStyle = strong || own ? focus : quiet
-      ctx.lineWidth = index === grabbed ? 3 : strong ? 2 : own ? 1.5 : 1
+      const strong = index === endBoundary || index === activeEnd || index === emphasisedBoundary
+      ctx.globalAlpha = strong ? 1 : 0.4
+      ctx.strokeStyle = strong ? focus : quiet
+      ctx.lineWidth = index === grabbed ? 3 : strong ? 2 : 1
       ctx.beginPath()
       ctx.moveTo(BAND_WIDTH, band)
       ctx.lineTo(WAVEFORM_WIDTH, row)
@@ -216,13 +215,16 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     return { x: event.clientX - rect.left, y: event.clientY - rect.top }
   }
 
-  // Gränsen (replikindex) närmast pekaren, om någon ligger inom greppavstånd.
+  // Gränsen (replikindex) närmast pekaren, om någon ligger inom greppavstånd. En markerad (vald eller aktiv) replik har bara sin gräns
+  // efter sig att dra i: dess startlinje är gränsen mot föregående replik och låses, så att orden alltid flödar mot nästa replik.
   function boundaryAt(y: number): number | null {
-    const { cues, height } = latest.current
+    const { cues, height, selectedIndex, activeIndex } = latest.current
     const win = currentWindow()
+    const locked = (index: number) => [selectedIndex, activeIndex].some((marked) => marked === index && marked >= 0 && marked + 1 < cues.length)
     let best: number | null = null
     let bestDistance = GRAB_PIXELS + 0.001
     for (const span of visibleSpans(cues, win, height)) {
+      if (locked(span.index)) continue
       const distance = Math.abs(span.y0 - y)
       if (distance < bestDistance) {
         bestDistance = distance

@@ -435,6 +435,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
       event.stopPropagation()
       const original = saved.find((cue) => cue.id === cues[index].id)
       if (original) setText(index, original.text)
+    } else if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+      // Ctrl/Cmd+Enter spelar repliken (och pausar) utan att lämna textfältet.
+      event.preventDefault()
+      playRow(index)
     } else if (event.key === 'Enter') {
       event.preventDefault()
       if (event.shiftKey) {
@@ -580,7 +584,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
             )}
 
             <p class="ce-help">
-              Dra en gräns i vågformen så flödar texten över den. Enter = nästa rad · Skift+Enter = ny rad · Esc = ångra raden · Tab = nästa rad ·
+              Dra en gräns i vågformen så flödar texten över den. Ctrl/Cmd+Enter = spela/pausa repliken · Enter = nästa rad · Skift+Enter = ny rad · Esc = ångra raden · Tab = nästa rad ·
               Backspace i början / Delete i slutet slår ihop med grannen. Klicka på en rads tid för att spela den.
             </p>
           </section>
@@ -662,6 +666,16 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                           onBlur={() => setHistory(commitTypingTo(history))}
                           onKeyDown={(event) => onAreaKeyDown(event, index)}
                         />
+                        <button
+                          class="ce-playbtn"
+                          type="button"
+                          tabIndex={-1}
+                          title={playing && index === selectedIndex ? 'Pausa (Ctrl/Cmd+Enter)' : 'Spela från den här repliken (Ctrl/Cmd+Enter)'}
+                          aria-label={playing && index === selectedIndex ? 'Pausa' : `Spela från replik ${index + 1}`}
+                          onClick={() => playRow(index)}
+                        >
+                          <Icon name={playing && index === selectedIndex ? 'pause' : 'play_arrow'} size={20} />
+                        </button>
                         {(() => {
                           const badge = wordBadge(index)
                           return badge && (
