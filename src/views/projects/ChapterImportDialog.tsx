@@ -8,8 +8,12 @@ import { buildImportItems, guessTimeMode, parseChapterLines, type TimeMode } fro
 interface ChapterImportDialogProps {
   projectId: string
   agendaId: string | null
-  /** Antal nuvarande kapitel som ersätts. */
+  /** Antal nuvarande kapitel (de ersätts, eller finns kvar vid "lägg till"). */
   currentChapterCount: number
+  /** Inspelad sändning med riktig klocka (UNG-169): klockslag placeras direkt mot videon, och kapitel kan läggas till i stället för att ersätta. */
+  directClock?: boolean
+  /** Datum (ÅÅÅÅ-MM-DD) som klockslag utan datum tolkas mot, t.ex. sändningens datum. */
+  defaultDate?: string
   onClose: () => void
   onImported: (result: ChapterImportResult) => void
 }
@@ -23,12 +27,15 @@ function todayIso(): string {
 }
 
 // UNG-65/UNG-64: en källa åt gången — importen ersätter hela kapitellistan.
-export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, onClose, onImported }: ChapterImportDialogProps) {
+export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, directClock = false, defaultDate, onClose, onImported }: ChapterImportDialogProps) {
   const [source, setSource] = useState<Source>('paste')
   const [text, setText] = useState('')
   const [mode, setMode] = useState<TimeMode | null>(null)
   const [modeChosen, setModeChosen] = useState(false)
-  const [date, setDate] = useState(todayIso)
+  const [date, setDate] = useState(() => defaultDate ?? todayIso())
+  // Inspelad sändning med kapitel som redan finns: lägg till är det vanliga (det som spelades ut ska inte försvinna).
+  const canAdd = directClock && currentChapterCount > 0
+  const [importMode, setImportMode] = useState<'replace' | 'add'>(canAdd ? 'add' : 'replace')
   const [agendaItems, setAgendaItems] = useState<string[] | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -57,7 +64,7 @@ export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, 
     setBusy(true)
     setError('')
     try {
-      onImported(await client.projects.importChapters(projectId, items))
+      onImported(await client.projects.importChapters(projectId, items, directClock ? importMode : undefined))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Importen misslyckades.')
       setBusy(false)
@@ -73,7 +80,7 @@ export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, 
         <>
           <button class="btn btn-sm" type="button" onClick={onClose}>Avbryt</button>
           <button class="btn btn-sm btn-primary" type="button" disabled={busy || items.length === 0} onClick={() => void submit()}>
-            {busy ? 'Importerar…' : `Ersätt kapitellistan (${items.length})`}
+            {busy ? 'Importerar…' : canAdd && importMode === 'add' ? `Lägg till i kapitellistan (${items.length})` : `${currentChapterCount > 0 ? 'Ersätt' : 'Skapa'} kapitellistan (${items.length})`}
           </button>
         </>
       }
@@ -104,7 +111,7 @@ export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, 
                 </label>
                 <label>
                   <input type="radio" name="time-mode" checked={effectiveMode === 'clock'} onChange={() => { setMode('clock'); setModeChosen(true) }} />
-                  Klockslag i sändningen (förankras mot videon)
+                  {directClock ? 'Klockslag i sändningen (placeras direkt mot videon)' : 'Klockslag i sändningen (förankras mot videon)'}
                 </label>
                 {effectiveMode === 'clock' && (
                   <label>
@@ -139,11 +146,26 @@ export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, 
             ))}
           </ol>
         )}
+        {canAdd && (
+          <fieldset class="od-import-mode">
+            <legend>De {currentChapterCount} nuvarande kapitlen</legend>
+            <label>
+              <input type="radio" name="import-mode" checked={importMode === 'add'} onChange={() => setImportMode('add')} />
+              Behåll dem och lägg till de nya
+            </label>
+            <label>
+              <input type="radio" name="import-mode" checked={importMode === 'replace'} onChange={() => setImportMode('replace')} />
+              Ersätt dem
+            </label>
+          </fieldset>
+        )}
         <p class="od-empty">
-          {currentChapterCount > 0
-            ? `Importen ersätter de ${currentChapterCount} nuvarande kapitlen och förankringen.`
-            : 'Importen skapar kapitellistan.'}
-          {' '}Kapitel utan tid, och klockslag som inte förankrats ännu, är dolda för publiken.
+          {currentChapterCount > 0 && !(canAdd && importMode === 'add')
+            ? `Importen ersätter de ${currentChapterCount} nuvarande kapitlen${directClock ? '' : ' och förankringen'}.`
+            : currentChapterCount > 0
+              ? 'De nya kapitlen läggs efter de nuvarande.'
+              : 'Importen skapar kapitellistan.'}
+          {' '}Kapitel utan tid{directClock ? '' : ', och klockslag som inte förankrats ännu,'} är dolda för publiken tills de placerats.
         </p>
         {error && <span class="od-download-error">{error}</span>}
       </div>

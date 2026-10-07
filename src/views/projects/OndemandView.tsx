@@ -283,7 +283,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     : broadcastInProgress
       ? 'En sändning pågår. Vänta tills den är avslutad.'
       : 'En video bearbetas eller väntar på ditt godkännande. Slutför det först.'
-  const stepperVisible = !!uploadedRecording && !awaitingApproval && !chaptersReadOnly && !guide && untimedChapters.length > 0
+  // UNG-169: kapitel utan tid kan stegas fram för alla färdiga inspelningar, inte bara uppladdade (importerade listor utan tid).
+  const stepperVisible = !awaitingApproval && !chaptersReadOnly && !guide && untimedChapters.length > 0
   const stepTarget = chapters.find((chapter) => chapter.chapterId === stepTargetId)
     ?? untimedChapters.find((chapter) => !skippedIds.includes(chapter.chapterId))
     ?? untimedChapters[0]
@@ -485,6 +486,16 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     setStepTargetId(previous.chapterId)
     seekVideo(previous.offsetSeconds)
   }
+
+  // Sändningens datum (lokalt), som klockslag utan datum tolkas mot vid import till en inspelad sändning.
+  const activeStartedAt = projectRecordings.find((item) => item.isActive)?.startedAt
+  const importDefaultDate = activeStartedAt
+    ? (() => {
+        const date = new Date(activeStartedAt)
+        const pad = (value: number) => String(value).padStart(2, '0')
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+      })()
+    : undefined
 
   async function onChaptersImported(result: ChapterImportResult) {
     setShowImport(false)
@@ -1170,7 +1181,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                   ? 'En uppladdad video har inga kapitel — de skapas från det som spelas ut under en livesändning.'
                   : !p.recording
                     ? 'Kapitel skapas från det som spelas ut under en livesändning.'
-                    : 'Inga kapitel än. De skapas från det som spelades ut under sändningen.'}
+                    : !chaptersReadOnly && (p.recording.state === 'recorded' || p.recording.state === 'trimmed')
+                      ? 'Inga kapitel än. Inget spelades ut under sändningen. Importera en dagordning eller en lista, eller lägg till kapitel vid en position i videon, nedan.'
+                      : 'Inga kapitel än. De skapas från det som spelades ut under sändningen.'}
               </p>
             ) : (
               <>
@@ -1256,10 +1269,10 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
               </ul>
               </>
             )}
-            {uploadedRecording && !awaitingApproval && !chaptersReadOnly && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed') && (
+            {!awaitingApproval && !chaptersReadOnly && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed') && (
               <AddChapterForm position={previewPosition} onAdd={addChapterHere} />
             )}
-            {uploadedRecording && !awaitingApproval && !chaptersReadOnly && p.publication.state !== 'published' && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed') && (
+            {!awaitingApproval && !chaptersReadOnly && p.publication.state !== 'published' && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed') && (
               <div class="od-add-chapter">
                 <button class="btn btn-sm" type="button" onClick={() => setShowImport(true)}>Importera kapitel…</button>
               </div>
@@ -1334,6 +1347,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
           projectId={p.id}
           agendaId={p.agendaId}
           currentChapterCount={chapters.length}
+          directClock={!uploadedRecording}
+          defaultDate={importDefaultDate}
           onClose={() => setShowImport(false)}
           onImported={(result) => void onChaptersImported(result)}
         />

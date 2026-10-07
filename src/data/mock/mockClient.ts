@@ -1202,7 +1202,7 @@ export const mockClient: Client = {
     async syncChapters(_id, _anchorChapterId, _anchorOffsetSeconds) {
       return delay({ synced: 0, outsideVideo: 0 })
     },
-    async importChapters(id, items) {
+    async importChapters(id, items, _mode) {
       const project = findProject(id)
       const recording = recordings.find((r) => r.id === project.recording?.id)
       if (!recording) throw new Error('Inspelningen finns inte')

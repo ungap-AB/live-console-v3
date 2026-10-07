@@ -1006,10 +1006,10 @@ export const httpClient: Client = {
       })
       return { synced: result.synced, outsideVideo: result.outsideVideo }
     },
-    async importChapters(id, items) {
+    async importChapters(id, items, mode) {
       return api<{ positioned: number; clock: number; untimed: number; outsideVideo: number }>(`/projects/${id}/timeline-draft/import`, {
         method: 'POST',
-        body: { items },
+        body: { items, mode },
       })
     },
     async confirmChapterSync(id) {
