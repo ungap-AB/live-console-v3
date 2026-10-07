@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { decodeBase64 } from '../../data/http/base64.ts'
 import {
-  bandProfile, bandWindow, cueIndexAt, focusWindow, level, snapToSpeech, speechThreshold, zoomFocusSpan, peakBetween, rowCenterY, timeAtRow, timeToY, viewWindow, visibleSpans, yToTime,
+  bandProfile, cueIndexAt, grabRole, level, snapToSpeech, speechThreshold, peakBetween, rowCenterY, timeAtRow, timeToY, viewWindow, visibleSpans, yToTime,
 } from './captionWaveformLogic.ts'
 import type { CaptionEnergy } from '../../data/types'
 
@@ -130,23 +130,11 @@ test('radens mittlinje följer scrollen', () => {
   assert.equal(rowCenterY(3, 100, 76), 3 * 76 - 100 + 38)
 })
 
-test('fokusfönster: centrerat på repliken, minst valt spann, växer för långa repliker och börjar aldrig före 0', () => {
-  assert.deepEqual(focusWindow({ start: 20, end: 24 }, 12), { t0: 16, t1: 28 })
-  assert.deepEqual(focusWindow({ start: 20, end: 40 }, 12), { t0: 16, t1: 44 }) // 20 s * 1,4 = 28 s
-  assert.deepEqual(focusWindow({ start: 0, end: 2 }, 10), { t0: 0, t1: 10 })
-})
-
-test('bandets fönster: fokus på vald replik, annars listans scroll', () => {
-  assert.deepEqual(bandWindow(cues, 0, 228, 76, 1, 10), focusWindow(cues[1], 10))
-  assert.deepEqual(bandWindow(cues, 0, 228, 76, 1, null), viewWindow(cues, 0, 228, 76))
-  assert.deepEqual(bandWindow(cues, 0, 228, 76, 9, 10), viewWindow(cues, 0, 228, 76)) // ingen vald replik
-})
-
-test('zoom i fokusläget: hjulsteg 1,25 gånger inom gränserna', () => {
-  assert.equal(zoomFocusSpan(10, 1), 12.5)
-  assert.equal(zoomFocusSpan(10, -1), 8)
-  assert.equal(zoomFocusSpan(59, 1), 60)
-  assert.equal(zoomFocusSpan(3.1, -1), 3)
+test('drag i en linje: den valda replikens start ändrar bara tiden, alla andra linjer är en replik slut mot nästa', () => {
+  assert.equal(grabRole(5, 5), 'start') // den valda replikens egen startlinje
+  assert.equal(grabRole(6, 5), 'end') // linjen under den valda: dess slut
+  assert.equal(grabRole(4, 5), 'end') // en annan linje: slut för repliken ovanför
+  assert.equal(grabRole(0, 3), 'start') // första linjen har ingen replik ovanför
 })
 
 // 20 ms per ram. Byte för dB: (db + 80) / 80 * 255.

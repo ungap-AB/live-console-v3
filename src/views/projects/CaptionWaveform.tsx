@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'preact/hooks'
 import type { CaptionEnergy } from '../../data/types'
 import {
-  bandProfile, bandWindow, cueIndexAt, snapToSpeech, speechThreshold, timeToY, visibleSpans, yToTime, type CueSpan, type TimeWindow,
+  bandProfile, cueIndexAt, grabRole, snapToSpeech, speechThreshold, timeToY, viewWindow, visibleSpans, yToTime, type CueSpan, type GrabRole, type TimeWindow,
 } from './captionWaveformLogic'
 
 /** Bredd på vågformsbandet och på solfjädern med kopplingslinjer mellan bandet och raderna (CSS-pixlar). */
@@ -25,17 +25,14 @@ interface CaptionWaveformProps {
   playing: boolean
   publishedStart?: number
   publishedEnd?: number
-  /** Fokusläge: bandet visar ett fönster av så här många sekunder kring vald replik. Null = fönstret följer listans scroll. */
-  focusSpan: number | null
   /** Om gränserna får dras. */
   editable: boolean
   onSeek: (time: number) => void
   onSelect: (index: number) => void
-  onZoom: (deltaY: number) => void
   /** Hjulet över bandet rullar listan. */
   onScrollBy: (deltaY: number) => void
-  onDragStart: (index: number) => void
-  onDrag: (index: number, time: number) => void
+  onDragStart: (index: number, role: GrabRole) => void
+  onDrag: (index: number, time: number, role: GrabRole) => void
   onDragEnd: () => void
 }
 
@@ -51,11 +48,12 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
   // Under ett drag ligger fönstret fast: annars flyttar sig bandet med gränsen som dras.
   const frozen = useRef<TimeWindow | null>(null)
   const dragging = useRef<number | null>(null)
+  const dragRole = useRef<GrabRole>('end')
   const hovered = useRef<number | null>(null)
 
   const currentWindow = () => {
-    const { cues, scrollTop, height, rowHeight, selectedIndex, focusSpan } = latest.current
-    return frozen.current ?? bandWindow(cues, scrollTop, height, rowHeight, selectedIndex, focusSpan)
+    const { cues, scrollTop, height, rowHeight } = latest.current
+    return frozen.current ?? viewWindow(cues, scrollTop, height, rowHeight)
   }
 
   function draw() {
@@ -86,9 +84,9 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     const startY = (index: number) => timeToY(cues[index].start, win, height)
     const grabbed = dragging.current
     const emphasisedBoundary = grabbed ?? hovered.current
-    // Den valda replikens gräns är den efter den (där orden flödar vidare till nästa replik); den sista repliken har ingen och använder sin start.
-    const endBoundary = selectedIndex + 1 < cues.length ? selectedIndex + 1 : selectedIndex
-    const activeEnd = activeIndex >= 0 ? (activeIndex + 1 < cues.length ? activeIndex + 1 : activeIndex) : -1
+    // Den valda replikens två linjer: dess start (ändrar bara tiden) och dess slut, som är nästa replik start (där orden flödar över).
+    const startLine = selectedIndex
+    const endLine = selectedIndex + 1 < cues.length ? selectedIndex + 1 : -1
 
     // Bandets bakgrund, och den valda repliken som ett svagt fält mellan sin gräns och nästa.
     ctx.fillStyle = surface
@@ -135,7 +133,7 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     for (const span of spans) {
       const y = span.y0
       if (y < -4 || y > height + 4) continue
-      const strong = span.index === endBoundary || span.index === activeEnd || span.index === emphasisedBoundary
+      const strong = span.index === startLine || span.index === endLine || span.index === emphasisedBoundary
       const dragged = span.index === grabbed
       ctx.fillStyle = strong ? focus : quiet
       ctx.globalAlpha = strong ? 1 : 0.55
@@ -151,6 +149,17 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
       }
     }
     ctx.globalAlpha = 1
+    // Vad den valda replikens två linjer är: dess start (bara tiden) och dess slut (orden flödar mot nästa replik).
+    ctx.font = '600 10px system-ui, sans-serif'
+    ctx.fillStyle = focus
+    if (startLine >= 0 && startLine < cues.length) {
+      const y = startY(startLine)
+      if (y > 14 && y < height) ctx.fillText('start', 12, y - 5)
+    }
+    if (endLine >= 0) {
+      const y = startY(endLine)
+      if (y > 0 && y < height - 12) ctx.fillText('slut', 12, y + 13)
+    }
 
     // Kopplingslinjer från radgränserna i listan (strecket ovanför varje rad) till gränsernas lägen i bandet.
     const firstRow = Math.max(0, Math.floor(scrollTop / rowHeight))
@@ -159,7 +168,7 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     for (let index = firstRow; index <= lastRow; index++) {
       const { band, row } = link(index)
       if (band < -30 || band > height + 30) continue // utanför fönstret (fokusläge): ingen linje
-      const strong = index === endBoundary || index === activeEnd || index === emphasisedBoundary
+      const strong = index === startLine || index === endLine || index === emphasisedBoundary
       ctx.globalAlpha = strong ? 1 : 0.4
       ctx.strokeStyle = strong ? focus : quiet
       ctx.lineWidth = index === grabbed ? 3 : strong ? 2 : 1
@@ -215,16 +224,13 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     return { x: event.clientX - rect.left, y: event.clientY - rect.top }
   }
 
-  // Gränsen (replikindex) närmast pekaren, om någon ligger inom greppavstånd. En markerad (vald eller aktiv) replik har bara sin gräns
-  // efter sig att dra i: dess startlinje är gränsen mot föregående replik och låses, så att orden alltid flödar mot nästa replik.
+  // Gränsen (replikindex) närmast pekaren, om någon ligger inom greppavstånd.
   function boundaryAt(y: number): number | null {
-    const { cues, height, selectedIndex, activeIndex } = latest.current
+    const { cues, height } = latest.current
     const win = currentWindow()
-    const locked = (index: number) => [selectedIndex, activeIndex].some((marked) => marked === index && marked >= 0 && marked + 1 < cues.length)
     let best: number | null = null
     let bestDistance = GRAB_PIXELS + 0.001
     for (const span of visibleSpans(cues, win, height)) {
-      if (locked(span.index)) continue
       const distance = Math.abs(span.y0 - y)
       if (distance < bestDistance) {
         bestDistance = distance
@@ -244,7 +250,8 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
       canvas.setPointerCapture(event.pointerId)
       frozen.current = currentWindow()
       dragging.current = boundary
-      latest.current.onDragStart(boundary)
+      dragRole.current = grabRole(boundary, latest.current.selectedIndex)
+      latest.current.onDragStart(boundary, dragRole.current)
       // Ett klick på en gräns hoppar också dit, precis som ett klick på själva vågformen.
       latest.current.onSeek(latest.current.cues[boundary].start)
       return
@@ -273,7 +280,7 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     const { height, energy, onDrag } = latest.current
     let time = Math.max(0, yToTime(Math.min(height, Math.max(0, position.y)), currentWindow(), height))
     if (!event.altKey) time = snapToSpeech(energy, threshold, time, 'start')
-    onDrag(index, time)
+    onDrag(index, time, dragRole.current)
   }
 
   function onPointerLeave() {
@@ -290,13 +297,10 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     latest.current.onDragEnd()
   }
 
-  // Hjulet rullar listan (bandet följer med). I fokusläget zoomar Ctrl/Cmd + hjul i stället.
+  // Hjulet rullar listan (bandet följer med). Ctrl/Cmd + hjul lämnas åt webbläsaren (zoom).
   function onWheel(event: WheelEvent) {
+    if (event.ctrlKey || event.metaKey) return
     event.preventDefault()
-    if (latest.current.focusSpan !== null && (event.ctrlKey || event.metaKey)) {
-      latest.current.onZoom(event.deltaY)
-      return
-    }
     latest.current.onScrollBy(event.deltaMode === 1 ? event.deltaY * 40 : event.deltaY)
   }
 
@@ -307,7 +311,7 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
         class="ce-wave"
         style={{ width: `${WAVEFORM_WIDTH}px`, height: `${props.height}px` }}
         aria-label="Vågform för ljudet. Klicka för att hoppa i videon, dra en gräns för att flytta den."
-        title="Ljudets vågform. Klicka för att hoppa i videon. Dra en gräns (linje) för att flytta den, så flödar texten över. Alt stänger av fästningen. Hjulet rullar listan (Ctrl/Cmd + hjul zoomar i fokusläge). Orange ljud saknar replik."
+        title="Ljudets vågform. Klicka för att hoppa i videon. Dra en gräns (linje) för att flytta den, så flödar texten över. Alt stänger av fästningen. Hjulet rullar listan. Orange ljud saknar replik."
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}

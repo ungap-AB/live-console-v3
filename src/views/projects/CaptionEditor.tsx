@@ -19,7 +19,7 @@ import { moveBoundary } from './captionFlow'
 import { deriveTimes, speechRuns } from './captionTimingLogic'
 import { emptyHistory, record, redo, undo, type History } from './captionHistory'
 import { CaptionWaveform, WAVEFORM_WIDTH } from './CaptionWaveform'
-import { zoomFocusSpan } from './captionWaveformLogic'
+import type { GrabRole } from './captionWaveformLogic'
 import './CaptionEditor.css'
 
 const ROW_HEIGHT = 84
@@ -59,10 +59,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   const [viewportHeight, setViewportHeight] = useState(600)
   const [focusTick, setFocusTick] = useState(0)
   const [energy, setEnergy] = useState<CaptionEnergy | null>(null)
-  // Fokusläge i vågformsbandet: sekunder kring vald replik, eller null när bandet följer listans scroll.
-  const [focusSpan, setFocusSpan] = useState<number | null>(null)
   // Gränsen (replikindex) som dras, med antal ord i de två berörda replikerna när draget började (för orden-just-nu-märket).
-  const [dragBoundary, setDragBoundary] = useState<{ index: number; baseBefore: number; baseAfter: number } | null>(null)
+  const [dragBoundary, setDragBoundary] = useState<{ index: number; role: GrabRole; baseBefore: number; baseAfter: number } | null>(null)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -298,23 +296,24 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   }
 
   // ---- Gränser i vågformsbandet (UNG-161) ----
-  // Gränsen före en rad (replikens start) dras i bandet och texten flödar över: orden byter sida efter uppskattad tid över tal. Raderna
-  // ändras löpande utan att historiken fylls; hela draget blir ETT ångra-steg när pekaren släpps.
+  // Linjerna i bandet är replikernas starter. Den valda replikens egen startlinje ändrar bara dess starttid (utan hänsyn till om den
+  // inkräktar på föregående replik, vars slut då kortas av sig självt). Alla andra linjer är en replik slut mot nästa: där flödar orden
+  // över efter uppskattad tid över tal. Raderna ändras löpande utan att historiken fylls; hela draget blir ETT ångra-steg.
   const wordCount = (text: string) => text.split(/\s+/).filter(Boolean).length
 
-  function dragStart(index: number) {
+  function dragStart(index: number, role: GrabRole) {
     const base = cuesRef.current
     dragBase.current = base
-    setDragBoundary({ index, baseBefore: index > 0 ? wordCount(base[index - 1].text) : 0, baseAfter: wordCount(base[index].text) })
-    // En gräns hör till repliken ovanför den (dess slut, där orden flödar vidare till nästa): den repliken blir vald.
-    setSelectedIndex(Math.max(0, index - 1))
+    setDragBoundary({ index, role, baseBefore: index > 0 ? wordCount(base[index - 1].text) : 0, baseAfter: wordCount(base[index].text) })
+    // Startlinjen tillhör repliken själv; en slutlinje tillhör repliken ovanför den. Den repliken blir vald.
+    setSelectedIndex(role === 'start' ? index : Math.max(0, index - 1))
   }
 
-  function dragMove(index: number, time: number) {
+  function dragMove(index: number, time: number, role: GrabRole) {
     const base = dragBase.current
     if (!base) return
     setNotice('')
-    setCues(derive(moveBoundary(base, index, time, timing.runs).cues))
+    setCues(derive(moveBoundary(base, index, time, timing.runs, role === 'end').cues))
     seekTo(time, false)
   }
 
@@ -331,9 +330,12 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     apply({ ok: true, cues: moveBoundary(cues, index, time, timing.runs, false).cues, focusIndex: index })
   }
 
+  // Spela-knappen sitter vid den aktiva repliken (den som visas i videon), annars vid den valda.
+  const playIndex = activeIndex >= 0 ? activeIndex : selectedIndex
+
   // Under ett drag visas hur många ord de två berörda replikerna just nu innehåller (och förändringen sedan draget började).
   function wordBadge(index: number): { count: number; delta: number } | null {
-    if (!dragBoundary) return null
+    if (!dragBoundary || dragBoundary.role !== 'end') return null // bara slutlinjen flyttar ord
     if (index === dragBoundary.index - 1) return { count: wordCount(cues[index].text), delta: wordCount(cues[index].text) - dragBoundary.baseBefore }
     if (index === dragBoundary.index) return { count: wordCount(cues[index].text), delta: wordCount(cues[index].text) - dragBoundary.baseAfter }
     return null
@@ -497,12 +499,6 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
             <input type="checkbox" checked={follow} onChange={(event) => setFollow(event.currentTarget.checked)} />
             Följ med
           </label>
-          {energy && (
-            <label class="ce-follow" title="Zooma vågformsbandet till den valda repliken (hjulet över bandet zoomar)">
-              <input type="checkbox" checked={focusSpan !== null} onChange={(event) => setFocusSpan(event.currentTarget.checked ? 12 : null)} />
-              Fokus
-            </label>
-          )}
           <span class="ce-dirty" aria-live="polite">{dirty ? `${changeCount} osparade ändringar` : master ? 'Sparat' : ''}</span>
           <button class="btn btn-sm btn-primary" type="button" disabled={!dirty || saving || readOnly} onClick={() => void save()}>
             {saving ? 'Sparar…' : 'Spara'}
@@ -591,7 +587,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
 
           <section class="ce-list-wrap" aria-label="Repliker">
             <div class="ce-list-head" aria-hidden="true" style={energy ? { marginLeft: `${WAVEFORM_WIDTH}px` } : undefined}>
-              <span>Text</span><span>#</span><span>Start</span><span />
+              <span /><span>Text</span><span>#</span><span>Start</span><span />
             </div>
             <div class="ce-list-main">
             {energy && (
@@ -607,11 +603,9 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                 playing={playing}
                 publishedStart={publishedStart}
                 publishedEnd={publishedEnd}
-                focusSpan={focusSpan}
                 editable={!readOnly}
                 onSeek={(time) => seekTo(time, false)}
                 onSelect={setSelectedIndex}
-                onZoom={(deltaY) => setFocusSpan((span) => (span === null ? span : zoomFocusSpan(span, deltaY)))}
                 onScrollBy={scrollListBy}
                 onDragStart={dragStart}
                 onDrag={dragMove}
@@ -644,6 +638,20 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                   ].filter(Boolean).join(' ')
                   return (
                     <div key={cue.id} class={classes} style={{ top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}>
+                      <div class="ce-playcol">
+                        {index === playIndex && (
+                          <button
+                            class="ce-playbtn"
+                            type="button"
+                            tabIndex={-1}
+                            title={playing ? 'Pausa (Ctrl/Cmd+Enter)' : 'Spela från den här repliken (Ctrl/Cmd+Enter)'}
+                            aria-label={playing ? 'Pausa' : `Spela från replik ${index + 1}`}
+                            onClick={() => playRow(index)}
+                          >
+                            <Icon name={playing ? 'pause' : 'play_arrow'} size={20} />
+                          </button>
+                        )}
+                      </div>
                       <div class="ce-text">
                         <textarea
                           ref={(element) => {
@@ -666,16 +674,6 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                           onBlur={() => setHistory(commitTypingTo(history))}
                           onKeyDown={(event) => onAreaKeyDown(event, index)}
                         />
-                        <button
-                          class="ce-playbtn"
-                          type="button"
-                          tabIndex={-1}
-                          title={playing && index === selectedIndex ? 'Pausa (Ctrl/Cmd+Enter)' : 'Spela från den här repliken (Ctrl/Cmd+Enter)'}
-                          aria-label={playing && index === selectedIndex ? 'Pausa' : `Spela från replik ${index + 1}`}
-                          onClick={() => playRow(index)}
-                        >
-                          <Icon name={playing && index === selectedIndex ? 'pause' : 'play_arrow'} size={20} />
-                        </button>
                         {(() => {
                           const badge = wordBadge(index)
                           return badge && (

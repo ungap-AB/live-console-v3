@@ -158,7 +158,7 @@
 .ce-list-head,
 .ce-row {
   display: grid;
-  grid-template-columns: 1fr 44px 76px;
+  grid-template-columns: 34px 1fr 44px 76px;
   align-items: stretch;
 }
 
@@ -287,8 +287,7 @@ button.ce-time:hover {
 
 .ce-text {
   position: relative;
-  /* Mer luft åt vänster: den aktiva och ändrade radens list (upp till 10 px) ligger i radens vänsterkant. */
-  padding: 6px 8px 6px 12px;
+  padding: 6px 8px;
   min-width: 0;
 }
 
@@ -307,15 +306,15 @@ button.ce-time:hover {
   border-radius: 4px;
 }
 
-.ce-text textarea {
-  padding-right: 34px; /* plats för spela-knappen */
+.ce-playcol {
+  /* Kolumnen närmast kopplingslinjerna och den blå markeringen: spela-knappen för den aktiva repliken. */
+  display: grid;
+  place-items: center;
+  padding-left: 6px; /* den aktiva radens list ligger i kanten */
 }
 
 .ce-playbtn {
-  position: absolute;
-  right: 14px;
-  bottom: 10px;
-  display: none;
+  display: grid;
   place-items: center;
   width: 26px;
   height: 26px;
@@ -325,12 +324,6 @@ button.ce-time:hover {
   border: 0;
   border-radius: 50%;
   cursor: pointer;
-}
-
-.ce-row:hover .ce-playbtn,
-.ce-row.is-selected .ce-playbtn,
-.ce-row.is-active .ce-playbtn {
-  display: grid;
 }
 
 .ce-text textarea:focus {
@@ -365,7 +358,7 @@ button.ce-time:hover {
 /* ---- UNG-143: radåtgärder, vald replik, korta rutor ---- */
 .ce-list-head,
 .ce-row {
-  grid-template-columns: 1fr 44px 76px 40px;
+  grid-template-columns: 34px 1fr 44px 76px 40px;
 }
 
 .ce-row-actions {

@@ -133,35 +133,15 @@ export function rowCenterY(index: number, scrollTop: number, rowHeight: number):
   return index * rowHeight - scrollTop + rowHeight / 2
 }
 
-/** Fokusfönstret (UNG-160): centrerat på repliken, minst span sekunder brett och minst 1,4 gånger replikens längd. Börjar aldrig före 0. */
-export function focusWindow(cue: CueSpan, span: number): TimeWindow {
-  const length = Math.max(span, (cue.end - cue.start) * 1.4)
-  const middle = (cue.start + cue.end) / 2
-  const t0 = Math.max(0, middle - length / 2)
-  return { t0, t1: t0 + length }
-}
+/**
+ * Vad ett drag i en gränslinje gör (UNG-161): den valda replikens egen startlinje ändrar bara dess starttid (utan ordflöde, och utan hänsyn
+ * till om den inkräktar på föregående replik, vars slut då kortas av sig självt). Alla andra linjer är en replik slut, mot nästa: där
+ * flödar orden mellan de två. Första replikens startlinje har ingen replik ovanför och ändrar bara tiden.
+ */
+export type GrabRole = 'start' | 'end'
 
-/** Fönstret bandet visar: fokusfönstret kring vald replik om fokusläge är på, annars det som följer listans scroll. */
-export function bandWindow(
-  cues: readonly CueSpan[],
-  scrollTop: number,
-  height: number,
-  rowHeight: number,
-  selectedIndex: number,
-  focusSpan: number | null,
-): TimeWindow {
-  const selected = cues[selectedIndex]
-  if (focusSpan !== null && selected) return focusWindow(selected, focusSpan)
-  return viewWindow(cues, scrollTop, height, rowHeight)
-}
-
-export const MIN_FOCUS_SECONDS = 3
-export const MAX_FOCUS_SECONDS = 60
-
-/** Zoom i fokusläget: en hjulsteg gör fönstret 1,25 gånger bredare eller smalare, inom gränserna. */
-export function zoomFocusSpan(span: number, deltaY: number): number {
-  const next = deltaY > 0 ? span * 1.25 : span / 1.25
-  return Math.min(MAX_FOCUS_SECONDS, Math.max(MIN_FOCUS_SECONDS, next))
+export function grabRole(index: number, selectedIndex: number): GrabRole {
+  return index === selectedIndex || index === 0 ? 'start' : 'end'
 }
 
 /**
