@@ -15,6 +15,7 @@ import { Livesandning } from './Livesandning'
 import { OndemandView } from './OndemandView'
 import { MODE_LABEL } from './projectMode'
 import { listCaptionButton, requestCaptionStudio } from './captionEntryLogic'
+import { currentPauseFromTimeline, normalizePauseText } from './pauseLogic'
 import { activeJobsByProject, jobKindIcon, jobKindLabel } from './projectJobLogic'
 import { openJobsView } from '../../app/jobsBus'
 import type { ProjectActions } from './actions'
@@ -65,6 +66,7 @@ function derivePlayoutState(timeline: TimelineEvent[]): PlayoutState {
     currentAgendaItem: lastItem?.label === 'Rensat' ? null : lastItem ?? null,
     currentPerson: lastPerson?.label === 'Rensat' ? null : lastPerson ?? null,
     currentExclamation: lastExclamation?.label === 'Rensat' ? null : lastExclamation ?? null,
+    currentPause: currentPauseFromTimeline(timeline),
     timeline,
   }
 }
@@ -348,13 +350,19 @@ export function ProjectsView({
       const hideNameEvent: TimelineEvent | null = kind === 'agendaItem' && project.playout.currentPersonId
         ? { id: hideId, kind: 'person', refId: null, label: 'Rensat', occurredAt: optimisticEvent.occurredAt, offsetSeconds }
         : null
-      const isOptimistic = (e: TimelineEvent) => e.id === tempId || e.id === hideId
+      // En punkt eller ett namn som spelas ut under en pågående paus avslutar pausen (UNG-119); servern lägger in pauseOut
+      // precis före, och vyn speglar det så pausen inte ser ut att fortsätta.
+      const resumeId = `${tempId}-resume`
+      const resumeEvent: TimelineEvent | null = project.playout.currentPause
+        ? { id: resumeId, kind: 'pauseOut', refId: null, label: 'Paus slut', occurredAt: optimisticEvent.occurredAt, offsetSeconds }
+        : null
+      const isOptimistic = (e: TimelineEvent) => e.id === tempId || e.id === hideId || e.id === resumeId
 
       // Optimistisk uppdatering — inget behov av att vänta på eller hämta om
       // hela projektet. Servern är sanningen i bakgrunden; vi rättar till
       // eller rullar tillbaka om anropet faktiskt misslyckas.
       updateProjectPlayout(project.id, (playout) =>
-        derivePlayoutState([...playout.timeline, ...(hideNameEvent ? [hideNameEvent] : []), optimisticEvent]))
+        derivePlayoutState([...playout.timeline, ...(resumeEvent ? [resumeEvent] : []), ...(hideNameEvent ? [hideNameEvent] : []), optimisticEvent]))
 
       client.projects.cue(project.id, kind, refId, label).then(
         (realEvent) => {
@@ -368,6 +376,46 @@ export function ProjectsView({
         (err) => {
           updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => !isOptimistic(e))))
           setToast(err instanceof Error ? err.message : 'Kunde inte spela ut.')
+        },
+      )
+    },
+    // UNG-119: pausen är en optimistisk uppdatering av tidslinjen precis som en utspelning; vid fel rullas den tillbaka.
+    pause: (text: string) => {
+      if (!selected) return
+      const project = selected
+      const label = normalizePauseText(text)
+      const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+      const running = project.playout.currentPause
+      const previousTimeline = project.playout.timeline
+      // En ny text under en pågående paus byter texten; annars startas en ny paus.
+      updateProjectPlayout(project.id, (playout) => derivePlayoutState(running
+        ? playout.timeline.map((e) => (e.id === running.id ? { ...e, label } : e))
+        : [...playout.timeline, { id: tempId, kind: 'pauseIn', refId: null, label, occurredAt: new Date().toISOString(), offsetSeconds: null }]))
+      client.projects.pause(project.id, label).then(
+        (realEvent) => updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId || e.id === realEvent.id ? realEvent : e)))),
+        (err) => {
+          updateProjectPlayout(project.id, () => derivePlayoutState(previousTimeline))
+          setToast(err instanceof Error ? err.message : 'Kunde inte starta pausen.')
+        },
+      )
+    },
+    resume: () => {
+      if (!selected) return
+      const project = selected
+      if (!project.playout.currentPause) return
+      const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+      const previousTimeline = project.playout.timeline
+      updateProjectPlayout(project.id, (playout) => derivePlayoutState([...playout.timeline, { id: tempId, kind: 'pauseOut', refId: null, label: 'Paus slut', occurredAt: new Date().toISOString(), offsetSeconds: null }]))
+      client.projects.resume(project.id).then(
+        (realEvent) => updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId ? realEvent : e)))),
+        (err) => {
+          // Någon annan hann före (409 not_paused): läget är ändå "ingen paus". Annars rullas vi tillbaka.
+          if (err instanceof ApiError && err.code === 'not_paused') {
+            updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => e.id !== tempId).concat({ id: tempId, kind: 'pauseOut', refId: null, label: 'Paus slut', occurredAt: new Date().toISOString(), offsetSeconds: null })))
+            return
+          }
+          updateProjectPlayout(project.id, () => derivePlayoutState(previousTimeline))
+          setToast(err instanceof Error ? err.message : 'Kunde inte avsluta pausen.')
         },
       )
     },

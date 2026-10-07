@@ -1053,6 +1053,18 @@
   color: var(--chapter-person);
 }
 
+.od-chapters li.kind-pauseIn,
+.od-chapters li.kind-pauseOut {
+  border-left: 4px dashed var(--warn-line);
+  background: var(--warn-bg);
+}
+
+.od-chapters li.kind-pauseIn .od-chapter-kind,
+.od-chapters li.kind-pauseOut .od-chapter-kind {
+  color: var(--warn);
+  font-weight: 600;
+}
+
 .od-chapter-toggle {
   display: inline-grid;
   place-items: center;

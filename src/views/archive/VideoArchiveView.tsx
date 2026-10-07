@@ -20,6 +20,8 @@ import { errorMessage, runOptimistic } from '../../app/optimistic'
 function kindLabel(kind: CueKind): string {
   if (kind === 'agendaItem') return 'Ärende'
   if (kind === 'person') return 'Talare'
+  if (kind === 'pauseIn') return 'Paus'
+  if (kind === 'pauseOut') return 'Paus slut'
   return 'Utrop'
 }
 

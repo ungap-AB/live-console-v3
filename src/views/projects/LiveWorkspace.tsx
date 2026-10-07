@@ -9,6 +9,8 @@ import { PlayoutColumns } from './PlayoutColumns'
 import { usePlayoutTestbed } from './playoutTestbed'
 import { useNameList } from './useNameList'
 import { Icon } from '../../components/Icon'
+import { Modal } from '../../components/Modal'
+import { MAX_PAUSE_TEXT_LENGTH, pauseDurationText } from './pauseLogic'
 import './LiveWorkspace.css'
 
 interface LiveWorkspaceProps {
@@ -33,6 +35,25 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
 
   // UNG-129: expanderat läge för skärmar med låg höjd. Samma komponenter och tillstånd, bara en klass på vyn som lägger
   // den över hela fönstret, så ingenting monteras om och inget tillstånd (markering, scroll, redigering) tappas.
+  // UNG-119: medan en paus pågår ligger en spärrande, stängbar ruta över vyn som påminner om att avsluta pausen. Stängs den
+  // kommer den inte tillbaka förrän nästa paus; en omladdning av sidan visar den igen.
+  const pause = p.playout.currentPause ?? null
+  const [reminderDismissed, setReminderDismissed] = useState(false)
+  const [pauseDraft, setPauseDraft] = useState('')
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!pause) {
+      setReminderDismissed(false)
+      return
+    }
+    setPauseDraft(pause.label)
+    setNow(Date.now())
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000)
+    return () => window.clearInterval(timer)
+    // Texten sätts när pausen börjar (och byts av nästa paus), inte vid varje optimistisk byte av händelse-id.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Boolean(pause)])
+
   const [expanded, setExpanded] = useState(false)
   useEffect(() => {
     if (!expanded) return
@@ -80,6 +101,7 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
   ]
 
   return (
+    <>
     <div class={`lw${expanded ? ' is-expanded' : ''}`}>
       {phase === 'signalInterrupted' && (
         <div class="lw-interrupt" role="alert">
@@ -138,6 +160,33 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
 
       <PlayoutColumns project={p} actions={actions} live />
     </div>
+    {pause && !reminderDismissed && (
+      <Modal
+        title="Paus pågår"
+        subtitle={`Pausad sedan ${formatLocalTime(pause.occurredAt)} (${pauseDurationText(pause.occurredAt, now)}). Tittarna ser texten nedan över videon.`}
+        onClose={() => setReminderDismissed(true)}
+        footer={
+          <>
+            <button class="btn btn-sm" type="button" onClick={() => setReminderDismissed(true)}>Stäng</button>
+            <button class="btn btn-sm" type="button" disabled={pauseDraft.trim() === pause.label || pauseDraft.trim() === ''} onClick={() => actions.pause(pauseDraft)}>Uppdatera texten</button>
+            <button class="btn btn-sm btn-primary" type="button" onClick={() => actions.resume()}>Avsluta paus</button>
+          </>
+        }
+      >
+        <p class="pause-reminder-note">
+          Pausen avslutas också när du spelar ut en punkt eller ett namn. Stänger du den här rutan fortsätter pausen tills du avslutar den.
+        </p>
+        <textarea
+          class="pause-dialog-text"
+          rows={3}
+          maxLength={MAX_PAUSE_TEXT_LENGTH}
+          aria-label="Text som visas i spelaren"
+          value={pauseDraft}
+          onInput={(event) => setPauseDraft(event.currentTarget.value)}
+        />
+      </Modal>
+    )}
+    </>
   )
 }
 

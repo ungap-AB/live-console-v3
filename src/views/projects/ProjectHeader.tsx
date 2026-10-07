@@ -1,3 +1,4 @@
+import { Fragment } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { useDismiss } from '../../app/useDismiss'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
@@ -13,6 +14,7 @@ import { useModeSwitching } from './useModeSwitching'
 import { MODES, MODE_LABEL } from './projectMode'
 import { IngestInfo } from './IngestInfo'
 import { PlayerSettingsDialog } from './PlayerSettingsDialog'
+import { PauseButton } from './PauseButton'
 import './ProjectHeader.css'
 
 interface ProjectHeaderProps {
@@ -324,8 +326,8 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
           </div>
           <div class="pv-seg" role="group" aria-labelledby="pv-mode-label">
             {MODES.map((mode) => (
+              <Fragment key={mode}>
               <button
-                key={mode}
                 type="button"
                 class={`pv-seg-btn${mode === 'live' ? ' is-live' : ''}${switchingTo === mode ? ' is-switching' : ''}`}
                 aria-pressed={shownMode === mode}
@@ -337,6 +339,11 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
                 {MODE_LABEL[mode]}
                 {switchingTo === mode && <span class="pv-spinner" aria-hidden="true" />}
               </button>
+              {/* UNG-119: paus-knappen sitter precis till höger om Live och visas bara i läget Live. */}
+              {mode === 'live' && p.publicMode === 'live' && (
+                <PauseButton pause={p.playout.currentPause ?? null} timeline={p.playout.timeline} onStart={actions.pause} onResume={actions.resume} />
+              )}
+              </Fragment>
             ))}
           </div>
           {switchingTo !== null && (

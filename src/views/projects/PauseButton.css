@@ -1,0 +1,96 @@
+/* UNG-119: paus-knappen i lägesväljaren, direkt till höger om Live (se PauseButton.tsx). */
+.pv-pause-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  min-width: 36px;
+  margin-left: 4px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Tunn avgränsare mot Live-knappen, så knappen sitter ihop med den utan att se ut som ett femte läge. */
+.pv-pause-btn::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--line);
+}
+
+.pv-pause-btn:hover:not(.is-paused) {
+  background: var(--accent-soft);
+}
+
+.pv-pause-glyph {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.pv-pause-glyph.is-filled {
+  fill: currentColor;
+}
+
+/* Aktiv paus: varningsfärg (rött är reserverat för Live) och en svag, långsam pulsering. */
+.pv-pause-btn.is-paused {
+  background: var(--warn-bg);
+  color: var(--warn);
+  animation: pv-pause-pulse 3s ease-in-out infinite;
+}
+
+.pv-pause-label {
+  display: none;
+}
+
+@keyframes pv-pause-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 4px var(--warn-line);
+    opacity: 0.8;
+  }
+}
+
+/* Reducerad rörelse: ingen pulsering. Läget syns i stället som text, så det inte bara bärs av färg och rörelse. */
+@media (prefers-reduced-motion: reduce) {
+  .pv-pause-btn.is-paused {
+    animation: none;
+    box-shadow: 0 0 0 1.5px var(--warn-line);
+  }
+
+  .pv-pause-btn.is-paused .pv-pause-label {
+    display: inline;
+  }
+}
+
+.pause-dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.pause-dialog-text {
+  width: 100%;
+  resize: vertical;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+}

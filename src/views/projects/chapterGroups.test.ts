@@ -33,3 +33,17 @@ test('ett valt, förankrat eller redigerat kapitel fäller ut sin grupp', () => 
   assert.deepEqual(visibleChapters(list, new Set(['a1', 'a2']), ['e1']), [true, true, true, true, true, false, true])
   assert.deepEqual(visibleChapters(list, new Set(['a2']), [null, undefined]), [true, true, true, true, true, false, true])
 })
+
+test('en pausmarkör står för sig, visas alltid och bryter inte punktens grupp', () => {
+  const withPause = [
+    { chapterId: 'a1', kind: 'agendaItem' },
+    { chapterId: 'p1', kind: 'person' },
+    { chapterId: 'x1', kind: 'pauseIn' },
+    { chapterId: 'x2', kind: 'pauseOut' },
+    { chapterId: 'p2', kind: 'person' },
+  ]
+  const info = chapterGroupInfo(withPause)
+  assert.deepEqual(info.map((i) => i.groupId), ['a1', 'a1', null, null, 'a1'])
+  assert.equal(info[0].childCount, 2) // bara talarna räknas
+  assert.deepEqual(visibleChapters(withPause, new Set(['a1']), []), [true, false, true, true, false])
+})

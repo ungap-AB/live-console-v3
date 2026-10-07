@@ -1183,6 +1183,29 @@ export const mockClient: Client = {
       else p.playout.currentPersonId = null
       return delay(clone(event))
     },
+    async pause(id, text) {
+      const p = findProject(id)
+      const running = p.playout.currentPause
+      const label = text.trim() || 'Paus'
+      if (running) {
+        const existing = p.playout.timeline.find((e) => e.id === running.id)
+        if (existing) existing.label = label
+        p.playout.currentPause = { ...running, label }
+        return delay(clone(p.playout.currentPause))
+      }
+      const event: TimelineEvent = { id: `ev${nextId++}`, kind: 'pauseIn', refId: null, label, occurredAt: new Date().toISOString(), offsetSeconds: null }
+      p.playout.timeline = [...p.playout.timeline, event]
+      p.playout.currentPause = event
+      return delay(clone(event))
+    },
+    async resume(id) {
+      const p = findProject(id)
+      if (!p.playout.currentPause) throw new Error('Ingen paus pågår.')
+      const event: TimelineEvent = { id: `ev${nextId++}`, kind: 'pauseOut', refId: null, label: 'Paus slut', occurredAt: new Date().toISOString(), offsetSeconds: null }
+      p.playout.timeline = [...p.playout.timeline, event]
+      p.playout.currentPause = null
+      return delay(clone(event))
+    },
     async updateTimelineEvent(id, eventId, input) {
       const project = findProject(id)
       const event = project.playout.timeline.find((item) => item.id === eventId)

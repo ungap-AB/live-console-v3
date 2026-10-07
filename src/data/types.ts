@@ -217,7 +217,8 @@ export interface PublicationHistory {
 
 // ---- Playout och tidslinje ----
 
-export type CueKind = 'agendaItem' | 'person' | 'exclamation'
+// pauseIn/pauseOut (UNG-119): en paus är två händelser i tidslinjen. Texten ligger i etiketten på pauseIn.
+export type CueKind = 'agendaItem' | 'person' | 'exclamation' | 'pauseIn' | 'pauseOut'
 
 export interface TimelineEvent {
   id: string
@@ -236,6 +237,8 @@ export interface PlayoutState {
   currentAgendaItem?: TimelineEvent | null
   currentPerson?: TimelineEvent | null
   currentExclamation?: TimelineEvent | null
+  /** Den pauseIn som pågår just nu (UNG-119), annars null. */
+  currentPause?: TimelineEvent | null
 }
 
 // ---- Live-resurser (IVS-kanaler) ----

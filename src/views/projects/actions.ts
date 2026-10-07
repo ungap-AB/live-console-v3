@@ -25,4 +25,8 @@ export interface ProjectActions {
   cue: (kind: CueKind, refId: string, label: string) => void
   /** Rensar aktiv dagordningspunkt/namnskylt — loggas som en egen händelse, tar inte bort tidigare utspelningar. */
   clear: (kind: CueKind) => void
+  /** Startar en paus med texten som visas över videon (UNG-119), eller byter texten på en pågående paus. */
+  pause: (text: string) => void
+  /** Avslutar en pågående paus. */
+  resume: () => void
 }

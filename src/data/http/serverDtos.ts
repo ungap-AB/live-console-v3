@@ -172,6 +172,7 @@ export interface ServerPlayout {
   currentAgendaItem: ServerTimelineEvent | null
   currentPerson: ServerTimelineEvent | null
   currentExclamation: ServerTimelineEvent | null
+  currentPause?: ServerTimelineEvent | null
   timeline: ServerTimelineEvent[]
 }
 

@@ -238,6 +238,10 @@ export interface Client {
     cue(id: string, kind: CueKind, refId: string, label: string): Promise<TimelineEvent>
     /** Rensar aktiv dagordningspunkt/namnskylt — loggas som en egen tidslinjehändelse, tar inte bort tidigare utspelningar. */
     clear(id: string, kind: CueKind): Promise<TimelineEvent>
+    /** Startar en paus (UNG-119) med texten som visas över videon i spelaren, eller byter texten på en pågående paus. */
+    pause(id: string, text: string): Promise<TimelineEvent>
+    /** Avslutar en pågående paus. Svarar 409 not_paused om ingen paus pågår. */
+    resume(id: string): Promise<TimelineEvent>
     updateTimelineEvent(id: string, eventId: string, input: { label?: string; offsetSeconds?: number }): Promise<TimelineEvent>
     deleteTimelineEvent(id: string, eventId: string): Promise<void>
     updateDraftChapter(id: string, chapterId: string, input: { label?: string; offsetSeconds?: number }): Promise<void>

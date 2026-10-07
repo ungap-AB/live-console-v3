@@ -1,6 +1,6 @@
 // UNG-103: kapitellistan är platt (punkt, talare, talare, punkt, …). Här grupperas den så att talarna kan fällas ihop under sin
 // punkt. En punkt (agendaItem) är gruppens rubrik; talare och utrop efter den hör till den, tills nästa punkt kommer. Kapitel före
-// första punkten tillhör ingen grupp och visas alltid.
+// första punkten tillhör ingen grupp och visas alltid. Pausmarkörer (pauseIn/pauseOut) står för sig och visas alltid.
 
 export interface GroupableChapter {
   chapterId: string
@@ -19,7 +19,10 @@ export function chapterGroupInfo(chapters: GroupableChapter[]): ChapterGroupInfo
   const info: ChapterGroupInfo[] = []
   let current: number | null = null
   chapters.forEach((chapter, index) => {
-    if (chapter.kind === 'agendaItem') {
+    // Pausmarkörer (UNG-119) hör inte till någon punkt och bryter inte gruppen: talarna efter en paus hör fortfarande till punkten före.
+    if (chapter.kind === 'pauseIn' || chapter.kind === 'pauseOut') {
+      info.push({ groupId: null, isHeader: false, childCount: 0 })
+    } else if (chapter.kind === 'agendaItem') {
       current = index
       info.push({ groupId: chapter.chapterId, isHeader: true, childCount: 0 })
     } else if (current === null) {

@@ -37,6 +37,8 @@ const CHAPTER_KIND: Record<CueKind, string> = {
   agendaItem: 'Ärende',
   person: 'Talare',
   exclamation: 'Utrop',
+  pauseIn: 'Paus',
+  pauseOut: 'Paus slut',
 }
 
 // Under denna längd flaggas en sändning som misstänkt kort (t.ex. ett test)
@@ -717,7 +719,10 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     pausePreview()
     setUndoVisible(false)
     setSelectedChapter(index)
-    setPreviewSeekSeconds(draftOffsets[index] ?? savedOffsets[index] ?? chapter.offsetSeconds)
+    // UNG-119: ett tryck på en pausrad hoppar till där pausen avslutas (nästa pauseOut), som i spelaren.
+    const target = chapter.kind === 'pauseIn' ? chapters.findIndex((candidate, at) => at > index && candidate.kind === 'pauseOut') : -1
+    const seekIndex = target >= 0 ? target : index
+    setPreviewSeekSeconds(draftOffsets[seekIndex] ?? savedOffsets[seekIndex] ?? chapters[seekIndex].offsetSeconds)
     setPreviewPlayRequest((request) => request + 1)
   }
 

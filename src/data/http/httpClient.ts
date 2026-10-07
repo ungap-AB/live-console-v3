@@ -306,6 +306,7 @@ async function fetchPlayout(id: string) {
     currentAgendaItem: dto.currentAgendaItem ? toTimelineEvent(dto.currentAgendaItem) : null,
     currentPerson: dto.currentPerson ? toTimelineEvent(dto.currentPerson) : null,
     currentExclamation: dto.currentExclamation ? toTimelineEvent(dto.currentExclamation) : null,
+    currentPause: dto.currentPause ? toTimelineEvent(dto.currentPause) : null,
     timeline,
   }
 }
@@ -987,6 +988,14 @@ export const httpClient: Client = {
     },
     async clear(id, kind) {
       const dto = await api<ServerTimelineEvent>(`/projects/${id}/playout/cue`, { method: 'POST', body: { kind, refId: null } })
+      return toTimelineEvent(dto)
+    },
+    async pause(id, text) {
+      const dto = await api<ServerTimelineEvent>(`/projects/${id}/playout/cue`, { method: 'POST', body: { kind: 'pauseIn', refId: null, label: text } })
+      return toTimelineEvent(dto)
+    },
+    async resume(id) {
+      const dto = await api<ServerTimelineEvent>(`/projects/${id}/playout/cue`, { method: 'POST', body: { kind: 'pauseOut', refId: null } })
       return toTimelineEvent(dto)
     },
     async updateTimelineEvent(id, eventId, input) {

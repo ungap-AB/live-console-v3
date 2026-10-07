@@ -245,3 +245,10 @@
   height: auto;
   min-height: 0;
 }
+
+/* UNG-119: påminnelseruta medan en paus pågår. */
+.pause-reminder-note {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
