@@ -4,7 +4,7 @@ import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { client } from '../../data'
 import { ApiError } from '../../data/http/fetchJson'
-import type { CaptionEnergy, CaptionMaster } from '../../data/types'
+import type { CaptionDraft, CaptionEnergy, CaptionMaster } from '../../data/types'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import { formatHms } from '../../app/time'
@@ -20,7 +20,7 @@ import { deriveTimes, speechRuns } from './captionTimingLogic'
 import { emptyHistory, record, redo, undo, type History } from './captionHistory'
 import { CaptionWaveform, WAVEFORM_WIDTH } from './CaptionWaveform'
 import { cueIndexAt, type GrabRole } from './captionWaveformLogic'
-import { groupCorrections, type CorrectionGroup } from './autoCaptionsLogic'
+import { approveBlockedReason, groupCorrections, type CorrectionGroup } from './autoCaptionsLogic'
 import { ownCorrections } from './captionCorrectionsLogic'
 import { CorrectionsPanel } from './CorrectionsPanel'
 import './CaptionEditor.css'
@@ -65,6 +65,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   // Flik under videon: verktyg för vald replik, eller rättningar (UNG-166). Maskinella rättningar hämtas ur utkastets genereringsläge.
   const [sideTab, setSideTab] = useState<'tools' | 'corrections'>('tools')
   const [machine, setMachine] = useState<CorrectionGroup[] | null>(null)
+  // Utkastet som servern känner till (för att veta om det går att publicera), och publiceringens tillstånd (UNG-165: Publicera i huvudet).
+  const [draftInfo, setDraftInfo] = useState<CaptionDraft | null>(null)
+  const [confirmPublish, setConfirmPublish] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   // Gränsen (replikindex) som dras, med antal ord i de två berörda replikerna när draget började (för orden-just-nu-märket).
   const [dragBoundary, setDragBoundary] = useState<{ index: number; role: GrabRole; baseBefore: number; baseAfter: number } | null>(null)
 
@@ -116,7 +120,11 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   useEffect(() => {
     let cancelled = false
     client.projects.getCaptionGeneration(projectId).then(
-      (generation) => { if (!cancelled) setMachine(groupCorrections(generation.draft?.corrections ?? [])) },
+      (generation) => {
+        if (cancelled) return
+        setMachine(groupCorrections(generation.draft?.corrections ?? []))
+        setDraftInfo(generation.draft ?? null)
+      },
       () => { if (!cancelled) setMachine([]) },
     )
     return () => { cancelled = true }
@@ -150,6 +158,11 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   const dirty = diff.dirty
   const changeCount = diff.changedIds.size + diff.removed + (diff.reordered && diff.changedIds.size + diff.removed === 0 ? 1 : 0)
   const readOnly = master?.legacy ?? false
+  // Publicera i huvudet: publicerad = den sparade versionen är den godkända och inget är ändrat sedan dess.
+  const hasPublished = master?.publishedVersion !== undefined && master?.publishedVersion !== null
+  const upToDate = Boolean(master) && hasPublished && master?.publishedVersion === master?.version && !dirty
+  const publishLabel = upToDate ? 'Publicerad' : hasPublished ? 'Publicera ändringar' : 'Godkänn och publicera'
+  const publishBlocked = draftInfo ? approveBlockedReason(draftInfo) : null
   const issues = useMemo(() => validateCues(cues), [cues])
   const issueByIndex = useMemo(() => {
     const map = new Map<number, (typeof issues)[number]>()
@@ -418,25 +431,57 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   }
 
   // ---- Spara och stäng ----
-  async function save() {
-    if (!master || !dirty || saving || readOnly) return
+  // Sparar och ger den nya mastern (eller null om något hindrade eller gick fel).
+  async function saveMaster(): Promise<CaptionMaster | null> {
+    if (!master || !dirty || saving || readOnly) return null
     const error = issues.find((issue) => issue.error)
     if (error) {
       setNotice(`Replik ${error.index + 1}: ${error.message}`)
       focusRow(error.index)
-      return
+      return null
     }
     setSaving(true)
     setSaveError('')
     try {
       // Tomma repliker (t.ex. en ny ruta som lämnats tom) tas bort tyst.
-      adopt(await client.projects.saveCaptionMaster(projectId, { ifVersion: master.version, cues: savePayload(sortedForSave(withoutEmpty(cues))) }))
+      const next = await client.projects.saveCaptionMaster(projectId, { ifVersion: master.version, cues: savePayload(sortedForSave(withoutEmpty(cues))) })
+      adopt(next)
       onSaved?.()
+      return next
     } catch (err) {
       if (err instanceof ApiError && err.code === 'version_conflict') setConflict(true)
       else setSaveError(err instanceof Error ? err.message : 'Undertexterna kunde inte sparas.')
+      return null
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function save() {
+    await saveMaster()
+  }
+
+  // Publicera från redigeringens huvud: osparade ändringar sparas först, sedan godkänns den versionen och blir synlig för tittarna.
+  async function publish() {
+    if (!master) return
+    setConfirmPublish(false)
+    setPublishing(true)
+    setSaveError('')
+    try {
+      let version = master.version
+      if (dirty) {
+        const saved = await saveMaster()
+        if (!saved) return
+        version = saved.version
+      }
+      await client.projects.approveCaptionDraft(projectId, version)
+      await load()
+      onSaved?.()
+      setNotice('Undertexterna är publicerade och syns för tittarna.')
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Undertexterna kunde inte publiceras.')
+    } finally {
+      setPublishing(false)
     }
   }
 
@@ -555,8 +600,17 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
             Följ med
           </label>
           <span class="ce-dirty" aria-live="polite">{dirty ? `${changeCount} osparade ändringar` : master ? 'Sparat' : ''}</span>
-          <button class="btn btn-sm btn-primary" type="button" disabled={!dirty || saving || readOnly} onClick={() => void save()}>
+          <button class="btn btn-sm" type="button" disabled={!dirty || saving || publishing || readOnly} onClick={() => void save()}>
             {saving ? 'Sparar…' : 'Spara'}
+          </button>
+          <button
+            class="btn btn-sm btn-primary"
+            type="button"
+            disabled={!master || readOnly || saving || publishing || upToDate || Boolean(publishBlocked)}
+            title={publishBlocked ?? (upToDate ? `Version ${master?.version} är publicerad` : dirty ? 'Sparar ändringarna och publicerar dem för tittarna' : 'Publicerar undertexterna för tittarna')}
+            onClick={() => setConfirmPublish(true)}
+          >
+            {publishing ? 'Publicerar…' : publishLabel}
           </button>
           <button class="ib" type="button" aria-label="Stäng" title="Stäng" onClick={requestClose}>✕</button>
         </div>
@@ -801,6 +855,20 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
           <p>
             Det är {seconds(pendingInfo.gapSeconds)} s paus mellan replikerna. Slår du ihop dem visas hela texten under pausen, som en replik på
             {' '}{seconds(pendingInfo.durationSeconds)} s.
+          </p>
+        </ConfirmModal>
+      )}
+
+      {confirmPublish && (
+        <ConfirmModal
+          title="Publicera undertexterna?"
+          confirmLabel={dirty ? 'Spara och publicera' : 'Publicera'}
+          onCancel={() => setConfirmPublish(false)}
+          onConfirm={() => void publish()}
+        >
+          <p>
+            Undertexterna blir synliga för tittarna direkt{hasPublished ? ' och ersätter de nuvarande' : ''}.
+            {dirty ? ' Dina osparade ändringar sparas först.' : ''} De är gjorda av en dator och kan innehålla fel, så granska dem först.
           </p>
         </ConfirmModal>
       )}

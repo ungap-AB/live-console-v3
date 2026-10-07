@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Chapter, ChapterImportResult, CueKind, Project, ProjectRecording, Recording } from '../../data/types'
-import { notifyJobsChanged, openJobsView } from '../../app/jobsBus'
+import { notifyJobsChanged } from '../../app/jobsBus'
 import { readNotifyByEmail } from '../../app/notifyPreference'
 import { formatBytes, formatDateTime, formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { Icon } from '../../components/Icon'
-import { NotifyCheckbox } from '../../components/NotifyCheckbox'
-import { ShareDialog } from '../../components/ShareDialog'
 import { VideoStatusRow } from './VideoStatusRow'
 import { CaptionEntry } from './CaptionEntry'
 import { VideoActionsDialog } from './VideoActionsDialog'
+import type { DownloadState } from './DownloadPanel'
+import { videoActionsAvailable } from './videoDialogLogic'
 import { PublishProgressDialog } from './PublishProgressDialog'
 import { buildPublishSteps } from './publishProgress'
 import type { PublishStep, PublishStepKey } from './publishProgress'
@@ -85,10 +85,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   // operatör har ingen tillgång till Videoarkivet där samma funktion redan
   // finns, så den behövs här också. Nyckel = recording-id (original ELLER
   // trim har olika id:n). Servern kör jobbet; framsteget visas i jobbfältet (UNG-80).
-  const [shareRecordingId, setShareRecordingId] = useState<string | null>(null)
-  const [downloads, setDownloads] = useState<
-    Record<string, { status: 'starting' | 'queued' | 'ready' | 'error'; url?: string; message?: string }>
-  >({})
+  const [downloads, setDownloads] = useState<Record<string, DownloadState>>({})
 
   // Misslyckad transkodning: servern tar bort inspelningsraden, så projektet går
   // från "bearbetas" (upload) till ingen inspelning alls — berätta varför.
@@ -272,6 +269,13 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const uploadedRecording = isOperatorSupplied(p.recording?.source)
   // UNG-102: en extern HLS-adress kopieras inte — den kan inte trimmas och inte laddas ned som MP4.
   const externalVideo = isExternalSource(p.recording?.source)
+  // UNG-132: nedladdning (original och trimmad) ligger i dialogen "Video och undertexter".
+  const downloadPossible = !isAfter && Boolean(source) && !awaitingApproval
+  const downloadBlockedReason = awaitingApproval
+    ? 'Godkänn eller ignorera den uppladdade videon först.'
+    : isAfter
+      ? 'Videon går att ladda ner när den är publicerad som ondemand.'
+      : 'Det finns ingen video att ladda ner.'
   const recordingReady = p.recording?.state === 'recorded' || p.recording?.state === 'trimmed' || p.recording?.state === 'published'
   const captionsEnabled = recordingReady && !awaitingApproval && !uploadPending
   const uploadBlockedReason = p.publication.state === 'published'
@@ -929,7 +933,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
               <div class="od-mock-trim" aria-label={isAfter ? 'Trimning' : 'Trim-förhandsvisning'}>
                 <VideoStatusRow
                   recording={p.recording}
-                  actionsAvailable={captionsEnabled || canUpload}
+                  actionsAvailable={videoActionsAvailable({ captionsEnabled, uploadEnabled: canUpload, downloadEnabled: downloadPossible })}
                   onOpenActions={() => setShowVideoDialog(true)}
                   captionAction={captionsEnabled ? (
                     <CaptionEntry
@@ -977,32 +981,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                     <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
                   )}
                 </div>
-                {!isAfter && source && !awaitingApproval && externalVideo && (
-                  <p class="od-empty">Videon ligger på en extern adress och kan inte laddas ned som MP4 förrän den kopierats till ungap.</p>
-                )}
-                {!isAfter && source && !awaitingApproval && !externalVideo && (
-                  <div class="od-download">
-                    <DownloadButton
-                      label="Ladda ner originalinspelning"
-                      fileName={`${p.name} (original)`}
-                      download={downloads[source.id]}
-                      onDownload={() => downloadRecording(source.id)}
-                      onShare={() => setShareRecordingId(source.id)}
-                    />
-                    {recording?.kind === 'trimmed' && (
-                      <DownloadButton
-                        label="Ladda ner trimmad version"
-                        fileName={`${p.name} (trimmad)`}
-                        download={downloads[recording.id]}
-                        onDownload={() => downloadRecording(recording.id)}
-                        onShare={() => setShareRecordingId(recording.id)}
-                      />
-                    )}
-                    {shareRecordingId && (
-                      <ShareDialog initialRecordingIds={[shareRecordingId]} onClose={() => setShareRecordingId(null)} />
-                    )}
-                  </div>
-                )}
                 {isAfter && projectRecordings.length > 1 && !uploadPending && (
                   <div class="od-recording-select">
                     <label>Sändning</label>
@@ -1114,6 +1092,13 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 uploadEnabled={canUpload}
                 uploadBlockedReason={uploadBlockedReason}
                 replacing={!!source}
+                downloadEnabled={downloadPossible}
+                downloadBlockedReason={downloadBlockedReason}
+                externalVideo={externalVideo}
+                sourceId={source?.id}
+                trimmedId={recording?.kind === 'trimmed' ? recording.id : undefined}
+                downloads={downloads}
+                onDownload={(recordingId) => void downloadRecording(recordingId)}
                 onChanged={() => void actions.refreshProject()}
                 onClose={() => setShowVideoDialog(false)}
               />
@@ -1355,65 +1340,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       )}
       {publishing && <PublishProgressDialog steps={publishSteps} activeKey={publishStep} />}
     </div>
-  )
-}
-
-interface DownloadButtonProps {
-  label: string
-  fileName: string
-  download?: { status: 'starting' | 'queued' | 'ready' | 'error'; url?: string; message?: string }
-  onDownload: () => void
-  /** Delar den färdiga filen via en länk (visas när filen är klar). */
-  onShare?: () => void
-}
-
-// UNG-58: samma "Förbereder… → riktig länk"-mönster som Videoarkivets
-// nedladdningsknapp — utbrutet här eftersom original och trimmad version
-// nu båda använder det, se ovan.
-function DownloadButton({ label, fileName, download, onDownload, onShare }: DownloadButtonProps) {
-  if (download?.status === 'starting') {
-    return <button class="btn btn-sm" type="button" disabled>Startar…</button>
-  }
-  if (download?.status === 'queued') {
-    return (
-      <span class="od-download-ready">
-        <span>Nedladdningen förbereds. Du får en avisering när den är klar.</span>
-        <button class="btn btn-sm" type="button" onClick={openJobsView}>
-          Visa jobb
-        </button>
-      </span>
-    )
-  }
-  if (download?.status === 'ready' && download.url) {
-    return (
-      <span class="od-download-ready">
-        <a class="btn btn-sm" href={download.url} download>
-          Ladda ner {fileName}.mp4
-        </a>
-        <button class="btn btn-sm" type="button" onClick={onDownload}>
-          Förbered på nytt
-        </button>
-        {onShare && (
-          <button class="btn btn-sm" type="button" onClick={onShare}>
-            Dela…
-          </button>
-        )}
-      </span>
-    )
-  }
-  return (
-    <span class="od-download-start">
-      <button
-        class="btn btn-sm"
-        type="button"
-        onClick={onDownload}
-        title="Förbereder en nedladdningsbar fil (kan ta några minuter). Filen sparas i 7 dagar."
-      >
-        {label}
-      </button>
-      <NotifyCheckbox />
-      {download?.status === 'error' && <span class="od-download-error">{download.message}</span>}
-    </span>
   )
 }
 
