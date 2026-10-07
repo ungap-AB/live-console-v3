@@ -77,7 +77,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     () => ({ runs: energy ? speechRuns(energy) : null, total: energy ? (energy.data.length * energy.intervalMs) / 1000 : 0 }),
     [energy],
   )
-  const derive = (list: EditCue[]) => deriveTimes(list, timing.runs, timing.total)
+  // Läses via en ref: funktioner som skapades innan energikurvan kom (t.ex. inläsningen av undertexterna) ska också härleda med den.
+  const timingRef = useRef(timing)
+  timingRef.current = timing
+  const derive = (list: EditCue[]) => deriveTimes(list, timingRef.current.runs, timingRef.current.total)
 
   function adopt(next: CaptionMaster) {
     const list = derive(next.cues.map(({ id, start, end, text }) => ({ id, start, end, text })))
@@ -121,7 +124,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     setSaved((current) => derive(current))
   }, [timing])
 
-  const diff = useMemo(() => diffState(saved, cues), [saved, cues])
+  // Det sparade jämförs i härledd form: annars ser varje replik ändrad ut (gul kant) så fort en enda redigering härlett om alla tider.
+  const diff = useMemo(() => diffState(derive(saved), cues), [saved, cues, timing])
   const dirty = diff.dirty
   const changeCount = diff.changedIds.size + diff.removed + (diff.reordered && diff.changedIds.size + diff.removed === 0 ? 1 : 0)
   const readOnly = master?.legacy ?? false
@@ -341,14 +345,16 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     return null
   }
 
-  // Klick på en rads nummer/tid: raden väljs och spelas från sin start. Klick på samma rad medan den spelas pausar (andningspaus);
-  // klick igen spelar från radens start.
+  // Klick på en rads nummer/tid eller spalten: raden väljs och spelas från sin start. Klick på den rad som spelar just nu pausar
+  // (andningspaus); klick igen spelar från radens start.
   function playRow(index: number) {
     const video = videoRef.current
     const cue = cues[index]
     if (!cue) return
-    if (index === selectedIndex && video && !video.paused) {
+    // Knappen visas vid den aktiva repliken (playIndex), så den pausar när uppspelning pågår, även om uppspelningen har gått förbi den valda.
+    if (index === playIndex && video && !video.paused) {
       video.pause()
+      setSelectedIndex(index)
       return
     }
     setSelectedIndex(index)
