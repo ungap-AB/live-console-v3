@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
-import { captionEntry } from './captionEntryLogic'
+import { captionEntry, consumeCaptionStudio } from './captionEntryLogic'
 import { CaptionStudio } from './CaptionStudio'
 import { useCaptionGeneration } from './useCaptionGeneration'
 
@@ -16,7 +16,8 @@ interface CaptionEntryProps {
 // (skapa, genererar n %, redigera). Knappen äger också studion (redigeraren med skapandet som overlay) och dess öppna/stängda läge.
 export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged }: CaptionEntryProps) {
   const captions = useCaptionGeneration(projectId)
-  const [open, setOpen] = useState(false)
+  // Öppnas direkt när man kommit hit via knappen i projektlistan.
+  const [open, setOpen] = useState(() => consumeCaptionStudio(projectId))
   const entry = captionEntry(captions.generation)
   if (!entry) return null
 

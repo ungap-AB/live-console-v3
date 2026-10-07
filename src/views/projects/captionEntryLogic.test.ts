@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { CaptionGeneration } from '../../data/types'
-import { captionEntry, studioView } from './captionEntryLogic.ts'
+import { captionEntry, consumeCaptionStudio, listCaptionButton, requestCaptionStudio, studioView } from './captionEntryLogic.ts'
 
 const job = (state: 'processing' | 'error' | 'done', progress = 0) => ({ id: 'j', state, progress, createdAtUtc: '2026-10-07T10:00:00Z' }) as unknown as NonNullable<CaptionGeneration['job']>
 const draft = { createdAtUtc: '2026-10-07T09:00:00Z' } as unknown as NonNullable<CaptionGeneration['draft']>
@@ -35,4 +35,25 @@ test('vyn: start, framsteg eller redigerare efter läget', () => {
   assert.equal(studioView('failed'), 'start')
   assert.equal(studioView('running'), 'progress')
   assert.equal(studioView('draft'), 'editor')
+})
+
+test('listknappen: skapa, genererar med procent, eller redigera efter projektets undertextläge', () => {
+  assert.deepEqual(listCaptionButton(undefined).kind, 'create')
+  assert.equal(listCaptionButton({ state: 'none' }).label, 'Skapa')
+  assert.equal(listCaptionButton({ state: 'failed' }).label, 'Skapa')
+  assert.match(listCaptionButton({ state: 'failed' }).title, /misslyckades/)
+  assert.deepEqual([listCaptionButton({ state: 'generating', progress: 41.6 }).label, listCaptionButton({ state: 'generating' }).label], ['Genererar 42 %', 'Genererar…'])
+  assert.equal(listCaptionButton({ state: 'generating', progress: 0 }).label, 'Genererar…')
+  assert.deepEqual([listCaptionButton({ state: 'draft' }).label, listCaptionButton({ state: 'published' }).kind], ['Redigera', 'edit'])
+})
+
+test('önskemål om att öppna studion gäller en gång, för rätt projekt, och en kort stund', () => {
+  requestCaptionStudio('p1', 1000)
+  assert.equal(consumeCaptionStudio('p2', 2000), false) // fel projekt
+  assert.equal(consumeCaptionStudio('p1', 2000), false) // redan förbrukat av det första anropet
+  requestCaptionStudio('p1', 1000)
+  assert.equal(consumeCaptionStudio('p1', 5000), true)
+  assert.equal(consumeCaptionStudio('p1', 5000), false) // bara en gång
+  requestCaptionStudio('p1', 1000)
+  assert.equal(consumeCaptionStudio('p1', 20_000), false) // för gammalt
 })

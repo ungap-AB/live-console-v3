@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { CueKind, PlayoutState, Project, PublicMode, TimelineEvent, Visibility } from '../../data/types'
 import { useResource } from '../../app/useResource'
@@ -12,6 +12,7 @@ import { errorMessage, runOptimistic } from '../../app/optimistic'
 import { Livesandning } from './Livesandning'
 import { OndemandView } from './OndemandView'
 import { MODE_LABEL } from './projectMode'
+import { listCaptionButton, requestCaptionStudio } from './captionEntryLogic'
 import type { ProjectActions } from './actions'
 import { ApiError } from '../../data/http/fetchJson'
 import { storeSelection } from '../../app/selectionStorage'
@@ -64,6 +65,12 @@ function derivePlayoutState(timeline: TimelineEvent[]): PlayoutState {
   }
 }
 
+/** Knappen för undertexter visas för projekt i ondemand-läget med en färdig inspelning (där redigeraren finns). */
+function captionsListable(project: Project): boolean {
+  const state = project.recording?.state
+  return screenForMode(project.publicMode) === 'ondemand' && (state === 'recorded' || state === 'trimmed' || state === 'published')
+}
+
 interface ProjectsViewProps {
   meetingDomain: string
   selectionScope: string
@@ -110,6 +117,13 @@ export function ProjectsView({
   }, [selectedId, selectionScope])
 
   const selected = projects.find((p) => p.id === selectedId) ?? null
+
+  // Tillbaka till listan: hämta den på nytt, så att undertextläget (genererar n %, utkast, publicerade) är aktuellt.
+  const previousSelected = useRef<string | null>(selectedId)
+  useEffect(() => {
+    if (previousSelected.current && !selectedId) resource.reload()
+    previousSelected.current = selectedId
+  }, [selectedId])
 
   // Vyn följer läget: byts läget över gränsen mellan Livesändning och Ondemand
   // (till exempel Live → After) byter vyn med.
@@ -431,6 +445,7 @@ export function ProjectsView({
                   <span class="col-date">Datum</span>
                   <span class="col-mode">Läge</span>
                   <span class="col-visibility">Synlighet</span>
+                  <span class="col-captions">Undertexter</span>
                   <span class="col-actions" />
                 </div>
                 <ul class="project-list-rows">
@@ -453,6 +468,25 @@ export function ProjectsView({
                       <span class={`col-visibility vis-${p.visibility}`}>
                         <Icon name={p.visibility === 'open' ? 'visibility' : 'visibility_off'} size={16} />
                         {p.visibility === 'open' ? 'Öppen' : 'Stängd'}
+                      </span>
+                      <span class="col-captions">
+                        {captionsListable(p) && (() => {
+                          const button = listCaptionButton(p.captionStatus)
+                          return (
+                            <button
+                              class={`btn btn-sm caption-list-button${button.kind === 'edit' ? ' is-edit' : ''}`}
+                              type="button"
+                              title={button.title}
+                              onClick={() => {
+                                requestCaptionStudio(p.id)
+                                onSelectedIdChange(p.id)
+                                onScreenChange('ondemand')
+                              }}
+                            >
+                              <Icon name="closed_caption" size={16} /> {button.label}
+                            </button>
+                          )
+                        })()}
                       </span>
                       <span class="col-actions">
                         <button

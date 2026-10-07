@@ -185,6 +185,8 @@ export interface Project {
   meetingId?: string
   meetingEventsEnabled?: boolean
   trimDraft: TrimDraft | null
+  /** Undertextläget (UNG-167), så att projektlistan inte behöver en fråga per rad. Saknas i mock-läget. */
+  captionStatus?: { state: 'none' | 'generating' | 'failed' | 'draft' | 'published'; progress?: number | null }
   /**
    * Mockup-bara fält för att simulera sändningsförloppet utan en riktig
    * IVS-kanal (se mockup/HANDOVER.md §6.5 — panelen som styr detta tas bort

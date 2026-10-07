@@ -122,6 +122,22 @@
   font-size: 13px;
 }
 
+.project-list .col-captions {
+  width: 130px;
+  flex: none;
+}
+
+.project-list .caption-list-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.project-list .caption-list-button.is-edit {
+  color: var(--focus);
+  border-color: var(--focus);
+}
+
 .project-list .col-actions {
   width: 186px;
   flex: none;
