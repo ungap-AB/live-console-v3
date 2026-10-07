@@ -4,7 +4,7 @@ import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { client } from '../../data'
 import { ApiError } from '../../data/http/fetchJson'
-import type { CaptionDraft, CaptionEnergy, CaptionMaster } from '../../data/types'
+import type { CaptionDraft, CaptionEnergy, CaptionGeneration, CaptionMaster } from '../../data/types'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import { formatHms } from '../../app/time'
@@ -27,12 +27,17 @@ import './CaptionEditor.css'
 
 const ROW_HEIGHT = 84
 
+// Fliken Verktyg är dold tillsvidare; med bara en flik visas rättningarna under en rubrik i stället för en flikrad.
+const SHOW_TOOLS_TAB = false
+
 interface CaptionEditorProps {
   projectId: string
   projectName: string
   onClose: () => void
   /** Anropas efter en lyckad sparning, så att omgivande vy kan hämta om status. */
   onSaved?: () => void
+  /** Anropas när "Skapa på nytt" har startat ett nytt jobb, så att omgivande vy kan visa framsteget (redigeraren stängs då). */
+  onRegenerated?: (generation: CaptionGeneration) => void
 }
 
 const seconds = (value: number) => value.toFixed(1).replace('.', ',')
@@ -40,7 +45,7 @@ const seconds = (value: number) => value.toFixed(1).replace('.', ',')
 // UNG-140/143: redigerare för undertexterna (mastern, original-tidslinje). Video med aktuell replik över bilden och en virtualiserad
 // radlista där texten rättas på plats. Rutor kan slås ihop (exakt tid), delas, orden kan flyttas mellan grannar, tider justeras,
 // rader läggs till och tas bort, och allt går att ångra tills man sparar. Sparas som en version (versionskontroll mot servern).
-export function CaptionEditor({ projectId, projectName, onClose, onSaved }: CaptionEditorProps) {
+export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRegenerated }: CaptionEditorProps) {
   const [master, setMaster] = useState<CaptionMaster | null>(null)
   const [loadError, setLoadError] = useState('')
   const [cues, setCues] = useState<EditCue[]>([])
@@ -63,12 +68,16 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   const [focusTick, setFocusTick] = useState(0)
   const [energy, setEnergy] = useState<CaptionEnergy | null>(null)
   // Flik under videon: verktyg för vald replik, eller rättningar (UNG-166). Maskinella rättningar hämtas ur utkastets genereringsläge.
-  const [sideTab, setSideTab] = useState<'tools' | 'corrections'>('tools')
+  const [sideTab, setSideTab] = useState<'tools' | 'corrections'>(SHOW_TOOLS_TAB ? 'tools' : 'corrections')
   const [machine, setMachine] = useState<CorrectionGroup[] | null>(null)
   // Utkastet som servern känner till (för att veta om det går att publicera), och publiceringens tillstånd (UNG-165: Publicera i huvudet).
   const [draftInfo, setDraftInfo] = useState<CaptionDraft | null>(null)
   const [confirmPublish, setConfirmPublish] = useState(false)
   const [publishing, setPublishing] = useState(false)
+  // "Skapa på nytt" i huvudet: nytt jobb från ljudet, efter bekräftelse.
+  const [canRegenerate, setCanRegenerate] = useState(false)
+  const [confirmRegenerate, setConfirmRegenerate] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
   // Gränsen (replikindex) som dras, med antal ord i de två berörda replikerna när draget började (för orden-just-nu-märket).
   const [dragBoundary, setDragBoundary] = useState<{ index: number; role: GrabRole; baseBefore: number; baseAfter: number } | null>(null)
 
@@ -124,6 +133,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
         if (cancelled) return
         setMachine(groupCorrections(generation.draft?.corrections ?? []))
         setDraftInfo(generation.draft ?? null)
+        setCanRegenerate(generation.canGenerate)
       },
       () => { if (!cancelled) setMachine([]) },
     )
@@ -461,6 +471,22 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     await saveMaster()
   }
 
+  // Skapa på nytt: startar ett nytt jobb från ljudet. Det nya utkastet ersätter arbetsversionen (den gamla finns kvar som tidigare version)
+  // och publiceras inte förrän det godkänns. Redigeraren stängs, och omgivande vy visar framsteget.
+  async function regenerate() {
+    setConfirmRegenerate(false)
+    setRegenerating(true)
+    setSaveError('')
+    try {
+      const generation = await client.projects.generateCaptions(projectId, false)
+      onRegenerated?.(generation)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Det gick inte att starta undertextningen.')
+    } finally {
+      setRegenerating(false)
+    }
+  }
+
   // Publicera från redigeringens huvud: osparade ändringar sparas först, sedan godkänns den versionen och blir synlig för tittarna.
   async function publish() {
     if (!master) return
@@ -588,8 +614,6 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
           </div>
         </div>
         <div class="ce-actions">
-          <button class="btn btn-sm" type="button" disabled={history.past.length === 0 || readOnly} onClick={doUndo} title="Ångra (Ctrl/Cmd+Z)">Ångra</button>
-          <button class="btn btn-sm" type="button" disabled={history.future.length === 0 || readOnly} onClick={doRedo} title="Gör om (Ctrl/Cmd+Skift+Z)">Gör om</button>
           {publishedStart !== undefined && (
             <button class="btn btn-sm" type="button" onClick={() => seekTo(publishedStart, false)}>
               Hoppa till publicerad del
@@ -600,6 +624,17 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
             Följ med
           </label>
           <span class="ce-dirty" aria-live="polite">{dirty ? `${changeCount} osparade ändringar` : master ? 'Sparat' : ''}</span>
+          {onRegenerated && (
+            <button
+              class="btn btn-sm"
+              type="button"
+              disabled={!master || readOnly || saving || publishing || regenerating || !canRegenerate}
+              title={canRegenerate ? 'Skapar nya undertexter från ljudet (efter bekräftelse)' : 'Undertexterna går inte att skapa på nytt just nu'}
+              onClick={() => setConfirmRegenerate(true)}
+            >
+              {regenerating ? 'Startar…' : 'Skapa på nytt'}
+            </button>
+          )}
           <button class="btn btn-sm" type="button" disabled={!dirty || saving || publishing || readOnly} onClick={() => void save()}>
             {saving ? 'Sparar…' : 'Spara'}
           </button>
@@ -612,7 +647,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
           >
             {publishing ? 'Publicerar…' : publishLabel}
           </button>
-          <button class="ib" type="button" aria-label="Stäng" title="Stäng" onClick={requestClose}>✕</button>
+          <button class="btn btn-sm" type="button" title="Stäng redigeraren (Esc)" onClick={requestClose}>Stäng</button>
         </div>
       </header>
 
@@ -652,12 +687,16 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
             </div>
             {videoError && <p class="ce-error-text" role="alert">{videoError}</p>}
 
-            <div class="ce-tabs" role="tablist" aria-label="Under videon">
-              <button class={sideTab === 'tools' ? 'is-active' : ''} role="tab" type="button" aria-selected={sideTab === 'tools'} onClick={() => setSideTab('tools')}>Verktyg</button>
-              <button class={sideTab === 'corrections' ? 'is-active' : ''} role="tab" type="button" aria-selected={sideTab === 'corrections'} onClick={() => setSideTab('corrections')}>
-                Rättningar{ownList.length > 0 ? ` (${ownList.length})` : ''}
-              </button>
-            </div>
+            {SHOW_TOOLS_TAB ? (
+              <div class="ce-tabs" role="tablist" aria-label="Under videon">
+                <button class={sideTab === 'tools' ? 'is-active' : ''} role="tab" type="button" aria-selected={sideTab === 'tools'} onClick={() => setSideTab('tools')}>Verktyg</button>
+                <button class={sideTab === 'corrections' ? 'is-active' : ''} role="tab" type="button" aria-selected={sideTab === 'corrections'} onClick={() => setSideTab('corrections')}>
+                  Rättningar{ownList.length > 0 ? ` (${ownList.length})` : ''}
+                </button>
+              </div>
+            ) : (
+              <h3 class="ce-side-title">Rättningar{ownList.length > 0 ? ` (${ownList.length})` : ''}</h3>
+            )}
 
             {sideTab === 'corrections' && (
               <CorrectionsPanel
@@ -711,10 +750,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
               </div>
             )}
 
-            {sideTab === 'tools' && <p class="ce-help">
+            <p class="ce-help">
               Dra en gräns i vågformen så flödar texten över den. Ctrl/Cmd+Enter = dela vid markören, ny ruta efter (sist i texten) eller före (först) · Enter = nästa rad · Skift+Enter = ny rad · Esc = ångra raden · Tab / Skift+Tab = nästa / föregående rad ·
               Backspace i början / Delete i slutet slår ihop med grannen. Klicka på en rads tid för att spela den.
-            </p>}
+            </p>
           </section>
 
           <section class="ce-list-wrap" aria-label="Repliker">
@@ -859,6 +898,22 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
         </ConfirmModal>
       )}
 
+      {confirmRegenerate && (
+        <ConfirmModal
+          title="Skapa undertexterna på nytt?"
+          confirmLabel="Skapa på nytt"
+          danger
+          onCancel={() => setConfirmRegenerate(false)}
+          onConfirm={() => void regenerate()}
+        >
+          <p>
+            Ett nytt utkast skapas från ljudet och ersätter den här arbetsversionen. Nuvarande version finns kvar i versionshistoriken, och
+            nuvarande publicerade undertexter ligger kvar för tittarna tills du godkänner det nya utkastet.
+            {dirty ? ` Dina ${changeCount} osparade ändringar går förlorade.` : ''}
+          </p>
+        </ConfirmModal>
+      )}
+
       {confirmPublish && (
         <ConfirmModal
           title="Publicera undertexterna?"
@@ -868,7 +923,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
         >
           <p>
             Undertexterna blir synliga för tittarna direkt{hasPublished ? ' och ersätter de nuvarande' : ''}.
-            {dirty ? ' Dina osparade ändringar sparas först.' : ''} De är gjorda av en dator och kan innehålla fel, så granska dem först.
+            {dirty ? ' Dina osparade ändringar sparas först.' : ''} De är gjorda av AI och kan innehålla fel, så granska dem först.
           </p>
         </ConfirmModal>
       )}

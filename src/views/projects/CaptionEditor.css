@@ -100,9 +100,30 @@
 }
 
 .ce-video {
+  /* Videon ligger fast överst och rättningslistan under den rullar för sig (inte hela spalten). */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   padding: 12px 16px;
   border-right: 1px solid var(--line-soft);
+  overflow: hidden;
+}
+
+.ce-video > * {
+  flex: none;
+}
+
+.ce-video > .ce-corr {
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
+}
+
+.ce-side-title {
+  margin: 12px 0 4px;
+  padding-bottom: 6px;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--line);
 }
 
 .ce-stage {

@@ -24,13 +24,13 @@ export function CorrectionsPanel({ machine, own, onJumpToTime, onJumpToRow }: Co
       <section>
         <h4>Dina rättningar ({own.length})</h4>
         {own.length === 0 ? (
-          <p class="ce-corr-empty">Orden du ändrar i texten visas här, tills du sparat.</p>
+          <p class="ce-corr-empty">Ord du byter ut i texten visas här, tills du sparat.</p>
         ) : (
           <ul>
             {own.map((item, position) => (
               <li key={`${item.index}-${position}`}>
                 <button type="button" class="ce-corr-item" onClick={() => onJumpToRow(item.index)}>
-                  <span class="ce-corr-from">{item.from || '(inget)'}</span> → <strong>{item.to || '(borttaget)'}</strong>
+                  <span class="ce-corr-from">{item.from}</span> → <strong>{item.to}</strong>
                   <span class="ce-corr-meta"> · replik {item.index + 1}</span>
                 </button>
               </li>
@@ -43,7 +43,7 @@ export function CorrectionsPanel({ machine, own, onJumpToTime, onJumpToRow }: Co
         {machine === null ? (
           <p class="ce-corr-empty">Hämtar…</p>
         ) : machine.length === 0 ? (
-          <p class="ce-corr-empty">Datorn har inte rättat några namn eller termer i det här utkastet.</p>
+          <p class="ce-corr-empty">Inga namn eller termer har rättats automatiskt i det här utkastet.</p>
         ) : (
           <ul>
             {machine.map((group) => (

@@ -33,7 +33,7 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, po
   const [confirmCancel, setConfirmCancel] = useState(false)
 
   if (view === 'editor') {
-    return <CaptionEditor projectId={projectId} projectName={projectName} onClose={onClose} onSaved={() => { onChanged(); void refresh() }} />
+    return <CaptionEditor projectId={projectId} projectName={projectName} onClose={onClose} onSaved={() => { onChanged(); void refresh() }} onRegenerated={setGeneration} />
   }
 
   async function start() {

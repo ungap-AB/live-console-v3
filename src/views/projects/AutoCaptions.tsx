@@ -158,6 +158,10 @@ export function AutoCaptions({ projectId, projectName = '', videoDurationSeconds
             void refresh()
           }}
           onSaved={() => void refresh()}
+          onRegenerated={(next) => {
+            setGeneration(next)
+            setEditing(false)
+          }}
         />
       )}
 
@@ -165,7 +169,7 @@ export function AutoCaptions({ projectId, projectName = '', videoDurationSeconds
         <ConfirmModal title="Godkänna och publicera undertexterna?" confirmLabel="Godkänn och publicera" onCancel={() => setConfirm(null)} onConfirm={() => void approve()}>
           <p>
             Undertexterna blir synliga för tittarna direkt{published ? ' och ersätter de nuvarande undertexterna' : ''}. De är gjorda
-            av en dator och kan innehålla fel, så granska dem först.
+            av AI och kan innehålla fel, så granska dem först.
           </p>
         </ConfirmModal>
       )}

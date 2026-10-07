@@ -53,7 +53,8 @@ export interface OwnCorrection extends WordChange {
 
 /**
  * Ändringarna i texten sedan det som lästes in, per replik (jämförda på id). Nya repliker och stora omläggningar (ord som flyttats mellan
- * repliker, sammanslagning, delning) räknas inte som rättningar: en ändring på fler än maxWords ord åt något håll hoppas över.
+ * repliker, sammanslagning, delning) räknas inte som rättningar: en ändring på fler än maxWords ord åt något håll hoppas över. Bara ersatta
+ * ord räknas (gammalt → nytt); rena infogningar och borttagningar visas inte.
  */
 export function ownCorrections(saved: readonly EditCue[], cues: readonly EditCue[], maxWords = 6): OwnCorrection[] {
   const before = new Map(saved.map((cue) => [cue.id, cue.text]))
@@ -62,6 +63,7 @@ export function ownCorrections(saved: readonly EditCue[], cues: readonly EditCue
     const original = before.get(cue.id)
     if (original === undefined || tokens(original).join(' ') === tokens(cue.text).join(' ')) continue
     for (const change of wordChanges(original, cue.text)) {
+      if (!change.from || !change.to) continue
       if (tokens(change.from).length > maxWords || tokens(change.to).length > maxWords) continue
       result.push({ cueId: cue.id, ...change })
     }

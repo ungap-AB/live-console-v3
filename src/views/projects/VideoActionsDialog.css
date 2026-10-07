@@ -61,3 +61,17 @@
   padding-top: 10px;
   border-top: 1px solid var(--line);
 }
+
+.vad-panels {
+  display: grid;
+}
+
+.vad-panel {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.vad-panel.is-inactive {
+  visibility: hidden;
+  pointer-events: none;
+}

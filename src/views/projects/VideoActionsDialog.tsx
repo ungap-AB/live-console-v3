@@ -48,16 +48,26 @@ export function VideoActionsDialog({
   const busy = captionsBusy || uploadBusy
 
   return (
-    <Modal title="Video och undertexter" subtitle={projectName} wide className="video-actions-dialog" closeDisabled={busy} onClose={onClose}>
-      <p class={`video-actions-note${busy ? ' is-busy' : ''}`} role="status">
-        {busy
-          ? 'En fil överförs från din webbläsare. Lämna den här rutan öppen tills det är klart — då kan du stänga den.'
-          : 'Lämna rutan öppen medan en fil överförs från din webbläsare. När överföringen är klar kan du stänga den: bearbetningen fortsätter i bakgrunden, och du följer den i statusraden ovanför videon och under Jobb.'}
-      </p>
+    <Modal
+      title="Video och undertexter"
+      subtitle={projectName}
+      wide
+      className="video-actions-dialog"
+      closeDisabled={busy}
+      onClose={onClose}
+      footer={<button class="btn" type="button" disabled={busy} title={busy ? 'Vänta tills överföringen är klar' : undefined} onClick={onClose}>Stäng</button>}
+    >
+      {busy && (
+        <p class="video-actions-note is-busy" role="status">
+          En fil överförs från din webbläsare. Lämna den här rutan öppen tills det är klart — då kan du stänga den.
+        </p>
+      )}
 
       <Tabs tabs={VIDEO_TABS} active={tab} onChange={(id) => setTab(id as VideoTab)} label="Video och undertexter" idPrefix="vad" />
 
-      <div role="tabpanel" id="vad-panel-captions" aria-labelledby="vad-tab-captions" hidden={tab !== 'captions'}>
+      {/* Alla paneler ligger i samma ruta och döljs med synlighet, så att dialogen alltid har storleken av den största fliken. */}
+      <div class="vad-panels">
+      <div class={`vad-panel${tab === 'captions' ? '' : ' is-inactive'}`} role="tabpanel" id="vad-panel-captions" aria-labelledby="vad-tab-captions" aria-hidden={tab !== 'captions'}>
       {captionsEnabled ? (
         <CaptionsPanel
           projectId={projectId}
@@ -75,7 +85,7 @@ export function VideoActionsDialog({
       )}
       </div>
 
-      <div role="tabpanel" id="vad-panel-upload" aria-labelledby="vad-tab-upload" hidden={tab !== 'upload'}>
+      <div class={`vad-panel${tab === 'upload' ? '' : ' is-inactive'}`} role="tabpanel" id="vad-panel-upload" aria-labelledby="vad-tab-upload" aria-hidden={tab !== 'upload'}>
       {uploadEnabled ? (
         <UploadPanel
           projectId={projectId}
@@ -96,7 +106,7 @@ export function VideoActionsDialog({
       )}
       </div>
 
-      <div role="tabpanel" id="vad-panel-download" aria-labelledby="vad-tab-download" hidden={tab !== 'download'}>
+      <div class={`vad-panel${tab === 'download' ? '' : ' is-inactive'}`} role="tabpanel" id="vad-panel-download" aria-labelledby="vad-tab-download" aria-hidden={tab !== 'download'}>
         <DownloadPanel
           projectName={projectName}
           sourceId={downloadEnabled ? sourceId : undefined}
@@ -106,6 +116,7 @@ export function VideoActionsDialog({
           downloads={downloads}
           onDownload={onDownload}
         />
+      </div>
       </div>
     </Modal>
   )
