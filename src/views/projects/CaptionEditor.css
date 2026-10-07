@@ -141,6 +141,69 @@
   pointer-events: none;
 }
 
+.ce-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 12px 0 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ce-tabs button {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.ce-tabs button.is-active {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--focus);
+}
+
+.ce-corr h4 {
+  margin: 10px 0 4px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.ce-corr ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ce-corr-item {
+  display: block;
+  width: 100%;
+  padding: 5px 8px;
+  text-align: left;
+  font-size: 13px;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ce-corr-item:hover {
+  background: var(--surface-2);
+}
+
+.ce-corr-from {
+  color: var(--ink-3);
+  text-decoration: line-through;
+}
+
+.ce-corr-meta,
+.ce-corr-empty {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
 .ce-help {
   margin: 10px 0 0;
   font-size: 12.5px;

@@ -19,7 +19,10 @@ import { estimateSplitTime, moveBoundary } from './captionFlow'
 import { deriveTimes, speechRuns } from './captionTimingLogic'
 import { emptyHistory, record, redo, undo, type History } from './captionHistory'
 import { CaptionWaveform, WAVEFORM_WIDTH } from './CaptionWaveform'
-import type { GrabRole } from './captionWaveformLogic'
+import { cueIndexAt, type GrabRole } from './captionWaveformLogic'
+import { groupCorrections, type CorrectionGroup } from './autoCaptionsLogic'
+import { ownCorrections } from './captionCorrectionsLogic'
+import { CorrectionsPanel } from './CorrectionsPanel'
 import './CaptionEditor.css'
 
 const ROW_HEIGHT = 84
@@ -59,6 +62,9 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   const [viewportHeight, setViewportHeight] = useState(600)
   const [focusTick, setFocusTick] = useState(0)
   const [energy, setEnergy] = useState<CaptionEnergy | null>(null)
+  // Flik under videon: verktyg för vald replik, eller rättningar (UNG-166). Maskinella rättningar hämtas ur utkastets genereringsläge.
+  const [sideTab, setSideTab] = useState<'tools' | 'corrections'>('tools')
+  const [machine, setMachine] = useState<CorrectionGroup[] | null>(null)
   // Gränsen (replikindex) som dras, med antal ord i de två berörda replikerna när draget började (för orden-just-nu-märket).
   const [dragBoundary, setDragBoundary] = useState<{ index: number; role: GrabRole; baseBefore: number; baseAfter: number } | null>(null)
 
@@ -107,6 +113,15 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     void load()
   }, [projectId])
 
+  useEffect(() => {
+    let cancelled = false
+    client.projects.getCaptionGeneration(projectId).then(
+      (generation) => { if (!cancelled) setMachine(groupCorrections(generation.draft?.corrections ?? [])) },
+      () => { if (!cancelled) setMachine([]) },
+    )
+    return () => { cancelled = true }
+  }, [projectId])
+
   // UNG-149/152: ljudets energikurva till vågformsbandet. Saknas den (eller kan inte hämtas) fungerar redigeraren som förut.
   useEffect(() => {
     let cancelled = false
@@ -123,6 +138,12 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     setCues((current) => derive(current))
     setSaved((current) => derive(current))
   }, [timing])
+
+  // Orden som ändrats sedan det som lästes in, med radens index (UNG-166).
+  const ownList = useMemo(() => {
+    const indexById = new Map(cues.map((cue, index) => [cue.id, index]))
+    return ownCorrections(saved, cues).map((item) => ({ index: indexById.get(item.cueId) ?? 0, from: item.from, to: item.to }))
+  }, [saved, cues])
 
   // Det sparade jämförs i härledd form: annars ser varje replik ändrad ut (gul kant) så fort en enda redigering härlett om alla tider.
   const diff = useMemo(() => diffState(derive(saved), cues), [saved, cues, timing])
@@ -577,7 +598,30 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
             </div>
             {videoError && <p class="ce-error-text" role="alert">{videoError}</p>}
 
-            {selected && (
+            <div class="ce-tabs" role="tablist" aria-label="Under videon">
+              <button class={sideTab === 'tools' ? 'is-active' : ''} role="tab" type="button" aria-selected={sideTab === 'tools'} onClick={() => setSideTab('tools')}>Verktyg</button>
+              <button class={sideTab === 'corrections' ? 'is-active' : ''} role="tab" type="button" aria-selected={sideTab === 'corrections'} onClick={() => setSideTab('corrections')}>
+                Rättningar{ownList.length > 0 ? ` (${ownList.length})` : ''}
+              </button>
+            </div>
+
+            {sideTab === 'corrections' && (
+              <CorrectionsPanel
+                machine={machine}
+                own={ownList}
+                onJumpToTime={(time) => {
+                  const index = cueIndexAt(cues, time)
+                  if (index >= 0) focusRow(index)
+                  seekTo(index >= 0 ? cues[index].start : time, false)
+                }}
+                onJumpToRow={(index) => {
+                  focusRow(index)
+                  seekTo(cues[index].start, false)
+                }}
+              />
+            )}
+
+            {sideTab === 'tools' && selected && (
               <div class="ce-tools" aria-label="Vald replik">
                 <div class="ce-tools-title">Replik {selectedIndex + 1}: gräns vid {formatCueTime(selected.start)}</div>
                 <div class="ce-tools-row">
@@ -613,10 +657,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
               </div>
             )}
 
-            <p class="ce-help">
+            {sideTab === 'tools' && <p class="ce-help">
               Dra en gräns i vågformen så flödar texten över den. Ctrl/Cmd+Enter = dela vid markören, ny ruta efter (sist i texten) eller före (först) · Enter = nästa rad · Skift+Enter = ny rad · Esc = ångra raden · Tab / Skift+Tab = nästa / föregående rad ·
               Backspace i början / Delete i slutet slår ihop med grannen. Klicka på en rads tid för att spela den.
-            </p>
+            </p>}
           </section>
 
           <section class="ce-list-wrap" aria-label="Repliker">

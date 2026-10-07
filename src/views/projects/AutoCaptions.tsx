@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { CaptionGeneration, ProjectCaptions } from '../../data/types'
-import { formatDateTime, formatHms } from '../../app/time'
+import { formatDateTime } from '../../app/time'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { JobProgress } from '../../components/JobProgress'
 import { CaptionEditor } from './CaptionEditor'
-import { approveBlockedReason, autoCaptionsPhase, draftState, estimatedWaitText, groupCorrections } from './autoCaptionsLogic'
+import { approveBlockedReason, autoCaptionsPhase, draftState, estimatedWaitText } from './autoCaptionsLogic'
 
 interface AutoCaptionsProps {
   projectId: string
@@ -209,7 +209,6 @@ interface DraftViewProps {
 
 function DraftView({ draft, busy, canGenerate, onEdit, onApprove, onDiscard, onDownload, onRegenerate }: DraftViewProps) {
   const blocked = approveBlockedReason(draft)
-  const groups = groupCorrections(draft.corrections)
   const state = draftState(draft)
   const heading =
     state === 'unreviewed' ? 'Automatiskt genererat, ej granskat' : state === 'changed' ? 'Publicerat, men med ändringar som inte är publicerade' : 'Godkänt och publicerat'
@@ -223,23 +222,6 @@ function DraftView({ draft, busy, canGenerate, onEdit, onApprove, onDiscard, onD
       </p>
       {state === 'unreviewed' && <p class="captions-help">Utkastet syns inte för tittarna förrän du godkänner det. Det gäller hela inspelningen, och den trimmade delen publiceras.</p>}
       {state === 'changed' && <p class="captions-help">Tittarna ser den senast godkända versionen tills du godkänner de nya ändringarna.</p>}
-      {groups.length > 0 && (
-        <details class="captions-corrections">
-          <summary>Maskinella rättningar ({draft.corrections.length})</summary>
-          <ul>
-            {groups.map((group) => (
-              <li key={`${group.original}|${group.replacement}`}>
-                {group.original} → <strong>{group.replacement}</strong>
-                <span class="captions-correction-meta">
-                  {' '}
-                  · {group.count > 1 ? `${group.count} gånger, första vid ` : 'vid '}
-                  {formatHms(group.firstTime)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
       {blocked && <p class="captions-warning" role="alert">{blocked}</p>}
       <div class="captions-actions">
         <button class="btn btn-sm" type="button" disabled={busy || Boolean(blocked)} onClick={onEdit}>

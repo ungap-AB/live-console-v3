@@ -11,6 +11,7 @@ import { Icon } from '../../components/Icon'
 import { NotifyCheckbox } from '../../components/NotifyCheckbox'
 import { ShareDialog } from '../../components/ShareDialog'
 import { VideoStatusRow } from './VideoStatusRow'
+import { CaptionEntry } from './CaptionEntry'
 import { VideoActionsDialog } from './VideoActionsDialog'
 import { PublishProgressDialog } from './PublishProgressDialog'
 import { buildPublishSteps } from './publishProgress'
@@ -930,6 +931,15 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                   recording={p.recording}
                   actionsAvailable={captionsEnabled || canUpload}
                   onOpenActions={() => setShowVideoDialog(true)}
+                  captionAction={captionsEnabled ? (
+                    <CaptionEntry
+                      projectId={p.id}
+                      projectName={p.name}
+                      videoDurationSeconds={recording?.durationSeconds}
+                      posterUrl={p.posterUrl}
+                      onChanged={() => void actions.refreshProject()}
+                    />
+                  ) : undefined}
                 />
                 <div class="od-trim-preview">
                   {broadcastInProgress ? (
