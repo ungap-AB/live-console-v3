@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { decodeBase64 } from '../../data/http/base64.ts'
 import {
-  bandProfile, cueIndexAt, level, peakBetween, rowCenterY, timeAtRow, timeToY, viewWindow, visibleSpans, yToTime,
+  bandProfile, bandWindow, cueIndexAt, focusWindow, level, snapToSpeech, speechThreshold, zoomFocusSpan, peakBetween, rowCenterY, timeAtRow, timeToY, viewWindow, visibleSpans, yToTime,
 } from './captionWaveformLogic.ts'
 import type { CaptionEnergy } from '../../data/types'
 
@@ -115,4 +115,49 @@ test('synliga repliker i fönstret med pixelrader, och sådana som bara delvis s
 test('radens mittlinje följer scrollen', () => {
   assert.equal(rowCenterY(0, 0, 76), 38)
   assert.equal(rowCenterY(3, 100, 76), 3 * 76 - 100 + 38)
+})
+
+test('fokusfönster: centrerat på repliken, minst valt spann, växer för långa repliker och börjar aldrig före 0', () => {
+  assert.deepEqual(focusWindow({ start: 20, end: 24 }, 12), { t0: 16, t1: 28 })
+  assert.deepEqual(focusWindow({ start: 20, end: 40 }, 12), { t0: 16, t1: 44 }) // 20 s * 1,4 = 28 s
+  assert.deepEqual(focusWindow({ start: 0, end: 2 }, 10), { t0: 0, t1: 10 })
+})
+
+test('bandets fönster: fokus på vald replik, annars listans scroll', () => {
+  assert.deepEqual(bandWindow(cues, 0, 228, 76, 1, 10), focusWindow(cues[1], 10))
+  assert.deepEqual(bandWindow(cues, 0, 228, 76, 1, null), viewWindow(cues, 0, 228, 76))
+  assert.deepEqual(bandWindow(cues, 0, 228, 76, 9, 10), viewWindow(cues, 0, 228, 76)) // ingen vald replik
+})
+
+test('zoom i fokusläget: hjulsteg 1,25 gånger inom gränserna', () => {
+  assert.equal(zoomFocusSpan(10, 1), 12.5)
+  assert.equal(zoomFocusSpan(10, -1), 8)
+  assert.equal(zoomFocusSpan(59, 1), 60)
+  assert.equal(zoomFocusSpan(3.1, -1), 3)
+})
+
+// 20 ms per ram. Byte för dB: (db + 80) / 80 * 255.
+const byteFor = (db: number) => Math.round(((db + 80) / 80) * 255)
+
+test('talgräns: tröskel ligger 12 dB under talnivån och aldrig under −46 dB', () => {
+  const speech = new Array(100).fill(byteFor(-20))
+  const threshold = speechThreshold(energyOf([...speech, ...new Array(100).fill(byteFor(-70))]))
+  assert.ok(Math.abs(threshold - byteFor(-32)) <= 1)
+  assert.equal(speechThreshold(energyOf(new Array(50).fill(byteFor(-70)))), Math.ceil(((-46 + 80) / 80) * 255)) // bara tystnad
+  assert.equal(speechThreshold(energyOf([])), Math.ceil(((-46 + 80) / 80) * 255))
+})
+
+test('fästning: start går till närmaste stigande kant och slut till närmaste fallande, annars orört', () => {
+  // Tal mellan 1,00 s och 2,00 s (ram 50..99), tystnad runtom.
+  const values = new Array(200).fill(0).map((_, index) => (index >= 50 && index < 100 ? byteFor(-20) : byteFor(-70)))
+  const energy = energyOf(values)
+  const threshold = speechThreshold(energy)
+  assert.ok(Math.abs(snapToSpeech(energy, threshold, 1.05, 'start') - 1.0) < 0.03)
+  assert.ok(Math.abs(snapToSpeech(energy, threshold, 0.95, 'start') - 1.0) < 0.03)
+  assert.ok(Math.abs(snapToSpeech(energy, threshold, 2.04, 'end') - 2.0) < 0.03)
+  assert.equal(snapToSpeech(energy, threshold, 1.5, 'start'), 1.5) // ingen kant inom 80 ms
+  assert.equal(snapToSpeech(energy, threshold, 1.05, 'end'), 1.05) // fel sorts kant (stigande) för ett slut
+  assert.equal(snapToSpeech(energy, threshold, 1.3, 'start'), 1.3) // 0,3 s från kanten: utanför standardfönstret
+  assert.ok(Math.abs(snapToSpeech(energy, threshold, 1.3, 'start', 0.5) - 1.0) < 0.03) // men inom ett större
+  assert.equal(snapToSpeech(energyOf([1, 2]), 1, 0.01, 'start'), 0.01) // för kort kurva
 })

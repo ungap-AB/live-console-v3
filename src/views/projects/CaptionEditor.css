@@ -67,6 +67,19 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* Korta meddelanden flyter över innehållet (och försvinner av sig själva) i stället för att flytta ner hela vyn. */
+.ce-banner.ce-notice {
+  position: absolute;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  max-width: min(640px, 80%);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
 .ce-loading {
   padding: 24px;
   color: var(--ink-3);
@@ -76,6 +89,8 @@
   flex: 1;
   min-height: 0;
   display: grid;
+  /* Raden får aldrig växa med innehållet: en banner ovanför får inte trycka ut listan eller bandet ur bild. */
+  grid-template-rows: minmax(0, 1fr);
   grid-template-columns: minmax(380px, 42%) 1fr;
 }
 
@@ -164,7 +179,9 @@
 }
 
 .ce-wave {
+  /* Höjden kommer från listan (via props) men får inte själv bestämma radens höjd. */
   flex: none;
+  align-self: flex-start;
   cursor: pointer;
   border-right: 1px solid var(--line-soft);
   touch-action: none;

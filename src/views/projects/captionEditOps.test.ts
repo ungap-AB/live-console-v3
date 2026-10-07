@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  addCue, deleteCue, isShort, mergeInfo, mergeWithNext, mergeWithPrevious, moveHeadToPrevious, moveTailToNext, nudge, setTime, shiftFrom, shortIndexes,
+  addCue, deleteCue, isShort, mergeInfo, mergeWithNext, mergeWithPrevious, moveEdge, moveHeadToPrevious, moveTailToNext, nudge, setTime, shiftFrom, shortIndexes,
   sortedForSave, splitCue, validateCues, wrapBalanced, diffState, type EditCue,
 } from './captionEditOps.ts'
 
@@ -261,4 +261,26 @@ test('en ångrad ändring är inte längre en ändring', () => {
   assert.ok(merged.ok)
   assert.equal(diffState(saved, merged.cues).dirty, true)
   assert.equal(diffState(saved, saved).dirty, false)
+})
+
+test('dra kant: fri kant flyttas, begränsas av grannen (inget överlapp) och av minsta längd', () => {
+  const list = [cue(1, 0, 3, 'a'), cue(2, 4, 8, 'b'), cue(3, 10, 12, 'c')]
+  assert.deepEqual(moveEdge(list, 1, 'start', 4.5).map((c) => [c.start, c.end]), [[0, 3], [4.5, 8], [10, 12]])
+  assert.equal(moveEdge(list, 1, 'start', 2)[1].start, 3) // stoppas vid föregåendes slut
+  assert.equal(moveEdge(list, 1, 'end', 11)[1].end, 10) // stoppas vid nästas start
+  assert.equal(moveEdge(list, 1, 'start', 99)[1].start, 7.7) // minst 0,3 s kvar
+  assert.equal(moveEdge(list, 1, 'end', 0)[1].end, 4.3)
+  assert.equal(moveEdge(list, 0, 'start', -5)[0].start, 0) // aldrig före 0
+  assert.deepEqual(moveEdge(list, 5, 'start', 1), list) // ingen sådan replik
+})
+
+test('dra kant: gemensam gräns flyttar båda repliker och bevarar minsta längd hos båda', () => {
+  const list = [cue(1, 0, 4, 'a'), cue(2, 4, 8, 'b'), cue(3, 8.03, 12, 'c')]
+  const earlier = moveEdge(list, 1, 'start', 3)
+  assert.deepEqual(earlier.map((c) => [c.start, c.end]), [[0, 3], [3, 8], [8.03, 12]])
+  assert.equal(moveEdge(list, 1, 'start', 0)[0].end, 0.3) // föregåendes längd bevaras
+  const later = moveEdge(list, 1, 'end', 9)
+  assert.deepEqual(later.map((c) => [c.start, c.end]), [[0, 4], [4, 9], [9, 12]]) // 8,03 räknas som gemensam gräns
+  assert.equal(moveEdge(list, 1, 'end', 99)[2].start, 11.7)
+  assert.deepEqual(list.map((c) => [c.start, c.end]), [[0, 4], [4, 8], [8.03, 12]]) // indata orörd
 })

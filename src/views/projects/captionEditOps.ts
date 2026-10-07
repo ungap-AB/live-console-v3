@@ -286,3 +286,33 @@ export function diffState(saved: readonly EditCue[], cues: readonly EditCue[]): 
   const reordered = keptSaved.some((id, position) => id !== keptCurrent[position])
   return { changedIds, removed, reordered, dirty: changedIds.size > 0 || removed > 0 || reordered }
 }
+
+const MIN_DRAG_SECONDS = 0.3
+/** Två kanter närmare än så här räknas som en gemensam gräns mellan två repliker. */
+const JOINT_SECONDS = 0.05
+
+/**
+ * Flyttar en replikkant till tiden (drag i vågformsbandet, UNG-161). Utgår från cues vid dragets början, så att gränsen inte byter
+ * karaktär under draget. Ligger grannens kant mot kant med den (gemensam gräns) följer den med, annars stoppas kanten vid grannen
+ * (inget överlapp). Repliken behåller minst 0,3 s, och en gemensam granne också. Tiden begränsas i stället för att avvisas.
+ */
+export function moveEdge(cues: readonly EditCue[], index: number, edge: 'start' | 'end', seconds: number): EditCue[] {
+  const cue = cues[index]
+  if (!cue) return [...cues]
+  const neighbour = edge === 'start' ? cues[index - 1] : cues[index + 1]
+  const joint = neighbour !== undefined && Math.abs((edge === 'start' ? neighbour.end : neighbour.start) - cue[edge]) <= JOINT_SECONDS
+  let value = Math.max(0, seconds)
+  if (edge === 'start') {
+    value = Math.min(value, cue.end - MIN_DRAG_SECONDS)
+    if (neighbour) value = Math.max(value, joint ? neighbour.start + MIN_DRAG_SECONDS : neighbour.end)
+  } else {
+    value = Math.max(value, cue.start + MIN_DRAG_SECONDS)
+    if (neighbour) value = Math.min(value, joint ? neighbour.end - MIN_DRAG_SECONDS : neighbour.start)
+  }
+  value = round(value)
+  return cues.map((item, position) => {
+    if (position === index) return { ...item, [edge]: value }
+    if (joint && position === (edge === 'start' ? index - 1 : index + 1)) return { ...item, [edge === 'start' ? 'end' : 'start']: value }
+    return item
+  })
+}

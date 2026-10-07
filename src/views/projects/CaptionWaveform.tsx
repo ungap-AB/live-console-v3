@@ -1,6 +1,8 @@
-import { useEffect, useRef } from 'preact/hooks'
+import { useEffect, useMemo, useRef } from 'preact/hooks'
 import type { CaptionEnergy } from '../../data/types'
-import { bandProfile, cueIndexAt, rowCenterY, timeToY, viewWindow, visibleSpans, yToTime, type CueSpan } from './captionWaveformLogic'
+import {
+  bandProfile, bandWindow, cueIndexAt, rowCenterY, snapToSpeech, speechThreshold, timeToY, visibleSpans, yToTime, type CueSpan, type TimeWindow,
+} from './captionWaveformLogic'
 
 /** Bredd på vågformsbandet och på solfjädern med kopplingslinjer mellan bandet och raderna (CSS-pixlar). */
 export const BAND_WIDTH = 84
@@ -20,9 +22,20 @@ interface CaptionWaveformProps {
   playing: boolean
   publishedStart?: number
   publishedEnd?: number
+  /** Fokusläge: bandet visar ett fönster av så här många sekunder kring vald replik. Null = fönstret följer listans scroll. */
+  focusSpan: number | null
+  /** Om kanterna på vald replik får dras. */
+  editable: boolean
   onSeek: (time: number) => void
   onSelect: (index: number) => void
+  onZoom: (deltaY: number) => void
+  onDragStart: () => void
+  onDrag: (edge: 'start' | 'end', time: number) => void
+  onDragEnd: () => void
 }
+
+/** Hur nära (pixlar) en kant ska träffas för att kunna tas tag i. */
+const GRAB_PIXELS = 7
 
 // UNG-152/160: vågformen som ett vertikalt band till vänster om replikrutorna. Tiden löper nedåt som listan. Varje replik visas
 // som ett intervall i bandet, ljud utanför alla repliker är markerat (möjligt tal utan text), spelhuvudet är en linje och
@@ -31,6 +44,15 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const latest = useRef(props)
   latest.current = props
+  const threshold = useMemo(() => speechThreshold(props.energy), [props.energy])
+  // Under ett drag ligger fönstret fast: annars flyttar sig bandet med repliken som dras.
+  const frozen = useRef<TimeWindow | null>(null)
+  const dragging = useRef<'start' | 'end' | null>(null)
+
+  const currentWindow = () => {
+    const { cues, scrollTop, height, rowHeight, selectedIndex, focusSpan } = latest.current
+    return frozen.current ?? bandWindow(cues, scrollTop, height, rowHeight, selectedIndex, focusSpan)
+  }
 
   function draw() {
     const canvas = canvasRef.current
@@ -56,7 +78,7 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     const surface = color('--surface-2', '#f1f4f8')
     const warn = color('--warn', '#8a5a00')
 
-    const win = viewWindow(cues, scrollTop, height, rowHeight)
+    const win = currentWindow()
     const spans = visibleSpans(cues, win, height)
 
     // Bandets bakgrund, repliker som omväxlande fält (vald replik markerad) och publicerad del.
@@ -104,6 +126,7 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
       const cue = cues[index]
       const emphasised = index === selectedIndex || index === activeIndex
       const yStart = timeToY(cue.start, win, height)
+      if (yStart < -30 || yStart > height + 30) continue // utanför fönstret (fokusläge): ingen linje
       const rowTop = index * rowHeight - scrollTop
       const rowCenter = rowCenterY(index, scrollTop, rowHeight)
       if (emphasised) {
@@ -128,6 +151,25 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     }
     ctx.globalAlpha = 1
 
+    // Den valda replikens kanter: fasta handtag att dra i, med liten flik till vänster.
+    const selectedCue = cues[selectedIndex]
+    if (selectedCue) {
+      ctx.fillStyle = focus
+      for (const edge of ['start', 'end'] as const) {
+        const edgeY = timeToY(selectedCue[edge], win, height)
+        if (edgeY < -4 || edgeY > height + 4) continue
+        const grabbed = dragging.current === edge
+        ctx.fillRect(0, edgeY - (grabbed ? 1.5 : 1), BAND_WIDTH, grabbed ? 3 : 2)
+        const flip = edge === 'start' ? 1 : -1
+        ctx.beginPath()
+        ctx.moveTo(0, edgeY)
+        ctx.lineTo(0, edgeY + flip * 9)
+        ctx.lineTo(9, edgeY)
+        ctx.closePath()
+        ctx.fill()
+      }
+    }
+
     // Spelhuvudet.
     const y = timeToY(getTime(), win, height)
     if (y >= -2 && y <= height + 2) {
@@ -149,16 +191,73 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     return () => cancelAnimationFrame(frame)
   }, [props.playing])
 
-  function onPointerDown(event: PointerEvent) {
+  function localY(event: PointerEvent | WheelEvent): { x: number; y: number } | null {
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas) return null
     const rect = canvas.getBoundingClientRect()
-    if (event.clientX - rect.left > BAND_WIDTH) return
-    const { cues, scrollTop, height, rowHeight, onSeek, onSelect } = latest.current
-    const time = Math.max(0, yToTime(event.clientY - rect.top, viewWindow(cues, scrollTop, height, rowHeight), height))
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top }
+  }
+
+  // Vilken av den valda replikens kanter (om någon) ligger under pekaren.
+  function edgeAt(y: number): 'start' | 'end' | null {
+    const { cues, height, selectedIndex, editable } = latest.current
+    const selected = cues[selectedIndex]
+    if (!editable || !selected) return null
+    const win = currentWindow()
+    const dStart = Math.abs(timeToY(selected.start, win, height) - y)
+    const dEnd = Math.abs(timeToY(selected.end, win, height) - y)
+    if (Math.min(dStart, dEnd) > GRAB_PIXELS) return null
+    return dStart <= dEnd ? 'start' : 'end'
+  }
+
+  function onPointerDown(event: PointerEvent) {
+    const position = localY(event)
+    const canvas = canvasRef.current
+    if (!position || !canvas || position.x > BAND_WIDTH) return
+    const edge = edgeAt(position.y)
+    if (edge) {
+      event.preventDefault()
+      canvas.setPointerCapture(event.pointerId)
+      frozen.current = currentWindow()
+      dragging.current = edge
+      latest.current.onDragStart()
+      return
+    }
+    const { cues, height, onSeek, onSelect } = latest.current
+    const time = Math.max(0, yToTime(position.y, currentWindow(), height))
     onSeek(time)
     const index = cueIndexAt(cues, time)
     if (index >= 0) onSelect(index)
+  }
+
+  function onPointerMove(event: PointerEvent) {
+    const position = localY(event)
+    const canvas = canvasRef.current
+    if (!position || !canvas) return
+    const edge = dragging.current
+    if (!edge) {
+      canvas.style.cursor = position.x <= BAND_WIDTH && edgeAt(position.y) ? 'ns-resize' : 'pointer'
+      return
+    }
+    const { height, energy, onDrag } = latest.current
+    const win = currentWindow()
+    let time = Math.max(0, yToTime(Math.min(height, Math.max(0, position.y)), win, height))
+    if (!event.altKey) time = snapToSpeech(energy, threshold, time, edge)
+    onDrag(edge, time)
+  }
+
+  function endDrag(event: PointerEvent) {
+    if (!dragging.current) return
+    canvasRef.current?.releasePointerCapture(event.pointerId)
+    dragging.current = null
+    frozen.current = null
+    latest.current.onDragEnd()
+  }
+
+  function onWheel(event: WheelEvent) {
+    if (latest.current.focusSpan === null) return
+    event.preventDefault()
+    latest.current.onZoom(event.deltaY)
   }
 
   return (
@@ -167,8 +266,12 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
       class="ce-wave"
       style={{ width: `${WAVEFORM_WIDTH}px`, height: `${props.height}px` }}
       aria-label="Vågform för ljudet. Klicka för att hoppa i videon."
-      title="Ljudets vågform. Klicka för att hoppa i videon. Orange ljud saknar replik."
+      title="Ljudets vågform. Klicka för att hoppa i videon. Dra den valda replikens kanter (blå) för att justera tiderna, Alt stänger av fästningen. Orange ljud saknar replik."
       onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+      onWheel={onWheel}
     />
   )
 }

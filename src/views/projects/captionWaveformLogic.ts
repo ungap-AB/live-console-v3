@@ -128,3 +128,81 @@ export function visibleSpans(cues: readonly CueSpan[], window: TimeWindow, heigh
 export function rowCenterY(index: number, scrollTop: number, rowHeight: number): number {
   return index * rowHeight - scrollTop + rowHeight / 2
 }
+
+/** Fokusfönstret (UNG-160): centrerat på repliken, minst span sekunder brett och minst 1,4 gånger replikens längd. Börjar aldrig före 0. */
+export function focusWindow(cue: CueSpan, span: number): TimeWindow {
+  const length = Math.max(span, (cue.end - cue.start) * 1.4)
+  const middle = (cue.start + cue.end) / 2
+  const t0 = Math.max(0, middle - length / 2)
+  return { t0, t1: t0 + length }
+}
+
+/** Fönstret bandet visar: fokusfönstret kring vald replik om fokusläge är på, annars det som följer listans scroll. */
+export function bandWindow(
+  cues: readonly CueSpan[],
+  scrollTop: number,
+  height: number,
+  rowHeight: number,
+  selectedIndex: number,
+  focusSpan: number | null,
+): TimeWindow {
+  const selected = cues[selectedIndex]
+  if (focusSpan !== null && selected) return focusWindow(selected, focusSpan)
+  return viewWindow(cues, scrollTop, height, rowHeight)
+}
+
+export const MIN_FOCUS_SECONDS = 3
+export const MAX_FOCUS_SECONDS = 60
+
+/** Zoom i fokusläget: en hjulsteg gör fönstret 1,25 gånger bredare eller smalare, inom gränserna. */
+export function zoomFocusSpan(span: number, deltaY: number): number {
+  const next = deltaY > 0 ? span * 1.25 : span / 1.25
+  return Math.min(MAX_FOCUS_SECONDS, Math.max(MIN_FOCUS_SECONDS, next))
+}
+
+/**
+ * Tröskel (byte) som skiljer tal från paus: en fjärdedel av talnivåns amplitud (−12 dB under medianen av ramar över −46 dB), aldrig
+ * under −46 dB. Samma princip som PauseSnapper i workern, så att fästningen i redigeraren stämmer med hur rutorna lades.
+ */
+export function speechThreshold(energy: CaptionEnergy): number {
+  const floorByte = Math.ceil(((-46 - energy.minDb) / (energy.maxDb - energy.minDb)) * 255)
+  const loud: number[] = []
+  for (let index = 0; index < energy.data.length; index++) if (energy.data[index] > floorByte) loud.push(energy.data[index])
+  if (loud.length === 0) return floorByte
+  loud.sort((a, b) => a - b)
+  const median = loud[loud.length >> 1]
+  const twelveDb = (12 / (energy.maxDb - energy.minDb)) * 255
+  return Math.max(floorByte, Math.round(median - twelveDb))
+}
+
+/**
+ * Fäster en tid vid närmaste verkliga talgräns: för en start den närmaste stigande kanten (paus → tal), för ett slut den närmaste
+ * fallande (tal → paus), inom windowSeconds. Utan kant i närheten lämnas tiden orörd. Värdena jämnas över tre ramar mot flimmer.
+ */
+export function snapToSpeech(energy: CaptionEnergy, threshold: number, time: number, edge: 'start' | 'end', windowSeconds = 0.08): number {
+  const step = energy.intervalMs / 1000
+  const length = energy.data.length
+  if (length < 3) return time
+  const smooth = (index: number) => {
+    const a = energy.data[Math.max(0, index - 1)]
+    const b = energy.data[Math.min(length - 1, Math.max(0, index))]
+    const c = energy.data[Math.min(length - 1, index + 1)]
+    return (a + b + c) / 3
+  }
+  const centre = Math.round(time / step)
+  const reach = Math.ceil(windowSeconds / step)
+  let best = -1
+  for (let offset = 0; offset <= reach; offset++) {
+    for (const index of offset === 0 ? [centre] : [centre - offset, centre + offset]) {
+      if (index < 1 || index >= length) continue
+      const before = smooth(index - 1) >= threshold
+      const here = smooth(index) >= threshold
+      if (edge === 'start' ? !before && here : before && !here) {
+        best = index
+        break
+      }
+    }
+    if (best >= 0) break
+  }
+  return best >= 0 ? Math.round(best * step * 1000) / 1000 : time
+}

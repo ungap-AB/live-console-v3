@@ -12,11 +12,12 @@ import {
   MAX_LINE_LENGTH, activeCueIndex, canInsertLineBreak, formatCueTime, hasLineWarning, lineInfo, rangeStatus, savePayload, scrollToReveal, windowRange,
 } from './captionEditorLogic'
 import {
-  LONG_GAP_SECONDS, addCue, deleteCue, diffState, isShort, mergeInfo, mergeWithNext, moveHeadToPrevious, moveTailToNext, nudge, setTime, shiftFrom,
+  LONG_GAP_SECONDS, addCue, deleteCue, diffState, isShort, mergeInfo, mergeWithNext, moveHeadToPrevious, moveTailToNext, moveEdge, nudge, setTime, shiftFrom,
   shortIndexes, sortedForSave, splitCue, validateCues, type EditCue, type OpResult,
 } from './captionEditOps'
 import { emptyHistory, record, redo, undo, type History } from './captionHistory'
 import { CaptionWaveform, WAVEFORM_WIDTH } from './CaptionWaveform'
+import { zoomFocusSpan } from './captionWaveformLogic'
 import './CaptionEditor.css'
 
 const ROW_HEIGHT = 76
@@ -56,6 +57,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   const [viewportHeight, setViewportHeight] = useState(600)
   const [focusTick, setFocusTick] = useState(0)
   const [energy, setEnergy] = useState<CaptionEnergy | null>(null)
+  // Fokusläge i vågformsbandet: sekunder kring vald replik, eller null när bandet följer listans scroll.
+  const [focusSpan, setFocusSpan] = useState<number | null>(null)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -63,6 +66,9 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   const pendingFocus = useRef<{ index: number; caret?: number } | null>(null)
   const focusBase = useRef<{ id: number; cues: EditCue[] } | null>(null)
   const tempId = useRef(-1)
+  const cuesRef = useRef<EditCue[]>([])
+  cuesRef.current = cues
+  const dragBase = useRef<EditCue[] | null>(null)
 
   function adopt(next: CaptionMaster) {
     const list = next.cues.map(({ id, start, end, text }) => ({ id, start, end, text }))
@@ -284,6 +290,27 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     return `Slå ihop med ${target}: ${seconds(info.durationSeconds)} s, ${info.lines} ${info.lines === 1 ? 'rad' : 'rader'}${pause}\n“${(info.text ?? '').replace('\n', ' ')}”`
   }
 
+  // ---- Drag av kanter i vågformsbandet (UNG-161) ----
+  // Under draget ändras raderna löpande utan att historiken fylls; hela draget blir ETT ångra-steg när pekaren släpps.
+  function dragStart() {
+    dragBase.current = cuesRef.current
+  }
+
+  function dragMove(edge: 'start' | 'end', time: number) {
+    const base = dragBase.current
+    if (!base) return
+    setNotice('')
+    setCues(moveEdge(base, selectedIndex, edge, time))
+    seekTo(time, false)
+  }
+
+  function dragEnd() {
+    const base = dragBase.current
+    dragBase.current = null
+    if (!base || cuesRef.current === base) return
+    setHistory(record(commitTypingTo(history), base))
+  }
+
   // ---- Spara och stäng ----
   async function save() {
     if (!master || !dirty || saving || readOnly) return
@@ -332,6 +359,13 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   })
+
+  // Ett meddelande försvinner av sig självt, så att det inte ligger kvar och skymmer.
+  useEffect(() => {
+    if (!notice) return
+    const timer = window.setTimeout(() => setNotice(''), 7000)
+    return () => window.clearTimeout(timer)
+  }, [notice])
 
   useEffect(() => {
     if (!dirty) return
@@ -418,6 +452,12 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
             <input type="checkbox" checked={follow} onChange={(event) => setFollow(event.currentTarget.checked)} />
             Följ med
           </label>
+          {energy && (
+            <label class="ce-follow" title="Zooma vågformsbandet till den valda repliken (hjulet över bandet zoomar)">
+              <input type="checkbox" checked={focusSpan !== null} onChange={(event) => setFocusSpan(event.currentTarget.checked ? 12 : null)} />
+              Fokus
+            </label>
+          )}
           <span class="ce-dirty" aria-live="polite">{dirty ? `${changeCount} osparade ändringar` : master ? 'Sparat' : ''}</span>
           <button class="btn btn-sm btn-primary" type="button" disabled={!dirty || saving || readOnly} onClick={() => void save()}>
             {saving ? 'Sparar…' : 'Spara'}
@@ -445,7 +485,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
       )}
       {saveError && <div class="ce-banner ce-error" role="alert">{saveError}</div>}
       {notice && (
-        <div class="ce-banner ce-warn" role="status">
+        <div class="ce-banner ce-warn ce-notice" role="status">
           {notice}
           <button class="ib" type="button" aria-label="Stäng meddelandet" onClick={() => setNotice('')}>✕</button>
         </div>
@@ -538,8 +578,14 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                 playing={playing}
                 publishedStart={publishedStart}
                 publishedEnd={publishedEnd}
+                focusSpan={focusSpan}
+                editable={!readOnly}
                 onSeek={(time) => seekTo(time, false)}
                 onSelect={setSelectedIndex}
+                onZoom={(deltaY) => setFocusSpan((span) => (span === null ? span : zoomFocusSpan(span, deltaY)))}
+                onDragStart={dragStart}
+                onDrag={dragMove}
+                onDragEnd={dragEnd}
               />
             )}
             <div
