@@ -86,6 +86,8 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     const startY = (index: number) => timeToY(cues[index].start, win, height)
     const grabbed = dragging.current
     const emphasisedBoundary = grabbed ?? hovered.current
+    // Den valda replikens gräns är den efter den (där orden flödar vidare till nästa replik); den sista repliken har ingen och använder sin start.
+    const endBoundary = selectedIndex + 1 < cues.length ? selectedIndex + 1 : selectedIndex
 
     // Bandets bakgrund, och den valda repliken som ett svagt fält mellan sin gräns och nästa.
     ctx.fillStyle = surface
@@ -132,11 +134,12 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     for (const span of spans) {
       const y = span.y0
       if (y < -4 || y > height + 4) continue
-      const strong = span.index === selectedIndex || span.index === emphasisedBoundary
+      const strong = span.index === endBoundary || span.index === emphasisedBoundary
+      const own = span.index === selectedIndex && !strong // den valda replikens egen start: tydlig men inte det som är i fokus
       const dragged = span.index === grabbed
-      ctx.fillStyle = strong ? focus : quiet
-      ctx.globalAlpha = strong ? 1 : 0.55
-      const thickness = dragged ? 3 : strong ? 2 : 1
+      ctx.fillStyle = strong || own ? focus : quiet
+      ctx.globalAlpha = strong ? 1 : own ? 0.8 : 0.55
+      const thickness = dragged ? 3 : strong ? 2 : own ? 1.5 : 1
       ctx.fillRect(0, y - thickness / 2, BAND_WIDTH, thickness)
       if (strong) {
         ctx.beginPath()
@@ -156,10 +159,11 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     for (let index = firstRow; index <= lastRow; index++) {
       const { band, row } = link(index)
       if (band < -30 || band > height + 30) continue // utanför fönstret (fokusläge): ingen linje
-      const strong = index === selectedIndex || index === emphasisedBoundary
-      ctx.globalAlpha = strong ? 1 : 0.4
-      ctx.strokeStyle = strong ? focus : quiet
-      ctx.lineWidth = index === grabbed ? 3 : strong ? 2 : 1
+      const strong = index === endBoundary || index === emphasisedBoundary
+      const own = index === selectedIndex && !strong
+      ctx.globalAlpha = strong ? 1 : own ? 0.8 : 0.4
+      ctx.strokeStyle = strong || own ? focus : quiet
+      ctx.lineWidth = index === grabbed ? 3 : strong ? 2 : own ? 1.5 : 1
       ctx.beginPath()
       ctx.moveTo(BAND_WIDTH, band)
       ctx.lineTo(WAVEFORM_WIDTH, row)

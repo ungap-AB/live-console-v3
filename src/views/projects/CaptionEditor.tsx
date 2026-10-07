@@ -306,7 +306,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     const base = cuesRef.current
     dragBase.current = base
     setDragBoundary({ index, baseBefore: index > 0 ? wordCount(base[index - 1].text) : 0, baseAfter: wordCount(base[index].text) })
-    setSelectedIndex(index)
+    // En gräns hör till repliken ovanför den (dess slut, där orden flödar vidare till nästa): den repliken blir vald.
+    setSelectedIndex(Math.max(0, index - 1))
   }
 
   function dragMove(index: number, time: number) {
