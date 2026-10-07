@@ -76,15 +76,14 @@ export function rangeStatus(cue: Pick<CaptionCue, 'start' | 'end'>, publishedSta
   return 'inside'
 }
 
-/** Tid som hh:mm:ss.mmm, för listans kolumner. */
+/** Tid som hh:mm:ss (hel sekund, avrundad nedåt), för listans kolumner. Interna tider behåller millisekunder. */
 export function formatCueTime(seconds: number): string {
-  const total = Math.max(0, Math.round(seconds * 1000))
-  const hours = Math.floor(total / 3_600_000)
-  const minutes = Math.floor((total / 60_000) % 60)
-  const secs = Math.floor((total / 1000) % 60)
-  const millis = total % 1000
-  const pad = (value: number, length = 2) => String(value).padStart(length, '0')
-  return `${pad(hours)}:${pad(minutes)}:${pad(secs)}.${pad(millis, 3)}`
+  const total = Math.max(0, Math.floor(seconds + 1e-9))
+  const hours = Math.floor(total / 3600)
+  const minutes = Math.floor((total / 60) % 60)
+  const secs = total % 60
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`
 }
 
 /** Det som skickas till servern: bara tid och text, i listans ordning. */

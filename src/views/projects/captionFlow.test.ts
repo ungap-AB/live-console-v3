@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { CaptionEnergy } from '../../data/types'
 import type { EditCue } from './captionEditOps.ts'
-import { boundaryPreview, moveBoundary, speechClock } from './captionFlow.ts'
+import { moveBoundary, speechClock } from './captionFlow.ts'
 import { speechRuns } from './captionTimingLogic.ts'
 
 const byteFor = (db: number) => Math.round(((db + 80) / 80) * 255)
@@ -97,23 +97,6 @@ test('flödet radbryter de två berörda replikerna om och lämnar orörda texte
   assert.equal(same.cues[0].text, 'ett två tre\nfyra fem sex')
   const moved = moveBoundary(wrapped, 1, 9, talk)
   assert.ok(!moved.cues[1].text.includes('\n'))
-})
-
-test('förhandsvisning: orden närmast gränsen, och flyttade ord utmärkta', () => {
-  const preview = boundaryPreview(list, 1, null)
-  assert.ok(preview)
-  assert.deepEqual(preview.before.map((w) => w.text), ['två', 'tre', 'fyra', 'fem', 'sex'])
-  assert.deepEqual(preview.after.map((w) => w.text), ['sju', 'åtta', 'nio', 'tio', 'elva'])
-  assert.equal(preview.moreBefore, true)
-  assert.equal(preview.moreAfter, true)
-  assert.ok([...preview.before, ...preview.after].every((w) => !w.moved))
-
-  const moved = moveBoundary(list, 1, 7.5, talk)
-  const during = boundaryPreview(moved.cues, 1, moved.baseSplit)
-  assert.ok(during)
-  const movedWords = [...during.before, ...during.after].filter((w) => w.moved).map((w) => w.text)
-  assert.deepEqual(movedWords, allWords(list).slice(moved.baseSplit, moved.split))
-  assert.equal(boundaryPreview(list, 0, null), null)
 })
 
 test('utan flöde ändras bara tiden och gränsen hålls inom grannarna', () => {

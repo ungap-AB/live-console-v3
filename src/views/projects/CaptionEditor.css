@@ -118,9 +118,12 @@
 
 .ce-overlay {
   position: absolute;
-  left: 50%;
+  /* Mitten utan left: 50%: ett absolut placerat block med left: 50% får bara halva bredden att breda ut sig på, och långa rader bröts. */
+  left: 0;
+  right: 0;
   bottom: 14%;
-  transform: translateX(-50%);
+  margin-inline: auto;
+  width: fit-content;
   /* Teckenstorleken följer bildens bredd (42 tecken ryms på en rad även i en smal ruta); breddgränsen är nästan hela bilden. */
   max-width: 97%;
   padding: 2px 0.5em;
@@ -155,7 +158,7 @@
 .ce-list-head,
 .ce-row {
   display: grid;
-  grid-template-columns: 44px 104px 1fr;
+  grid-template-columns: 44px 76px 1fr;
   align-items: stretch;
 }
 
@@ -192,44 +195,22 @@
   touch-action: none;
 }
 
-/* Orden närmast gränsen (UNG-161): hänger på gränsens linje och ligger över listan. */
-.ce-flow {
+.ce-wordcount {
   position: absolute;
-  left: 100%;
-  z-index: 6;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  max-width: 560px;
-  padding: 5px 10px;
-  margin-left: 6px;
+  top: 8px;
+  right: 14px;
+  padding: 0 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--focus);
   background: var(--panel);
   border: 1px solid var(--focus);
-  border-radius: 6px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
-  font-size: 13px;
-  line-height: 1.35;
+  border-radius: 9px;
   pointer-events: none;
 }
 
-.ce-flow-word.is-moved {
-  background: color-mix(in srgb, var(--focus) 22%, transparent);
-  border-radius: 3px;
-  padding: 0 3px;
-  font-weight: 600;
-}
-
-.ce-flow-more {
-  color: var(--ink-3);
-}
-
-.ce-flow-cut {
-  width: 3px;
-  align-self: stretch;
-  min-height: 18px;
-  background: var(--focus);
-  border-radius: 2px;
+.ce-wordcount b {
+  font-weight: 700;
 }
 
 .ce-list {
@@ -304,13 +285,13 @@ button.ce-time:hover {
 
 .ce-text textarea {
   width: 100%;
-  height: 44px;
+  height: 100%;
   box-sizing: border-box;
   resize: none;
   padding: 4px 6px;
   font: inherit;
-  font-size: 13.5px;
-  line-height: 1.3;
+  font-size: 15px;
+  line-height: 1.35;
   color: var(--field-fg);
   background: var(--field-bg);
   border: 1px solid var(--line);
@@ -327,6 +308,12 @@ button.ce-time:hover {
 }
 
 .ce-counters {
+  /* Bara fel (tom replik) visas, över textrutans nederkant, så att raden behåller sin höjd. */
+  position: absolute;
+  left: 12px;
+  bottom: 2px;
+  padding: 0 4px;
+  background: var(--panel);
   display: flex;
   gap: 10px;
   margin-top: 2px;
@@ -343,7 +330,7 @@ button.ce-time:hover {
 /* ---- UNG-143: radåtgärder, vald replik, korta rutor ---- */
 .ce-list-head,
 .ce-row {
-  grid-template-columns: 44px 104px 1fr 158px;
+  grid-template-columns: 44px 76px 1fr 40px;
 }
 
 .ce-row-actions {

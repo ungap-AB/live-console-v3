@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from 'preact/hooks'
 import type { CaptionEnergy } from '../../data/types'
-import type { BoundaryPreview } from './captionFlow'
 import {
   bandProfile, bandWindow, cueIndexAt, snapToSpeech, speechThreshold, timeToY, visibleSpans, yToTime, type CueSpan, type TimeWindow,
 } from './captionWaveformLogic'
@@ -12,11 +11,6 @@ export const WAVEFORM_WIDTH = BAND_WIDTH + FAN_WIDTH
 
 /** Hur nära (pixlar) en gräns ska träffas för att kunna tas tag i. */
 const GRAB_PIXELS = 8
-
-export interface FlowBubble {
-  index: number
-  preview: BoundaryPreview
-}
 
 interface CaptionWaveformProps {
   cues: readonly CueSpan[]
@@ -35,12 +29,11 @@ interface CaptionWaveformProps {
   focusSpan: number | null
   /** Om gränserna får dras. */
   editable: boolean
-  /** Orden närmast en gräns som hålls över eller dras, vid gränsen. */
-  bubble: FlowBubble | null
   onSeek: (time: number) => void
   onSelect: (index: number) => void
   onZoom: (deltaY: number) => void
-  onHover: (index: number | null) => void
+  /** Hjulet över bandet rullar listan. */
+  onScrollBy: (deltaY: number) => void
   onDragStart: (index: number) => void
   onDrag: (index: number, time: number) => void
   onDragEnd: () => void
@@ -265,7 +258,7 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
       canvas.style.cursor = boundary !== null ? 'ns-resize' : 'pointer'
       if (boundary !== hovered.current) {
         hovered.current = boundary
-        latest.current.onHover(boundary)
+        draw()
       }
       return
     }
@@ -278,7 +271,7 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
   function onPointerLeave() {
     if (dragging.current !== null || hovered.current === null) return
     hovered.current = null
-    latest.current.onHover(null)
+    draw()
   }
 
   function endDrag(event: PointerEvent) {
@@ -289,15 +282,15 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     latest.current.onDragEnd()
   }
 
+  // Hjulet rullar listan (bandet följer med). I fokusläget zoomar Ctrl/Cmd + hjul i stället.
   function onWheel(event: WheelEvent) {
-    if (latest.current.focusSpan === null) return
     event.preventDefault()
-    latest.current.onZoom(event.deltaY)
+    if (latest.current.focusSpan !== null && (event.ctrlKey || event.metaKey)) {
+      latest.current.onZoom(event.deltaY)
+      return
+    }
+    latest.current.onScrollBy(event.deltaMode === 1 ? event.deltaY * 40 : event.deltaY)
   }
-
-  // Orden vid gränsen: lagret hänger på gränsens linje och visar vad som ligger på var sida (flyttade ord utmärkta).
-  const bubble = props.bubble
-  const bubbleY = bubble && props.cues[bubble.index] ? timeToY(props.cues[bubble.index].start, currentWindow(), props.height) : null
 
   return (
     <div class="ce-wave-slot" style={{ width: `${WAVEFORM_WIDTH}px`, height: `${props.height}px` }}>
@@ -306,7 +299,7 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
         class="ce-wave"
         style={{ width: `${WAVEFORM_WIDTH}px`, height: `${props.height}px` }}
         aria-label="Vågform för ljudet. Klicka för att hoppa i videon, dra en gräns för att flytta den."
-        title="Ljudets vågform. Klicka för att hoppa i videon. Dra en gräns (linje) för att flytta den, så flödar texten över. Alt stänger av fästningen. Orange ljud saknar replik."
+        title="Ljudets vågform. Klicka för att hoppa i videon. Dra en gräns (linje) för att flytta den, så flödar texten över. Alt stänger av fästningen. Hjulet rullar listan (Ctrl/Cmd + hjul zoomar i fokusläge). Orange ljud saknar replik."
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
@@ -314,15 +307,6 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
         onPointerCancel={endDrag}
         onWheel={onWheel}
       />
-      {bubble && bubbleY !== null && bubbleY > -20 && bubbleY < props.height + 20 && (
-        <div class="ce-flow" style={{ top: `${Math.min(props.height - 30, Math.max(0, bubbleY - 15))}px` }} aria-hidden="true">
-          {bubble.preview.moreBefore && <span class="ce-flow-more">…</span>}
-          {bubble.preview.before.map((word, index) => <span key={`b${index}`} class={word.moved ? 'ce-flow-word is-moved' : 'ce-flow-word'}>{word.text}</span>)}
-          <span class="ce-flow-cut" />
-          {bubble.preview.after.map((word, index) => <span key={`a${index}`} class={word.moved ? 'ce-flow-word is-moved' : 'ce-flow-word'}>{word.text}</span>)}
-          {bubble.preview.moreAfter && <span class="ce-flow-more">…</span>}
-        </div>
-      )}
     </div>
   )
 }

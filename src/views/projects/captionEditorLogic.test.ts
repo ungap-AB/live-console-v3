@@ -73,11 +73,11 @@ test('förhållande till publicerad del: utanför, över kanten och inuti', () =
   assert.equal(rangeStatus({ start: 0, end: 5 }), 'inside')
 })
 
-test('tid som hh:mm:ss.mmm', () => {
-  assert.equal(formatCueTime(0), '00:00:00.000')
-  assert.equal(formatCueTime(3723.004), '01:02:03.004')
-  assert.equal(formatCueTime(59.9996), '00:01:00.000')
-  assert.equal(formatCueTime(-3), '00:00:00.000')
+test('tid som hh:mm:ss (hel sekund)', () => {
+  assert.equal(formatCueTime(0), '00:00:00')
+  assert.equal(formatCueTime(3723.004), '01:02:03')
+  assert.equal(formatCueTime(59.9996), '00:00:59') // avrundas nedåt: en replik visas aldrig som senare än den börjar
+  assert.equal(formatCueTime(-3), '00:00:00')
 })
 
 test('det som sparas är bara tid och text, i ordning', () => {

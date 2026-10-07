@@ -12,17 +12,17 @@ import {
   activeCueIndex, formatCueTime, rangeStatus, savePayload, scrollToReveal, windowRange,
 } from './captionEditorLogic'
 import {
-  LONG_GAP_SECONDS, addCue, deleteCue, diffState, mergeInfo, mergeWithNext, moveHeadToPrevious, moveTailToNext, shiftFrom,
-  sortedForSave, splitCue, validateCues, type EditCue, type OpResult,
+  LONG_GAP_SECONDS, addCue, deleteCue, diffState, mergeInfo, mergeWithNext, shiftFrom,
+  sortedForSave, validateCues, type EditCue, type OpResult,
 } from './captionEditOps'
-import { boundaryPreview, moveBoundary } from './captionFlow'
+import { moveBoundary } from './captionFlow'
 import { deriveTimes, speechRuns } from './captionTimingLogic'
 import { emptyHistory, record, redo, undo, type History } from './captionHistory'
-import { CaptionWaveform, WAVEFORM_WIDTH, type FlowBubble } from './CaptionWaveform'
+import { CaptionWaveform, WAVEFORM_WIDTH } from './CaptionWaveform'
 import { zoomFocusSpan } from './captionWaveformLogic'
 import './CaptionEditor.css'
 
-const ROW_HEIGHT = 76
+const ROW_HEIGHT = 84
 
 interface CaptionEditorProps {
   projectId: string
@@ -61,9 +61,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   const [energy, setEnergy] = useState<CaptionEnergy | null>(null)
   // Fokusläge i vågformsbandet: sekunder kring vald replik, eller null när bandet följer listans scroll.
   const [focusSpan, setFocusSpan] = useState<number | null>(null)
-  // Gränsen (replikindex) som pekaren hålls över, och den som dras (med antal ord före gränsen när draget började).
-  const [hoverBoundary, setHoverBoundary] = useState<number | null>(null)
-  const [dragBoundary, setDragBoundary] = useState<{ index: number; baseSplit: number } | null>(null)
+  // Gränsen (replikindex) som dras, med antal ord i de två berörda replikerna när draget började (för orden-just-nu-märket).
+  const [dragBoundary, setDragBoundary] = useState<{ index: number; baseBefore: number; baseAfter: number } | null>(null)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -287,7 +286,6 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   }
 
   const newId = () => tempId.current--
-  const caretOf = (index: number) => areas.current.get(index)?.selectionStart ?? 0
 
   function startMerge(firstIndex: number) {
     const info = mergeInfo(cues, firstIndex)
@@ -299,14 +297,6 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     else apply(mergeWithNext(cues, firstIndex))
   }
 
-  function mergeTitle(firstIndex: number, direction: 'up' | 'down'): string {
-    const info = mergeInfo(cues, firstIndex)
-    const target = direction === 'down' ? 'nästa' : 'föregående'
-    if (!info) return `Ingen ${target} replik`
-    const pause = info.gapSeconds > 0.05 ? `, paus ${seconds(info.gapSeconds)} s` : ''
-    return `Slå ihop med ${target}: ${seconds(info.durationSeconds)} s, ${info.lines} ${info.lines === 1 ? 'rad' : 'rader'}${pause}\n“${(info.text ?? '').replace('\n', ' ')}”`
-  }
-
   // ---- Gränser i vågformsbandet (UNG-161) ----
   // Gränsen före en rad (replikens start) dras i bandet och texten flödar över: orden byter sida efter uppskattad tid över tal. Raderna
   // ändras löpande utan att historiken fylls; hela draget blir ETT ångra-steg när pekaren släpps.
@@ -315,7 +305,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   function dragStart(index: number) {
     const base = cuesRef.current
     dragBase.current = base
-    setDragBoundary({ index, baseSplit: index > 0 ? wordCount(base[index - 1].text) : 0 })
+    setDragBoundary({ index, baseBefore: index > 0 ? wordCount(base[index - 1].text) : 0, baseAfter: wordCount(base[index].text) })
     setSelectedIndex(index)
   }
 
@@ -340,9 +330,38 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     apply({ ok: true, cues: moveBoundary(cues, index, time, timing.runs, false).cues, focusIndex: index })
   }
 
-  const bubbleIndex = dragBoundary?.index ?? hoverBoundary
-  const bubblePreview = bubbleIndex === null ? null : boundaryPreview(cues, bubbleIndex, dragBoundary?.baseSplit ?? null)
-  const bubble: FlowBubble | null = bubbleIndex !== null && bubblePreview ? { index: bubbleIndex, preview: bubblePreview } : null
+  // Under ett drag visas hur många ord de två berörda replikerna just nu innehåller (och förändringen sedan draget började).
+  function wordBadge(index: number): { count: number; delta: number } | null {
+    if (!dragBoundary) return null
+    if (index === dragBoundary.index - 1) return { count: wordCount(cues[index].text), delta: wordCount(cues[index].text) - dragBoundary.baseBefore }
+    if (index === dragBoundary.index) return { count: wordCount(cues[index].text), delta: wordCount(cues[index].text) - dragBoundary.baseAfter }
+    return null
+  }
+
+  // Klick på en rads nummer/tid: en annan rad väljs och spelas från sin start; samma rad växlar mellan spela och paus (andningspaus).
+  function playRow(index: number) {
+    const video = videoRef.current
+    const cue = cues[index]
+    if (index === selectedIndex && video && cue) {
+      if (!video.paused) {
+        video.pause()
+        return
+      }
+      const position = video.currentTime
+      seekTo(position >= cue.start - 0.05 && position <= cue.end + 0.5 ? position : cue.start, true)
+      return
+    }
+    setSelectedIndex(index)
+    seekTo(cue.start, true)
+  }
+
+  // Hjul över vågformen rullar listan (och slår av "Följ med", som när man rullar i listan).
+  function scrollListBy(deltaY: number) {
+    const element = listRef.current
+    if (!element) return
+    stopFollowing()
+    element.scrollTop += deltaY
+  }
 
   // ---- Spara och stäng ----
   async function save() {
@@ -588,11 +607,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                 publishedEnd={publishedEnd}
                 focusSpan={focusSpan}
                 editable={!readOnly}
-                bubble={bubble}
                 onSeek={(time) => seekTo(time, false)}
                 onSelect={setSelectedIndex}
                 onZoom={(deltaY) => setFocusSpan((span) => (span === null ? span : zoomFocusSpan(span, deltaY)))}
-                onHover={setHoverBoundary}
+                onScrollBy={scrollListBy}
                 onDragStart={dragStart}
                 onDrag={dragMove}
                 onDragEnd={dragEnd}
@@ -624,12 +642,12 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                   ].filter(Boolean).join(' ')
                   return (
                     <div key={cue.id} class={classes} style={{ top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}>
-                      <button class="ce-time ce-num" type="button" title="Spela den här repliken" onClick={() => { setSelectedIndex(index); seekTo(cue.start, true) }}>{index + 1}</button>
+                      <button class="ce-time ce-num" type="button" title="Spela den här repliken (klicka igen för paus)" onClick={() => playRow(index)}>{index + 1}</button>
                       <button
                         class="ce-time"
                         type="button"
-                        title={`Spela den här repliken (${formatCueTime(cue.start)}–${formatCueTime(cue.end)}, ${seconds(cue.end - cue.start)} s)`}
-                        onClick={() => { setSelectedIndex(index); seekTo(cue.start, true) }}
+                        title={`Spela den här repliken (klicka igen för paus), ${seconds(cue.end - cue.start)} s`}
+                        onClick={() => playRow(index)}
                       >
                         {formatCueTime(cue.start)}
                       </button>
@@ -639,7 +657,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                             if (element) areas.current.set(index, element)
                             else areas.current.delete(index)
                           }}
-                          rows={2}
+                          rows={3}
                           value={cue.text}
                           readOnly={readOnly}
                           aria-label={`Text för replik ${index + 1}`}
@@ -655,25 +673,18 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                           onBlur={() => setHistory(commitTypingTo(history))}
                           onKeyDown={(event) => onAreaKeyDown(event, index)}
                         />
+                        {(() => {
+                          const badge = wordBadge(index)
+                          return badge && (
+                            <span class="ce-wordcount" aria-hidden="true">
+                              {badge.count} ord{badge.delta !== 0 && <b>{badge.delta > 0 ? ` +${badge.delta}` : ` −${-badge.delta}`}</b>}
+                            </span>
+                          )
+                        })()}
                         {issue?.error && <div class="ce-counters" role="alert"><span class="is-over">{issue.message}</span></div>}
                       </div>
                       {!readOnly && (
                         <div class="ce-row-actions">
-                          <button class="ce-icon" type="button" title={mergeTitle(index - 1, 'up')} disabled={index === 0} onClick={() => startMerge(index - 1)}>
-                            <Icon name="vertical_align_top" size={16} />
-                          </button>
-                          <button class="ce-icon" type="button" title={mergeTitle(index, 'down')} disabled={index >= cues.length - 1} onClick={() => startMerge(index)}>
-                            <Icon name="vertical_align_bottom" size={16} />
-                          </button>
-                          <button class="ce-icon" type="button" title="Dela vid markören (tiden från videons position om den ligger i repliken, annars efter antal tecken)" onClick={() => apply(splitCue(cues, index, caretOf(index), newId(), playhead()))}>
-                            <Icon name="call_split" size={16} />
-                          </button>
-                          <button class="ce-icon" type="button" title="Flytta orden före markören till föregående replik" disabled={index === 0} onClick={() => apply(moveHeadToPrevious(cues, index, caretOf(index)))}>
-                            <Icon name="arrow_upward" size={16} />
-                          </button>
-                          <button class="ce-icon" type="button" title="Flytta orden efter markören till nästa replik" disabled={index >= cues.length - 1} onClick={() => apply(moveTailToNext(cues, index, caretOf(index)))}>
-                            <Icon name="arrow_downward" size={16} />
-                          </button>
                           <button class="ce-icon" type="button" title="Ta bort repliken" onClick={() => apply(deleteCue(cues, index))}>
                             <Icon name="delete" size={16} />
                           </button>
