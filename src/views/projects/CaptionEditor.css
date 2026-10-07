@@ -263,3 +263,127 @@ button.ce-time:hover {
   color: var(--warn);
   font-weight: 600;
 }
+
+/* ---- UNG-143: radåtgärder, vald replik, korta rutor ---- */
+.ce-list-head,
+.ce-row {
+  grid-template-columns: 44px 104px 1fr 158px;
+}
+
+.ce-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 0 6px;
+  visibility: hidden;
+}
+
+.ce-row:hover .ce-row-actions,
+.ce-row:focus-within .ce-row-actions,
+.ce-row.is-selected .ce-row-actions,
+.ce-row.is-short .ce-row-actions {
+  visibility: visible;
+}
+
+.ce-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ce-icon:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+.ce-icon:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.ce-row.is-selected {
+  background: var(--surface-2);
+}
+
+.ce-row.has-error textarea {
+  border-color: var(--warn);
+  outline: 1px solid var(--warn);
+}
+
+.ce-chip {
+  padding: 0 6px;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: var(--surface-3);
+  border-radius: 8px;
+}
+
+.ce-note {
+  color: var(--ink-3);
+}
+
+.ce-tools {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.ce-tools-title {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ce-tools-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.ce-tools-label {
+  min-width: 44px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.ce-nudge {
+  min-width: 44px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ce-shift-input {
+  width: 56px;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 13px;
+  text-align: right;
+  color: var(--field-fg);
+  background: var(--field-bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.ce-unit {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.ce-short-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}

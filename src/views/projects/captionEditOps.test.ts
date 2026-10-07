@@ -1,0 +1,264 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import {
+  addCue, deleteCue, isShort, mergeInfo, mergeWithNext, mergeWithPrevious, moveHeadToPrevious, moveTailToNext, nudge, setTime, shiftFrom, shortIndexes,
+  sortedForSave, splitCue, validateCues, wrapBalanced, diffState, type EditCue,
+} from './captionEditOps.ts'
+
+const cue = (id: number, start: number, end: number, text: string): EditCue => ({ id, start, end, text })
+const words = (cues: readonly EditCue[]) => cues.flatMap((c) => c.text.split(/\s+/).filter(Boolean))
+
+test('radbrytning: en rad om det ryms, annars jämnast möjliga delning, null om det inte går', () => {
+  assert.equal(wrapBalanced('Kort text'), 'Kort text')
+  assert.equal(wrapBalanced('Jag yrkar bifall till förslaget från kommunstyrelsen'), 'Jag yrkar bifall till\nförslaget från kommunstyrelsen')
+  assert.equal(wrapBalanced('x'.repeat(90)), null)
+  assert.equal(wrapBalanced('   '), '')
+  const long = 'ett två tre fyra fem sex sju åtta nio tio elva tolv tretton fjorton femton sexton sjutton arton nitton tjugo'
+  assert.equal(wrapBalanced(long), null)
+})
+
+test('sammanslagning är exakt: första start, sista slut, texten fogad och orden i ordning', () => {
+  const cues = [cue(1, 10, 11.5, 'Ja.'), cue(2, 11.9, 15.25, 'Tack ordförande, ledamöter.'), cue(3, 20, 22, 'Nästa.')]
+  const result = mergeWithNext(cues, 0)
+  assert.ok(result.ok)
+  assert.equal(result.cues.length, 2)
+  assert.deepEqual([result.cues[0].start, result.cues[0].end], [10, 15.25])
+  assert.equal(result.cues[0].text.replace('\n', ' '), 'Ja. Tack ordförande, ledamöter.')
+  assert.equal(result.cues[0].id, 1)
+  assert.deepEqual(words(result.cues), words(cues))
+  assert.deepEqual(result.cues[1], cues[2])
+  assert.equal(result.focusIndex, 0)
+})
+
+test('sammanslagning rör inte indatan', () => {
+  const cues = [cue(1, 0, 1, 'a'), cue(2, 1, 2, 'b')]
+  const copy = JSON.parse(JSON.stringify(cues))
+  mergeWithNext(cues, 0)
+  assert.deepEqual(cues, copy)
+})
+
+test('sammanslagning upp åt är samma sak som att slå ihop föregående med den här', () => {
+  const cues = [cue(1, 0, 2, 'Första delen'), cue(2, 2.2, 4, 'andra delen')]
+  const up = mergeWithPrevious(cues, 1)
+  const down = mergeWithNext(cues, 0)
+  assert.ok(up.ok && down.ok)
+  assert.deepEqual(up.cues, down.cues)
+  assert.equal(up.focusIndex, 0)
+  assert.equal(mergeWithPrevious(cues, 0).ok, false)
+  assert.equal(mergeWithNext(cues, 1).ok, false)
+})
+
+test('en sammanslagning som blir över två rader blockeras och ändrar ingenting', () => {
+  const a = 'Det här är en ganska lång replik som nästan fyller två rader helt och hållet'
+  const cues = [cue(1, 0, 5, a), cue(2, 5, 8, 'och ännu fler ord här')]
+  const result = mergeWithNext(cues, 0)
+  assert.equal(result.ok, false)
+  assert.match(!result.ok ? result.reason : '', /för lång/)
+  assert.equal(mergeInfo(cues, 0)?.fits, false)
+})
+
+test('förhandsvisningen: paus, längd, rader och om det ryms', () => {
+  const info = mergeInfo([cue(1, 0, 2, 'Ja.'), cue(2, 3.5, 6, 'Tack så mycket.')], 0)
+  assert.ok(info)
+  assert.equal(info.gapSeconds, 1.5)
+  assert.equal(info.durationSeconds, 6)
+  assert.equal(info.lines, 1)
+  assert.equal(info.fits, true)
+  assert.equal(mergeInfo([cue(1, 0, 2, 'a'), cue(2, 1.5, 3, 'b')], 0)?.gapSeconds, 0) // överlapp räknas som ingen paus
+  assert.equal(mergeInfo([cue(1, 0, 2, 'a')], 0), null)
+})
+
+test('markören hamnar där texterna fogades', () => {
+  const result = mergeWithNext([cue(1, 0, 2, 'Första delen'), cue(2, 2, 4, 'andra delen')], 0)
+  assert.ok(result.ok)
+  assert.equal(result.caret, 'Första delen'.length)
+})
+
+test('delning vid markören: tiden proportionell mot tecken, kant i kant, orden oförändrade', () => {
+  const cues = [cue(1, 0, 10, 'Det första yttrandet gäller budgeten för nästa år')]
+  const text = cues[0].text
+  const caret = text.indexOf(' gäller')
+  const result = splitCue(cues, 0, caret, 99)
+  assert.ok(result.ok)
+  assert.equal(result.cues.length, 2)
+  assert.equal(result.cues[0].end, result.cues[1].start)
+  assert.equal(result.cues[0].start, 0)
+  assert.equal(result.cues[1].end, 10)
+  assert.equal(result.cues[1].id, 99)
+  assert.equal(result.focusIndex, 1)
+  assert.deepEqual(words(result.cues), words(cues))
+  const expected = (10 * 'Det första yttrandet'.length) / ('Det första yttrandet'.length + 'gäller budgeten för nästa år'.length)
+  assert.ok(Math.abs(result.cues[0].end - expected) < 0.001)
+})
+
+test('delning vid videons position använder tiden om den ligger inne i repliken', () => {
+  const cues = [cue(1, 10, 20, 'Före delningen och efter delningen')]
+  const caret = 'Före delningen'.length
+  const atPlayhead = splitCue(cues, 0, caret, 2, 13.37)
+  assert.ok(atPlayhead.ok)
+  assert.equal(atPlayhead.cues[0].end, 13.37)
+  // För nära kanten: tiden används inte, delningen blir proportionell.
+  const nearEdge = splitCue(cues, 0, caret, 2, 10.1)
+  assert.ok(nearEdge.ok)
+  assert.notEqual(nearEdge.cues[0].end, 10.1)
+  // Utanför repliken: proportionell.
+  const outside = splitCue(cues, 0, caret, 2, 50)
+  assert.ok(outside.ok)
+  assert.ok(outside.cues[0].end < 20)
+})
+
+test('delning kräver att markören ligger mellan ord', () => {
+  const cues = [cue(1, 0, 5, 'Två ord')]
+  assert.equal(splitCue(cues, 0, 0, 2).ok, false)
+  assert.equal(splitCue(cues, 0, cues[0].text.length, 2).ok, false)
+  assert.equal(splitCue([], 0, 1, 2).ok, false)
+})
+
+test('delning och sammanslagning tar ut varandra i text och yttertider', () => {
+  const original = [cue(1, 4, 12, 'Det första yttrandet gäller budgeten för nästa år')]
+  const split = splitCue(original, 0, 'Det första yttrandet'.length, 2)
+  assert.ok(split.ok)
+  const merged = mergeWithNext(split.cues, 0)
+  assert.ok(merged.ok)
+  assert.equal(merged.cues.length, 1)
+  assert.deepEqual([merged.cues[0].start, merged.cues[0].end], [4, 12])
+  assert.equal(merged.cues[0].text.replace('\n', ' '), original[0].text)
+})
+
+test('flytta ord till nästa: orden byter replik, gränsen fördelas efter tecken, pausen bevaras', () => {
+  const cues = [cue(1, 0, 4, 'Vi går igenom ärendet och beslutar'), cue(2, 4.5, 8, 'om förslaget.')]
+  const caret = 'Vi går igenom ärendet'.length
+  const result = moveTailToNext(cues, 0, caret)
+  assert.ok(result.ok)
+  assert.equal(result.cues[0].text, 'Vi går igenom ärendet')
+  assert.equal(result.cues[1].text.replace('\n', ' '), 'och beslutar om förslaget.')
+  assert.deepEqual(words(result.cues), words(cues))
+  assert.equal(result.cues[0].start, 0)
+  assert.equal(result.cues[1].end, 8)
+  // Pausen mellan dem är oförändrad (0,5 s).
+  assert.ok(Math.abs(result.cues[1].start - result.cues[0].end - 0.5) < 0.002)
+  assert.equal(result.focusIndex, 1)
+})
+
+test('flytta ord till föregående: orden i början flyttas till föregående replik', () => {
+  const cues = [cue(1, 0, 3, 'Jag yrkar'), cue(2, 3, 7, 'bifall till förslaget från styrelsen')]
+  const result = moveHeadToPrevious(cues, 1, 'bifall'.length)
+  assert.ok(result.ok)
+  assert.equal(result.cues[0].text, 'Jag yrkar bifall')
+  assert.equal(result.cues[1].text.replace('\n', ' '), 'till förslaget från styrelsen')
+  assert.deepEqual(words(result.cues), words(cues))
+  assert.equal(result.cues[0].start, 0)
+  assert.equal(result.cues[1].end, 7)
+})
+
+test('flytta ord blockeras när orden inte ryms eller markören står fel', () => {
+  const full = 'Det här är en ganska lång replik som nästan fyller två rader helt och hållet'
+  const cues = [cue(1, 0, 4, 'Kort start och ett ord'), cue(2, 4, 8, full)]
+  assert.equal(moveTailToNext(cues, 0, 'Kort start och'.length).ok, false)
+  assert.equal(moveTailToNext(cues, 0, 0).ok, false)
+  assert.equal(moveTailToNext(cues, 0, cues[0].text.length).ok, false)
+  assert.equal(moveTailToNext([cues[0]], 0, 5).ok, false)
+  assert.equal(moveHeadToPrevious([cues[0]], 0, 5).ok, false)
+})
+
+test('ta bort en replik och lägg till en ny vid en tid', () => {
+  const cues = [cue(1, 0, 2, 'a'), cue(2, 5, 7, 'b'), cue(3, 10, 12, 'c')]
+  const deleted = deleteCue(cues, 1)
+  assert.ok(deleted.ok)
+  assert.deepEqual(deleted.cues.map((c) => c.id), [1, 3])
+  assert.equal(deleteCue(cues, 9).ok, false)
+
+  const added = addCue(cues, 8, 50)
+  assert.ok(added.ok)
+  assert.deepEqual(added.cues.map((c) => c.id), [1, 2, 50, 3])
+  assert.deepEqual([added.cues[2].start, added.cues[2].end, added.cues[2].text], [8, 9.96, ''])
+  assert.equal(added.focusIndex, 2)
+  const atEnd = addCue(cues, 20, 51)
+  assert.ok(atEnd.ok)
+  assert.deepEqual([atEnd.cues[3].start, atEnd.cues[3].end], [20, 22])
+})
+
+test('ställ in och finjustera start och slut', () => {
+  const cues = [cue(1, 10, 14, 'a')]
+  const start = setTime(cues, 0, 'start', 11.2345)
+  assert.ok(start.ok)
+  assert.equal(start.cues[0].start, 11.235)
+  assert.equal(setTime(cues, 0, 'start', 14).ok, false)
+  assert.equal(setTime(cues, 0, 'end', 10).ok, false)
+  const moved = nudge(cues, 0, 'end', 0.5)
+  assert.ok(moved.ok)
+  assert.equal(moved.cues[0].end, 14.5)
+  const early = nudge([cue(1, 0.05, 4, 'a')], 0, 'start', -0.5)
+  assert.ok(early.ok)
+  assert.equal(early.cues[0].start, 0) // aldrig före 0
+})
+
+test('förskjutning: vald rad och alla efter flyttas med exakt vald tid, de före rörs inte', () => {
+  const cues = [cue(1, 1, 3, 'a'), cue(2, 5, 7, 'b'), cue(3, 9, 11, 'c')]
+  const shifted = shiftFrom(cues, 1, -0.75)
+  assert.ok(shifted.ok)
+  assert.deepEqual(shifted.cues.map((c) => [c.start, c.end]), [[1, 3], [4.25, 6.25], [8.25, 10.25]])
+  const all = shiftFrom(cues, 0, 2)
+  assert.ok(all.ok)
+  assert.deepEqual(all.cues.map((c) => c.start), [3, 7, 11])
+  assert.equal(shiftFrom(cues, 0, -2).ok, false)
+  assert.equal(shiftFrom(cues, 7, 1).ok, false)
+})
+
+test('kort ruta: högst två ord eller under 1,2 s, och navigering mellan dem', () => {
+  assert.equal(isShort(cue(1, 0, 3, 'Ja.')), true)
+  assert.equal(isShort(cue(1, 0, 3, 'Ja tack')), true)
+  assert.equal(isShort(cue(1, 0, 0.8, 'Ett längre yttrande här')), true)
+  assert.equal(isShort(cue(1, 0, 3, 'Ett normalt yttrande')), false)
+  assert.deepEqual(shortIndexes([cue(1, 0, 3, 'Ja.'), cue(2, 3, 7, 'Ett normalt yttrande'), cue(3, 7, 8, 'Nej')]), [0, 2])
+})
+
+test('kontroll: tom text och orimlig tid är fel, överlapp och fel ordning är varningar', () => {
+  const issues = validateCues([cue(1, 0, 3, 'a'), cue(2, 2.5, 5, 'b'), cue(3, 1, 4, 'c'), cue(4, 6, 6, 'd'), cue(5, 7, 9, '  ')])
+  const byIndex = (index: number) => issues.filter((issue) => issue.index === index).map((issue) => issue.kind)
+  assert.deepEqual(byIndex(0), [])
+  assert.deepEqual(byIndex(1), ['overlap'])
+  assert.deepEqual(byIndex(2), ['order'])
+  assert.deepEqual(byIndex(3), ['badTime'])
+  assert.deepEqual(byIndex(4), ['empty'])
+  assert.deepEqual(issues.filter((issue) => issue.error).map((issue) => issue.index), [3, 4])
+  assert.deepEqual(validateCues([cue(1, 0, 3, 'a'), cue(2, 3, 5, 'b')]), [])
+})
+
+test('sortering inför sparning: på starttid och stabilt', () => {
+  const sorted = sortedForSave([cue(1, 5, 6, 'b'), cue(2, 1, 2, 'a'), cue(3, 5, 6, 'c'), cue(4, 5, 5.5, 'd')])
+  assert.deepEqual(sorted.map((c) => c.id), [2, 4, 1, 3])
+})
+
+test('ändringsspårning: ändrad text eller tid, nya, borttagna och omordnade repliker', () => {
+  const saved = [cue(1, 0, 2, 'a'), cue(2, 3, 5, 'b'), cue(3, 6, 8, 'c')]
+  assert.equal(diffState(saved, saved).dirty, false)
+
+  const text = diffState(saved, [saved[0], { ...saved[1], text: 'bb' }, saved[2]])
+  assert.deepEqual([...text.changedIds], [2])
+  assert.equal(text.dirty, true)
+
+  const time = diffState(saved, [saved[0], { ...saved[1], end: 5.1 }, saved[2]])
+  assert.deepEqual([...time.changedIds], [2])
+
+  const added = diffState(saved, [...saved, cue(-1, 9, 10, 'ny')])
+  assert.deepEqual([...added.changedIds], [-1])
+  assert.equal(added.removed, 0)
+
+  const removed = diffState(saved, [saved[0], saved[2]])
+  assert.equal(removed.removed, 1)
+  assert.equal(removed.dirty, true)
+  assert.equal(removed.changedIds.size, 0)
+
+  const reordered = diffState(saved, [saved[1], saved[0], saved[2]])
+  assert.equal(reordered.reordered, true)
+  assert.equal(reordered.dirty, true)
+})
+
+test('en ångrad ändring är inte längre en ändring', () => {
+  const saved = [cue(1, 0, 2, 'a'), cue(2, 3, 5, 'b')]
+  const merged = mergeWithNext(saved, 0)
+  assert.ok(merged.ok)
+  assert.equal(diffState(saved, merged.cues).dirty, true)
+  assert.equal(diffState(saved, saved).dirty, false)
+})
