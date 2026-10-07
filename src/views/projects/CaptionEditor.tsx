@@ -4,12 +4,18 @@ import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { client } from '../../data'
 import { ApiError } from '../../data/http/fetchJson'
-import type { CaptionCue, CaptionMaster } from '../../data/types'
+import type { CaptionMaster } from '../../data/types'
 import { ConfirmModal } from '../../components/ConfirmModal'
+import { Icon } from '../../components/Icon'
 import { formatHms } from '../../app/time'
 import {
-  MAX_LINE_LENGTH, activeCueIndex, canInsertLineBreak, changedIndexes, formatCueTime, hasLineWarning, lineInfo, rangeStatus, savePayload, scrollToReveal, windowRange,
+  MAX_LINE_LENGTH, activeCueIndex, canInsertLineBreak, formatCueTime, hasLineWarning, lineInfo, rangeStatus, savePayload, scrollToReveal, windowRange,
 } from './captionEditorLogic'
+import {
+  LONG_GAP_SECONDS, addCue, deleteCue, diffState, isShort, mergeInfo, mergeWithNext, moveHeadToPrevious, moveTailToNext, nudge, setTime, shiftFrom,
+  shortIndexes, sortedForSave, splitCue, validateCues, type EditCue, type OpResult,
+} from './captionEditOps'
+import { emptyHistory, record, redo, undo, type History } from './captionHistory'
 import './CaptionEditor.css'
 
 const ROW_HEIGHT = 76
@@ -22,21 +28,29 @@ interface CaptionEditorProps {
   onSaved?: () => void
 }
 
-// UNG-140: redigerare för undertexterna (mastern, original-tidslinje). Video med aktuell replik över bilden, och en radlista
-// där texten rättas på plats. Listan är virtualiserad (2 000+ rader). Tider ändras inte här än (UNG-143), bara text.
+const seconds = (value: number) => value.toFixed(1).replace('.', ',')
+
+// UNG-140/143: redigerare för undertexterna (mastern, original-tidslinje). Video med aktuell replik över bilden och en virtualiserad
+// radlista där texten rättas på plats. Rutor kan slås ihop (exakt tid), delas, orden kan flyttas mellan grannar, tider justeras,
+// rader läggs till och tas bort, och allt går att ångra tills man sparar. Sparas som en version (versionskontroll mot servern).
 export function CaptionEditor({ projectId, projectName, onClose, onSaved }: CaptionEditorProps) {
   const [master, setMaster] = useState<CaptionMaster | null>(null)
   const [loadError, setLoadError] = useState('')
-  const [cues, setCues] = useState<CaptionCue[]>([])
-  const [savedTexts, setSavedTexts] = useState<string[]>([])
+  const [cues, setCues] = useState<EditCue[]>([])
+  const [saved, setSaved] = useState<EditCue[]>([])
+  const [history, setHistory] = useState<History<EditCue[]>>(emptyHistory)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [notice, setNotice] = useState('')
   const [conflict, setConflict] = useState(false)
   const [follow, setFollow] = useState(true)
   const [currentTime, setCurrentTime] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [videoError, setVideoError] = useState('')
   const [confirmClose, setConfirmClose] = useState(false)
+  const [pendingMerge, setPendingMerge] = useState<number | null>(null)
+  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [shiftInput, setShiftInput] = useState('0,5')
   const [scrollTop, setScrollTop] = useState(0)
   const [viewportHeight, setViewportHeight] = useState(600)
   const [focusTick, setFocusTick] = useState(0)
@@ -44,12 +58,17 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   const videoRef = useRef<HTMLVideoElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const areas = useRef(new Map<number, HTMLTextAreaElement>())
-  const pendingFocus = useRef<number | null>(null)
+  const pendingFocus = useRef<{ index: number; caret?: number } | null>(null)
+  const focusBase = useRef<{ id: number; cues: EditCue[] } | null>(null)
+  const tempId = useRef(-1)
 
   function adopt(next: CaptionMaster) {
+    const list = next.cues.map(({ id, start, end, text }) => ({ id, start, end, text }))
     setMaster(next)
-    setCues(next.cues)
-    setSavedTexts(next.cues.map((cue) => cue.text))
+    setCues(list)
+    setSaved(list)
+    setHistory(emptyHistory())
+    focusBase.current = null
   }
 
   async function load() {
@@ -58,6 +77,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
       adopt(await client.projects.getCaptionMaster(projectId))
       setConflict(false)
       setSaveError('')
+      setNotice('')
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'Undertexterna kunde inte hämtas.')
     }
@@ -67,9 +87,18 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     void load()
   }, [projectId])
 
-  const changed = useMemo(() => changedIndexes(savedTexts, cues.map((cue) => cue.text)), [savedTexts, cues])
-  const dirty = changed.length > 0
+  const diff = useMemo(() => diffState(saved, cues), [saved, cues])
+  const dirty = diff.dirty
+  const changeCount = diff.changedIds.size + diff.removed + (diff.reordered && diff.changedIds.size + diff.removed === 0 ? 1 : 0)
   const readOnly = master?.legacy ?? false
+  const issues = useMemo(() => validateCues(cues), [cues])
+  const issueByIndex = useMemo(() => {
+    const map = new Map<number, (typeof issues)[number]>()
+    for (const issue of issues) if (!map.has(issue.index) || issue.error) map.set(issue.index, issue)
+    return map
+  }, [issues])
+  const shorts = useMemo(() => shortIndexes(cues), [cues])
+  const selected = cues[selectedIndex]
 
   // ---- Video ----
   const hlsUrl = master?.originalHlsUrl
@@ -98,14 +127,15 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     }
   }, [hlsUrl])
 
-  function seekTo(seconds: number, play: boolean) {
+  function seekTo(target: number, play: boolean) {
     const video = videoRef.current
     if (!video) return
-    video.currentTime = Math.max(0, seconds)
+    video.currentTime = Math.max(0, target)
     setCurrentTime(video.currentTime)
     if (play) void video.play().catch(() => undefined)
   }
 
+  const playhead = () => videoRef.current?.currentTime ?? currentTime
   const activeIndex = useMemo(() => activeCueIndex(cues, currentTime), [cues, currentTime])
   const activeCue = activeIndex >= 0 ? cues[activeIndex] : null
 
@@ -132,22 +162,29 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     }
   }
 
-  function focusRow(index: number) {
-    if (index < 0 || index >= cues.length) return
-    revealRow(index)
-    pendingFocus.current = index
+  // Raden får fokus (och markören sin plats) så snart den finns i listan, efter att den scrollats fram vid behov.
+  function focusRow(index: number, caret?: number) {
+    pendingFocus.current = { index, caret }
+    setSelectedIndex(index)
     setFocusTick((tick) => tick + 1)
   }
 
   useEffect(() => {
-    const index = pendingFocus.current
-    if (index === null) return
-    const area = areas.current.get(index)
+    const pending = pendingFocus.current
+    if (!pending) return
+    if (pending.index < 0 || pending.index >= cues.length) {
+      pendingFocus.current = null
+      return
+    }
+    const area = areas.current.get(pending.index)
     if (area) {
       pendingFocus.current = null
       area.focus()
+      if (pending.caret !== undefined) area.setSelectionRange(pending.caret, pending.caret)
+    } else {
+      revealRow(pending.index)
     }
-  }, [focusTick, scrollTop, first, last])
+  }, [focusTick, scrollTop, first, last, cues])
 
   // Listan följer med uppspelningen, men inte medan operatören skriver.
   useEffect(() => {
@@ -166,17 +203,88 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     if (follow && activeIndex >= 0) revealRow(activeIndex)
   }, [follow])
 
+  // ---- Ändringar och ångra ----
   function setText(index: number, text: string) {
     setCues((current) => current.map((cue, position) => (position === index ? { ...cue, text } : cue)))
+  }
+
+  // Skrivning i en ruta är en ändring för sig: den sparas i historiken när rutan lämnas (eller vid ångra), inte per tecken.
+  function commitTypingTo(base: History<EditCue[]>): History<EditCue[]> {
+    const typing = focusBase.current
+    focusBase.current = null
+    if (!typing) return base
+    const before = typing.cues.find((cue) => cue.id === typing.id)
+    const now = cues.find((cue) => cue.id === typing.id)
+    return before && now && before.text !== now.text ? record(base, typing.cues) : base
+  }
+
+  function apply(result: OpResult): boolean {
+    if (!result.ok) {
+      setNotice(result.reason)
+      return false
+    }
+    setNotice('')
+    setHistory(record(commitTypingTo(history), cues))
+    setCues(result.cues)
+    focusRow(result.focusIndex, result.caret)
+    return true
+  }
+
+  function doUndo() {
+    const base = commitTypingTo(history)
+    const result = undo(base, cues)
+    if (!result) {
+      setHistory(base)
+      return
+    }
+    setHistory(result.history)
+    setCues(result.value)
+    setNotice('')
+  }
+
+  function doRedo() {
+    const result = redo(history, cues)
+    if (!result) return
+    setHistory(result.history)
+    setCues(result.value)
+    setNotice('')
+  }
+
+  const newId = () => tempId.current--
+  const caretOf = (index: number) => areas.current.get(index)?.selectionStart ?? 0
+
+  function startMerge(firstIndex: number) {
+    const info = mergeInfo(cues, firstIndex)
+    if (!info) {
+      setNotice('Det finns ingen replik att slå ihop med.')
+      return
+    }
+    if (info.fits && info.gapSeconds > LONG_GAP_SECONDS) setPendingMerge(firstIndex)
+    else apply(mergeWithNext(cues, firstIndex))
+  }
+
+  function mergeTitle(firstIndex: number, direction: 'up' | 'down'): string {
+    const info = mergeInfo(cues, firstIndex)
+    const target = direction === 'down' ? 'nästa' : 'föregående'
+    if (!info) return `Ingen ${target} replik`
+    if (!info.fits) return `Slå ihop med ${target}: blir för lång (över två rader). Flytta ord i stället.`
+    const pause = info.gapSeconds > 0.05 ? `, paus ${seconds(info.gapSeconds)} s` : ''
+    return `Slå ihop med ${target}: ${seconds(info.durationSeconds)} s, ${info.lines} ${info.lines === 1 ? 'rad' : 'rader'}${pause}\n“${(info.text ?? '').replace('\n', ' ')}”`
   }
 
   // ---- Spara och stäng ----
   async function save() {
     if (!master || !dirty || saving || readOnly) return
+    const error = issues.find((issue) => issue.error)
+    if (error) {
+      setNotice(`Replik ${error.index + 1}: ${error.message}`)
+      focusRow(error.index)
+      return
+    }
     setSaving(true)
     setSaveError('')
     try {
-      adopt(await client.projects.saveCaptionMaster(projectId, { ifVersion: master.version, cues: savePayload(cues) }))
+      adopt(await client.projects.saveCaptionMaster(projectId, { ifVersion: master.version, cues: savePayload(sortedForSave(cues)) }))
       onSaved?.()
     } catch (err) {
       if (err instanceof ApiError && err.code === 'version_conflict') setConflict(true)
@@ -193,7 +301,19 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape' || confirmClose) return
+      const modifier = event.metaKey || event.ctrlKey
+      if (modifier && (event.key === 'z' || event.key === 'Z')) {
+        event.preventDefault()
+        if (event.shiftKey) doRedo()
+        else doUndo()
+        return
+      }
+      if (modifier && (event.key === 'y' || event.key === 'Y')) {
+        event.preventDefault()
+        doRedo()
+        return
+      }
+      if (event.key !== 'Escape' || confirmClose || pendingMerge !== null) return
       if (event.target instanceof HTMLTextAreaElement) return
       requestClose()
     }
@@ -212,10 +332,13 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
 
   function onAreaKeyDown(event: KeyboardEvent, index: number) {
     const area = event.currentTarget as HTMLTextAreaElement
+    const atStart = area.selectionStart === 0 && area.selectionEnd === 0
+    const atEnd = area.selectionStart === area.value.length && area.selectionEnd === area.value.length
     if (event.key === 'Escape') {
       event.preventDefault()
       event.stopPropagation()
-      setText(index, savedTexts[index] ?? '')
+      const original = saved.find((cue) => cue.id === cues[index].id)
+      if (original) setText(index, original.text)
     } else if (event.key === 'Enter') {
       event.preventDefault()
       if (event.shiftKey) {
@@ -231,11 +354,32 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     } else if (event.key === 'Tab') {
       event.preventDefault()
       focusRow(event.shiftKey ? index - 1 : index + 1)
+    } else if (event.key === 'Backspace' && atStart && index > 0 && !readOnly) {
+      // Som i en textredigerare: Backspace i början slår ihop med föregående replik.
+      event.preventDefault()
+      startMerge(index - 1)
+    } else if (event.key === 'Delete' && atEnd && index < cues.length - 1 && !readOnly) {
+      event.preventDefault()
+      startMerge(index)
     }
+  }
+
+  function jumpToShort(direction: 1 | -1) {
+    if (shorts.length === 0) return
+    const target =
+      direction === 1 ? (shorts.find((index) => index > selectedIndex) ?? shorts[0]) : ([...shorts].reverse().find((index) => index < selectedIndex) ?? shorts[shorts.length - 1])
+    focusRow(target)
+    seekTo(cues[target].start, false)
+  }
+
+  function parsedShift(): number | null {
+    const value = Number.parseFloat(shiftInput.replace(',', '.'))
+    return Number.isFinite(value) && value !== 0 ? value : null
   }
 
   const publishedStart = master?.publishedStartSeconds
   const publishedEnd = master?.publishedEndSeconds
+  const pendingInfo = pendingMerge === null ? null : mergeInfo(cues, pendingMerge)
 
   return (
     <div class="ce-scrim" role="dialog" aria-modal="true" aria-label="Redigera undertexter">
@@ -251,6 +395,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
           </div>
         </div>
         <div class="ce-actions">
+          <button class="btn btn-sm" type="button" disabled={history.past.length === 0 || readOnly} onClick={doUndo} title="Ångra (Ctrl/Cmd+Z)">Ångra</button>
+          <button class="btn btn-sm" type="button" disabled={history.future.length === 0 || readOnly} onClick={doRedo} title="Gör om (Ctrl/Cmd+Skift+Z)">Gör om</button>
           {publishedStart !== undefined && (
             <button class="btn btn-sm" type="button" onClick={() => seekTo(publishedStart, false)}>
               Hoppa till publicerad del
@@ -260,7 +406,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
             <input type="checkbox" checked={follow} onChange={(event) => setFollow(event.currentTarget.checked)} />
             Följ med
           </label>
-          <span class="ce-dirty" aria-live="polite">{dirty ? `${changed.length} osparade ändringar` : master ? 'Sparat' : ''}</span>
+          <span class="ce-dirty" aria-live="polite">{dirty ? `${changeCount} osparade ändringar` : master ? 'Sparat' : ''}</span>
           <button class="btn btn-sm btn-primary" type="button" disabled={!dirty || saving || readOnly} onClick={() => void save()}>
             {saving ? 'Sparar…' : 'Spara'}
           </button>
@@ -286,6 +432,12 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
         </div>
       )}
       {saveError && <div class="ce-banner ce-error" role="alert">{saveError}</div>}
+      {notice && (
+        <div class="ce-banner ce-warn" role="status">
+          {notice}
+          <button class="ib" type="button" aria-label="Stäng meddelandet" onClick={() => setNotice('')}>✕</button>
+        </div>
+      )}
 
       {!master && !loadError && <div class="ce-loading">Hämtar undertexter…</div>}
 
@@ -297,15 +449,68 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
               {activeCue && <div class="ce-overlay" aria-hidden="true">{activeCue.text}</div>}
             </div>
             {videoError && <p class="ce-error-text" role="alert">{videoError}</p>}
+
+            {selected && (
+              <div class="ce-tools" aria-label="Vald replik">
+                <div class="ce-tools-title">
+                  Replik {selectedIndex + 1}: {formatCueTime(selected.start)} – {formatCueTime(selected.end)} ({seconds(selected.end - selected.start)} s)
+                </div>
+                <div class="ce-tools-row">
+                  <span class="ce-tools-label">Start</span>
+                  <button class="btn btn-sm" type="button" disabled={readOnly} onClick={() => apply(setTime(cues, selectedIndex, 'start', playhead()))}>Starta här</button>
+                  {[-0.5, -0.1, 0.1, 0.5].map((delta) => (
+                    <button key={delta} class="btn btn-sm ce-nudge" type="button" disabled={readOnly} onClick={() => apply(nudge(cues, selectedIndex, 'start', delta))}>
+                      {delta > 0 ? '+' : '−'}{Math.abs(delta).toString().replace('.', ',')}
+                    </button>
+                  ))}
+                </div>
+                <div class="ce-tools-row">
+                  <span class="ce-tools-label">Slut</span>
+                  <button class="btn btn-sm" type="button" disabled={readOnly} onClick={() => apply(setTime(cues, selectedIndex, 'end', playhead()))}>Sluta här</button>
+                  {[-0.5, -0.1, 0.1, 0.5].map((delta) => (
+                    <button key={delta} class="btn btn-sm ce-nudge" type="button" disabled={readOnly} onClick={() => apply(nudge(cues, selectedIndex, 'end', delta))}>
+                      {delta > 0 ? '+' : '−'}{Math.abs(delta).toString().replace('.', ',')}
+                    </button>
+                  ))}
+                </div>
+                <div class="ce-tools-row">
+                  <span class="ce-tools-label">Flytta</span>
+                  <input
+                    class="ce-shift-input"
+                    type="text"
+                    inputMode="decimal"
+                    aria-label="Förskjutning i sekunder"
+                    value={shiftInput}
+                    onInput={(event) => setShiftInput(event.currentTarget.value)}
+                  />
+                  <span class="ce-unit">s</span>
+                  <button class="btn btn-sm" type="button" disabled={readOnly || parsedShift() === null} title="Förskjuter den valda repliken och alla efter den" onClick={() => { const delta = parsedShift(); if (delta !== null) apply(shiftFrom(cues, selectedIndex, delta)) }}>
+                    Vald och alla efter
+                  </button>
+                  <button class="btn btn-sm" type="button" disabled={readOnly || parsedShift() === null} title="Förskjuter alla repliker" onClick={() => { const delta = parsedShift(); if (delta !== null) apply(shiftFrom(cues, 0, delta)) }}>
+                    Alla
+                  </button>
+                </div>
+                <div class="ce-tools-row">
+                  <button class="btn btn-sm" type="button" disabled={readOnly} onClick={() => apply(addCue(cues, playhead(), newId()))}>Lägg till replik här</button>
+                  <span class="ce-tools-label ce-short-nav">
+                    Korta repliker: {shorts.length}
+                    <button class="ib" type="button" aria-label="Föregående korta replik" title="Föregående korta replik" disabled={shorts.length === 0} onClick={() => jumpToShort(-1)}>▲</button>
+                    <button class="ib" type="button" aria-label="Nästa korta replik" title="Nästa korta replik" disabled={shorts.length === 0} onClick={() => jumpToShort(1)}>▼</button>
+                  </span>
+                </div>
+              </div>
+            )}
+
             <p class="ce-help">
-              Enter = nästa rad · Skift+Enter = ny rad · Esc = ångra raden · Tab = nästa rad. Klicka på en rads tid för att spela den.
-              Gräns: {MAX_LINE_LENGTH} tecken per rad och två rader.
+              Enter = nästa rad · Skift+Enter = ny rad · Esc = ångra raden · Tab = nästa rad · Backspace i början / Delete i slutet slår ihop med
+              grannen. Klicka på en rads tid för att spela den. Gräns: {MAX_LINE_LENGTH} tecken per rad och två rader.
             </p>
           </section>
 
           <section class="ce-list-wrap" aria-label="Repliker">
             <div class="ce-list-head" aria-hidden="true">
-              <span>#</span><span>Start</span><span>Text</span>
+              <span>#</span><span>Start</span><span>Text</span><span />
             </div>
             <div
               class="ce-list"
@@ -323,21 +528,26 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                   const index = first + offset
                   const lines = lineInfo(cue.text)
                   const status = rangeStatus(cue, publishedStart, publishedEnd)
+                  const issue = issueByIndex.get(index)
+                  const short = isShort(cue)
                   const classes = [
                     'ce-row',
                     index === activeIndex ? 'is-active' : '',
+                    index === selectedIndex ? 'is-selected' : '',
                     status === 'outside' ? 'is-outside' : status === 'edge' ? 'is-edge' : '',
-                    changed.includes(index) ? 'is-changed' : '',
+                    diff.changedIds.has(cue.id) ? 'is-changed' : '',
                     hasLineWarning(cue.text) ? 'has-warning' : '',
+                    short ? 'is-short' : '',
+                    issue?.error ? 'has-error' : '',
                   ].filter(Boolean).join(' ')
                   return (
                     <div key={cue.id} class={classes} style={{ top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}>
-                      <button class="ce-time ce-num" type="button" title="Spela den här repliken" onClick={() => seekTo(cue.start, true)}>{index + 1}</button>
+                      <button class="ce-time ce-num" type="button" title="Spela den här repliken" onClick={() => { setSelectedIndex(index); seekTo(cue.start, true) }}>{index + 1}</button>
                       <button
                         class="ce-time"
                         type="button"
-                        title={`Spela den här repliken (${formatCueTime(cue.start)}–${formatCueTime(cue.end)}, ${(cue.end - cue.start).toFixed(1)} s)`}
-                        onClick={() => seekTo(cue.start, true)}
+                        title={`Spela den här repliken (${formatCueTime(cue.start)}–${formatCueTime(cue.end)}, ${seconds(cue.end - cue.start)} s)`}
+                        onClick={() => { setSelectedIndex(index); seekTo(cue.start, true) }}
                       >
                         {formatCueTime(cue.start)}
                       </button>
@@ -351,8 +561,16 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                           value={cue.text}
                           readOnly={readOnly}
                           aria-label={`Text för replik ${index + 1}`}
-                          onInput={(event) => setText(index, event.currentTarget.value)}
-                          onFocus={() => seekTo(cue.start, false)}
+                          onInput={(event) => {
+                            // Skrivning är en ändring för sig: utgångsläget sparas första gången något skrivs i rutan.
+                            if (focusBase.current?.id !== cue.id) focusBase.current = { id: cue.id, cues }
+                            setText(index, event.currentTarget.value)
+                          }}
+                          onFocus={() => {
+                            setSelectedIndex(index)
+                            seekTo(cue.start, false)
+                          }}
+                          onBlur={() => setHistory(commitTypingTo(history))}
                           onKeyDown={(event) => onAreaKeyDown(event, index)}
                         />
                         <div class="ce-counters" aria-hidden="true">
@@ -360,8 +578,32 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                             <span key={lineIndex} class={line.tooLong ? 'is-over' : ''}>{line.length}/{MAX_LINE_LENGTH}</span>
                           ))}
                           {lines.length > 2 && <span class="is-over">{lines.length} rader</span>}
+                          {short && <span class="ce-chip">Kort</span>}
+                          {issue && <span class={issue.error ? 'is-over' : 'ce-note'}>{issue.message}</span>}
                         </div>
                       </div>
+                      {!readOnly && (
+                        <div class="ce-row-actions">
+                          <button class="ce-icon" type="button" title={mergeTitle(index - 1, 'up')} disabled={index === 0} onClick={() => startMerge(index - 1)}>
+                            <Icon name="vertical_align_top" size={16} />
+                          </button>
+                          <button class="ce-icon" type="button" title={mergeTitle(index, 'down')} disabled={index >= cues.length - 1} onClick={() => startMerge(index)}>
+                            <Icon name="vertical_align_bottom" size={16} />
+                          </button>
+                          <button class="ce-icon" type="button" title="Dela vid markören (tiden från videons position om den ligger i repliken, annars efter antal tecken)" onClick={() => apply(splitCue(cues, index, caretOf(index), newId(), playhead()))}>
+                            <Icon name="call_split" size={16} />
+                          </button>
+                          <button class="ce-icon" type="button" title="Flytta orden före markören till föregående replik" disabled={index === 0} onClick={() => apply(moveHeadToPrevious(cues, index, caretOf(index)))}>
+                            <Icon name="arrow_upward" size={16} />
+                          </button>
+                          <button class="ce-icon" type="button" title="Flytta orden efter markören till nästa replik" disabled={index >= cues.length - 1} onClick={() => apply(moveTailToNext(cues, index, caretOf(index)))}>
+                            <Icon name="arrow_downward" size={16} />
+                          </button>
+                          <button class="ce-icon" type="button" title="Ta bort repliken" onClick={() => apply(deleteCue(cues, index))}>
+                            <Icon name="delete" size={16} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -369,6 +611,24 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
             </div>
           </section>
         </div>
+      )}
+
+      {pendingMerge !== null && pendingInfo && (
+        <ConfirmModal
+          title="Slå ihop trots paus?"
+          confirmLabel="Slå ihop ändå"
+          onCancel={() => setPendingMerge(null)}
+          onConfirm={() => {
+            const index = pendingMerge
+            setPendingMerge(null)
+            apply(mergeWithNext(cues, index))
+          }}
+        >
+          <p>
+            Det är {seconds(pendingInfo.gapSeconds)} s paus mellan replikerna. Slår du ihop dem visas hela texten under pausen, som en replik på
+            {' '}{seconds(pendingInfo.durationSeconds)} s.
+          </p>
+        </ConfirmModal>
       )}
 
       {confirmClose && (
@@ -379,7 +639,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
           onCancel={() => setConfirmClose(false)}
           onConfirm={onClose}
         >
-          <p>Du har {changed.length} osparade ändringar. De går förlorade om du stänger nu.</p>
+          <p>Du har {changeCount} osparade ändringar. De går förlorade om du stänger nu.</p>
         </ConfirmModal>
       )}
     </div>
