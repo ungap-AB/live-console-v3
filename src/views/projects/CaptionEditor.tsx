@@ -587,7 +587,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
 
           <section class="ce-list-wrap" aria-label="Repliker">
             <div class="ce-list-head" aria-hidden="true" style={energy ? { marginLeft: `${WAVEFORM_WIDTH}px` } : undefined}>
-              <span>#</span><span>Start</span><span>Text</span><span />
+              <span>Text</span><span>#</span><span>Start</span><span />
             </div>
             <div class="ce-list-main">
             {energy && (
@@ -640,15 +640,6 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                   ].filter(Boolean).join(' ')
                   return (
                     <div key={cue.id} class={classes} style={{ top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}>
-                      <button class="ce-time ce-num" type="button" title="Spela den här repliken (klicka igen för paus)" onClick={() => playRow(index)}>{index + 1}</button>
-                      <button
-                        class="ce-time"
-                        type="button"
-                        title={`Spela den här repliken (klicka igen för paus), ${seconds(cue.end - cue.start)} s`}
-                        onClick={() => playRow(index)}
-                      >
-                        {formatCueTime(cue.start)}
-                      </button>
                       <div class="ce-text">
                         <textarea
                           ref={(element) => {
@@ -681,6 +672,15 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                         })()}
                         {issue?.error && <div class="ce-counters" role="alert"><span class="is-over">{issue.message}</span></div>}
                       </div>
+                      <button class="ce-time ce-num" type="button" title="Spela den här repliken (klicka igen för paus)" onClick={() => playRow(index)}>{index + 1}</button>
+                      <button
+                        class="ce-time"
+                        type="button"
+                        title={`Spela den här repliken (klicka igen för paus), ${seconds(cue.end - cue.start)} s`}
+                        onClick={() => playRow(index)}
+                      >
+                        {formatCueTime(cue.start)}
+                      </button>
                       {!readOnly && (
                         <div class="ce-row-actions">
                           <button class="ce-icon" type="button" title="Ta bort repliken" onClick={() => apply(deleteCue(cues, index))}>
