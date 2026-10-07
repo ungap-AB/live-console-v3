@@ -21,7 +21,9 @@ export interface TimeWindow {
 export function timeAtRow(cues: readonly CueSpan[], row: number): number {
   const count = cues.length
   if (count === 0) return 0
-  if (row <= 0) return cues[0].start + row * Math.max(0.5, cues[0].end - cues[0].start)
+  // Före första repliken räknas tiden mot ljudets början: en rad över första repliken motsvarar tid 0, så att ljudet som ligger före
+  // första repliken (t.ex. när de första replikerna tagits bort) syns när listan står överst.
+  if (row <= 0) return Math.max(0, cues[0].start) * (1 + Math.max(-1, row))
   if (row >= count - 1) {
     const last = cues[count - 1]
     return last.start + (row - (count - 1)) * Math.max(0.5, last.end - last.start)
@@ -37,7 +39,9 @@ export function timeAtRow(cues: readonly CueSpan[], row: number): number {
  */
 export function viewWindow(cues: readonly CueSpan[], scrollTop: number, viewportHeight: number, rowHeight: number, minSeconds = 8): TimeWindow {
   if (cues.length === 0 || rowHeight <= 0) return { t0: 0, t1: minSeconds }
-  let t0 = timeAtRow(cues, scrollTop / rowHeight)
+  // Överst i listan går bandet en rad längre upp (ljudet före första repliken); övergången är mjuk och försvinner efter en rads scroll.
+  const row = scrollTop / rowHeight
+  let t0 = timeAtRow(cues, row < 1 ? 2 * row - 1 : row)
   let t1 = timeAtRow(cues, (scrollTop + viewportHeight) / rowHeight)
   if (t1 - t0 < minSeconds) {
     const middle = (t0 + t1) / 2

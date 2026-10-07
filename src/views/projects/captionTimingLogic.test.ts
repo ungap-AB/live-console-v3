@@ -36,17 +36,23 @@ test('inSpeech, nästa talstart och talets slut inom ett intervall', () => {
 
 test('slut = talets slut + väntan när det räcker, annars läsetid, aldrig längre än nästa start', () => {
   const runs = speechRuns(energyWith(30, [[1, 6], [20, 21]]))
-  // Replik 1: tal 1–6 s (10 ord → läsetid 1,4+1,2 = 2,6 s): talets slut + 0,25 = 6,25 vinner.
+  // Replik 1: tal 1–6 s (10 ord → golv max(2, 2,5) = 2,5 s): talets slut + 0,25 = 6,25 vinner.
   const first = cue(1, 1, 99, 'ett två tre fyra fem sex sju åtta nio tio')
-  // Replik 2: ett enda ord, tal 20–21 s: talets slut + väntan 21,25 mot läsetid 20 + 1,52 = 21,52 → läsetiden.
+  // Replik 2: ett enda ord, tal 20–21 s: talets slut + väntan 21,25 mot golv 20 + 1,1 → 21,25.
   const second = cue(2, 20, 99, 'Tack')
   const [a, b] = deriveTimes([first, second], runs, 30)
   assert.ok(Math.abs(a.end - 6.25) < 0.05, String(a.end))
-  assert.ok(Math.abs(b.end - 21.52) < 0.05, String(b.end))
-  // Läsetid vinner när talet är kort: ett ord som sägs på 0,3 s visas minst 1,52 s.
+  assert.ok(Math.abs(b.end - 21.25) < 0.05, String(b.end))
+  // Golvet vinner när talet är kort: ett ord som sägs på 0,3 s visas minst 1,1 s, två ord minst 2 s (korta repliker visas relativt längre).
   const brief = speechRuns(energyWith(30, [[5, 5.3]]))
   const [c] = deriveTimes([cue(1, 5, 9, 'Ja')], brief, 30)
-  assert.ok(Math.abs(c.end - 6.52) < 0.05, String(c.end))
+  assert.ok(Math.abs(c.end - 6.1) < 0.05, String(c.end))
+  const [two] = deriveTimes([cue(1, 5, 9, 'Ja tack')], brief, 30)
+  assert.ok(Math.abs(two.end - 7) < 0.05, String(two.end))
+  // Långa repliker i snabbt tal: 0,25 s per ord som golv (12 ord → 3 s) när talet är kortare än så.
+  const fast = speechRuns(energyWith(30, [[5, 6.5]]))
+  const [long] = deriveTimes([cue(1, 5, 9, 'ett två tre fyra fem sex sju åtta nio tio elva tolv')], fast, 30)
+  assert.ok(Math.abs(long.end - 8) < 0.05, String(long.end))
   // Aldrig längre än nästa start.
   const [d] = deriveTimes([cue(1, 5, 9, 'Ja'), cue(2, 5.5, 9, 'Nej')], brief, 30)
   assert.ok(d.end <= 5.5 + 1e-9)
@@ -72,5 +78,5 @@ test('härledningen är idempotent, bevarar oförändrade repliker och rör inge
   assert.equal(twice[0], once[0]) // samma objekt
   const untouched = [cue(1, 0.5, 9, 'a b')]
   assert.deepEqual(deriveTimes(untouched, null, 30), untouched)
-  assert.deepEqual(DEFAULT_TIMING, { lingerSeconds: 0.25, minBaseSeconds: 1.4, perWordSeconds: 0.12, startLeadSeconds: 0 })
+  assert.deepEqual(DEFAULT_TIMING, { lingerSeconds: 0.25, minSeconds: 2.0, singleWordSeconds: 1.1, perWordSeconds: 0.25, startLeadSeconds: 0 })
 })

@@ -338,17 +338,14 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     return null
   }
 
-  // Klick på en rads nummer/tid: en annan rad väljs och spelas från sin start; samma rad växlar mellan spela och paus (andningspaus).
+  // Klick på en rads nummer/tid: raden väljs och spelas från sin start. Klick på samma rad medan den spelas pausar (andningspaus);
+  // klick igen spelar från radens start.
   function playRow(index: number) {
     const video = videoRef.current
     const cue = cues[index]
-    if (index === selectedIndex && video && cue) {
-      if (!video.paused) {
-        video.pause()
-        return
-      }
-      const position = video.currentTime
-      seekTo(position >= cue.start - 0.05 && position <= cue.end + 0.5 ? position : cue.start, true)
+    if (!cue) return
+    if (index === selectedIndex && video && !video.paused) {
+      video.pause()
       return
     }
     setSelectedIndex(index)

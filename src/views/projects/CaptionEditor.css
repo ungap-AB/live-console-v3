@@ -233,8 +233,16 @@
 }
 
 .ce-row.is-active {
-  background: var(--surface-2);
-  box-shadow: inset 3px 0 0 var(--focus);
+  /* Den aktiva repliken (den som visas i videon just nu) ska synas tydligt: tonad bakgrund, bred list och fylld radnummerruta. */
+  background: color-mix(in srgb, var(--focus) 13%, var(--panel));
+  box-shadow: inset 6px 0 0 var(--focus);
+}
+
+.ce-row.is-active .ce-num {
+  font-weight: 700;
+  color: #fff;
+  background: var(--focus);
+  border-radius: 0 4px 4px 0;
 }
 
 .ce-row.is-outside {
@@ -252,7 +260,7 @@
 }
 
 .ce-row.is-active.is-changed {
-  box-shadow: inset 3px 0 0 var(--warn);
+  box-shadow: inset 6px 0 0 var(--focus), inset 10px 0 0 var(--warn);
 }
 
 .ce-time {

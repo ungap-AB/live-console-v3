@@ -4,19 +4,23 @@ import type { EditCue } from './captionEditOps.ts'
 
 // UNG-161: gränsmodellen. Operatören placerar bara gränserna (replikernas start) mot vågformen. Visningstiden räknas ut:
 // slutet ur talets slut och antal ord, och en gräns i en paus skjuts fram till nästa talstart. Reglerna är kalibrerade mot
-// mänskliga facit (live-transcribe, kommandot calibrate: median fel 0,16 s, 91 % inom 0,5 s). Konfigureras senare (ordlängd).
+// mänskliga facit (live-transcribe, kommandot calibrate, 3 möten och ca 3 800 rutor: median fel 0,14 s, 92 % inom 0,5 s; korta
+// repliker visas relativt längre, 0,35 s per ord som golv är för långt). Konfigureras senare (ordlängd).
 
 export interface TimingOptions {
   /** Väntan efter talets slut innan texten försvinner. */
   lingerSeconds: number
-  /** Lägsta visningstid: base + perWord · antal ord. Ger läsetid för korta repliker i snabbt tal. */
-  minBaseSeconds: number
+  /** Lägsta visningstid för en replik med två ord eller fler. Människor visar korta repliker ca 2 s oavsett om de har 2 eller 6 ord. */
+  minSeconds: number
+  /** Lägsta visningstid för en replik med ett enda ord. */
+  singleWordSeconds: number
+  /** Läsetid per ord som golv för långa repliker i snabbt tal (golvet är det större av minSeconds och ord · perWordSeconds). */
   perWordSeconds: number
   /** Hur långt före talstart en replik visas när gränsen ligger i en paus (människor ligger runt 0). */
   startLeadSeconds: number
 }
 
-export const DEFAULT_TIMING: TimingOptions = { lingerSeconds: 0.25, minBaseSeconds: 1.4, perWordSeconds: 0.12, startLeadSeconds: 0 }
+export const DEFAULT_TIMING: TimingOptions = { lingerSeconds: 0.25, minSeconds: 2.0, singleWordSeconds: 1.1, perWordSeconds: 0.25, startLeadSeconds: 0 }
 
 /** Talsegment i sekunder, sorterade och utan överlapp. Luckor under 0,15 s (andning, klusiler) räknas inte som paus. */
 export interface SpeechRuns {
@@ -115,7 +119,8 @@ const wordCount = (text: string) => text.split(/\s+/).filter(Boolean).length
 /**
  * Räknar ut visningstiden för varje replik ur gränserna (replikernas start), texten och talet.
  * Start: ligger gränsen i en paus skjuts den fram till nästa talstart (minus startLead), men aldrig förbi nästa gräns.
- * Slut: det tidigaste av nästa starts och det senare av (talets slut + väntan) och (start + lägsta läsetid).
+ * Slut: det tidigaste av nästa starts och det senare av (talets slut + väntan) och (start + golv), där golvet är 1,1 s för ett ord och
+ * annars det större av 2 s och 0,25 s per ord.
  * Idempotent: en lista som redan härletts ändras inte av en ny härledning. Utan tal (null) lämnas tiderna orörda.
  * Oförändrade repliker behåller sin identitet i listan.
  */
@@ -132,7 +137,9 @@ export function deriveTimes(cues: readonly EditCue[], runs: SpeechRuns | null, t
     const nextCut = cues[index + 1]?.start ?? totalSeconds
     const nextStart = starts[index + 1] ?? totalSeconds
     const speechEnd = lastSpeechEnd(runs, start, nextCut) ?? start
-    const reading = start + options.minBaseSeconds + options.perWordSeconds * wordCount(cue.text)
+    const words = wordCount(cue.text)
+    const floor = words <= 1 ? options.singleWordSeconds : Math.max(options.minSeconds, options.perWordSeconds * words)
+    const reading = start + floor
     const end = round(Math.max(start + 0.1, Math.min(nextStart, Math.max(speechEnd + options.lingerSeconds, reading))))
     return cue.start === start && cue.end === end ? cue : { ...cue, start, end }
   })

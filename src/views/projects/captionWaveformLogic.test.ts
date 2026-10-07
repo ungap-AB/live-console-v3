@@ -27,26 +27,39 @@ test('tid vid radposition: radens start vid heltal, linjärt däremellan och fö
   assert.equal(timeAtRow(cues, 2.25), 11)
   assert.equal(timeAtRow(cues, 3), 14)
   assert.equal(timeAtRow(cues, 4), 15) // förlängt med sista replikens längd (1 s)
-  assert.equal(timeAtRow(cues, -1), 1 - 3) // och första replikens längd (3 s) före första
+  assert.equal(timeAtRow(cues, -1), 0) // en rad över första repliken = ljudets början
+  assert.equal(timeAtRow(cues, -0.5), 0.5)
+  assert.equal(timeAtRow(cues, -9), 0) // aldrig före 0
   assert.equal(timeAtRow([], 3), 0)
   assert.equal(timeAtRow([{ start: 2, end: 2 }], 1), 2.5) // minsta längd 0,5 s
 })
 
 test('fönstret följer listans scroll mjukt och rymmer varje synlig rads start', () => {
   const rowHeight = 76
-  const win = viewWindow(cues, 0, 76 * 3, rowHeight)
-  assert.equal(win.t0, 1)
-  assert.equal(win.t1, 14) // tre rader ner = fjärde replikens start
+  // Överst i listan går bandet en rad längre upp: ljudet från början fram till första repliken syns.
+  const top = viewWindow(cues, 0, 76 * 3, rowHeight)
+  assert.equal(top.t0, 0)
+  assert.equal(top.t1, 14) // tre rader ner = fjärde replikens start
   const half = viewWindow(cues, 38, 76 * 2, rowHeight, 0)
-  assert.equal(half.t0, 3) // halv rad ner: mitt mellan start 1 och 5
+  assert.equal(half.t0, 1) // en halv rad ner: övergången har kommit halvvägs, fönstret börjar vid första repliken
   assert.equal(half.t1, 12) // 2,5 rader ner: mitt mellan start 10 och 14
+  const scrolled = viewWindow(cues, 76, 76 * 3, rowHeight) // en rad ner: raka mappningen, rad 1 överst
+  assert.equal(scrolled.t0, 5)
+  assert.equal(scrolled.t1, 15) // fyra rader ner förlängs med sista replikens längd (1 s)
+})
+
+test('ljudet före första repliken syns överst även när de första replikerna har tagits bort', () => {
+  const late = [{ start: 120, end: 124 }, { start: 125, end: 128 }]
+  const win = viewWindow(late, 0, 76 * 2, 76)
+  assert.equal(win.t0, 0)
+  assert.equal(win.t1, 128) // två rader ner: efter sista repliken förlängs med dess längd (3 s)
 })
 
 test('minsta fönster hindrar för stark zoom och centreras på samma mitt', () => {
   const dense = [{ start: 10, end: 10.5 }, { start: 10.5, end: 11 }, { start: 11, end: 11.5 }]
-  const win = viewWindow(dense, 0, 76 * 2, 76, 8)
+  const win = viewWindow(dense, 76, 76 * 2, 76, 8) // rad 1 överst: 10,5 till 11,5
   assert.equal(win.t1 - win.t0, 8)
-  assert.equal((win.t0 + win.t1) / 2, 10.5)
+  assert.equal((win.t0 + win.t1) / 2, 11)
   assert.deepEqual(viewWindow([], 0, 600, 76), { t0: 0, t1: 8 })
 })
 

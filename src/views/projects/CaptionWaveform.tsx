@@ -239,6 +239,8 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
       frozen.current = currentWindow()
       dragging.current = boundary
       latest.current.onDragStart(boundary)
+      // Ett klick på en gräns hoppar också dit, precis som ett klick på själva vågformen.
+      latest.current.onSeek(latest.current.cues[boundary].start)
       return
     }
     const { cues, height, onSeek, onSelect } = latest.current
