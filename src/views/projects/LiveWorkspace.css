@@ -203,3 +203,45 @@
   font-weight: 400;
   color: var(--ink-3);
 }
+
+/* Expanderat läge (UNG-129): arbetsytan täcker hela fönstret, så listorna får full höjd. Dialoger (z-index 50) ligger ovanför. */
+.lw-expand {
+  flex: none;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.lw-expand:hover {
+  background: var(--surface-2);
+}
+
+.lw.is-expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--bg);
+  padding: 12px 20px 16px;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.lw.is-expanded .lw-now {
+  flex-wrap: nowrap;
+  flex: none;
+}
+
+.lw.is-expanded .pcols,
+.lw.is-expanded .pcols-search + .pcols {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+}

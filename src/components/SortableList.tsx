@@ -11,6 +11,8 @@ interface SortableListProps<T> {
   /** Extra klass per rad (t.ex. "active" i Playout-vyn) — utöver dragging/over. */
   getItemClassName?: (item: T) => string
   onItemClick?: (item: T) => void
+  /** Rader som döljs (t.ex. av en sökning). De finns kvar i listan, så ordning, numrering och dragning gäller hela listan. */
+  hiddenIds?: ReadonlySet<string>
 }
 
 export function SortableList<T>({
@@ -21,6 +23,7 @@ export function SortableList<T>({
   disabled = false,
   getItemClassName,
   onItemClick,
+  hiddenIds,
 }: SortableListProps<T>) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [overIndex, setOverIndex] = useState<number | null>(null)
@@ -50,6 +53,7 @@ export function SortableList<T>({
             overIndex === index && dragIndex !== index ? 'over' : '',
             overIndex === index && dragIndex !== null && dragIndex > index ? 'drop-before' : '',
             overIndex === index && dragIndex !== null && dragIndex < index ? 'drop-after' : '',
+            hiddenIds?.has(getId(item)) ? 'filtered-out' : '',
             getItemClassName?.(item) ?? '',
           ]
             .filter(Boolean)

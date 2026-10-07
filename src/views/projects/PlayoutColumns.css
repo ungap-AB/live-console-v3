@@ -97,6 +97,74 @@
   height: max(260px, calc(100vh - 360px));
 }
 
+/* Sökraden (UNG-130) tar plats ovanför listorna, så de blir lika mycket lägre. */
+.pcols-search + .pcols {
+  height: max(260px, calc(100vh - 410px));
+}
+
+.pcols-search {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  min-height: 38px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink-3);
+}
+
+.pcols-search:focus-within {
+  border-color: var(--focus);
+}
+
+.pcols-search-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.pcols-search-clear {
+  flex: none;
+  display: inline-flex;
+  border: 0;
+  background: none;
+  padding: 2px;
+  border-radius: 4px;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.pcols-search-clear:hover {
+  background: var(--surface-2);
+}
+
+.pcols-search-count {
+  flex: none;
+  min-width: 110px;
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.pcols mark {
+  background: var(--surface-3);
+  color: inherit;
+  font-weight: 700;
+  border-radius: 2px;
+}
+
+.pcols li.search-hit {
+  box-shadow: inset 0 0 0 2px var(--focus);
+  border-radius: 6px;
+}
+
 .before-project-workspace .pcols {
   height: auto;
   flex: 1 1 auto;

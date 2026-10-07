@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
+import { notifyJobsChanged } from '../../app/jobsBus'
 import { client } from '../../data'
 import type { CaptionGeneration, ProjectCaptions } from '../../data/types'
 import { formatDateTime } from '../../app/time'
@@ -56,6 +57,13 @@ export function AutoCaptions({ projectId, projectName = '', videoDurationSeconds
   }, [projectId])
 
   const phase = generation ? autoCaptionsPhase(generation) : 'idle'
+  // När ett jobb blir klart eller misslyckas i panelens egen pollning ska jobblistan följa med (UNG-159).
+  const previousPhase = useRef<typeof phase | null>(null)
+  useEffect(() => {
+    if (generation && previousPhase.current !== null && previousPhase.current !== phase) notifyJobsChanged()
+    if (generation) previousPhase.current = phase
+  }, [phase, generation !== null])
+
   useEffect(() => {
     if (phase !== 'running') return
     const timer = setInterval(() => void refresh(), POLL_MS)
@@ -74,7 +82,12 @@ export function AutoCaptions({ projectId, projectName = '', videoDurationSeconds
     }
   }
 
-  const start = () => run(async () => setGeneration(await client.projects.generateCaptions(projectId, notify)), 'Det gick inte att starta undertextningen.')
+  // Jobblistan hämtas om direkt så jobbet syns i jobbfältet och Jobb-vyn (UNG-159).
+  const start = () =>
+    run(async () => {
+      setGeneration(await client.projects.generateCaptions(projectId, notify))
+      notifyJobsChanged()
+    }, 'Det gick inte att starta undertextningen.')
   const approve = () =>
     run(async () => {
       setConfirm(null)
@@ -93,6 +106,7 @@ export function AutoCaptions({ projectId, projectName = '', videoDurationSeconds
       setConfirm(null)
       if (generation?.job) await client.jobs.cancel(generation.job.id)
       await refresh()
+      notifyJobsChanged()
     }, 'Jobbet kunde inte avbrytas.')
 
   if (!generation) return null

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Agenda, AgendaItem, NameList, NameListPerson, Project } from '../../data/types'
 import { useResource } from '../../app/useResource'
@@ -7,12 +7,14 @@ import { EditableItemList } from '../../components/EditableItemList'
 import { PdfAttachmentsModal } from '../../components/PdfAttachmentsModal'
 import { Modal } from '../../components/Modal'
 import { OverflowMenu } from '../../components/OverflowMenu'
+import { Icon } from '../../components/Icon'
 import { CheckIcon, PdfIcon, PlayIcon, StopIcon } from '../../components/icons'
 import { formatHms } from '../../app/time'
 import { errorMessage, runOptimistic } from '../../app/optimistic'
 import { Toast } from '../../components/Toast'
 import type { ProjectActions } from './actions'
 import { useNameList } from './useNameList'
+import { highlight, markedHit, matches, moveActive, queryTokens, shouldActivateSearch, type Hit } from './playoutSearchLogic'
 import './PlayoutColumns.css'
 
 interface PlayoutColumnsProps {
@@ -22,13 +24,23 @@ interface PlayoutColumnsProps {
   live?: boolean
   openPicker?: 'agenda' | 'namelist' | null
   onPickerClosed?: () => void
+  /** Sökfält för båda listorna (UNG-130). Förvalt i läget Live. */
+  searchable?: boolean
+}
+
+function Highlighted({ text, tokens }: { text: string; tokens: readonly string[] }) {
+  return (
+    <>
+      {highlight(text, tokens).map((segment, index) => (segment.hit ? <mark key={index}>{segment.text}</mark> : segment.text))}
+    </>
+  )
 }
 
 // Dagordning och namnlista med utspelning. Portad från Playout (samma
 // klientanrop och utspelningslogik) — Playouts egen kopia försvinner när
 // den gamla vyn tas bort. Kopplingen görs i kolumnens rubrikrad; en
 // okopplad kolumn visar ett tomt läge, inte ett fel.
-export function PlayoutColumns({ project: p, actions, live = false, openPicker = null, onPickerClosed }: PlayoutColumnsProps) {
+export function PlayoutColumns({ project: p, actions, live = false, openPicker = null, onPickerClosed, searchable = live }: PlayoutColumnsProps) {
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
     [p.agendaId],
@@ -214,6 +226,91 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
     )
   }
 
+  // ---- Sök (UNG-130) ----
+  // Skriv-för-att-söka: `/` flyttar fokus till sökfältet (inget annat fångar tangenter), listorna filtreras utan att
+  // ändra ordning, pilarna markerar en träff och Enter spelar bara ut en medvetet markerad rad.
+  const searchRef = useRef<HTMLInputElement | null>(null)
+  const [query, setQuery] = useState('')
+  const [activeHit, setActiveHit] = useState(-1)
+  const tokens = useMemo(() => queryTokens(query), [query])
+  const searching = searchable && tokens.length > 0
+  const agendaHits = useMemo(
+    () => (searching ? (agenda?.items ?? []).filter((it) => matches(tokens, [it.title, it.reference])).map((it) => it.id) : []),
+    [searching, tokens, agenda],
+  )
+  const nameHits = useMemo(
+    () => (searching ? (nameList?.people ?? []).filter((pe) => matches(tokens, [pe.name, pe.party, pe.role])).map((pe) => pe.id) : []),
+    [searching, tokens, nameList],
+  )
+  const hiddenAgenda = useMemo(
+    () => (searching ? new Set((agenda?.items ?? []).map((it) => it.id).filter((id) => !agendaHits.includes(id))) : undefined),
+    [searching, agenda, agendaHits],
+  )
+  const hiddenNames = useMemo(
+    () => (searching ? new Set((nameList?.people ?? []).map((pe) => pe.id).filter((id) => !nameHits.includes(id))) : undefined),
+    [searching, nameList, nameHits],
+  )
+  const hits: Hit[] = useMemo(
+    () => [...agendaHits.map((id) => ({ list: 'agenda' as const, id })), ...nameHits.map((id) => ({ list: 'names' as const, id }))],
+    [agendaHits, nameHits],
+  )
+  const marked = searching ? markedHit(hits, activeHit) : null
+  const isMarked = (list: Hit['list'], id: string) => marked?.list === list && marked.id === id
+
+  useEffect(() => {
+    if (!searchable) return
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null
+      const editable = Boolean(target?.isContentEditable) || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName ?? '')
+      if (!shouldActivateSearch(event, editable, Boolean(document.querySelector('[role="dialog"]')))) return
+      event.preventDefault()
+      searchRef.current?.focus()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [searchable])
+
+  useEffect(() => {
+    if (marked) document.querySelector('.pcols li.search-hit')?.scrollIntoView({ block: 'nearest' })
+  }, [marked?.list, marked?.id])
+
+  function clearSearch() {
+    setQuery('')
+    setActiveHit(-1)
+  }
+
+  function playMarked() {
+    if (!marked || !canPlay) return
+    if (marked.list === 'agenda') {
+      const item = agenda?.items.find((it) => it.id === marked.id)
+      // En redan utspelad rad stoppas inte av Enter (det gör knappen); då händer ingenting.
+      if (!item || p.playout.currentAgendaItemId === item.id) return
+      actions.cue('agendaItem', item.id, item.title)
+    } else {
+      const person = nameList?.people.find((pe) => pe.id === marked.id)
+      if (!person || p.playout.currentPersonId === person.id) return
+      actions.cue('person', person.id, person.name)
+    }
+    clearSearch()
+    searchRef.current?.blur()
+  }
+
+  function onSearchKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      // Esc rensar sökningen och lämnar fältet; det stänger inget annat (t.ex. expanderat läge) i samma tryck.
+      event.stopPropagation()
+      clearSearch()
+      searchRef.current?.blur()
+    } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      const current = marked ? hits.findIndex((hit) => hit.list === marked.list && hit.id === marked.id) : -1
+      setActiveHit(moveActive(current, event.key === 'ArrowDown' ? 1 : -1, hits.length))
+    } else if (event.key === 'Enter') {
+      event.preventDefault()
+      playMarked()
+    }
+  }
+
   async function submitImport() {
     const values = parseImport(importText)
     if (values.length === 0) {
@@ -227,6 +324,35 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
 
   return (
     <>
+      {searchable && (
+        <div class="pcols-search">
+          <Icon name="search" size={18} />
+          <input
+            ref={searchRef}
+            class="pcols-search-input"
+            type="text"
+            role="searchbox"
+            autoComplete="off"
+            spellcheck={false}
+            aria-label="Sök i dagordning och namnlista"
+            placeholder="Sök punkt eller namn. Tryck / för att söka"
+            value={query}
+            onInput={(event) => {
+              setQuery(event.currentTarget.value)
+              setActiveHit(-1)
+            }}
+            onKeyDown={onSearchKeyDown}
+          />
+          {query && (
+            <button class="pcols-search-clear" type="button" aria-label="Rensa sökningen" title="Rensa sökningen (Esc)" onClick={clearSearch}>
+              <Icon name="close" size={16} />
+            </button>
+          )}
+          <span class="pcols-search-count" role="status" aria-live="polite">
+            {searching ? `Punkter ${agendaHits.length} · Namn ${nameHits.length}` : ''}
+          </span>
+        </div>
+      )}
       <div class={`pcols${live ? ' is-live' : ''}`}>
         <section class="pcol">
           <div class="pcol-head">
@@ -268,7 +394,9 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                 getLabel={(it) => it.title}
                 numbered
                 addLabel="Lägg till punkt"
-                getItemClassName={(it) => (p.playout.currentAgendaItemId === it.id ? 'active' : '')}
+                hiddenIds={hiddenAgenda}
+                renderLabel={searching ? (it) => <Highlighted text={it.title} tokens={tokens} /> : undefined}
+                getItemClassName={(it) => [p.playout.currentAgendaItemId === it.id ? 'active' : '', isMarked('agenda', it.id) ? 'search-hit' : ''].filter(Boolean).join(' ')}
                 onReorder={reorderAgendaItems}
                 onAdd={addAgendaItem}
                 onRename={renameAgendaItem}
@@ -314,6 +442,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                 }}
               />
             )}
+            {searching && agenda && agendaHits.length === 0 && <p class="pcol-empty">Inga träffar</p>}
           </div>
         </section>
 
@@ -373,7 +502,9 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                 getId={(person) => person.id}
                 getLabel={(person) => person.name}
                 addLabel="Lägg till namn"
-                getItemClassName={(person) => (p.playout.currentPersonId === person.id ? 'active' : '')}
+                hiddenIds={hiddenNames}
+                renderLabel={searching ? (person) => <Highlighted text={person.name} tokens={tokens} /> : undefined}
+                getItemClassName={(person) => [p.playout.currentPersonId === person.id ? 'active' : '', isMarked('names', person.id) ? 'search-hit' : ''].filter(Boolean).join(' ')}
                 onReorder={reorderPeople}
                 onAdd={addPerson}
                 onRename={renamePerson}
@@ -402,6 +533,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                 }}
               />
             )}
+            {searching && nameList && nameHits.length === 0 && <p class="pcol-empty">Inga träffar</p>}
           </div>
         </section>
       </div>

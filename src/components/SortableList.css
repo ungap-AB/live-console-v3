@@ -152,3 +152,7 @@
   color: var(--ink-2);
   border: 1px solid var(--line);
 }
+
+.sortable-list > li.filtered-out {
+  display: none;
+}

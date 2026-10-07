@@ -32,6 +32,10 @@ interface EditableItemListProps<T> {
   compactInteractions?: boolean
   /** Dölj standardknappen för att låta en yttre meny starta samma åtgärd. */
   hideAddButton?: boolean
+  /** Rader som döljs av en sökning (kvar i listan, så ordning och numrering gäller hela listan). */
+  hiddenIds?: ReadonlySet<string>
+  /** Egen återgivning av radens text (t.ex. med markerad träff). */
+  renderLabel?: (item: T) => ComponentChildren
 }
 
 // Bruten ut ur AgendasView/NameListsView (de var identiska förutom vilket
@@ -59,6 +63,8 @@ export function EditableItemList<T>({
   emptyMessage,
   compactInteractions = false,
   hideAddButton = false,
+  hiddenIds,
+  renderLabel,
 }: EditableItemListProps<T>) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
@@ -164,6 +170,7 @@ export function EditableItemList<T>({
         items={items}
         getId={getId}
         disabled={disabled}
+        hiddenIds={hiddenIds}
         onReorder={onReorder}
         getItemClassName={(item) => [getItemClassName?.(item) ?? '', compactInteractions && getId(item) === selectedId ? 'selected' : ''].filter(Boolean).join(' ')}
         onItemClick={compactInteractions ? (item) => setSelectedId(getId(item)) : undefined}
@@ -213,7 +220,7 @@ export function EditableItemList<T>({
             <>
               {numbered && <span class="no">{i + 1}</span>}
               <span class="txt">
-                <b onDblClick={compactInteractions ? () => startEdit(item) : undefined}>{getLabel(item)}</b>
+                <b onDblClick={compactInteractions ? () => startEdit(item) : undefined}>{renderLabel ? renderLabel(item) : getLabel(item)}</b>
               </span>
               {renderExtra?.(item)}
               {!compactInteractions && <span class="rowbtns">

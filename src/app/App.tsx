@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../data'
+import { onSessionLost } from '../data/http/fetchJson'
 import type { CurrentUser } from '../data/types'
 import { parseProjectLink } from './projectLink'
 import { routeHref, useCredentialToken, useRoute, useShareToken } from './router'
@@ -41,14 +42,36 @@ export function App() {
     )
   }, [])
 
+  // UNG-128: ett ogiltigt token märks först vid ett anrop. Då visas inloggningen med en förklaring; valt projekt och vy
+  // ligger kvar i tillståndet och lagrat urval, så operatören hamnar där hen var efter ny inloggning.
+  const [sessionNotice, setSessionNotice] = useState('')
+  const loggingOut = useRef(false)
+  useEffect(
+    () =>
+      onSessionLost(() => {
+        if (loggingOut.current) return
+        setAuth((current) => {
+          if (current.status !== 'authed') return current
+          setLoginEmail(current.user.email)
+          setSessionNotice('Din session har gått ut. Logga in igen så fortsätter du där du var.')
+          return { status: 'anon' }
+        })
+      }),
+    [],
+  )
+
   function login(user: CurrentUser) {
+    setSessionNotice('')
     setActiveProjectId(readStoredSelection('project', user.domain.id))
     setProjectScreen(parseProjectScreen(readStoredSelection('project-screen', user.domain.id)))
     setAuth({ status: 'authed', user })
   }
 
   function logout() {
+    loggingOut.current = true
     client.auth.logout().finally(() => {
+      loggingOut.current = false
+      setSessionNotice('')
       setActiveProjectId(null)
       setProjectScreen('livesandning')
       setAuth({ status: 'anon' })
@@ -131,7 +154,7 @@ export function App() {
     )
   }
   if (auth.status === 'loading') return <div class="login-screen">Laddar…</div>
-  if (auth.status === 'anon') return <LoginView onLogin={login} initialEmail={loginEmail ?? ''} />
+  if (auth.status === 'anon') return <LoginView onLogin={login} initialEmail={loginEmail ?? ''} notice={sessionNotice} />
 
   // Genvägen till det öppna projektets vy vinner när man står på en annan sida.
   // "+ Nytt" visas bara när Projekt-vyn faktiskt visar projektlistan — inte när

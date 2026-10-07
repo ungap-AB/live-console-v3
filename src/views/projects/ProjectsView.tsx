@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { CueKind, PlayoutState, Project, PublicMode, TimelineEvent, Visibility } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { OverflowMenu } from '../../components/OverflowMenu'
 import { Icon } from '../../components/Icon'
+import { JobProgress } from '../../components/JobProgress'
+import { JobsContext } from '../../app/jobsContext'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
@@ -13,6 +15,8 @@ import { Livesandning } from './Livesandning'
 import { OndemandView } from './OndemandView'
 import { MODE_LABEL } from './projectMode'
 import { listCaptionButton, requestCaptionStudio } from './captionEntryLogic'
+import { activeJobsByProject, jobKindIcon, jobKindLabel } from './projectJobLogic'
+import { openJobsView } from '../../app/jobsBus'
 import type { ProjectActions } from './actions'
 import { ApiError } from '../../data/http/fetchJson'
 import { storeSelection } from '../../app/selectionStorage'
@@ -103,6 +107,8 @@ export function ProjectsView({
     if (resource.data) setProjects(resource.data)
   }, [resource.data])
 
+  const jobs = useContext(JobsContext)
+  const activeJobs = useMemo(() => activeJobsByProject(jobs), [jobs])
   const sortedProjects = [...projects].sort(
     (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
   )
@@ -461,6 +467,22 @@ export function ProjectsView({
                       >
                         {p.name}
                       </button>
+                      {(() => {
+                        const active = activeJobs.get(p.id)
+                        if (!active) return null
+                        return (
+                          <button
+                            class="project-row-job"
+                            type="button"
+                            title={`${jobKindLabel(active.job.kind)} pågår. Öppna Jobb.`}
+                            onClick={openJobsView}
+                          >
+                            <Icon name={jobKindIcon(active.job.kind)} size={16} />
+                            <JobProgress progress={active.job.progress} phase={active.job.phase} />
+                            {active.extra > 0 && <span class="project-row-job-extra">+{active.extra}</span>}
+                          </button>
+                        )
+                      })()}
                       <span class="col-date">{formatShortDate(p.createdAt)}</span>
                       <span class="col-mode">
                         <span class={`mode-chip mode-${MODE_TONE[p.publicMode]}`}>{MODE_LABEL[p.publicMode]}</span>

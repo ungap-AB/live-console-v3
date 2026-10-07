@@ -8,9 +8,11 @@ import './LoginView.css'
 interface LoginViewProps {
   onLogin: (user: CurrentUser) => void
   initialEmail?: string
+  /** Förklaring ovanför formuläret, t.ex. att sessionen gått ut (så det inte ser ut som ett fel). */
+  notice?: string
 }
 
-export function LoginView({ onLogin, initialEmail = '' }: LoginViewProps) {
+export function LoginView({ onLogin, initialEmail = '', notice }: LoginViewProps) {
   const [email, setEmail] = useState(initialEmail)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -48,6 +50,11 @@ export function LoginView({ onLogin, initialEmail = '' }: LoginViewProps) {
         <img class="login-logo theme-light-only" src={logoLightUrl} alt="ungap" />
         <img class="login-logo theme-dark-only" src={logoDarkUrl} alt="ungap" />
         <p class="login-sub">{resetting ? 'Glömt din PIN-kod?' : 'Välkommen att logga in'}</p>
+        {notice && !resetting && (
+          <p class="login-note" role="status">
+            {notice}
+          </p>
+        )}
         <label class="login-field">
           E-post
           <input

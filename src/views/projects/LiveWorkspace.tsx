@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Channel, ChannelHealth, Project, TimelineEvent } from '../../data/types'
 import { useIsRootAdmin } from '../../app/currentUserContext'
@@ -7,6 +8,7 @@ import type { ProjectActions } from './actions'
 import { PlayoutColumns } from './PlayoutColumns'
 import { usePlayoutTestbed } from './playoutTestbed'
 import { useNameList } from './useNameList'
+import { Icon } from '../../components/Icon'
 import './LiveWorkspace.css'
 
 interface LiveWorkspaceProps {
@@ -28,6 +30,19 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
   )
   const nameListResource = useNameList(p)
   const phase = health?.livePhase
+
+  // UNG-129: expanderat läge för skärmar med låg höjd. Samma komponenter och tillstånd, bara en klass på vyn som lägger
+  // den över hela fönstret, så ingenting monteras om och inget tillstånd (markering, scroll, redigering) tappas.
+  const [expanded, setExpanded] = useState(false)
+  useEffect(() => {
+    if (!expanded) return
+    function onKeyDown(event: KeyboardEvent) {
+      // En öppen dialog äger Esc (den stänger sig själv); annars stänger Esc det expanderade läget.
+      if (event.key === 'Escape' && !document.querySelector('[role="dialog"]')) setExpanded(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [expanded])
 
   const nowItem =
     p.playout.currentAgendaItem?.label ??
@@ -65,7 +80,7 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
   ]
 
   return (
-    <div class="lw">
+    <div class={`lw${expanded ? ' is-expanded' : ''}`}>
       {phase === 'signalInterrupted' && (
         <div class="lw-interrupt" role="alert">
           <p>Signalavbrott — videosignalen har avbrutits medan spelaren är öppen.</p>
@@ -78,7 +93,7 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
         </div>
       )}
 
-      {isRootAdmin && <section class="lw-testbed" aria-label="Testbädd">
+      {isRootAdmin && !expanded && <section class="lw-testbed" aria-label="Testbädd">
         <div>
           <strong>Testbädd</strong>
           {testbed.state.running ? (
@@ -109,6 +124,16 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
             onClear={panel.onClear}
           />
         ))}
+        <button
+          class="lw-expand"
+          type="button"
+          aria-pressed={expanded}
+          aria-label={expanded ? 'Stäng expanderad vy' : 'Expandera'}
+          title={expanded ? 'Stäng expanderad vy (Esc)' : 'Expandera listorna till hela fönstret'}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          <Icon name={expanded ? 'close' : 'open_in_full'} size={20} />
+        </button>
       </div>
 
       <PlayoutColumns project={p} actions={actions} live />

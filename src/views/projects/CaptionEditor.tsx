@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
+import { notifyJobsChanged } from '../../app/jobsBus'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
@@ -489,6 +490,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     setSaveError('')
     try {
       const generation = await client.projects.generateCaptions(projectId, false)
+      notifyJobsChanged()
       onRegenerated?.(generation)
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Det gick inte att starta undertextningen.')
