@@ -82,7 +82,14 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   const [dragBoundary, setDragBoundary] = useState<{ index: number; role: GrabRole; baseBefore: number; baseAfter: number } | null>(null)
 
   const videoRef = useRef<HTMLVideoElement>(null)
-  const listRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement | null>(null)
+  // Listans element hålls också i tillstånd (via en stabil ref-funktion), så att höjdmätningen alltid följer det element som faktiskt finns
+  // i sidan. Tidigare mättes ett element som hunnit bytas ut: det gav höjd 0 och vågformsbandet försvann.
+  const [listElement, setListElement] = useState<HTMLDivElement | null>(null)
+  const setListRef = useRef((element: HTMLDivElement | null) => {
+    listRef.current = element
+    setListElement(element)
+  }).current
   const areas = useRef(new Map<number, HTMLTextAreaElement>())
   const pendingFocus = useRef<{ index: number; caret?: number } | null>(null)
   const focusBase = useRef<{ id: number; cues: EditCue[] } | null>(null)
@@ -222,7 +229,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
 
   // ---- Lista (virtualiserad) ----
   useEffect(() => {
-    const element = listRef.current
+    const element = listElement
     if (!element) return
     // En mätning på 0 (listan dold eller ännu inte lagd) ignoreras: då skulle vågformsbandet få höjd 0 och försvinna tills storleken ändras.
     const update = () => {
@@ -232,7 +239,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     const observer = new ResizeObserver(update)
     observer.observe(element)
     return () => observer.disconnect()
-  }, [master])
+  }, [listElement])
 
   const { first, last } = windowRange(scrollTop, viewportHeight, ROW_HEIGHT, cues.length)
 
@@ -788,7 +795,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
             )}
             <div
               class="ce-list"
-              ref={listRef}
+              ref={setListRef}
               onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
               onWheel={stopFollowing}
               onTouchMove={stopFollowing}
