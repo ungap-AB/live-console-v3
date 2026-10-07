@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { CaptionEnergy } from '../../data/types'
 import type { EditCue } from './captionEditOps.ts'
-import { moveBoundary, speechClock } from './captionFlow.ts'
+import { estimateSplitTime, moveBoundary, speechClock } from './captionFlow.ts'
 import { speechRuns } from './captionTimingLogic.ts'
 
 const byteFor = (db: number) => Math.round(((db + 80) / 80) * 255)
@@ -105,4 +105,15 @@ test('utan flöde ändras bara tiden och gränsen hålls inom grannarna', () => 
   assert.deepEqual(timeOnly.cues.map((c) => c.text), list.map((c) => c.text))
   assert.equal(moveBoundary(list, 1, 99, talk, false).cues[1].start, 9.7)
   assert.equal(moveBoundary(list, 1, -1, talk, false).cues[1].start, 0.3)
+})
+
+test('uppskattad delningstid: tecken fördelas över talet, så en paus i mitten skjuter delningen förbi pausen', () => {
+  // Tal 0–4 s och 8–12 s (paus 4–8). Första halvan av tecknen ligger i det första talet.
+  const runs = speechRuns(energyWith(14, [[0, 4], [8, 12]]))
+  const split = estimateSplitTime(0, 12, 50, 50, runs)
+  assert.ok(split > 3.9 && split < 8.1, String(split)) // mitt i talet = vid pausen
+  const early = estimateSplitTime(0, 12, 25, 75, runs)
+  assert.ok(Math.abs(early - 2) < 0.2, String(early)) // en fjärdedel av talet (8 s) = 2 s
+  assert.equal(estimateSplitTime(10, 20, 30, 70, null), 13) // utan tal: tecken-proportionellt över tiden
+  assert.equal(estimateSplitTime(5, 5.01, 1, 1, runs), 5.005) // intervall utan tal
 })

@@ -13,9 +13,9 @@ import {
 } from './captionEditorLogic'
 import {
   LONG_GAP_SECONDS, addCue, deleteCue, diffState, mergeInfo, mergeWithNext, shiftFrom,
-  sortedForSave, validateCues, type EditCue, type OpResult,
+  sortedForSave, splitCue, validateCues, type EditCue, type OpResult,
 } from './captionEditOps'
-import { moveBoundary } from './captionFlow'
+import { estimateSplitTime, moveBoundary } from './captionFlow'
 import { deriveTimes, speechRuns } from './captionTimingLogic'
 import { emptyHistory, record, redo, undo, type History } from './captionHistory'
 import { CaptionWaveform, WAVEFORM_WIDTH } from './CaptionWaveform'
@@ -355,6 +355,19 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     seekTo(cue.start, true)
   }
 
+  // Delar repliken vid markören. Tiden är videons position om den ligger inne i repliken (exakt), annars en uppskattning över talet.
+  function splitAtCaret(index: number) {
+    const cue = cues[index]
+    if (!cue) return
+    const caret = areas.current.get(index)?.selectionStart ?? 0
+    const position = playhead()
+    const inside = position > cue.start + 0.3 && position < cue.end - 0.3
+    const to = cues[index + 1]?.start ?? cue.end
+    const leftChars = cue.text.slice(0, caret).replace(/\s+/g, ' ').trim().length
+    const rightChars = cue.text.slice(caret).replace(/\s+/g, ' ').trim().length
+    apply(splitCue(cues, index, caret, newId(), inside ? position : estimateSplitTime(cue.start, to, leftChars, rightChars, timing.runs)))
+  }
+
   // Hjul över vågformen rullar listan (och slår av "Följ med", som när man rullar i listan).
   function scrollListBy(deltaY: number) {
     const element = listRef.current
@@ -438,9 +451,9 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
       const original = saved.find((cue) => cue.id === cues[index].id)
       if (original) setText(index, original.text)
     } else if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-      // Ctrl/Cmd+Enter spelar repliken (och pausar) utan att lämna textfältet.
+      // Ctrl/Cmd+Enter delar repliken vid markören; delarna kan sedan justeras som vanligt.
       event.preventDefault()
-      playRow(index)
+      splitAtCaret(index)
     } else if (event.key === 'Enter') {
       event.preventDefault()
       if (event.shiftKey) {
@@ -580,7 +593,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
             )}
 
             <p class="ce-help">
-              Dra en gräns i vågformen så flödar texten över den. Ctrl/Cmd+Enter = spela/pausa repliken · Enter = nästa rad · Skift+Enter = ny rad · Esc = ångra raden · Tab = nästa rad ·
+              Dra en gräns i vågformen så flödar texten över den. Ctrl/Cmd+Enter = dela vid markören · Enter = nästa rad · Skift+Enter = ny rad · Esc = ångra raden · Tab / Skift+Tab = nästa / föregående rad ·
               Backspace i början / Delete i slutet slår ihop med grannen. Klicka på en rads tid för att spela den.
             </p>
           </section>
@@ -638,18 +651,17 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                   ].filter(Boolean).join(' ')
                   return (
                     <div key={cue.id} class={classes} style={{ top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}>
-                      <div class="ce-playcol">
+                      <div
+                        class="ce-playcol"
+                        role="button"
+                        aria-label={index === playIndex && playing ? 'Pausa' : `Välj och spela replik ${index + 1}`}
+                        title={index === playIndex && playing ? 'Pausa' : 'Välj repliken och spela från dess start (klicka igen för paus)'}
+                        onClick={() => playRow(index)}
+                      >
                         {index === playIndex && (
-                          <button
-                            class="ce-playbtn"
-                            type="button"
-                            tabIndex={-1}
-                            title={playing ? 'Pausa (Ctrl/Cmd+Enter)' : 'Spela från den här repliken (Ctrl/Cmd+Enter)'}
-                            aria-label={playing ? 'Pausa' : `Spela från replik ${index + 1}`}
-                            onClick={() => playRow(index)}
-                          >
+                          <span class="ce-playbtn" aria-hidden="true">
                             <Icon name={playing ? 'pause' : 'play_arrow'} size={20} />
-                          </button>
+                          </span>
                         )}
                       </div>
                       <div class="ce-text">

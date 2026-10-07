@@ -67,6 +67,19 @@ function wordTimes(words: string[], from: number, to: number, clock: SpeechClock
   })
 }
 
+/**
+ * Uppskattad tid för en delning av en replik som visas över [from, to): ordens tecken fördelas över talet i intervallet (utan pauser),
+ * så en delning mitt i en mening hamnar där orden på var sida ungefär sägs. Delningen vid videons position är exakt och används i första hand.
+ */
+export function estimateSplitTime(from: number, to: number, leftChars: number, rightChars: number, runs: SpeechRuns | null): number {
+  const clock = speechClock(runs)
+  const speechFrom = clock.toSpeech(from)
+  const speechTo = clock.toSpeech(to)
+  const fraction = leftChars / Math.max(1, leftChars + rightChars)
+  if (speechTo - speechFrom < 0.05) return round(from + fraction * (to - from))
+  return round(clock.toTime(speechFrom + fraction * (speechTo - speechFrom)))
+}
+
 export interface BoundaryMove {
   cues: EditCue[]
   /** Antal ord i föregående replik efter flytten, och före den (utgångsläget). */

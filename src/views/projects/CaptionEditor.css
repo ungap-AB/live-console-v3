@@ -307,10 +307,16 @@ button.ce-time:hover {
 }
 
 .ce-playcol {
-  /* Kolumnen närmast kopplingslinjerna och den blå markeringen: spela-knappen för den aktiva repliken. */
+  /* Kolumnen närmast kopplingslinjerna och den blå markeringen. Ett klick var som helst i den väljer repliken och växlar uppspelning;
+     spela-knappen visas bara för den aktiva repliken. */
   display: grid;
   place-items: center;
   padding-left: 6px; /* den aktiva radens list ligger i kanten */
+  cursor: pointer;
+}
+
+.ce-playcol:hover {
+  background: var(--surface-3);
 }
 
 .ce-playbtn {
