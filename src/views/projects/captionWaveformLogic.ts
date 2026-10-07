@@ -161,13 +161,14 @@ export function zoomFocusSpan(span: number, deltaY: number): number {
 }
 
 /**
- * Tröskel (byte) som skiljer tal från paus: en fjärdedel av talnivåns amplitud (−12 dB under medianen av ramar över −46 dB), aldrig
+ * Tröskel (byte) som skiljer tal från paus: en fjärdedel av talnivåns amplitud (−12 dB under medianen av ramar över −40 dB), aldrig
  * under −46 dB. Samma princip som PauseSnapper i workern, så att fästningen i redigeraren stämmer med hur rutorna lades.
  */
 export function speechThreshold(energy: CaptionEnergy): number {
   const floorByte = Math.ceil(((-46 - energy.minDb) / (energy.maxDb - energy.minDb)) * 255)
+  const speechByte = Math.ceil(((-40 - energy.minDb) / (energy.maxDb - energy.minDb)) * 255)
   const loud: number[] = []
-  for (let index = 0; index < energy.data.length; index++) if (energy.data[index] > floorByte) loud.push(energy.data[index])
+  for (let index = 0; index < energy.data.length; index++) if (energy.data[index] > speechByte) loud.push(energy.data[index])
   if (loud.length === 0) return floorByte
   loud.sort((a, b) => a - b)
   const median = loud[loud.length >> 1]

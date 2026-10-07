@@ -51,6 +51,27 @@ export function wrapBalanced(text: string): string | null {
 
 const flatten = (text: string) => text.replace(/\s+/g, ' ').trim()
 
+/**
+ * Radbrytning som aldrig vägrar: jämnaste delning i två rader om det går, annars så många rader som behövs (högst 42 tecken var).
+ * Överfulla repliker är ett normalläge vid första genomgången och ska inte stoppa redigeringen (UNG-161).
+ */
+export function wrapAny(text: string): string {
+  const balanced = wrapBalanced(text)
+  if (balanced !== null) return balanced
+  const lines: string[] = []
+  let line = ''
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    if (line && line.length + 1 + word.length > MAX_LINE_LENGTH) {
+      lines.push(line)
+      line = word
+    } else {
+      line = line ? `${line} ${word}` : word
+    }
+  }
+  if (line) lines.push(line)
+  return lines.join('\n')
+}
+
 export function isShort(cue: Pick<EditCue, 'start' | 'end' | 'text'>): boolean {
   const words = cue.text.split(/\s+/).filter(Boolean).length
   return words <= SHORT_MAX_WORDS || cue.end - cue.start < SHORT_MAX_SECONDS
@@ -67,7 +88,7 @@ export function shortIndexes(cues: readonly EditCue[]): number[] {
 export interface MergeInfo {
   /** Pausen mellan de två replikerna (0 om de ligger kant i kant eller överlappar). */
   gapSeconds: number
-  text: string | null
+  text: string
   lines: number
   durationSeconds: number
   /** Ryms på två rader om 42 tecken. */
@@ -81,15 +102,16 @@ export function mergeInfo(cues: readonly EditCue[], index: number): MergeInfo | 
   const first = cues[index]
   const second = cues[index + 1]
   if (!first || !second) return null
-  const text = wrapBalanced(`${flatten(first.text)} ${flatten(second.text)}`)
+  const joined = `${flatten(first.text)} ${flatten(second.text)}`
+  const text = wrapAny(joined)
   const start = Math.min(first.start, second.start)
   const end = Math.max(first.end, second.end)
   return {
     gapSeconds: Math.max(0, round(second.start - first.end)),
     text,
-    lines: text === null ? 0 : text.split('\n').length,
+    lines: text.split('\n').length,
     durationSeconds: round(end - start),
-    fits: text !== null,
+    fits: wrapBalanced(joined) !== null,
     startSeconds: start,
     endSeconds: end,
   }
@@ -99,9 +121,6 @@ export function mergeInfo(cues: readonly EditCue[], index: number): MergeInfo | 
 export function mergeWithNext(cues: readonly EditCue[], index: number): OpResult {
   const info = mergeInfo(cues, index)
   if (!info) return { ok: false, reason: 'Det finns ingen replik att slå ihop med.' }
-  if (info.text === null) {
-    return { ok: false, reason: 'Blir för lång för en replik (över två rader). Flytta ord till grannrepliken i stället.' }
-  }
   const first = cues[index]
   const joinCaret = flatten(first.text).length
   const merged: EditCue = { id: first.id, start: info.startSeconds, end: info.endSeconds, text: info.text }
@@ -141,8 +160,8 @@ export function splitCue(cues: readonly EditCue[], index: number, caret: number,
 
   const useTime = time !== null && time > cue.start + MIN_PART_SECONDS && time < cue.end - MIN_PART_SECONDS
   const boundary = round(useTime ? time : cue.start + ((cue.end - cue.start) * left.length) / (left.length + right.length))
-  const first: EditCue = { id: cue.id, start: cue.start, end: boundary, text: wrapBalanced(left) ?? left }
-  const second: EditCue = { id: newId, start: boundary, end: cue.end, text: wrapBalanced(right) ?? right }
+  const first: EditCue = { id: cue.id, start: cue.start, end: boundary, text: wrapAny(left) }
+  const second: EditCue = { id: newId, start: boundary, end: cue.end, text: wrapAny(right) }
   return { ok: true, cues: [...cues.slice(0, index), first, second, ...cues.slice(index + 1)], focusIndex: index + 1, caret: 0 }
 }
 
@@ -168,9 +187,8 @@ export function moveTailToNext(cues: readonly EditCue[], index: number, caret: n
   const keep = flatten(cue.text.slice(0, caret))
   const move = flatten(cue.text.slice(caret))
   if (!keep || !move) return { ok: false, reason: 'Placera markören före de ord som ska flyttas (och efter minst ett ord som ska stanna).' }
-  const aText = wrapBalanced(keep)
-  const bText = wrapBalanced(`${move} ${flatten(next.text)}`)
-  if (aText === null || bText === null) return { ok: false, reason: 'Orden ryms inte i nästa replik (över två rader).' }
+  const aText = wrapAny(keep)
+  const bText = wrapAny(`${move} ${flatten(next.text)}`)
   const [a, b] = redistribute(cue, next, aText, bText)
   return { ok: true, cues: [...cues.slice(0, index), a, b, ...cues.slice(index + 2)], focusIndex: index + 1, caret: textCaret(bText, flatten(move).length) }
 }
@@ -183,9 +201,8 @@ export function moveHeadToPrevious(cues: readonly EditCue[], index: number, care
   const move = flatten(cue.text.slice(0, caret))
   const keep = flatten(cue.text.slice(caret))
   if (!keep || !move) return { ok: false, reason: 'Placera markören efter de ord som ska flyttas (och före minst ett ord som ska stanna).' }
-  const aText = wrapBalanced(`${flatten(previous.text)} ${move}`)
-  const bText = wrapBalanced(keep)
-  if (aText === null || bText === null) return { ok: false, reason: 'Orden ryms inte i föregående replik (över två rader).' }
+  const aText = wrapAny(`${flatten(previous.text)} ${move}`)
+  const bText = wrapAny(keep)
   const [a, b] = redistribute(previous, cue, aText, bText)
   return { ok: true, cues: [...cues.slice(0, index - 1), a, b, ...cues.slice(index + 1)], focusIndex: index, caret: 0 }
 }

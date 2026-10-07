@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   addCue, deleteCue, isShort, mergeInfo, mergeWithNext, mergeWithPrevious, moveEdge, moveHeadToPrevious, moveTailToNext, nudge, setTime, shiftFrom, shortIndexes,
-  sortedForSave, splitCue, validateCues, wrapBalanced, diffState, type EditCue,
+  sortedForSave, splitCue, validateCues, wrapAny, wrapBalanced, diffState, type EditCue,
 } from './captionEditOps.ts'
 
 const cue = (id: number, start: number, end: number, text: string): EditCue => ({ id, start, end, text })
@@ -48,13 +48,27 @@ test('sammanslagning upp åt är samma sak som att slå ihop föregående med de
   assert.equal(mergeWithNext(cues, 1).ok, false)
 })
 
-test('en sammanslagning som blir över två rader blockeras och ändrar ingenting', () => {
+test('en sammanslagning som blir över två rader tillåts och radbryts i så många rader som behövs', () => {
   const a = 'Det här är en ganska lång replik som nästan fyller två rader helt och hållet'
   const cues = [cue(1, 0, 5, a), cue(2, 5, 8, 'och ännu fler ord här')]
   const result = mergeWithNext(cues, 0)
-  assert.equal(result.ok, false)
-  assert.match(!result.ok ? result.reason : '', /för lång/)
+  assert.equal(result.ok, true)
+  const text = result.ok ? result.cues[0].text : ''
+  assert.ok(text.split('\n').length >= 3)
+  assert.ok(text.split('\n').every((line) => line.length <= 42))
+  assert.equal(text.replace(/\s+/g, ' '), `${a} och ännu fler ord här`)
   assert.equal(mergeInfo(cues, 0)?.fits, false)
+})
+
+test('wrapAny: som wrapBalanced när det går, annars så många rader som behövs utan att tappa ord', () => {
+  assert.equal(wrapAny('Kort text'), 'Kort text')
+  assert.equal(wrapAny('Jag yrkar bifall till förslaget från kommunstyrelsen'), 'Jag yrkar bifall till\nförslaget från kommunstyrelsen')
+  const long = Array.from({ length: 40 }, (_, i) => `ord${i}`).join(' ')
+  const wrapped = wrapAny(long)
+  assert.ok(wrapped.split('\n').length >= 5)
+  assert.ok(wrapped.split('\n').every((line) => line.length <= 42))
+  assert.equal(wrapped.replace(/\n/g, ' '), long)
+  assert.equal(wrapAny('   '), '')
 })
 
 test('förhandsvisningen: paus, längd, rader och om det ryms', () => {
@@ -151,10 +165,12 @@ test('flytta ord till föregående: orden i början flyttas till föregående re
   assert.equal(result.cues[1].end, 7)
 })
 
-test('flytta ord blockeras när orden inte ryms eller markören står fel', () => {
+test('flytta ord till en full replik tillåts (överfullt är normalläge), men markören måste stå rätt', () => {
   const full = 'Det här är en ganska lång replik som nästan fyller två rader helt och hållet'
   const cues = [cue(1, 0, 4, 'Kort start och ett ord'), cue(2, 4, 8, full)]
-  assert.equal(moveTailToNext(cues, 0, 'Kort start och'.length).ok, false)
+  const moved = moveTailToNext(cues, 0, 'Kort start och'.length)
+  assert.ok(moved.ok)
+  assert.equal(words(moved.cues).join(' '), words(cues).join(' '))
   assert.equal(moveTailToNext(cues, 0, 0).ok, false)
   assert.equal(moveTailToNext(cues, 0, cues[0].text.length).ok, false)
   assert.equal(moveTailToNext([cues[0]], 0, 5).ok, false)

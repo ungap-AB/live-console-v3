@@ -178,13 +178,58 @@
   display: flex;
 }
 
-.ce-wave {
+.ce-wave-slot {
   /* Höjden kommer från listan (via props) men får inte själv bestämma radens höjd. */
+  position: relative;
   flex: none;
   align-self: flex-start;
+}
+
+.ce-wave {
+  display: block;
   cursor: pointer;
   border-right: 1px solid var(--line-soft);
   touch-action: none;
+}
+
+/* Orden närmast gränsen (UNG-161): hänger på gränsens linje och ligger över listan. */
+.ce-flow {
+  position: absolute;
+  left: 100%;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  max-width: 560px;
+  padding: 5px 10px;
+  margin-left: 6px;
+  background: var(--panel);
+  border: 1px solid var(--focus);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  font-size: 13px;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.ce-flow-word.is-moved {
+  background: color-mix(in srgb, var(--focus) 22%, transparent);
+  border-radius: 3px;
+  padding: 0 3px;
+  font-weight: 600;
+}
+
+.ce-flow-more {
+  color: var(--ink-3);
+}
+
+.ce-flow-cut {
+  width: 3px;
+  align-self: stretch;
+  min-height: 18px;
+  background: var(--focus);
+  border-radius: 2px;
 }
 
 .ce-list {
