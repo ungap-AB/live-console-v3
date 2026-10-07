@@ -37,6 +37,7 @@ import type {
   Visibility,
 } from '../types'
 import { toTextPlacement } from '../textPlacement'
+import { decodeBase64 } from './base64'
 import { ApiError, api, apiBlob, setAuthToken } from './fetchJson'
 import type {
   ServerAgenda,
@@ -843,6 +844,17 @@ export const httpClient: Client = {
     },
     saveCaptionMaster(id, input) {
       return api<CaptionMaster>(`/projects/${id}/captions/master`, { method: 'PUT', body: input })
+    },
+    async getCaptionEnergy(id) {
+      try {
+        const dto = await api<{ version: number; intervalMs: number; minDb: number; maxDb: number; data: string }>(`/projects/${id}/captions/energy`)
+        if (dto.version !== 1) return null
+        return { intervalMs: dto.intervalMs, minDb: dto.minDb, maxDb: dto.maxDb, data: decodeBase64(dto.data) }
+      } catch (err) {
+        // Äldre utkast saknar kurvan: redigeraren fungerar utan vågformsband.
+        if (err instanceof ApiError && err.code === 'captions_energy_not_found') return null
+        throw err
+      }
     },
     listCaptionVersions(id) {
       return api<CaptionVersionInfo[]>(`/projects/${id}/captions/versions`)

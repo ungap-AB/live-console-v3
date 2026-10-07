@@ -862,6 +862,9 @@ export const mockClient: Client = {
     async saveCaptionMaster() {
       throw new Error('Undertextredigeraren finns inte i mock-läget')
     },
+    async getCaptionEnergy() {
+      return null
+    },
     async listCaptionVersions() {
       throw new Error('Undertextredigeraren finns inte i mock-läget')
     },

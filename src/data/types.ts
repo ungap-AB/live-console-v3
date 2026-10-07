@@ -401,6 +401,14 @@ export interface CaptionMaster {
   legacy: boolean
 }
 
+/** UNG-149: ljudets energikurva för originalet (en byte per ram, decibelskala), som vågformsbandet ritar. */
+export interface CaptionEnergy {
+  intervalMs: number
+  minDb: number
+  maxDb: number
+  data: Uint8Array
+}
+
 export interface CaptionVersionInfo {
   version: number
   createdAtUtc: string

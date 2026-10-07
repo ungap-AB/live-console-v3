@@ -4,7 +4,7 @@ import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { client } from '../../data'
 import { ApiError } from '../../data/http/fetchJson'
-import type { CaptionMaster } from '../../data/types'
+import type { CaptionEnergy, CaptionMaster } from '../../data/types'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import { formatHms } from '../../app/time'
@@ -16,6 +16,7 @@ import {
   shortIndexes, sortedForSave, splitCue, validateCues, type EditCue, type OpResult,
 } from './captionEditOps'
 import { emptyHistory, record, redo, undo, type History } from './captionHistory'
+import { CaptionWaveform, WAVEFORM_WIDTH } from './CaptionWaveform'
 import './CaptionEditor.css'
 
 const ROW_HEIGHT = 76
@@ -54,6 +55,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
   const [scrollTop, setScrollTop] = useState(0)
   const [viewportHeight, setViewportHeight] = useState(600)
   const [focusTick, setFocusTick] = useState(0)
+  const [energy, setEnergy] = useState<CaptionEnergy | null>(null)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -85,6 +87,16 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
 
   useEffect(() => {
     void load()
+  }, [projectId])
+
+  // UNG-149/152: ljudets energikurva till vågformsbandet. Saknas den (eller kan inte hämtas) fungerar redigeraren som förut.
+  useEffect(() => {
+    let cancelled = false
+    client.projects.getCaptionEnergy(projectId).then(
+      (value) => { if (!cancelled) setEnergy(value) },
+      () => { if (!cancelled) setEnergy(null) },
+    )
+    return () => { cancelled = true }
   }, [projectId])
 
   const diff = useMemo(() => diffState(saved, cues), [saved, cues])
@@ -509,9 +521,27 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
           </section>
 
           <section class="ce-list-wrap" aria-label="Repliker">
-            <div class="ce-list-head" aria-hidden="true">
+            <div class="ce-list-head" aria-hidden="true" style={energy ? { marginLeft: `${WAVEFORM_WIDTH}px` } : undefined}>
               <span>#</span><span>Start</span><span>Text</span><span />
             </div>
+            <div class="ce-list-main">
+            {energy && (
+              <CaptionWaveform
+                cues={cues}
+                energy={energy}
+                scrollTop={scrollTop}
+                height={viewportHeight}
+                rowHeight={ROW_HEIGHT}
+                selectedIndex={selectedIndex}
+                activeIndex={activeIndex}
+                getTime={playhead}
+                playing={playing}
+                publishedStart={publishedStart}
+                publishedEnd={publishedEnd}
+                onSeek={(time) => seekTo(time, false)}
+                onSelect={setSelectedIndex}
+              />
+            )}
             <div
               class="ce-list"
               ref={listRef}
@@ -608,6 +638,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
                   )
                 })}
               </div>
+            </div>
             </div>
           </section>
         </div>

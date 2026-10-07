@@ -208,6 +208,8 @@ export interface Client {
     /** UNG-138: mastern som radlista. Spara med den version du utgick från (409 om någon annan hunnit före). */
     getCaptionMaster(id: string): Promise<import('./types').CaptionMaster>
     saveCaptionMaster(id: string, input: { ifVersion: number; cues: { start: number; end: number; text: string }[] }): Promise<import('./types').CaptionMaster>
+    /** UNG-149: ljudets energikurva för vågformsbandet, eller null om den saknas (äldre utkast). */
+    getCaptionEnergy(id: string): Promise<import('./types').CaptionEnergy | null>
     listCaptionVersions(id: string): Promise<import('./types').CaptionVersionInfo[]>
     restoreCaptionVersion(id: string, version: number, ifVersion: number): Promise<import('./types').CaptionMaster>
     discardCaptionDraft(id: string): Promise<void>
