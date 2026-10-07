@@ -224,7 +224,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   useEffect(() => {
     const element = listRef.current
     if (!element) return
-    const update = () => setViewportHeight(element.clientHeight)
+    // En mätning på 0 (listan dold eller ännu inte lagd) ignoreras: då skulle vågformsbandet få höjd 0 och försvinna tills storleken ändras.
+    const update = () => {
+      if (element.clientHeight > 0) setViewportHeight(element.clientHeight)
+    }
     update()
     const observer = new ResizeObserver(update)
     observer.observe(element)

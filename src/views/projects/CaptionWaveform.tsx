@@ -56,7 +56,16 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     return frozen.current ?? viewWindow(cues, scrollTop, height, rowHeight)
   }
 
+  // Ett fel i ritningen ska aldrig stoppa resten av redigeraren: det loggas och bandet ritas om vid nästa rendering.
   function draw() {
+    try {
+      paint()
+    } catch (error) {
+      console.error('Vågformsbandet kunde inte ritas', error)
+    }
+  }
+
+  function paint() {
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
     if (!canvas || !ctx) return
