@@ -67,17 +67,22 @@
   border-bottom: 1px solid var(--line);
 }
 
-/* Korta meddelanden flyter över innehållet (och försvinner av sig själva) i stället för att flytta ner hela vyn. */
+/* Korta meddelanden: ett fast lager nere i hörnet över hela sidan. Det ligger helt utanför editorns layout (kan inte flytta eller trycka
+   ut något), klickar igenom och försvinner av sig självt. */
 .ce-banner.ce-notice {
-  position: absolute;
-  top: 58px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
-  max-width: min(640px, 80%);
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 90;
+  max-width: min(420px, calc(100vw - 32px));
   border: 1px solid var(--line);
   border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.ce-banner.ce-notice button {
+  pointer-events: auto;
 }
 
 .ce-loading {

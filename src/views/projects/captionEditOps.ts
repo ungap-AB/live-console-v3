@@ -259,10 +259,41 @@ export interface Issue {
   message: string
 }
 
+/**
+ * Starttid för en ny, tom replik bredvid replik index (Ctrl/Cmd+Enter sist eller först i texten, UNG-164). Videons position används om den
+ * ligger inne i utrymmet (så att man kan trycka precis när nästa mening börjar), annars strax efter repliken (eller strax före, för 'before').
+ * Alltid minst 0,3 s från grannarna så långt det finns plats.
+ */
+export function newCueTime(cues: readonly EditCue[], index: number, where: 'after' | 'before', playhead: number): number {
+  const cue = cues[index]
+  if (!cue) return Math.max(0, playhead)
+  let low: number
+  let high: number
+  let preferred: number
+  if (where === 'after') {
+    const next = cues[index + 1]
+    low = cue.start + MIN_PART_SECONDS
+    high = next ? next.start - MIN_PART_SECONDS : Number.POSITIVE_INFINITY
+    preferred = cue.end + 0.05
+  } else {
+    const previous = cues[index - 1]
+    low = previous ? previous.start + MIN_PART_SECONDS : 0
+    high = cue.start - MIN_PART_SECONDS
+    preferred = cue.start - 1
+  }
+  const wanted = playhead > low && playhead < high ? playhead : preferred
+  return round(Math.max(0, high < low ? low : Math.min(high, Math.max(low, wanted))))
+}
+
+/** Tomma repliker tas bort vid sparning (en ny tom ruta som lämnas kvar är inget fel). */
+export function withoutEmpty(cues: readonly EditCue[]): EditCue[] {
+  return cues.filter((cue) => cue.text.trim() !== '')
+}
+
 export function validateCues(cues: readonly EditCue[]): Issue[] {
   const issues: Issue[] = []
   cues.forEach((cue, index) => {
-    if (!cue.text.trim()) issues.push({ index, kind: 'empty', error: true, message: 'Repliken saknar text.' })
+    if (!cue.text.trim()) issues.push({ index, kind: 'empty', error: false, message: 'Repliken saknar text och tas bort vid sparning.' })
     if (!(cue.end > cue.start)) issues.push({ index, kind: 'badTime', error: true, message: 'Repliken slutar inte efter att den börjar.' })
     const previous = cues[index - 1]
     if (previous) {

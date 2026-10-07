@@ -13,7 +13,7 @@ import {
 } from './captionEditorLogic'
 import {
   LONG_GAP_SECONDS, addCue, deleteCue, diffState, mergeInfo, mergeWithNext, shiftFrom,
-  sortedForSave, splitCue, validateCues, type EditCue, type OpResult,
+  newCueTime, sortedForSave, splitCue, validateCues, withoutEmpty, type EditCue, type OpResult,
 } from './captionEditOps'
 import { estimateSplitTime, moveBoundary } from './captionFlow'
 import { deriveTimes, speechRuns } from './captionTimingLogic'
@@ -361,6 +361,20 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     seekTo(cue.start, true)
   }
 
+  function ctrlEnter(index: number) {
+    const cue = cues[index]
+    if (!cue) return
+    const caret = areas.current.get(index)?.selectionStart ?? 0
+    if (cue.text.trim() === '' || cue.text.slice(caret).trim() === '') addEmptyCue(index, 'after')
+    else if (cue.text.slice(0, caret).trim() === '') addEmptyCue(index, 'before')
+    else splitAtCaret(index)
+  }
+
+  // En ny, tom replik bredvid raden; markören hamnar i dess textfält. Tomma repliker tas bort vid sparning om de lämnas kvar.
+  function addEmptyCue(index: number, where: 'after' | 'before') {
+    apply(addCue(cues, newCueTime(cues, index, where, playhead()), newId()))
+  }
+
   // Delar repliken vid markören. Tiden är videons position om den ligger inne i repliken (exakt), annars en uppskattning över talet.
   function splitAtCaret(index: number) {
     const cue = cues[index]
@@ -394,7 +408,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
     setSaving(true)
     setSaveError('')
     try {
-      adopt(await client.projects.saveCaptionMaster(projectId, { ifVersion: master.version, cues: savePayload(sortedForSave(cues)) }))
+      // Tomma repliker (t.ex. en ny ruta som lämnats tom) tas bort tyst.
+      adopt(await client.projects.saveCaptionMaster(projectId, { ifVersion: master.version, cues: savePayload(sortedForSave(withoutEmpty(cues))) }))
       onSaved?.()
     } catch (err) {
       if (err instanceof ApiError && err.code === 'version_conflict') setConflict(true)
@@ -457,9 +472,9 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
       const original = saved.find((cue) => cue.id === cues[index].id)
       if (original) setText(index, original.text)
     } else if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-      // Ctrl/Cmd+Enter delar repliken vid markören; delarna kan sedan justeras som vanligt.
+      // Ctrl/Cmd+Enter: mitt i texten delas repliken, sist i texten skapas en ny tom replik efter, först i texten en före (UNG-164).
       event.preventDefault()
-      splitAtCaret(index)
+      ctrlEnter(index)
     } else if (event.key === 'Enter') {
       event.preventDefault()
       if (event.shiftKey) {
@@ -599,7 +614,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved }: Capt
             )}
 
             <p class="ce-help">
-              Dra en gräns i vågformen så flödar texten över den. Ctrl/Cmd+Enter = dela vid markören · Enter = nästa rad · Skift+Enter = ny rad · Esc = ångra raden · Tab / Skift+Tab = nästa / föregående rad ·
+              Dra en gräns i vågformen så flödar texten över den. Ctrl/Cmd+Enter = dela vid markören, ny ruta efter (sist i texten) eller före (först) · Enter = nästa rad · Skift+Enter = ny rad · Esc = ångra raden · Tab / Skift+Tab = nästa / föregående rad ·
               Backspace i början / Delete i slutet slår ihop med grannen. Klicka på en rads tid för att spela den.
             </p>
           </section>

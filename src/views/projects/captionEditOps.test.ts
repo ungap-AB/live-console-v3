@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   addCue, deleteCue, isShort, mergeInfo, mergeWithNext, mergeWithPrevious, moveEdge, moveHeadToPrevious, moveTailToNext, nudge, setTime, shiftFrom, shortIndexes,
-  sortedForSave, splitCue, validateCues, wrapAny, wrapBalanced, diffState, type EditCue,
+  newCueTime, sortedForSave, splitCue, validateCues, withoutEmpty, wrapAny, wrapBalanced, diffState, type EditCue,
 } from './captionEditOps.ts'
 
 const cue = (id: number, start: number, end: number, text: string): EditCue => ({ id, start, end, text })
@@ -229,7 +229,7 @@ test('kort ruta: högst två ord eller under 1,2 s, och navigering mellan dem', 
   assert.deepEqual(shortIndexes([cue(1, 0, 3, 'Ja.'), cue(2, 3, 7, 'Ett normalt yttrande'), cue(3, 7, 8, 'Nej')]), [0, 2])
 })
 
-test('kontroll: tom text och orimlig tid är fel, överlapp och fel ordning är varningar', () => {
+test('kontroll: orimlig tid är fel, tom text, överlapp och fel ordning är varningar', () => {
   const issues = validateCues([cue(1, 0, 3, 'a'), cue(2, 2.5, 5, 'b'), cue(3, 1, 4, 'c'), cue(4, 6, 6, 'd'), cue(5, 7, 9, '  ')])
   const byIndex = (index: number) => issues.filter((issue) => issue.index === index).map((issue) => issue.kind)
   assert.deepEqual(byIndex(0), [])
@@ -237,7 +237,7 @@ test('kontroll: tom text och orimlig tid är fel, överlapp och fel ordning är 
   assert.deepEqual(byIndex(2), ['order'])
   assert.deepEqual(byIndex(3), ['badTime'])
   assert.deepEqual(byIndex(4), ['empty'])
-  assert.deepEqual(issues.filter((issue) => issue.error).map((issue) => issue.index), [3, 4])
+  assert.deepEqual(issues.filter((issue) => issue.error).map((issue) => issue.index), [3]) // tom text tas bort vid sparning, inget fel
   assert.deepEqual(validateCues([cue(1, 0, 3, 'a'), cue(2, 3, 5, 'b')]), [])
 })
 
@@ -299,4 +299,30 @@ test('dra kant: gemensam gräns flyttar båda repliker och bevarar minsta längd
   assert.deepEqual(later.map((c) => [c.start, c.end]), [[0, 4], [4, 9], [9, 12]]) // 8,03 räknas som gemensam gräns
   assert.equal(moveEdge(list, 1, 'end', 99)[2].start, 11.7)
   assert.deepEqual(list.map((c) => [c.start, c.end]), [[0, 4], [4, 8], [8.03, 12]]) // indata orörd
+})
+
+test('ny tom ruta efter: videons position om den ryms, annars strax efter repliken, aldrig närmare grannen än 0,3 s', () => {
+  const list = [cue(1, 0, 3, 'a'), cue(2, 6, 9, 'b'), cue(3, 6.5, 9, 'c')]
+  assert.equal(newCueTime(list, 0, 'after', 4.2), 4.2) // videons position inne i utrymmet
+  assert.equal(newCueTime(list, 0, 'after', 1), 1) // videons position inne i rutan själv gäller också (den rutans slut kortas)
+  assert.equal(newCueTime(list, 0, 'after', 99), 3.05)
+  assert.equal(newCueTime(list, 1, 'after', 0), 6.3) // trångt (nästa rutas start ligger för nära): 0,3 s efter rutans egen start
+  assert.equal(newCueTime(list, 2, 'after', 0), 9.05) // sista repliken: strax efter slutet
+  assert.equal(newCueTime(list, 1, 'after', 6.45), 6.3)
+  assert.equal(newCueTime([cue(1, 0, 3, 'a'), cue(2, 8, 9, 'b')], 0, 'after', 7.9), 3.05) // för nära nästa ruta: strax efter slutet i stället
+})
+
+test('ny tom ruta före: videons position om den ryms, annars en sekund före, men inte före föregående + 0,3 s', () => {
+  const list = [cue(1, 2, 4, 'a'), cue(2, 10, 12, 'b')]
+  assert.equal(newCueTime(list, 1, 'before', 7), 7)
+  assert.equal(newCueTime(list, 1, 'before', 0), 9) // en sekund före
+  assert.equal(newCueTime(list, 0, 'before', 99), 1) // första repliken: en sekund före, inte före 0
+  assert.equal(newCueTime([cue(1, 0.5, 2, 'a')], 0, 'before', 0), 0) // trångt före första repliken: början, aldrig negativt
+  assert.equal(newCueTime(list, 5, 'after', 3), 3) // ingen sådan replik
+})
+
+test('tomma repliker tas bort vid sparning', () => {
+  const list = [cue(1, 0, 2, 'a'), cue(2, 3, 5, '  \n'), cue(3, 6, 8, 'c')]
+  assert.deepEqual(withoutEmpty(list).map((c) => c.id), [1, 3])
+  assert.equal(withoutEmpty([]).length, 0)
 })
