@@ -14,6 +14,8 @@ import { errorMessage, runOptimistic } from '../../app/optimistic'
 import { Toast } from '../../components/Toast'
 import type { ProjectActions } from './actions'
 import { useNameList } from './useNameList'
+import { PERSON_SORT_OPTIONS, IDLE_REORDER_MS, orderPeople, parsePersonSort, resolveShown, type PersonSort } from './personOrder'
+import { useFlip } from './useFlip'
 import { highlight, markedHit, matches, moveActive, queryTokens, shouldActivateSearch, type Hit } from './playoutSearchLogic'
 import './PlayoutColumns.css'
 
@@ -59,7 +61,15 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
   const [importKind, setImportKind] = useState<'agenda' | 'namelist' | null>(null)
   const [importText, setImportText] = useState('')
   const [importError, setImportError] = useState<string | null>(null)
-  const [personSort, setPersonSort] = useState<'name' | 'playCount'>('name')
+  // UNG-178: sorteringen är en vy (ändrar inte den lagrade listan) och minns valet per projekt.
+  const sortKey = `ungap-live-console:person-sort:${p.id}`
+  const [personSort, setPersonSort] = useState<PersonSort>(() => {
+    try {
+      return parsePersonSort(localStorage.getItem(sortKey))
+    } catch {
+      return 'manual'
+    }
+  })
   const [pdfItem, setPdfItem] = useState<AgendaItem | null>(null)
 
   // Utspelning ska fungera även offline — mötet måste dokumenteras trots
@@ -75,6 +85,29 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
   function speakerPlayCount(personId: string): number {
     return p.playout.timeline.filter((event) => event.kind === 'person' && event.refId === personId).length
   }
+
+  // Namnlistan som visas (UNG-178). Målordningen följer sorteringen och utspelningen löpande; raden som just spelats ut ligger kvar på
+  // sin plats så länge pekaren är över listan och rör sig, och flyttas sedan mjukt när pekaren lämnat listan eller varit stilla en stund.
+  const namesBodyRef = useRef<HTMLDivElement | null>(null)
+  const [pointerInNames, setPointerInNames] = useState(false)
+  const [pointerIdle, setPointerIdle] = useState(false)
+  const lastPointerMove = useRef(0)
+  useEffect(() => {
+    if (!pointerInNames) {
+      setPointerIdle(false)
+      return
+    }
+    lastPointerMove.current = Date.now()
+    const timer = window.setInterval(() => setPointerIdle(Date.now() - lastPointerMove.current >= IDLE_REORDER_MS), 500)
+    return () => window.clearInterval(timer)
+  }, [pointerInNames])
+  const targetPeople = orderPeople(nameList?.people ?? [], personSort, speakerPlayCount)
+  const shownIds = useRef<string[]>([])
+  const holdOrder = pointerInNames && !pointerIdle
+  shownIds.current = resolveShown(shownIds.current, targetPeople.map((person) => person.id), holdOrder)
+  const peopleById = new Map((nameList?.people ?? []).map((person) => [person.id, person]))
+  const displayedPeople = shownIds.current.map((id) => peopleById.get(id)).filter((person): person is NameListPerson => Boolean(person))
+  useFlip(namesBodyRef, shownIds.current)
 
   async function addAgendaItem(): Promise<string> {
     const updated = await client.agendas.addItem(agenda!.id, { title: 'Ny punkt' })
@@ -147,17 +180,13 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
     setNameList(await client.namelists.replacePeople(nameList!.id, renumbered))
   }
 
-  async function changePersonSort(value: 'name' | 'playCount') {
+  function changePersonSort(value: PersonSort) {
     setPersonSort(value)
-    if (!nameList) return
-    const sorted = [...nameList.people].sort((left, right) => {
-      if (value === 'playCount') {
-        const countDifference = speakerPlayCount(right.id) - speakerPlayCount(left.id)
-        if (countDifference) return countDifference
-      }
-      return left.name.localeCompare(right.name, 'sv')
-    })
-    await reorderPeople(sorted)
+    try {
+      localStorage.setItem(sortKey, value)
+    } catch {
+      // Valet kommer bara inte ihåg till nästa gång.
+    }
   }
 
   async function createAndAttachAgenda() {
@@ -239,8 +268,8 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
     [searching, tokens, agenda],
   )
   const nameHits = useMemo(
-    () => (searching ? (nameList?.people ?? []).filter((pe) => matches(tokens, [pe.name, pe.party, pe.role])).map((pe) => pe.id) : []),
-    [searching, tokens, nameList],
+    () => (searching ? displayedPeople.filter((pe) => matches(tokens, [pe.name, pe.party, pe.role])).map((pe) => pe.id) : []),
+    [searching, tokens, displayedPeople.map((pe) => pe.id).join('|'), nameList],
   )
   const hiddenAgenda = useMemo(
     () => (searching ? new Set((agenda?.items ?? []).map((it) => it.id).filter((id) => !agendaHits.includes(id))) : undefined),
@@ -454,10 +483,9 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                 class="sort-select"
                 aria-label="Sortera namnlista"
                 value={personSort}
-                onChange={(event) => void changePersonSort(event.currentTarget.value as 'name' | 'playCount')}
+                onChange={(event) => changePersonSort(parsePersonSort(event.currentTarget.value))}
               >
-                <option value="name">Namn A–Ö</option>
-                <option value="playCount">Mest utspelade</option>
+                {PERSON_SORT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             )}
             <AttachedListPicker
@@ -486,7 +514,16 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
               ]}
             />
           </div>
-          <div class="pcol-body">
+          <div
+            class="pcol-body"
+            ref={namesBodyRef}
+            onPointerEnter={() => setPointerInNames(true)}
+            onPointerLeave={() => setPointerInNames(false)}
+            onPointerMove={() => {
+              lastPointerMove.current = Date.now()
+              if (pointerIdle) setPointerIdle(false)
+            }}
+          >
             {!nameList ? (
               <p class="pcol-empty">
                 {p.namelistId
@@ -497,7 +534,8 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
               </p>
             ) : (
               <EditableItemList
-                items={nameList.people}
+                items={displayedPeople}
+                disabled={personSort !== 'manual'}
                 getId={(person) => person.id}
                 getLabel={(person) => person.name}
                 addLabel="Lägg till namn"

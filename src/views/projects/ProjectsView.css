@@ -83,6 +83,28 @@
   border-radius: 10px;
 }
 
+/* UNG-183: hovring över listan. En svag tonad bakgrund och en tydligare ram på raden under pekaren. */
+.project-row {
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.project-row:hover {
+  background: var(--surface-2);
+  border-color: var(--ink-3);
+}
+
+.project-row.is-last-opened {
+  background: color-mix(in srgb, var(--focus) 8%, var(--panel));
+  border-color: var(--focus);
+  box-shadow: inset 4px 0 0 var(--focus);
+}
+
+/* Det senast öppnade projektet behåller sin blå ram vid hovring och får en något kraftigare ton. */
+.project-row.is-last-opened:hover {
+  background: color-mix(in srgb, var(--focus) 14%, var(--panel));
+  border-color: var(--focus);
+}
+
 .project-row-name {
   flex: 1 1 0;
   min-width: 0;

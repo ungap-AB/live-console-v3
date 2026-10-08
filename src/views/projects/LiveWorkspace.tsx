@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Channel, ChannelHealth, Project, TimelineEvent } from '../../data/types'
 import { useIsRootAdmin } from '../../app/currentUserContext'
@@ -10,6 +10,10 @@ import { usePlayoutTestbed } from './playoutTestbed'
 import { useNameList } from './useNameList'
 import { Icon } from '../../components/Icon'
 import { Modal } from '../../components/Modal'
+import { Clock } from '../../components/Clock'
+import { ModeSelector } from './ModeSelector'
+import { EncoderStatusChip, ViewersChip } from './LiveStatusBadges'
+import { encoderStatusOf, viewerCountOf } from './liveStatus'
 import { MAX_PAUSE_TEXT_LENGTH, pauseDurationText } from './pauseLogic'
 import './LiveWorkspace.css'
 
@@ -19,10 +23,13 @@ interface LiveWorkspaceProps {
   channel: Channel | null
   health: ChannelHealth | null
   streamKey: string | null
+  /** Expanderat läge (UNG-129) ägs av föräldern, så knappen kan ligga i projektets huvud i normalläget (UNG-179). */
+  expanded: boolean
+  onExpandedChange: (expanded: boolean) => void
 }
 
 // Ren sändningskontroll för läget Live.
-export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProps) {
+export function LiveWorkspace({ project: p, actions, channel, health, expanded, onExpandedChange }: LiveWorkspaceProps) {
   const testbed = usePlayoutTestbed(p, actions)
   // Testbädden är ett verktyg för oss (root admin), inte för operatörer.
   const isRootAdmin = useIsRootAdmin()
@@ -55,7 +62,24 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [Boolean(pause)])
 
-  const [expanded, setExpanded] = useState(false)
+  // Stängkrysset i headern (UNG-179) tar fokus när läget expanderas; när det stängs flyttar föräldern fokus tillbaka till knappen i huvudet.
+  const expandButtonRef = useRef<HTMLButtonElement | null>(null)
+  useEffect(() => {
+    if (expanded) expandButtonRef.current?.focus()
+  }, [expanded])
+  const expandButton = (
+    <button
+      class="lw-expand"
+      type="button"
+      ref={expandButtonRef}
+      aria-pressed={expanded}
+      aria-label={expanded ? 'Stäng expanderad vy' : 'Expandera'}
+      title={expanded ? 'Stäng expanderad vy' : 'Expandera listorna till hela fönstret'}
+      onClick={() => onExpandedChange(!expanded)}
+    >
+      <Icon name={expanded ? 'close' : 'open_in_full'} size={20} />
+    </button>
+  )
 
   const nowItem =
     p.playout.currentAgendaItem?.label ??
@@ -107,6 +131,19 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
         </div>
       )}
 
+      {/* UNG-179: i det expanderade läget ligger lägesknapparna (med paus), signalstatus, tittarantal och klockan i en smal header, så att
+          man kan byta läge och se signalen utan att stänga läget. Ingen "Läge"-etikett, för att spara höjd. */}
+      {expanded && (
+        <div class="lw-bar">
+          <ModeSelector project={p} actions={actions} compact />
+          <span class="spacer" />
+          <EncoderStatusChip status={encoderStatusOf({ hasChannel: Boolean(channel), publicMode: p.publicMode, livePhase: health?.livePhase, healthState: health?.state })} />
+          {viewerCountOf(health) !== null && <ViewersChip count={viewerCountOf(health)!} />}
+          <span class="pv-clock"><Clock /></span>
+          {expandButton}
+        </div>
+      )}
+
       {isRootAdmin && !expanded && <section class="lw-testbed" aria-label="Testbädd">
         <div>
           <strong>Testbädd</strong>
@@ -134,20 +171,11 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
             label={panel.label}
             value={panel.value}
             occurredAt={panel.occurredAt}
+            showTime={!expanded}
             clearLabel={panel.clearLabel}
             onClear={panel.onClear}
           />
         ))}
-        <button
-          class="lw-expand"
-          type="button"
-          aria-pressed={expanded}
-          aria-label={expanded ? 'Stäng expanderad vy' : 'Expandera'}
-          title={expanded ? 'Stäng expanderad vy' : 'Expandera listorna till hela fönstret'}
-          onClick={() => setExpanded((value) => !value)}
-        >
-          <Icon name={expanded ? 'close' : 'open_in_full'} size={20} />
-        </button>
       </div>
 
       <PlayoutColumns project={p} actions={actions} live />
@@ -186,6 +214,8 @@ interface NowPanelProps {
   label: string
   value: string | null
   occurredAt: string | null
+  /** Tidsstämpeln visas inte i det expanderade läget (UNG-179), för att spara höjd. */
+  showTime?: boolean
   clearLabel: string
   onClear: () => void
 }
@@ -195,14 +225,14 @@ interface NowPanelProps {
 // rader text (längre kläms med "…", hela texten finns som tooltip), en tidsrad och en plats för ✕-knappen.
 // Tidsraden och knappen är kvar men osynliga när inget är aktivt, så ingenting i rutan visas/döljs på ett
 // sätt som påverkar höjden. Höjderna sätts i LiveWorkspace.css.
-function NowPanel({ label, value, occurredAt, clearLabel, onClear }: NowPanelProps) {
+function NowPanel({ label, value, occurredAt, showTime = true, clearLabel, onClear }: NowPanelProps) {
   return (
-    <div class={`lw-now-panel${value ? ' is-active' : ''}`}>
+    <div class={`lw-now-panel${value ? ' is-active' : ''}${showTime ? '' : ' no-time'}`}>
       <span class="lw-now-label">{label}</span>
       <span class="lw-now-value">
         <span class="lw-now-text">
           <span class="lw-now-title" title={value ?? undefined}>{value ?? '–'}</span>
-          <small class="lw-now-time">{occurredAt ? formatLocalTime(occurredAt) : ''}</small>
+          {showTime && <small class="lw-now-time">{occurredAt ? formatLocalTime(occurredAt) : ''}</small>}
         </span>
         <button
           class="pv-icon-btn"

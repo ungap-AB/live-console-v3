@@ -1,4 +1,3 @@
-import { Fragment } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { useDismiss } from '../../app/useDismiss'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
@@ -9,12 +8,11 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { Clock } from '../../components/Clock'
 import type { Channel, ChannelHealth, Project } from '../../data/types'
 import type { ProjectActions } from './actions'
-import { useModeChange } from './useModeChange'
-import { useModeSwitching } from './useModeSwitching'
-import { MODES, MODE_LABEL } from './projectMode'
+import { ModeSelector } from './ModeSelector'
+import { EncoderStatusChip, ViewersChip } from './LiveStatusBadges'
+import { encoderStatusOf, viewerCountOf } from './liveStatus'
 import { IngestInfo } from './IngestInfo'
 import { PlayerSettingsDialog } from './PlayerSettingsDialog'
-import { PauseButton } from './PauseButton'
 import './ProjectHeader.css'
 
 interface ProjectHeaderProps {
@@ -27,6 +25,8 @@ interface ProjectHeaderProps {
   streamKey?: string | null
   showIngestInfo: boolean
   onShowIngestInfoChange: (show: boolean) => void
+  /** Knappen som expanderar live-vyn (UNG-179), till höger i huvudet. Saknas utanför läget Live. */
+  expand?: { expanded: boolean; onToggle: () => void }
 }
 
 // Spelarlänken visas utan protokoll.
@@ -37,13 +37,9 @@ function displayUrl(url: string): string {
 // Gemensam för Livesändning och Ondemand. showIngestInfo ägs av föräldern så
 // att t.ex. BeforeWorkspaces "Visa ingest-info"-menyval kan slå på samma
 // panel som knappen här i headern, istället för att ha en egen kopia.
-export function ProjectHeader({ project: p, actions, onBack, onModeSelect, channel = null, health = null, streamKey = null, showIngestInfo, onShowIngestInfoChange }: ProjectHeaderProps) {
+export function ProjectHeader({ project: p, actions, onBack, onModeSelect, channel = null, health = null, streamKey = null, showIngestInfo, onShowIngestInfoChange, expand }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
-  const { selectMode, dialog: modeDialog } = useModeChange(p, actions)
-  // UNG-107: läget som håller på att bytas till visas som valt direkt, med en snurra, tills servern har svarat.
-  const switchingTo = useModeSwitching(p.id)
-  const shownMode = switchingTo ?? p.publicMode
   const [closingIngestInfo, setClosingIngestInfo] = useState(false)
   const [confirmTeardown, setConfirmTeardown] = useState<'manual' | 'encoderStopped' | null>(null)
   const [copied, setCopied] = useState(false)
@@ -158,24 +154,10 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
     if (stoppedInAfter && !wasStoppedInAfter.current) setConfirmTeardown('encoderStopped')
     wasStoppedInAfter.current = stoppedInAfter
   }, [p.publicMode, phase])
-  const encoderStatus = !channel
-    ? { label: 'Ingen ingest', tone: 'neutral' }
-    : p.publicMode === 'after' && (phase === 'live' || phase === 'waitingforstream' || health?.state?.toLowerCase() === 'live')
-      ? { label: 'Väntar på att enkoder stoppar', tone: 'warn' }
-      : phase === 'live' || health?.state?.toLowerCase() === 'live'
-      ? { label: 'Signal OK', tone: 'ok' }
-      : phase === 'signalinterrupted' || phase === 'signalinterrupteddeclined'
-        ? { label: 'Avbrott i signal', tone: 'danger' }
-        : p.publicMode === 'after' && phase === 'waitingforstream'
-          ? { label: 'Väntar på att enkoder stoppar', tone: 'warn' }
-          : phase === 'streamended'
-            ? { label: 'Sändningen avslutad', tone: 'ended' }
-            : p.publicMode === 'ondemand'
-              ? { label: 'Ingen signal', tone: 'warn' }
-              : { label: 'Väntar på signal', tone: 'warn' }
+  const encoderStatus = encoderStatusOf({ hasChannel: Boolean(channel), publicMode: p.publicMode, livePhase: health?.livePhase, healthState: health?.state })
 
   // UNG-22: bara medan strömmen är live och IVS har gett en siffra.
-  const viewerCount = health?.state?.toLowerCase() === 'live' && typeof health.viewerCount === 'number' ? health.viewerCount : null
+  const viewerCount = viewerCountOf(health)
 
   const prevEncoderLabelRef = useRef(encoderStatus.label)
 
@@ -245,16 +227,8 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
           </>
         )}
         <span class="spacer" />
-        <div class={`pv-encoder-status is-${encoderStatus.tone}`} role="status">
-          <span class="pv-encoder-dot" aria-hidden="true" />
-          <span>{encoderStatus.label}</span>
-        </div>
-        {viewerCount !== null && (
-          <div class="pv-viewers" role="status" title="Samtidiga tittare enligt IVS. Siffran är en uppskattning med några sekunders fördröjning.">
-            <Icon name="visibility" size={17} />
-            <span>{viewerCount.toLocaleString('sv-SE')} tittare</span>
-          </div>
-        )}
+        <EncoderStatusChip status={encoderStatus} />
+        {viewerCount !== null && <ViewersChip count={viewerCount} />}
         <button
           class="pv-ingest-button"
           type="button"
@@ -282,6 +256,19 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
         </button>
         <span class="spacer" />
         <span class="pv-clock"><Clock /></span>
+        {expand && (
+          <button
+            id="lw-expand-open"
+            class="lw-expand"
+            type="button"
+            aria-pressed={expand.expanded}
+            aria-label="Expandera"
+            title="Expandera listorna till hela fönstret"
+            onClick={expand.onToggle}
+          >
+            <Icon name="open_in_full" size={20} />
+          </button>
+        )}
       </div>
 
       {(showIngestInfo || closingIngestInfo) && channel && (
@@ -320,39 +307,7 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
       )}
 
       <div class="pv-row pv-controls">
-        <div class="pv-field">
-          <div class="pv-label" id="pv-mode-label">
-            Läge
-          </div>
-          <div class="pv-seg" role="group" aria-labelledby="pv-mode-label">
-            {MODES.map((mode) => (
-              <Fragment key={mode}>
-              <button
-                type="button"
-                class={`pv-seg-btn${mode === 'live' ? ' is-live' : ''}${switchingTo === mode ? ' is-switching' : ''}`}
-                aria-pressed={shownMode === mode}
-                aria-busy={switchingTo === mode ? true : undefined}
-                disabled={switchingTo !== null || (mode === 'before' && p.publicMode === 'live')}
-                title={mode === 'before' && p.publicMode === 'live' ? 'Gå till After innan Before — ett avbrutet test granskas alltid där först.' : undefined}
-                onClick={() => (onModeSelect ? onModeSelect(mode) : selectMode(mode))}
-              >
-                {MODE_LABEL[mode]}
-                {switchingTo === mode && <span class="pv-spinner" aria-hidden="true" />}
-              </button>
-              {/* UNG-119: paus-knappen sitter precis till höger om Live och visas bara i läget Live. */}
-              {mode === 'live' && p.publicMode === 'live' && (
-                <PauseButton pause={p.playout.currentPause ?? null} timeline={p.playout.timeline} onStart={actions.pause} onResume={actions.resume} />
-              )}
-              </Fragment>
-            ))}
-          </div>
-          {switchingTo !== null && (
-            <div class="pv-switching" role="status">
-              <span class="pv-spinner" aria-hidden="true" />
-              <span>Byter till {MODE_LABEL[switchingTo]}…</span>
-            </div>
-          )}
-        </div>
+        <ModeSelector project={p} actions={actions} onModeSelect={onModeSelect} />
 
         <div class="pv-field pv-link-field">
           <div class="pv-label">Spelare</div>
@@ -418,8 +373,6 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
         </div>
 
       </div>
-
-      {modeDialog}
 
       {showPlayerSettings && (
         <PlayerSettingsDialog project={p} actions={actions} onClose={() => setShowPlayerSettings(false)} />

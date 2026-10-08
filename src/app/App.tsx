@@ -17,6 +17,7 @@ import { JobsView } from '../views/jobs/JobsView'
 import { TrashView } from '../views/trash/TrashView'
 import { UsersView } from '../views/users/UsersView'
 import { readStoredSelection, storeSelection } from './selectionStorage'
+import { nextLastOpened } from '../views/projects/projectListFocus'
 import { IsRootAdminContext } from './currentUserContext'
 
 type AuthState = { status: 'loading' } | { status: 'anon' } | { status: 'authed'; user: CurrentUser }
@@ -82,6 +83,11 @@ export function App() {
   // överlever att man navigerar bort och tillbaka — det är vad som gör
   // genvägen i sidomenyn meningsfull.
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
+  // UNG-183: projektet man senast hade öppet. Behålls när man går tillbaka till listan, så det kan markeras och scrollas fram där.
+  const [lastOpenedProjectId, setLastOpenedProjectId] = useState<string | null>(null)
+  useEffect(() => {
+    setLastOpenedProjectId((previous) => nextLastOpened(previous, activeProjectId))
+  }, [activeProjectId])
   const [projectScreen, setProjectScreen] = useState<ProjectScreen>('livesandning')
   // Lyft hit av samma skäl som projectScreen — navmenyns "+ Ny"-knapp (bild 1)
   // måste kunna öppna ProjectsViews skapa-dialog utifrån, inte bara inifrån.
@@ -185,6 +191,7 @@ export function App() {
           meetingDomain={auth.user.domain.host}
           selectionScope={auth.user.domain.id}
           selectedId={activeProjectId}
+          lastOpenedId={lastOpenedProjectId}
           onSelectedIdChange={setActiveProjectId}
           screen={projectScreen}
           onScreenChange={setProjectScreen}

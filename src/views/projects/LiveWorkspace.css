@@ -252,3 +252,42 @@
   font-size: 13px;
   color: var(--ink-2);
 }
+
+/* UNG-179: smal header i det expanderade läget, lika hög som lägesknapparna (ramen runt dem är 44 px) med liten marginal. */
+.lw-bar .lw-expand {
+  align-self: center;
+  width: 44px;
+  height: 44px; /* lika hög som lägesknapparnas ram, så headern inte blir högre än den */
+}
+
+.lw-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.lw-bar .pv-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+}
+
+.lw.is-expanded {
+  gap: 8px;
+}
+
+/* Utan tidsstämpel är rutan en rad kortare (tidsraden är 16 px + 4 px marginal). */
+.lw-now-panel.no-time {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+/* UNG-179: expandera-knappen i projektets huvud (normalläget), längst till höger efter klockan. */
+.pv-row > .lw-expand {
+  align-self: center;
+  width: 34px;
+  height: 34px;
+  margin-left: 4px;
+}

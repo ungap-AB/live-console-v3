@@ -14,6 +14,9 @@ import { VideoActionsDialog } from './VideoActionsDialog'
 import type { DownloadState } from './DownloadPanel'
 import { videoActionsAvailable } from './videoDialogLogic'
 import { PublishProgressDialog } from './PublishProgressDialog'
+import { PublishOutcomeDialog } from './PublishOutcomeDialog'
+import { stepLabel as publishStepLabel } from './publishOutcome'
+import type { PublishedFacts } from './publishOutcome'
 import { buildPublishSteps } from './publishProgress'
 import type { PublishStep, PublishStepKey } from './publishProgress'
 import { UploadPanel } from './UploadPanel'
@@ -78,6 +81,8 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [publishing, setPublishing] = useState(false)
   const [publishSteps, setPublishSteps] = useState<PublishStep[]>([])
   const [publishStep, setPublishStep] = useState<PublishStepKey>('publish')
+  // UNG-181: kvittot efter publiceringen. Står kvar tills det stängs.
+  const [publishOutcome, setPublishOutcome] = useState<{ kind: 'published'; wasPublished: boolean } | { kind: 'failed'; step: PublishStepKey } | null>(null)
   // Kapitel som hämtas om (efter publicering) medan den förra listan fortfarande visas.
   const [chaptersRefreshing, setChaptersRefreshing] = useState(false)
   const chaptersProjectRef = useRef<string | null>(null)
@@ -830,31 +835,55 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   async function publishWithTrim() {
     setConfirmOndemand(false)
     const willTrim = trimDirty && !!p.recording
-    setPublishSteps(buildPublishSteps({ saveDraft: draftDirty, trim: willTrim }))
+    const wasPublished = p.publication.state === 'published'
+    const steps = buildPublishSteps({ saveDraft: draftDirty, trim: willTrim })
+    setPublishSteps(steps)
     setPublishStep(draftDirty ? 'save' : willTrim ? 'trim' : 'publish')
+    setPublishOutcome(null)
     setPublishing(true)
+    // Steget som stannade flödet (annars null). Ett misslyckat steg visas i kvittot i stället för att dialogen bara försvinner.
+    let failedStep: PublishStepKey | null = null
+    let succeeded = false
     try {
-      if (draftDirty) await saveTrimDraft()
+      if (draftDirty) {
+        try {
+          await saveTrimDraft()
+        } catch {
+          failedStep = 'save'
+          return
+        }
+      }
       let published = false
       if (willTrim) {
         setPublishStep('trim')
-        if (!(await actions.trim({ startOffsetSeconds: mockTrimStart, endOffsetSeconds: mockTrimEnd }))) return
+        if (!(await actions.trim({ startOffsetSeconds: mockTrimStart, endOffsetSeconds: mockTrimEnd }))) {
+          failedStep = 'trim'
+          return
+        }
         await actions.refreshProject()
         setPublishStep('publish')
         published = await actions.publish()
+        if (!published) failedStep = 'publish'
       } else if (p.recording) {
         setPublishStep('publish')
         published = await actions.publish()
+        if (!published) failedStep = 'publish'
       } else if (await actions.setPublicMode('ondemand')) {
         actions.setVisibility('open')
+        succeeded = true
+      } else {
+        failedStep = 'publish'
       }
       if (published) {
         setHasUnpublishedChanges(false)
         setPublishStep('chapters')
         await reloadChaptersNow()
+        succeeded = true
       }
     } finally {
       setPublishing(false)
+      if (failedStep) setPublishOutcome({ kind: 'failed', step: failedStep })
+      else if (succeeded) setPublishOutcome({ kind: 'published', wasPublished })
     }
   }
 
@@ -1376,6 +1405,23 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
         />
       )}
       {publishing && <PublishProgressDialog steps={publishSteps} activeKey={publishStep} />}
+      {!publishing && publishOutcome?.kind === 'published' && (
+        <PublishOutcomeDialog
+          kind="published"
+          facts={{
+            wasPublished: publishOutcome.wasPublished,
+            visibility: p.visibility,
+            chapterCount: chapters.filter((chapter) => chapter.kind !== 'pauseIn' && chapter.kind !== 'pauseOut').length,
+            captions: p.recording?.captions ? { label: p.recording.captions.label, cueCount: p.recording.captions.cueCount } : null,
+          } satisfies PublishedFacts}
+          playerUrl={p.playerUrl}
+          onOpenForViewers={() => void actions.setVisibility('open')}
+          onClose={() => setPublishOutcome(null)}
+        />
+      )}
+      {!publishing && publishOutcome?.kind === 'failed' && (
+        <PublishOutcomeDialog kind="failed" stepLabel={publishStepLabel(publishSteps, publishOutcome.step)} onClose={() => setPublishOutcome(null)} />
+      )}
     </div>
   )
 }

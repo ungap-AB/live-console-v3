@@ -17,6 +17,7 @@ import { MODE_LABEL } from './projectMode'
 import { listCaptionButton, requestCaptionStudio } from './captionEntryLogic'
 import { currentPauseFromTimeline, normalizePauseText } from './pauseLogic'
 import { activeJobsByProject, jobKindIcon, jobKindLabel } from './projectJobLogic'
+import { needsScroll, revealTarget } from './projectListFocus'
 import { openJobsView } from '../../app/jobsBus'
 import type { ProjectActions } from './actions'
 import { ApiError } from '../../data/http/fetchJson'
@@ -81,6 +82,8 @@ interface ProjectsViewProps {
   meetingDomain: string
   selectionScope: string
   selectedId: string | null
+  /** Projektet som senast var öppet (UNG-183): markeras och scrollas fram när listan visas. */
+  lastOpenedId?: string | null
   onSelectedIdChange: (id: string | null) => void
   screen: ProjectScreen
   onScreenChange: (screen: ProjectScreen) => void
@@ -93,6 +96,7 @@ export function ProjectsView({
   meetingDomain,
   selectionScope,
   selectedId,
+  lastOpenedId = null,
   onSelectedIdChange,
   screen,
   onScreenChange,
@@ -125,6 +129,27 @@ export function ProjectsView({
   }, [selectedId, selectionScope])
 
   const selected = projects.find((p) => p.id === selectedId) ?? null
+
+  // UNG-183: när listan visas (tillbaka från ett projekt, eller när man kommer hit från en annan vy) scrollas det senast öppnade
+  // projektet fram och får fokus på sin namnknapp, så Enter öppnar det igen. Raden markeras så länge det är det senast öppnade.
+  const listRef = useRef<HTMLUListElement | null>(null)
+  const revealPending = useRef(lastOpenedId !== null)
+  useEffect(() => {
+    if (selectedId) {
+      revealPending.current = true
+      return
+    }
+    if (!revealPending.current) return
+    const target = revealTarget(lastOpenedId, projects)
+    const row = target ? listRef.current?.querySelector<HTMLElement>(`[data-project-id="${CSS.escape(target)}"]`) : null
+    if (!row) return
+    revealPending.current = false
+    const container = row.closest<HTMLElement>('.content')
+    const view = container?.getBoundingClientRect() ?? { top: 0, bottom: window.innerHeight }
+    const rect = row.getBoundingClientRect()
+    if (needsScroll(rect, view)) row.scrollIntoView({ block: 'center' })
+    row.querySelector<HTMLElement>('.project-row-name')?.focus({ preventScroll: true })
+  }, [selectedId, projects, lastOpenedId])
 
   // Tillbaka till listan: hämta den på nytt, så att undertextläget (genererar n %, utkast, publicerade) är aktuellt.
   const previousSelected = useRef<string | null>(selectedId)
@@ -502,9 +527,9 @@ export function ProjectsView({
                   <span class="col-captions">Undertexter</span>
                   <span class="col-actions" />
                 </div>
-                <ul class="project-list-rows">
+                <ul class="project-list-rows" ref={listRef}>
                   {sortedProjects.map((p) => (
-                    <li key={p.id} class="project-row">
+                    <li key={p.id} class={`project-row${p.id === lastOpenedId ? ' is-last-opened' : ''}`} data-project-id={p.id} aria-current={p.id === lastOpenedId ? 'true' : undefined}>
                       <button
                         class="project-row-name"
                         type="button"

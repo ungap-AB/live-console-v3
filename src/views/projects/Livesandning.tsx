@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Project } from '../../data/types'
 import type { ProjectActions } from './actions'
@@ -21,6 +21,14 @@ export function Livesandning({ project: p, actions, meetingDomain, onBack }: Liv
   // Delas mellan headerns "Ingest info"-knapp och BeforeWorkspaces
   // motsvarande menyval — en enda panel, oavsett vilken som öppnar den.
   const [showIngestInfo, setShowIngestInfo] = useState(false)
+  // UNG-129/179: det expanderade live-läget. Knappen för att expandera ligger i projektets huvud (till höger), stängkrysset i den
+  // expanderade headern; fokus följer med så tangentbordsanvändaren inte tappar knappen.
+  const [expanded, setExpanded] = useState(false)
+  const wasExpanded = useRef(false)
+  useEffect(() => {
+    if (wasExpanded.current && !expanded) document.getElementById('lw-expand-open')?.focus()
+    wasExpanded.current = expanded
+  }, [expanded])
 
   // Samma pollning som Playout: håller utspelningsläget i synk mellan operatörer.
   useEffect(() => {
@@ -52,6 +60,7 @@ export function Livesandning({ project: p, actions, meetingDomain, onBack }: Liv
         streamKey={live.streamKey}
         showIngestInfo={showIngestInfo}
         onShowIngestInfoChange={setShowIngestInfo}
+        expand={p.publicMode === 'live' ? { expanded, onToggle: () => setExpanded((value) => !value) } : undefined}
       />
       {p.publicMode === 'before' ? (
         <BeforeWorkspace
@@ -65,7 +74,7 @@ export function Livesandning({ project: p, actions, meetingDomain, onBack }: Liv
           meetingDomain={meetingDomain}
         />
       ) : (
-        <LiveWorkspace project={p} actions={actions} channel={live.channel} health={live.health} streamKey={live.streamKey} />
+        <LiveWorkspace project={p} actions={actions} channel={live.channel} health={live.health} streamKey={live.streamKey} expanded={expanded} onExpandedChange={setExpanded} />
       )}
     </div>
   )
