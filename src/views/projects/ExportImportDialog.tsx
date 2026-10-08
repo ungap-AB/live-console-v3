@@ -8,7 +8,7 @@ import { ShareDialog } from '../../components/ShareDialog'
 import { buildExportChapters, exportFileName, toUngapChaptersJson, toWebVttChapters, toYoutubeChapters } from './chapterExport'
 import { loadChapterExportData, type ChapterExportData } from './chapterExportData'
 import {
-  chaptersExportAvailability, copiedMessage, importAvailability, savedMessage, videoDownloadAvailability, type Availability, type ImportHandlers,
+  captionDraftAvailability, chaptersExportAvailability, copiedMessage, importAvailability, publishedCaptionsAvailability, savedMessage, videoDownloadAvailability, type Availability, type ImportHandlers,
 } from './exportImportLogic'
 import { DownloadButton } from './RecordingDownload'
 import { useRecordingDownloads } from './useRecordingDownloads'
@@ -22,7 +22,14 @@ interface ExportImportDialogProps extends ImportHandlers {
 }
 
 type Mode = 'export' | 'import'
+type ExportTab = 'chapters' | 'captions' | 'video'
 interface RowStatus { kind: 'ok' | 'error'; text: string }
+
+const EXPORT_TABS = [
+  { id: 'chapters', label: 'Kapitel' },
+  { id: 'captions', label: 'Undertexter' },
+  { id: 'video', label: 'Video' },
+] as const
 
 const MODES = [
   { id: 'export', label: 'Exportera' },
@@ -73,16 +80,20 @@ function Row({ title, description, availability, status, children, fallbackActio
 // rena funktioner (exportImportLogic.ts); här ritas de. Öppnas från ...-menyn på projektraden och från projektet självt.
 export function ExportImportDialog({ project, onClose, onOpenProject, onImportChapters, onOpenVideoActions }: ExportImportDialogProps) {
   const [mode, setMode] = useState<Mode>('export')
+  const [exportTab, setExportTab] = useState<ExportTab>('chapters')
   const [includeSpeakers, setIncludeSpeakers] = useState(false)
   const [statuses, setStatuses] = useState<Record<string, RowStatus>>({})
   const [copied, setCopied] = useState(false)
   const [wordBusy, setWordBusy] = useState(false)
+  const [captionBusy, setCaptionBusy] = useState<string | null>(null)
   const [shareRecordingId, setShareRecordingId] = useState<string | null>(null)
   const copyTimer = useRef<number | undefined>(undefined)
   const { downloads, start: startDownload } = useRecordingDownloads()
 
   const chaptersAvailability = chaptersExportAvailability(project)
   const videoAvailability = videoDownloadAvailability(project)
+  const publishedCaptions = publishedCaptionsAvailability(project)
+  const draftCaptions = captionDraftAvailability(project)
   const imports = importAvailability({ onImportChapters, onOpenVideoActions })
   const recordingId = project.recording?.id
 
@@ -159,6 +170,33 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
     }
   }
 
+  // Undertexter: servern läser den publicerade filen ur lagringen (VTT som den är, SRT omräknad) så att den hör till den publicerade videon.
+  const saveCaptions = async (format: 'vtt' | 'srt') => {
+    setCaptionBusy(format)
+    try {
+      const blob = await client.projects.exportCaptions(project.id, format)
+      const fileName = exportFileName(project.name, 'undertexter', format)
+      saveFile(fileName, blob, format === 'vtt' ? 'text/vtt;charset=utf-8' : 'application/x-subrip;charset=utf-8')
+      report(`captions-${format}`, 'ok', savedMessage(fileName))
+    } catch (reason) {
+      report(`captions-${format}`, 'error', reason instanceof Error ? reason.message : 'Undertexterna kunde inte hämtas.')
+    } finally {
+      setCaptionBusy(null)
+    }
+  }
+
+  const saveCaptionDraft = async () => {
+    setCaptionBusy('draft')
+    try {
+      await client.projects.downloadCaptionDraft(project.id)
+      report('captions-draft', 'ok', 'Utkastet laddades ner som en .vtt-fil.')
+    } catch (reason) {
+      report('captions-draft', 'error', reason instanceof Error ? reason.message : 'Utkastet kunde inte hämtas.')
+    } finally {
+      setCaptionBusy(null)
+    }
+  }
+
   const noChapters = exports !== null && exports.count === 0
   const chapterRowAvailability: Availability = chapterError
     ? { enabled: false, reason: chapterError }
@@ -189,8 +227,10 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
       <div class="ei-panel" role="tabpanel" id={`eid-panel-${mode}`} aria-labelledby={`eid-tab-${mode}`}>
         {mode === 'export' ? (
           <>
-            <section class="ei-group" aria-labelledby="ei-chapters">
-              <h3 id="ei-chapters">Kapitel</h3>
+            <Tabs tabs={EXPORT_TABS} active={exportTab} onChange={(id) => setExportTab(id as ExportTab)} label="Vad vill du exportera" idPrefix="eis" />
+            <div class="ei-subpanel" role="tabpanel" id={`eis-panel-${exportTab}`} aria-labelledby={`eis-tab-${exportTab}`}>
+            {exportTab === 'chapters' && (
+            <section class="ei-group" aria-label="Kapitel">
               <p class="ei-help">Tiderna räknas från den publicerade videons start.</p>
               {chaptersAvailability.enabled && (
                 <label class="ps-switch ei-option">
@@ -225,9 +265,27 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
                 </Row>
               </ul>
             </section>
+            )}
 
-            <section class="ei-group" aria-labelledby="ei-video">
-              <h3 id="ei-video">Video</h3>
+            {exportTab === 'captions' && (
+            <section class="ei-group" aria-label="Undertexter">
+              <p class="ei-help">De publicerade undertexterna är i den publicerade videons tid.</p>
+              <ul class="ei-list">
+                <Row title="Undertexter (.vtt)" description="WebVTT, som spelaren och de flesta videoplattformar läser." availability={publishedCaptions} status={statuses['captions-vtt']}>
+                  <button class="btn btn-sm" type="button" disabled={captionBusy !== null} onClick={() => void saveCaptions('vtt')}>{captionBusy === 'vtt' ? 'Hämtar…' : 'Ladda ner'}</button>
+                </Row>
+                <Row title="Undertexter (.srt)" description="SRT, för redigeringsprogram och plattformar som inte läser WebVTT." availability={publishedCaptions} status={statuses['captions-srt']}>
+                  <button class="btn btn-sm" type="button" disabled={captionBusy !== null} onClick={() => void saveCaptions('srt')}>{captionBusy === 'srt' ? 'Hämtar…' : 'Ladda ner'}</button>
+                </Row>
+                <Row title="Utkast för redigering (.vtt)" description="Hela utkastet, med eventuella ändringar som inte är publicerade, i originalinspelningens tid." availability={draftCaptions} status={statuses['captions-draft']}>
+                  <button class="btn btn-sm" type="button" disabled={captionBusy !== null} onClick={() => void saveCaptionDraft()}>{captionBusy === 'draft' ? 'Hämtar…' : 'Ladda ner'}</button>
+                </Row>
+              </ul>
+            </section>
+            )}
+
+            {exportTab === 'video' && (
+            <section class="ei-group" aria-label="Video">
               <ul class="ei-list">
                 <Row
                   title="Video (MP4)"
@@ -255,6 +313,8 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
                 </Row>
               </ul>
             </section>
+            )}
+            </div>
           </>
         ) : (
           <section class="ei-group" aria-labelledby="ei-import">

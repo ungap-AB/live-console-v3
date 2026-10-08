@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { chaptersExportAvailability, copiedMessage, importAvailability, savedMessage, videoDownloadAvailability } from './exportImportLogic.ts'
+import { captionDraftAvailability, chaptersExportAvailability, copiedMessage, importAvailability, publishedCaptionsAvailability, savedMessage, videoDownloadAvailability } from './exportImportLogic.ts'
 
 const rec = (state: string, source = 'Live-sändning') => ({ id: 'r1', state: state as 'recorded', source })
 
@@ -34,3 +34,19 @@ test('meddelandena nämner vad som hände', () => {
   assert.equal(copiedMessage(12), '12 kapitel kopierades. Klistra in dem i videons beskrivning på YouTube.')
   assert.equal(savedMessage('KF - kapitel.docx'), 'Sparad som "KF - kapitel.docx". Filen ligger bland dina hämtade filer.')
 })
+
+test('publicerade undertexter går att exportera först när de finns, med förklaring annars', () => {
+  const captions = { language: 'sv', label: 'Svenska', cueCount: 10, lastCueEndSeconds: 60, uploadedAt: '2026-10-08T10:00:00Z', url: 'https://x/c.vtt' }
+  assert.equal(publishedCaptionsAvailability({ recording: { ...rec('published'), captions } }).enabled, true)
+  assert.match(publishedCaptionsAvailability({ recording: rec('published') }).reason ?? '', /inga publicerade undertexter/)
+  assert.match(publishedCaptionsAvailability({ recording: null }).reason ?? '', /inga publicerade undertexter/)
+})
+
+test('undertextutkastet går att exportera när det finns (utkast eller publicerat)', () => {
+  assert.equal(captionDraftAvailability({ recording: null, captionStatus: { state: 'draft' } }).enabled, true)
+  assert.equal(captionDraftAvailability({ recording: null, captionStatus: { state: 'published' } }).enabled, true)
+  assert.equal(captionDraftAvailability({ recording: null, captionStatus: { state: 'none' } }).enabled, false)
+  assert.equal(captionDraftAvailability({ recording: null, captionStatus: { state: 'generating' } }).enabled, false)
+  assert.match(captionDraftAvailability({ recording: null }).reason ?? '', /inget undertextutkast/)
+})
+

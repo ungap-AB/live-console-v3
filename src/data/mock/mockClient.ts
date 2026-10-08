@@ -891,6 +891,9 @@ export const mockClient: Client = {
     async downloadCaptionDraft() {
       throw new Error('Automatiska undertexter finns inte i mock-läget')
     },
+    async exportCaptions() {
+      throw new Error('Undertexter finns inte i mock-läget')
+    },
     async exportChaptersDocx() {
       throw new Error('Word-export finns inte i mock-läget')
     },

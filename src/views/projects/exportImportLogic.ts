@@ -12,6 +12,7 @@ export interface Availability {
 }
 
 type Facts = Pick<Project, 'publicMode' | 'recording'>
+type CaptionFacts = Pick<Project, 'recording' | 'captionStatus'>
 
 const OK: Availability = { enabled: true }
 
@@ -35,6 +36,19 @@ export function videoDownloadAvailability(project: Facts): Availability {
   if (project.publicMode !== 'ondemand') return { enabled: false, reason: 'Videon går att ladda ner när sändningen är avslutad och publicerad.' }
   const ready = recording.state === 'recorded' || recording.state === 'trimmed' || recording.state === 'published'
   return ready ? OK : { enabled: false, reason: 'Videon är inte klar än.' }
+}
+
+/** De publicerade undertexterna (VTT och SRT) finns när videon har en publicerad undertext. */
+export function publishedCaptionsAvailability(project: CaptionFacts): Availability {
+  return project.recording?.captions
+    ? OK
+    : { enabled: false, reason: 'Det finns inga publicerade undertexter. Skapa och godkänn dem under Video och undertexter.' }
+}
+
+/** Utkastet (hela mastern i originalets tid) finns när undertexter skapats, även om de inte publicerats. */
+export function captionDraftAvailability(project: CaptionFacts): Availability {
+  const state = project.captionStatus?.state
+  return state === 'draft' || state === 'published' ? OK : { enabled: false, reason: 'Det finns inget undertextutkast.' }
 }
 
 export interface ImportHandlers {

@@ -2,9 +2,16 @@
 .ei-panel {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 14px;
   padding-top: 14px;
-  min-height: 360px;
+  min-height: 400px;
+}
+
+/* Undertabbarnas innehåll: lite luft mot flikraden, och dialogen behåller sin höjd när man byter flik. */
+.ei-subpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .ei-group h3 {

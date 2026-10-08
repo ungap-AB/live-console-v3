@@ -888,6 +888,9 @@ export const httpClient: Client = {
       anchor.remove()
       setTimeout(() => URL.revokeObjectURL(url), 10_000)
     },
+    exportCaptions(id, format) {
+      return apiBlob(`/projects/${id}/export/captions.${format}`)
+    },
     exportChaptersDocx(id) {
       return apiBlob(`/projects/${id}/export/chapters.docx`)
     },

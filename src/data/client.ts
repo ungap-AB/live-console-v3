@@ -220,6 +220,8 @@ export interface Client {
     downloadCaptionDraft(id: string): Promise<void>
     /** UNG-194: kapitel för arkivering som Word-dokument (servern bygger det). */
     exportChaptersDocx(id: string): Promise<Blob>
+    /** De publicerade undertexterna som fil, i den publicerade videons tid (servern läser dem ur lagringen). */
+    exportCaptions(id: string, format: 'vtt' | 'srt'): Promise<Blob>
     setPoster(id: string, file: File): Promise<Project>
     removePoster(id: string): Promise<Project>
     setVisibility(id: string, visibility: Visibility): Promise<Project>
