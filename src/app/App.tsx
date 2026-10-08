@@ -162,18 +162,16 @@ export function App() {
   if (auth.status === 'loading') return <div class="login-screen">Laddar…</div>
   if (auth.status === 'anon') return <LoginView onLogin={login} initialEmail={loginEmail ?? ''} notice={sessionNotice} />
 
-  // Genvägen till det öppna projektets vy vinner när man står på en annan sida.
-  // "+ Nytt" visas bara när Projekt-vyn faktiskt visar projektlistan — inte när
-  // ett projekt redan är öppet där (man tittar ju redan på det).
-  const projectsNavAction =
-    activeProjectId && route !== 'projects'
-      ? {
-          label: projectScreen === 'ondemand' ? 'Ondemand' : 'Livesändning',
-          onClick: () => { window.location.hash = routeHref('projects') },
-        }
-      : route === 'projects' && !activeProjectId
-        ? { label: '+ Nytt', onClick: () => setCreatingProject(true) }
-        : null
+  // UNG-186: projektraden i menyn har bara "+ Nytt", och den syns alltid. Från en annan sida går den först till Projekt-vyn och öppnar
+  // sedan skapa-dialogen (tillståndet ligger här, så dialogen följer med när vyn monteras). Menyvalet "Projekt" går till listan med det
+  // senast öppnade projektet markerat (UNG-183), inte tillbaka in i projektet.
+  const projectsNavAction = {
+    label: '+ Nytt',
+    onClick: () => {
+      window.location.hash = routeHref('projects')
+      setCreatingProject(true)
+    },
+  }
 
   return (
     <IsRootAdminContext.Provider value={isRootAdmin}>

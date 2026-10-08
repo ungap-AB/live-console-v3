@@ -183,13 +183,26 @@
   gap: 5px;
 }
 
-.project-list .caption-list-button.is-edit {
+.project-list .caption-list-button.is-draft {
   color: var(--focus);
   border-color: var(--focus);
 }
 
+/* Publicerade undertexter: grönt, som Öppen. Färgen stöds alltid av texten. */
+.project-list .caption-list-button.is-published {
+  color: var(--open-fg);
+  border-color: var(--open-fg);
+  background: var(--open-bg);
+}
+
+.project-list .caption-list-button.is-warn {
+  color: var(--warn);
+  border-color: var(--warn);
+  background: var(--warn-bg);
+}
+
 .project-list .col-actions {
-  width: 186px;
+  width: 44px; /* bara ...-menyn (UNG-188) */
   flex: none;
   display: flex;
   align-items: center;
@@ -248,13 +261,8 @@
 
 @media (max-width: 900px) {
   .project-list .col-date,
-  .project-list-head .col-date,
-  .project-list .copy-label {
+  .project-list-head .col-date {
     display: none;
-  }
-
-  .project-list .col-actions {
-    width: 76px;
   }
 }
 

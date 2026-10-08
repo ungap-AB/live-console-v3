@@ -569,7 +569,7 @@ export function ProjectsView({
                           const button = listCaptionButton(p.captionStatus)
                           return (
                             <button
-                              class={`btn btn-sm caption-list-button${button.kind === 'edit' ? ' is-edit' : ''}`}
+                              class={`btn btn-sm caption-list-button is-${button.tone}`}
                               type="button"
                               title={button.title}
                               onClick={() => {
@@ -584,23 +584,20 @@ export function ProjectsView({
                         })()}
                       </span>
                       <span class="col-actions">
-                        <button
-                          class="btn btn-sm btn-ghost"
-                          type="button"
-                          disabled={!p.playerUrl}
-                          onClick={() =>
-                            void navigator.clipboard.writeText(p.playerUrl).then(
-                              () => setToast('Spelarlänken kopierades.'),
-                              () => setToast('Det gick inte att kopiera länken.'),
-                            )
-                          }
-                        >
-                          <Icon name="content_copy" size={16} />
-                          <span class="copy-label">Kopiera länk</span>
-                        </button>
                         <OverflowMenu
                           label={`Fler åtgärder för ${p.name}`}
                           items={[
+                            // UNG-188: Kopiera länk ligger i menyn, inte som egen knapp på raden. Inaktivt (med förklaring) om länk saknas.
+                            {
+                              label: 'Kopiera länk',
+                              disabled: !p.playerUrl,
+                              title: p.playerUrl ? undefined : 'Projektet saknar spelarlänk',
+                              onClick: () =>
+                                void navigator.clipboard.writeText(p.playerUrl).then(
+                                  () => setToast('Spelarlänken kopierades.'),
+                                  () => setToast('Det gick inte att kopiera länken.'),
+                                ),
+                            },
                             { label: 'Byt namn', onClick: () => setRenaming(p) },
                             {
                               label: 'Flytta till papperskorgen',

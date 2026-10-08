@@ -13,20 +13,64 @@ export interface CaptionEntry {
   disabledReason?: string
 }
 
+// UNG-187: undertextens tillstånd och hur det benämns. EN källa för knappen ovanför videon och knappen i projektlistan, så orden inte
+// kan glida isär. Listan säger var undertexten står (Skapa, Genererar, Försök igen, Utkast, Publicerade); knappen ovanför videon har
+// verb där det finns en åtgärd (Redigera utkast, Redigera undertexter). Utkast gäller även publicerade undertexter som ändrats efteråt.
+export type CaptionState = 'none' | 'generating' | 'failed' | 'draft' | 'published'
+export type CaptionTone = 'neutral' | 'progress' | 'warn' | 'draft' | 'published'
+
+export interface CaptionStateView {
+  kind: EntryKind
+  tone: CaptionTone
+  /** Texten i projektlistan. */
+  listLabel: string
+  /** Texten på knappen ovanför videon. */
+  entryLabel: string
+  /** Vad ett klick gör. */
+  title: string
+}
+
+export function captionStateView(state: CaptionState, progress?: number | null): CaptionStateView {
+  const percent = typeof progress === 'number' && progress > 0 ? ` ${Math.round(progress)} %` : ''
+  switch (state) {
+    case 'generating':
+      return {
+        kind: 'progress',
+        tone: 'progress',
+        listLabel: percent ? `Genererar${percent}` : 'Genererar…',
+        entryLabel: percent ? `Genererar undertexter…${percent}` : 'Genererar undertexter…',
+        title: 'Undertexterna genereras. Öppna för att följa framsteget.',
+      }
+    case 'failed':
+      return { kind: 'create', tone: 'warn', listLabel: 'Försök igen', entryLabel: 'Försök igen', title: 'Förra försöket misslyckades. Skapa undertexterna igen.' }
+    case 'draft':
+      return {
+        kind: 'edit',
+        tone: 'draft',
+        listLabel: 'Utkast',
+        entryLabel: 'Redigera utkast',
+        title: 'Redigera utkastet. Det syns inte för tittarna förrän det publicerats.',
+      }
+    case 'published':
+      return { kind: 'edit', tone: 'published', listLabel: 'Publicerade', entryLabel: 'Redigera undertexter', title: 'Redigera de publicerade undertexterna' }
+    default:
+      return { kind: 'create', tone: 'neutral', listLabel: 'Skapa', entryLabel: 'Skapa undertexter', title: 'Skapa undertexter automatiskt' }
+  }
+}
+
 /** Knappens läge, eller null medan serverns läge inte är hämtat. */
 export function captionEntry(generation: CaptionGeneration | null): CaptionEntry | null {
   if (!generation) return null
   const phase = autoCaptionsPhase(generation)
-  if (phase === 'running') {
-    const progress = generation.job?.progress
-    return { kind: 'progress', label: typeof progress === 'number' && progress > 0 ? `Genererar undertexter… ${Math.round(progress)} %` : 'Genererar undertexter…' }
+  const unavailable = generation.canGenerate ? undefined : 'Undertexter går inte att skapa automatiskt för den här videon.'
+  if (phase === 'running') return { kind: 'progress', label: captionStateView('generating', generation.job?.progress).entryLabel }
+  if (phase === 'draft') {
+    // Publicerade bara om den senast sparade versionen är den publicerade; allt annat (även ändringar efter en publicering) är ett utkast.
+    const published = generation.draft?.unpublishedChanges === false
+    return { kind: 'edit', label: captionStateView(published ? 'published' : 'draft').entryLabel }
   }
-  if (phase === 'draft') return { kind: 'edit', label: 'Redigera undertexter' }
-  return {
-    kind: 'create',
-    label: 'Skapa undertexter',
-    disabledReason: generation.canGenerate ? undefined : 'Undertexter går inte att skapa automatiskt för den här videon.',
-  }
+  if (phase === 'failed') return { kind: 'create', label: captionStateView('failed').entryLabel, disabledReason: unavailable }
+  return { kind: 'create', label: captionStateView('none').entryLabel, disabledReason: unavailable }
 }
 
 export type StudioView = 'start' | 'progress' | 'editor'
@@ -40,33 +84,21 @@ export function studioView(phase: AutoCaptionsPhase): StudioView {
 
 /** Undertextläget per projekt ur projektlistan (servern räknar ut det för hela listan med få frågor, UNG-167). */
 export interface ProjectCaptionStatus {
-  state: 'none' | 'generating' | 'failed' | 'draft' | 'published'
+  state: CaptionState
   progress?: number | null
 }
 
 export interface ListCaptionButton {
   label: string
   kind: EntryKind
+  tone: CaptionTone
   title: string
 }
 
-/** Knappen i projektlistan: skapa när inga undertexter finns, framsteg medan de genereras, redigera när utkast eller publicerade finns. */
+/** Knappen i projektlistan: tillståndet som text (Skapa, Genererar N %, Försök igen, Utkast, Publicerade) och vad ett klick gör som tooltip. */
 export function listCaptionButton(status: ProjectCaptionStatus | undefined): ListCaptionButton {
-  switch (status?.state) {
-    case 'generating':
-      return {
-        label: typeof status.progress === 'number' && status.progress > 0 ? `Genererar ${Math.round(status.progress)} %` : 'Genererar…',
-        kind: 'progress',
-        title: 'Undertexterna genereras. Öppna för att följa framsteget.',
-      }
-    case 'draft':
-    case 'published':
-      return { label: 'Redigera', kind: 'edit', title: 'Redigera undertexterna' }
-    case 'failed':
-      return { label: 'Skapa', kind: 'create', title: 'Förra försöket misslyckades. Skapa undertexterna igen.' }
-    default:
-      return { label: 'Skapa', kind: 'create', title: 'Skapa undertexter automatiskt' }
-  }
+  const view = captionStateView(status?.state ?? 'none', status?.progress)
+  return { label: view.listLabel, kind: view.kind, tone: view.tone, title: view.title }
 }
 
 // Ett önskemål om att öppna undertextstudion direkt när projektet öppnats (knappen i projektlistan). Gäller en kort stund, så att ett
