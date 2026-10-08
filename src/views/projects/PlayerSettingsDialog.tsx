@@ -31,6 +31,7 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
   const [muxEnabled, setMuxEnabled] = useState(project.muxEnabled)
   const [muxRespectDnt, setMuxRespectDnt] = useState(project.muxRespectDoNotTrack)
   const [dvrEnabled, setDvrEnabled] = useState(project.dvrEnabled)
+  const [exclamationsAsSpeakers, setExclamationsAsSpeakers] = useState(project.exclamationsAsSpeakers)
   const [posterFile, setPosterFile] = useState<File | null>(null)
   const [posterRemoved, setPosterRemoved] = useState(false)
   const [posterError, setPosterError] = useState<string | null>(null)
@@ -46,7 +47,7 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
   // Exempeltexten i förhandsvisningen: den valda flikens text, annars spelarens standardtext eller ett exempel.
   const activeField = PLAYER_TEXT_FIELDS.find((field) => field.key === activeTextField) ?? PLAYER_TEXT_FIELDS[0]
   const previewText = texts[activeField.key].trim() || activeField.fallback || 'Exempeltext'
-  const changed = changedSettings(project, texts, placement, muxEnabled, muxRespectDnt, dvrEnabled)
+  const changed = changedSettings(project, texts, placement, muxEnabled, muxRespectDnt, dvrEnabled, exclamationsAsSpeakers)
   const dirty = changed !== null || posterFile !== null || (posterRemoved && Boolean(project.posterUrl))
 
   function choosePoster(file: File | undefined) {
@@ -205,6 +206,23 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
         </div>
         {posterError && <p class="ps-error" role="alert">{posterError}</p>}
         <p class="ps-help">JPG, PNG eller WebP, högst 5 MB. Rekommenderat format 16:9, t.ex. 1920×1080.</p>
+      </section>
+
+      <section class="ps-section">
+        <h3>Talare i dagordningen</h3>
+        <p class="ps-help">
+          Under en livesändning listar spelaren talarna under varje dagordningspunkt allteftersom de visas med namnskylt. Listan fylls på
+          med några tiotals sekunders fördröjning.
+        </p>
+        <label class="ps-switch">
+          <input
+            type="checkbox"
+            checked={exclamationsAsSpeakers}
+            onChange={(e) => setExclamationsAsSpeakers((e.target as HTMLInputElement).checked)}
+          />
+          <span>Räkna utrop som talare</span>
+        </label>
+        <span class="ps-help">Av som standard. Utrop (fria texter som visas som namnskylt) listas då också under punkten.</span>
       </section>
 
       <section class="ps-section">

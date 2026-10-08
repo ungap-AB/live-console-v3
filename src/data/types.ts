@@ -167,6 +167,8 @@ export interface Project {
   muxRespectDoNotTrack: boolean
   /** UNG-5: tittare får spola tillbaka i en pågående sändning (DVR). */
   dvrEnabled: boolean
+  /** UNG-192: utrop räknas som talare i spelarens dagordningslista under live. */
+  exclamationsAsSpeakers: boolean
   visibility: Visibility
   publicMode: PublicMode
   afterReason: AfterReason | null

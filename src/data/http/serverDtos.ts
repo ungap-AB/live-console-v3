@@ -135,6 +135,7 @@ export interface ServerProject {
   muxEnvKey?: string | null
   muxRespectDoNotTrack?: boolean
   dvrEnabled?: boolean
+  exclamationsAsSpeakers?: boolean
   visibility: string
   publicMode: string
   afterReason: string | null

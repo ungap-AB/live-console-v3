@@ -811,6 +811,7 @@ export const mockClient: Client = {
         muxEnabled: layoutSource?.muxEnabled ?? false,
         muxRespectDoNotTrack: layoutSource?.muxRespectDoNotTrack ?? false,
         dvrEnabled: false,
+        exclamationsAsSpeakers: false,
         posterUrl: layoutSource?.posterUrl ?? null,
         muxEnvKey: 'os3srhrpsr4mfcc3tdlv25lo3',
         visibility: 'closed',

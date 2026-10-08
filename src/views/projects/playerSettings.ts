@@ -51,22 +51,24 @@ export function changedTexts(project: Pick<Project, PlayerTextKey>, draft: Playe
   return Object.keys(changed).length > 0 ? changed : null
 }
 
-export type PlayerSettingsChanges = Partial<PlayerTexts> & { textPlacement?: TextPlacement; muxEnabled?: boolean; muxRespectDoNotTrack?: boolean; dvrEnabled?: boolean }
+export type PlayerSettingsChanges = Partial<PlayerTexts> & { textPlacement?: TextPlacement; muxEnabled?: boolean; muxRespectDoNotTrack?: boolean; dvrEnabled?: boolean; exclamationsAsSpeakers?: boolean }
 
 /** Texter, placering och mätning som ändrats mot projektet, eller null om inget ändrats. */
 export function changedSettings(
-  project: Pick<Project, PlayerTextKey | 'textPlacement' | 'muxEnabled' | 'muxRespectDoNotTrack' | 'dvrEnabled'>,
+  project: Pick<Project, PlayerTextKey | 'textPlacement' | 'muxEnabled' | 'muxRespectDoNotTrack' | 'dvrEnabled' | 'exclamationsAsSpeakers'>,
   texts: PlayerTexts,
   placement: TextPlacement,
   muxEnabled: boolean,
   muxRespectDoNotTrack: boolean,
   dvrEnabled: boolean = project.dvrEnabled,
+  exclamationsAsSpeakers: boolean = project.exclamationsAsSpeakers,
 ): PlayerSettingsChanges | null {
   const changed: PlayerSettingsChanges = { ...changedTexts(project, texts) }
   if (placement !== project.textPlacement) changed.textPlacement = placement
   if (muxEnabled !== project.muxEnabled) changed.muxEnabled = muxEnabled
   if (muxRespectDoNotTrack !== project.muxRespectDoNotTrack) changed.muxRespectDoNotTrack = muxRespectDoNotTrack
   if (dvrEnabled !== project.dvrEnabled) changed.dvrEnabled = dvrEnabled
+  if (exclamationsAsSpeakers !== project.exclamationsAsSpeakers) changed.exclamationsAsSpeakers = exclamationsAsSpeakers
   return Object.keys(changed).length > 0 ? changed : null
 }
 

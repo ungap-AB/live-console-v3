@@ -351,6 +351,7 @@ function toProjectLite(dto: ServerProject): Project {
     muxEnvKey: dto.muxEnvKey ?? null,
     muxRespectDoNotTrack: dto.muxRespectDoNotTrack ?? false,
     dvrEnabled: dto.dvrEnabled ?? false,
+    exclamationsAsSpeakers: dto.exclamationsAsSpeakers ?? false,
     captionStatus: toCaptionStatus(dto.captionStatus),
     visibility: dto.visibility as Visibility,
     publicMode: dto.publicMode as PublicMode,
