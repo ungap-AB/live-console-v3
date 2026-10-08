@@ -1,6 +1,6 @@
 import type { Chapter, CueKind, Project, Recording } from '../../data/types'
 
-// UNG-193: export av kapitel. Presenters interna kapitelmodell är den kanoniska; formaten nedan (WebVTT, ungap JSON) är bara serialiserare. Allt här är
+// UNG-193: export av kapitel. Presenters interna kapitelmodell är den kanoniska; formaten nedan är bara serialiserare. Allt här är
 // rena funktioner. Tiderna räknas från den PUBLICERADE videons start: kapitlen ligger i originalets tid, så trimstarten dras av.
 
 export interface VideoWindow {
@@ -89,8 +89,72 @@ export function buildExportChapters(chapters: readonly Chapter[], window: VideoW
   }))
 }
 
+// ---- YouTube ---------------------------------------------------------------
+
+export const YOUTUBE_MIN_CHAPTER_SECONDS = 10
+export const YOUTUBE_MIN_CHAPTERS = 3
+
+export interface YoutubeChapters {
+  /** En rad per kapitel: "00:00 Titel". Tom om det inte finns några kapitel. */
+  text: string
+  /** Antal rader i listan. */
+  count: number
+  /** Listan uppfyller YouTubes krav (börjar på 00:00, minst tre kapitel, minst 10 s var). */
+  valid: boolean
+  /** Förklaringar till tittaren: det som ändrats eller saknas. */
+  notes: string[]
+}
+
 function pad(value: number, width = 2): string {
   return String(value).padStart(width, '0')
+}
+
+/** "mm:ss" under en timme. Bara när något kapitel startar efter en timme används "hh:mm:ss", och då på alla rader. */
+export function formatYoutubeTime(totalSeconds: number, withHours: boolean): string {
+  const seconds = Math.max(0, Math.floor(totalSeconds))
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const rest = seconds % 60
+  return withHours ? `${pad(hours)}:${pad(minutes)}:${pad(rest)}` : `${pad(hours * 60 + minutes)}:${pad(rest)}`
+}
+
+/**
+ * YouTube-kapitel för videobeskrivningen. YouTube läser listan bara om den börjar på 00:00, har minst tre kapitel och varje kapitel är
+ * minst tio sekunder. Därför läggs en inledande rad till om första kapitlet börjar senare, och kapitel som blir kortare än tio sekunder
+ * hoppas över (föregående får lite längre tid). Det som ändrats berättas i `notes`.
+ */
+export function toYoutubeChapters(chapters: readonly ExportChapter[], durationSeconds: number, introTitle = 'Start'): YoutubeChapters {
+  const notes: string[] = []
+  if (chapters.length === 0) {
+    return { text: '', count: 0, valid: false, notes: ['Det finns inga kapitel att exportera.'] }
+  }
+
+  const lines: { start: number; title: string }[] = chapters.map((chapter) => ({ start: chapter.start, title: chapter.title }))
+  if (lines[0].start >= 1) {
+    lines.unshift({ start: 0, title: introTitle })
+    notes.push(`En inledande rad ("${introTitle}") lades till, eftersom YouTube kräver att första kapitlet börjar på 00:00.`)
+  } else {
+    lines[0] = { ...lines[0], start: 0 }
+  }
+
+  // Ett kapitel kortare än tio sekunder hoppas över. Det första (0:00) behålls alltid, och det sista räknas mot videons slut.
+  const kept: { start: number; title: string }[] = []
+  let skipped = 0
+  for (let index = 0; index < lines.length; index += 1) {
+    const next = lines[index + 1]?.start ?? durationSeconds
+    if (index > 0 && next - lines[index].start < YOUTUBE_MIN_CHAPTER_SECONDS) {
+      skipped += 1
+      continue
+    }
+    kept.push(lines[index])
+  }
+  if (skipped > 0) notes.push(`${skipped} kapitel kortare än ${YOUTUBE_MIN_CHAPTER_SECONDS} sekunder hoppades över, eftersom YouTube kräver minst så långa kapitel.`)
+
+  const withHours = kept.some((line) => line.start >= 3600)
+  const text = kept.map((line) => `${formatYoutubeTime(line.start, withHours)} ${line.title}`).join('\n')
+  const valid = kept.length >= YOUTUBE_MIN_CHAPTERS
+  if (!valid) notes.push(`YouTube kräver minst ${YOUTUBE_MIN_CHAPTERS} kapitel. Listan har ${kept.length}.`)
+  return { text, count: kept.length, valid, notes }
 }
 
 // ---- WebVTT-kapitel ----------------------------------------------------------

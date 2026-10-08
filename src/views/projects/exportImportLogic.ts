@@ -52,6 +52,10 @@ export function importAvailability(handlers: ImportHandlers): { chapters: Availa
   }
 }
 
+export function copiedMessage(count: number): string {
+  return `${count} kapitel kopierades. Klistra in dem i videons beskrivning på YouTube.`
+}
+
 export function savedMessage(fileName: string): string {
   return `Sparad som "${fileName}". Filen ligger bland dina hämtade filer.`
 }
