@@ -816,7 +816,14 @@ export const httpClient: Client = {
       await api<void>(`/projects/${id}/playout/presence`, { method: 'POST' })
     },
     async create(input) {
-      const dto = await api<ServerProject>('/projects', { method: 'POST', body: input })
+      const dto = await api<ServerProject>('/projects', {
+        method: 'POST',
+        body: { name: input.name, layoutSource: input.layoutSourceProjectId ? { type: 'project', id: input.layoutSourceProjectId } : undefined },
+      })
+      return toProjectFull(dto)
+    },
+    async inheritLayout(id, sourceProjectId) {
+      const dto = await api<ServerProject>(`/projects/${id}/layout/inherit`, { method: 'POST', body: { source: { type: 'project', id: sourceProjectId } } })
       return toProjectFull(dto)
     },
     async rename(id, name, texts) {

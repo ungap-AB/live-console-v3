@@ -25,6 +25,8 @@ export interface ProjectActions {
   cue: (kind: CueKind, refId: string, label: string) => void
   /** Rensar aktiv dagordningspunkt/namnskylt — loggas som en egen händelse, tar inte bort tidigare utspelningar. */
   clear: (kind: CueKind) => void
+  /** Ersätter projektets spelarlayout med en kopia av ett annat projekts (UNG-180). Svarar om det lyckades. */
+  inheritLayout: (sourceProjectId: string) => Promise<boolean>
   /** Startar en paus med texten som visas över videon (UNG-119), eller byter texten på en pågående paus. */
   pause: (text: string) => void
   /** Avslutar en pågående paus. */

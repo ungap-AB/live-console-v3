@@ -798,17 +798,18 @@ export const mockClient: Client = {
       await delay(undefined)
     },
     async create(input) {
+      const layoutSource = input.layoutSourceProjectId ? findProject(input.layoutSourceProjectId) : null
       const project: Project = {
         id: `p${nextId++}`,
         name: input.name,
         createdAt: new Date().toISOString(),
-        beforeText: '',
-        liveText: '',
-        afterText: '',
-        ondemandText: '',
-        textPlacement: 'middle',
-        muxEnabled: false,
-        muxRespectDoNotTrack: false,
+        beforeText: layoutSource?.beforeText ?? '',
+        liveText: layoutSource?.liveText ?? '',
+        afterText: layoutSource?.afterText ?? '',
+        ondemandText: layoutSource?.ondemandText ?? '',
+        textPlacement: layoutSource?.textPlacement ?? 'middle',
+        muxEnabled: layoutSource?.muxEnabled ?? false,
+        muxRespectDoNotTrack: layoutSource?.muxRespectDoNotTrack ?? false,
         muxEnvKey: 'os3srhrpsr4mfcc3tdlv25lo3',
         visibility: 'closed',
         publicMode: 'before',
@@ -829,6 +830,18 @@ export const mockClient: Client = {
         playout: { currentAgendaItemId: null, currentPersonId: null, timeline: [] },
       }
       projects = [project, ...projects]
+      return delay(projectSnapshot(project))
+    },
+    async inheritLayout(id, sourceProjectId) {
+      const project = findProject(id)
+      const source = findProject(sourceProjectId)
+      project.beforeText = source.beforeText
+      project.liveText = source.liveText
+      project.afterText = source.afterText
+      project.ondemandText = source.ondemandText
+      project.textPlacement = source.textPlacement
+      project.muxEnabled = source.muxEnabled
+      project.muxRespectDoNotTrack = source.muxRespectDoNotTrack
       return delay(projectSnapshot(project))
     },
     async rename(id, name, texts) {

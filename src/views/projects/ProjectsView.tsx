@@ -7,6 +7,7 @@ import { Icon } from '../../components/Icon'
 import { JobProgress } from '../../components/JobProgress'
 import { JobsContext } from '../../app/jobsContext'
 import { RenameModal } from '../../components/RenameModal'
+import { CreateProjectDialog } from './CreateProjectDialog'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
 import { formatShortDate } from '../../app/time'
@@ -227,8 +228,8 @@ export function ProjectsView({
     await attempt(fn)
   }
 
-  async function createProject(name: string) {
-    const created = await client.projects.create({ name })
+  async function createProject(name: string, layoutSourceProjectId: string | null) {
+    const created = await client.projects.create({ name, layoutSourceProjectId: layoutSourceProjectId ?? undefined })
     setProjects((prev) => [created, ...prev])
     onSelectedIdChange(created.id)
     onScreenChange(screenForMode(created.publicMode))
@@ -347,6 +348,11 @@ export function ProjectsView({
       attempt(async () => {
         if (!selected) return
         replace(await client.projects.returnToLive(selected.id))
+      }),
+    inheritLayout: (sourceProjectId: string) =>
+      attempt(async () => {
+        if (!selected) return
+        replace(await client.projects.inheritLayout(selected.id, sourceProjectId))
       }),
     cue: (kind: CueKind, refId: string, label: string) => {
       if (!selected) return
@@ -649,12 +655,7 @@ export function ProjectsView({
       )}
 
       {creating && (
-        <RenameModal
-          title="Nytt projekt"
-          initialValue=""
-          onCancel={() => onCreatingChange(false)}
-          onSave={createProject}
-        />
+        <CreateProjectDialog projects={projects} onCancel={() => onCreatingChange(false)} onCreate={(name, source) => void createProject(name, source)} />
       )}
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}

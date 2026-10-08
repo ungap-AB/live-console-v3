@@ -192,7 +192,10 @@ export interface Client {
     /** Byter vilken inspelning som räknas som aktiv för Ondemand — räknar om kapitlens tider. */
     setActiveRecording(id: string, recordingId: string): Promise<Project>
     touchPlayout(id: string): Promise<void>
-    create(input: { name: string }): Promise<Project>
+    /** layoutSourceProjectId: projektet vars spelarlayout kopieras till det nya (UNG-180). Utan det blir projektet som förut. */
+    create(input: { name: string; layoutSourceProjectId?: string }): Promise<Project>
+    /** Ersätter projektets spelarlayout (texter, placering, Mux) med en kopia av ett annat projekts (UNG-180). */
+    inheritLayout(id: string, sourceProjectId: string): Promise<Project>
     rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText' | 'textPlacement' | 'muxEnabled' | 'muxRespectDoNotTrack'>>): Promise<Project>
     trash(id: string): Promise<void>
     /** Laddar upp spelarens poster (JPG/PNG/WebP, högst 5 MB). Ersätter en tidigare poster. */

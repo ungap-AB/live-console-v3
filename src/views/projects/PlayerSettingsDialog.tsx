@@ -13,6 +13,7 @@ import {
 } from './playerSettings'
 import type { PlayerTextKey } from './playerSettings'
 import type { TextPlacement } from '../../data/types'
+import { InheritLayoutDialog } from './InheritLayoutDialog'
 import './PlayerSettingsDialog.css'
 
 interface PlayerSettingsDialogProps {
@@ -33,6 +34,8 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
   const [posterRemoved, setPosterRemoved] = useState(false)
   const [posterError, setPosterError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  // UNG-180: hämta layouten från ett annat projekt. Efteråt är dialogens lokala värden inaktuella, så den stängs.
+  const [inheriting, setInheriting] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
 
   const localPreview = useMemo(() => (posterFile ? URL.createObjectURL(posterFile) : null), [posterFile])
@@ -79,9 +82,12 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
   }
 
   return (
+    <>
     <Modal
       title="Spelarinställningar"
       onClose={onClose}
+      // Esc och ✕ hör till den öppna layoutdialogen medan den visas, så båda dialogerna inte stängs på en gång.
+      closeDisabled={inheriting}
       wide
       footer={
         <>
@@ -94,6 +100,16 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
         </>
       }
     >
+      <section class="ps-section">
+        <h3>Layout från ett annat projekt</h3>
+        <p class="ps-help">Hämta texter, textplacering och Mux-inställning från ett annat projekt. De ersätter dessa inställningar, efter bekräftelse.</p>
+        <div class="ps-poster-actions">
+          <button class="btn btn-sm" type="button" onClick={() => setInheriting(true)}>
+            Hämta layout från projekt…
+          </button>
+        </div>
+      </section>
+
       <section class="ps-section">
         <h3>Texter i spelaren</h3>
         <p class="ps-help">Texten som tittarna ser i respektive läge. Lämnas ett fält tomt används spelarens standardtext, om det finns någon.</p>
@@ -221,5 +237,9 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
         <span class="ps-help">Nyckeln ställs in per domän av en administratör. Utan egen nyckel används ungaps standardnyckel.</span>
       </section>
     </Modal>
+    {inheriting && (
+      <InheritLayoutDialog project={project} actions={actions} onCancel={() => setInheriting(false)} onDone={() => { setInheriting(false); onClose() }} />
+    )}
+    </>
   )
 }
