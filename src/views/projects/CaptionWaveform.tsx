@@ -27,7 +27,10 @@ interface CaptionWaveformProps {
   publishedEnd?: number
   /** Om gränserna får dras. */
   editable: boolean
-  onSeek: (time: number) => void
+  /** 'place' = ett klick i vågformen (sätter en placering, UNG-184); 'boundary' = ett grepp om en gräns (hoppar dit utan att byta placering). */
+  onSeek: (time: number, kind: 'place' | 'boundary') => void
+  /** Placeringen som mellanslag spelar från (UNG-184), eller null. Ritas som en tunn markör vid sidan av spelhuvudet. */
+  anchor: number | null
   onSelect: (index: number) => void
   /** Hjulet över bandet rullar listan. */
   onScrollBy: (deltaY: number) => void
@@ -205,6 +208,30 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     }
     ctx.globalAlpha = 1
 
+    // Placeringen (UNG-184): en tunn streckad linje med en liten spets åt höger, på det ställe mellanslag spelar från.
+    if (latest.current.anchor !== null) {
+      const anchorY = timeToY(latest.current.anchor, win, height)
+      if (anchorY >= -2 && anchorY <= height + 2) {
+        ctx.save()
+        ctx.strokeStyle = color('--ink', '#1c2430')
+        ctx.fillStyle = color('--ink', '#1c2430')
+        ctx.lineWidth = 1
+        ctx.setLineDash([4, 3])
+        ctx.beginPath()
+        ctx.moveTo(0, anchorY + 0.5)
+        ctx.lineTo(BAND_WIDTH, anchorY + 0.5)
+        ctx.stroke()
+        ctx.setLineDash([])
+        ctx.beginPath()
+        ctx.moveTo(BAND_WIDTH, anchorY - 4)
+        ctx.lineTo(BAND_WIDTH, anchorY + 5)
+        ctx.lineTo(BAND_WIDTH - 7, anchorY + 0.5)
+        ctx.closePath()
+        ctx.fill()
+        ctx.restore()
+      }
+    }
+
     // Spelhuvudet.
     const y = timeToY(getTime(), win, height)
     if (y >= -2 && y <= height + 2) {
@@ -262,12 +289,12 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
       dragRole.current = grabRole(boundary, latest.current.selectedIndex)
       latest.current.onDragStart(boundary, dragRole.current)
       // Ett klick på en gräns hoppar också dit, precis som ett klick på själva vågformen.
-      latest.current.onSeek(latest.current.cues[boundary].start)
+      latest.current.onSeek(latest.current.cues[boundary].start, 'boundary')
       return
     }
     const { cues, height, onSeek, onSelect } = latest.current
     const time = Math.max(0, yToTime(position.y, currentWindow(), height))
-    onSeek(time)
+    onSeek(time, 'place')
     const index = cueIndexAt(cues, time)
     if (index >= 0) onSelect(index)
   }

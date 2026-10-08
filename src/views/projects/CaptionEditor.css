@@ -23,12 +23,6 @@
   }
 }
 
-.ce-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex: none;
-}
 
 .ce-head {
   display: flex;
@@ -37,10 +31,6 @@
   gap: 16px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--line-soft);
-}
-
-.ce-title {
-  margin-right: auto;
 }
 
 .ce-title h2 {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { shouldTogglePlayback, spaceTargetKind } from './captionKeysLogic.ts'
+import { shouldTogglePlayback, spaceAction, spaceTargetKind } from './captionKeysLogic.ts'
 
 const space = { key: ' ', ctrlKey: false, metaKey: false, altKey: false, repeat: false }
 const none = () => false
@@ -39,4 +39,15 @@ test('modifierartangenter, upprepning och öppna dialoger stoppar växlingen', (
   assert.equal(shouldTogglePlayback({ ...space, repeat: true }, other, false), false)
   assert.equal(shouldTogglePlayback(space, other, true), false)
   assert.equal(shouldTogglePlayback({ ...space, key: 'a' }, other, false), false)
+})
+
+test('utan placering växlar mellanslag uppspelningen som vanligt', () => {
+  assert.deepEqual(spaceAction(null, true), { kind: 'toggle' })
+  assert.deepEqual(spaceAction(null, false), { kind: 'toggle' })
+})
+
+test('med placering spelar mellanslag från den, och pausar tillbaka till den', () => {
+  assert.deepEqual(spaceAction(12.5, true), { kind: 'playFrom', time: 12.5 })
+  assert.deepEqual(spaceAction(12.5, false), { kind: 'pauseBack', time: 12.5 })
+  assert.deepEqual(spaceAction(0, true), { kind: 'playFrom', time: 0 }) // en placering vid noll är fortfarande en placering
 })

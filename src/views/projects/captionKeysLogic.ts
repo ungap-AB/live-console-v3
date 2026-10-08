@@ -32,3 +32,16 @@ export function shouldTogglePlayback(event: SpaceKeyEvent, target: SpaceTarget, 
   if (otherDialogOpen) return false
   return target === 'other' || target === 'playcontrol'
 }
+
+// UNG-184: en placering som gjorts med ett klick i vågformen. Mellanslag provlyssnar den: spelar från placeringen, och när man pausar
+// flyttar spelhuvudet tillbaka dit, så att man kan höra samma ställe om och om igen medan man finjusterar. Utan placering växlar
+// mellanslag uppspelningen som vanligt. Placeringen avslutas när man väljer ett annat sätt att spela upp (se CaptionEditor.seekTo).
+export type SpaceAction =
+  | { kind: 'toggle' }
+  | { kind: 'playFrom'; time: number }
+  | { kind: 'pauseBack'; time: number }
+
+export function spaceAction(anchor: number | null, paused: boolean): SpaceAction {
+  if (anchor === null) return { kind: 'toggle' }
+  return paused ? { kind: 'playFrom', time: anchor } : { kind: 'pauseBack', time: anchor }
+}

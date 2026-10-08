@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { notifyJobsChanged } from '../../app/jobsBus'
-import { shouldTogglePlayback, spaceTargetKind } from './captionKeysLogic'
+import { shouldTogglePlayback, spaceAction, spaceTargetKind } from './captionKeysLogic'
 import { cueCharCount, isLongCue } from './captionLengthLogic'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
@@ -218,7 +218,18 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     }
   }, [hlsUrl])
 
-  function seekTo(target: number, play: boolean) {
+  // UNG-184: placeringen som mellanslag spelar från. Sätts av ett klick i vågformen och avslutas av allt annat som flyttar videon
+  // (en rads spelknapp, fokus i en replikruta, videons egna kontroller, hopp till publicerad del). Gränsdrag och mellanslagets egna
+  // hopp behåller den (keepAnchor).
+  const [anchor, setAnchorState] = useState<number | null>(null)
+  const anchorRef = useRef<number | null>(null)
+  function setAnchor(next: number | null) {
+    anchorRef.current = next
+    setAnchorState(next)
+  }
+
+  function seekTo(target: number, play: boolean, keepAnchor = false) {
+    if (!keepAnchor && anchorRef.current !== null) setAnchor(null)
     const video = videoRef.current
     if (!video) return
     video.currentTime = Math.max(0, target)
@@ -375,7 +386,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     if (!base) return
     setNotice('')
     setCues(derive(moveBoundary(base, index, time, timing.runs, role === 'end').cues))
-    seekTo(time, false)
+    seekTo(time, false, true)
   }
 
   function dragEnd() {
@@ -408,6 +419,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     const video = videoRef.current
     const cue = cues[index]
     if (!cue) return
+    setAnchor(null) // en rads spelknapp är ett annat sätt att spela upp: placeringen från vågformen avslutas (UNG-184)
     // Knappen visas vid den aktiva repliken (playIndex), så den pausar när uppspelning pågår, även om uppspelningen har gått förbi den valda.
     if (index === playIndex && video && !video.paused) {
       video.pause()
@@ -422,7 +434,12 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   function togglePlayback() {
     const video = videoRef.current
     if (!video) return
-    if (video.paused) void video.play().catch(() => undefined)
+    const action = spaceAction(anchorRef.current, video.paused)
+    if (action.kind === 'playFrom') seekTo(action.time, true, true)
+    else if (action.kind === 'pauseBack') {
+      video.pause()
+      seekTo(action.time, false, true)
+    } else if (video.paused) void video.play().catch(() => undefined)
     else video.pause()
   }
 
@@ -636,9 +653,6 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   return (
     <div class="ce-scrim" role="dialog" aria-modal="true" aria-label="Redigera undertexter">
       <header class="ce-head">
-        <button class="btn btn-sm ce-back" type="button" title="Tillbaka till projektet (Esc)" onClick={requestClose}>
-          <Icon name="arrow_back" size={18} /> Tillbaka till projektet
-        </button>
         <div class="ce-title">
           <h2>Redigera undertexter</h2>
           <div class="ce-sub">
@@ -683,6 +697,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
           >
             {publishing ? 'Publicerar…' : publishLabel}
           </button>
+          <button class="btn btn-sm" type="button" title="Stäng redigeraren (Esc)" onClick={requestClose}>Stäng</button>
         </div>
       </header>
 
@@ -717,7 +732,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
         <div class="ce-body">
           <section class="ce-video" aria-label="Video">
             <div class="ce-stage">
-              <video ref={videoRef} controls playsInline preload="metadata" />
+              <video ref={videoRef} controls playsInline preload="metadata" onPointerDown={() => setAnchor(null)} onKeyDown={() => setAnchor(null)} />
               {activeCue && <div class="ce-overlay" aria-hidden="true">{activeCue.text}</div>}
             </div>
             {videoError && <p class="ce-error-text" role="alert">{videoError}</p>}
@@ -810,7 +825,11 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                 publishedStart={publishedStart}
                 publishedEnd={publishedEnd}
                 editable={!readOnly}
-                onSeek={(time) => seekTo(time, false)}
+                anchor={anchor}
+                onSeek={(time, kind) => {
+                  if (kind === 'place') setAnchor(time)
+                  seekTo(time, false, true)
+                }}
                 onSelect={setSelectedIndex}
                 onScrollBy={scrollListBy}
                 onDragStart={dragStart}
