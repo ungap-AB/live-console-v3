@@ -223,7 +223,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
       player.pause()
       player.delete()
     }
-  }, [hlsUrl])
+  }, [hlsUrl, videoElement])
 
   // UNG-184: placeringen som mellanslag spelar från. Sätts av ett klick i vågformen och avslutas av allt annat som flyttar videon
   // (en rads spelknapp, fokus i en replikruta, videons egna kontroller, hopp till publicerad del). Gränsdrag och mellanslagets egna
