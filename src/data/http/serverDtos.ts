@@ -158,6 +158,7 @@ export interface ServerProject {
   meetingId?: string
   meetingEventsEnabled?: boolean
   trimDraft: ServerTrimDraft | null
+  captionStatus?: { state: string; progress?: number | null } | null
 }
 
 export interface ServerTimelineEvent {

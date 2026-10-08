@@ -37,6 +37,7 @@ import type {
   Visibility,
 } from '../types'
 import { toTextPlacement } from '../textPlacement'
+import { toCaptionStatus } from '../captionStatus'
 import { decodeBase64 } from './base64'
 import { ApiError, api, apiBlob, setAuthToken } from './fetchJson'
 import type {
@@ -349,6 +350,7 @@ function toProjectLite(dto: ServerProject): Project {
     muxEnabled: dto.muxEnabled ?? false,
     muxEnvKey: dto.muxEnvKey ?? null,
     muxRespectDoNotTrack: dto.muxRespectDoNotTrack ?? false,
+    captionStatus: toCaptionStatus(dto.captionStatus),
     visibility: dto.visibility as Visibility,
     publicMode: dto.publicMode as PublicMode,
     afterReason: dto.afterReason as AfterReason | null,
