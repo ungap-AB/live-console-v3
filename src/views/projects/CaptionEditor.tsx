@@ -193,8 +193,15 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
 
   // ---- Video ----
   const hlsUrl = master?.originalHlsUrl
+  // UNG-172: spelaren kopplas till det <video>-element som finns just nu. Byts elementet ut (av vilken anledning som helst) kopplas
+  // spelaren om, i stället för att det nya elementet blir en tom ruta utan källa.
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null)
+  const videoRefCallback = useRef((element: HTMLVideoElement | null) => {
+    videoRef.current = element
+    setVideoElement(element)
+  }).current
   useEffect(() => {
-    const video = videoRef.current
+    const video = videoElement
     if (!video || !hlsUrl) return
     if (!isPlayerSupported) {
       setVideoError('Videospelaren kan inte köras i den här webbläsaren.')
@@ -701,38 +708,40 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
         </div>
       </header>
 
+      {/* UNG-172: varje villkorlig syskon har en nyckel. Utan nycklar återanvände Preact den befintliga .ce-body-diven som meddelanderutan
+          (båda är en <div> utan nyckel) när ett meddelande dök upp, vilket byggde om hela redigeraren inklusive <video> (utan källa). */}
       {loadError && (
-        <div class="ce-banner ce-error" role="alert">
+        <div key="load-error" class="ce-banner ce-error" role="alert">
           {loadError}
           <button class="btn btn-sm" type="button" onClick={() => void load()}>Försök igen</button>
         </div>
       )}
       {readOnly && (
-        <div class="ce-banner ce-warn" role="alert">
+        <div key="read-only" class="ce-banner ce-warn" role="alert">
           Det här utkastet är skapat på ett äldre sätt och går inte att redigera här. Skapa nya undertexter i undertextpanelen.
         </div>
       )}
       {conflict && (
-        <div class="ce-banner ce-error" role="alert">
+        <div key="conflict" class="ce-banner ce-error" role="alert">
           Någon annan har sparat undertexterna sedan du öppnade dem. Dina ändringar är inte sparade.
           <button class="btn btn-sm" type="button" onClick={() => void load()}>Ladda om (dina ändringar går förlorade)</button>
         </div>
       )}
-      {saveError && <div class="ce-banner ce-error" role="alert">{saveError}</div>}
+      {saveError && <div key="save-error" class="ce-banner ce-error" role="alert">{saveError}</div>}
       {notice && (
-        <div class="ce-banner ce-warn ce-notice" role="status">
+        <div key="notice" class="ce-banner ce-warn ce-notice" role="status">
           {notice}
           <button class="ib" type="button" aria-label="Stäng meddelandet" onClick={() => setNotice('')}>✕</button>
         </div>
       )}
 
-      {!master && !loadError && <div class="ce-loading">Hämtar undertexter…</div>}
+      {!master && !loadError && <div key="loading" class="ce-loading">Hämtar undertexter…</div>}
 
       {master && (
-        <div class="ce-body">
+        <div key="body" class="ce-body">
           <section class="ce-video" aria-label="Video">
             <div class="ce-stage">
-              <video ref={videoRef} controls playsInline preload="metadata" onPointerDown={() => setAnchor(null)} onKeyDown={() => setAnchor(null)} />
+              <video ref={videoRefCallback} controls playsInline preload="metadata" onPointerDown={() => setAnchor(null)} onKeyDown={() => setAnchor(null)} />
               {activeCue && <div class="ce-overlay" aria-hidden="true">{activeCue.text}</div>}
             </div>
             {videoError && <p class="ce-error-text" role="alert">{videoError}</p>}
