@@ -33,6 +33,9 @@ interface OndemandViewProps {
   onBack: () => void
 }
 
+// Så länge ett klick på en kapitelrad väntar på att bli ett dubbelklick (redigera texten) innan raden väljs.
+const CHAPTER_CLICK_DELAY_MS = 220
+
 const CHAPTER_KIND: Record<CueKind, string> = {
   agendaItem: 'Ärende',
   person: 'Talare',
@@ -713,6 +716,21 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
     setPreviewPlaying(false)
   }
 
+  // Ett klick på en rad väljer den (UNG-176). Valet väntar en kort stund så att ett dubbelklick för att redigera texten inte först
+  // hoppar och spelar i förhandsvisningen; dubbelklicket avbryter det väntande valet.
+  const pendingSelectRef = useRef<number | null>(null)
+  function cancelPendingSelect() {
+    if (pendingSelectRef.current !== null) window.clearTimeout(pendingSelectRef.current)
+    pendingSelectRef.current = null
+  }
+  function selectChapterSoon(index: number) {
+    cancelPendingSelect()
+    pendingSelectRef.current = window.setTimeout(() => {
+      pendingSelectRef.current = null
+      selectChapter(index)
+    }, CHAPTER_CLICK_DELAY_MS)
+  }
+
   function selectChapter(index: number) {
     const chapter = chapters[index]
     if (!chapter) return
@@ -1201,11 +1219,19 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 {chapters.map((chapter, index) => visibleFlags[index] ? (
                   <li
                     key={chapter.chapterId}
-                    class={`od-chapter-row kind-${chapter.kind}${groupInfo[index].isHeader ? ' is-group-header' : ''}${selectedChapter === index ? ' is-selected' : ''}${chapter.synced === false ? ' is-unsynced' : ''}${(guide?.step === 1 && chapter.anchorable) || stepperVisible ? ' is-pickable' : ''}${stepperVisible && stepTarget?.chapterId === chapter.chapterId ? ' is-step-target' : ''}${guide?.anchorId === chapter.chapterId ? ' is-anchor' : ''}`}
+                    class={`od-chapter-row kind-${chapter.kind}${!chaptersReadOnly && chapter.synced !== false ? ' is-selectable' : ''}${groupInfo[index].isHeader ? ' is-group-header' : ''}${selectedChapter === index ? ' is-selected' : ''}${chapter.synced === false ? ' is-unsynced' : ''}${(guide?.step === 1 && chapter.anchorable) || stepperVisible ? ' is-pickable' : ''}${stepperVisible && stepTarget?.chapterId === chapter.chapterId ? ' is-step-target' : ''}${guide?.anchorId === chapter.chapterId ? ' is-anchor' : ''}`}
+                    tabIndex={!chaptersReadOnly && chapter.synced !== false ? 0 : undefined}
+                    aria-current={selectedChapter === index ? 'true' : undefined}
                     onClick={(event) => {
                       if ((event.target as HTMLElement).closest('button, input')) return
                       if (guide?.step === 1) chooseAnchor(index)
                       else if (stepperVisible) { setOrderWarning(null); setStepTargetId(chapter.chapterId) }
+                      else if (!chaptersReadOnly && chapter.synced !== false) selectChapterSoon(index)
+                    }}
+                    onKeyDown={(event) => {
+                      // Enter på själva raden (inte på en knapp eller ett fält i den) väljer den, som ett klick.
+                      if (event.key !== 'Enter' || event.target !== event.currentTarget) return
+                      if (!guide && !stepperVisible && !chaptersReadOnly && chapter.synced !== false) selectChapter(index)
                     }}
                   >
                       {groupInfo[index].isHeader && groupInfo[index].childCount > 0 && (
@@ -1222,15 +1248,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                       )}
                       {!chaptersReadOnly && guide?.anchorId === chapter.chapterId && <Icon name="anchor" size={16} />}
                       {!chaptersReadOnly && chapter.synced === false && <span class="od-chapter-unsynced">{chapter.timing === 'untimed' ? 'Ingen tid' : 'Ej förankrad'}</span>}
-                      {!chaptersReadOnly && chapter.synced !== false && <button
-                      class="od-chapter-play"
-                      type="button"
-                      aria-label={`Spela från ${chapter.label}`}
-                      title="Spela från denna punkt"
-                        onClick={() => selectChapter(index)}
-                    >
-                      <Icon name="skip_next" size={16} />
-                    </button>}
                     {!chaptersReadOnly && chapter.synced !== false && <span class={`od-time${draftOffsets[index] !== undefined ? ' is-draft' : ''}`}>
                       {formatHms(draftOffsets[index] ?? savedOffsets[index] ?? chapter.offsetSeconds)}
                     </span>}
@@ -1250,7 +1267,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                         <button class="btn btn-sm" type="button" onClick={() => void finishChapterEdit()}>Klar</button>
                       </span>
                     ) : (
-                      <span class="od-chapter-label" onDblClick={chaptersReadOnly ? undefined : () => startChapterEdit(index, chapterLabels[index] ?? chapter.label)} title={chaptersReadOnly ? undefined : 'Dubbelklicka för att redigera'}>
+                      <span class="od-chapter-label" onDblClick={chaptersReadOnly ? undefined : () => { cancelPendingSelect(); startChapterEdit(index, chapterLabels[index] ?? chapter.label) }} title={chaptersReadOnly ? undefined : 'Dubbelklicka för att redigera'}>
                         {chapterLabels[index] ?? chapter.label}
                       </span>
                     )}

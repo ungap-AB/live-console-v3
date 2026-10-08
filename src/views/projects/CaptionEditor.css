@@ -6,6 +6,28 @@
   flex-direction: column;
   background: var(--panel);
   color: var(--ink);
+  /* Lagret tonas fram över projektet, så det syns att det ligger ovanpå samma sida (UNG-182). */
+  animation: ce-layer-in 160ms ease-out;
+}
+
+@keyframes ce-layer-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ce-scrim {
+    animation: none;
+  }
+}
+
+.ce-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
 }
 
 .ce-head {
@@ -15,6 +37,10 @@
   gap: 16px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--line-soft);
+}
+
+.ce-title {
+  margin-right: auto;
 }
 
 .ce-title h2 {
@@ -298,6 +324,25 @@
   pointer-events: none;
 }
 
+.ce-longcue {
+  position: absolute;
+  right: 14px;
+  bottom: 8px;
+  padding: 0 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--warn);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+  border-radius: 9px;
+  pointer-events: none;
+}
+
+/* UNG-175: en lång replik får en diskret ram runt textrutan, utöver märket med antalet tecken (så det inte bara bärs av färg). */
+.ce-row.is-long .ce-text textarea {
+  border-color: var(--warn-line);
+}
+
 .ce-wordcount b {
   font-weight: 700;
 }
@@ -406,6 +451,21 @@ button.ce-time:hover {
 
 .ce-playcol:hover {
   background: var(--surface-3);
+}
+
+.ce-playcol:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+/* UNG-173: spelknappen finns i alla rader men syns bara för den hovrade (eller fokuserade) raden, så raderna aldrig ändrar storlek. */
+.ce-playbtn.is-ghost {
+  opacity: 0;
+}
+
+.ce-playcol:hover .ce-playbtn.is-ghost,
+.ce-playcol:focus-visible .ce-playbtn.is-ghost {
+  opacity: 1;
 }
 
 .ce-playbtn {

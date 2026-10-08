@@ -35,6 +35,7 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
 
   // UNG-129: expanderat läge för skärmar med låg höjd. Samma komponenter och tillstånd, bara en klass på vyn som lägger
   // den över hela fönstret, så ingenting monteras om och inget tillstånd (markering, scroll, redigering) tappas.
+  // Läget stängs bara med knappen: Esc hör till sökfältet och dialogerna (UNG-177).
   // UNG-119: medan en paus pågår ligger en spärrande, stängbar ruta över vyn som påminner om att avsluta pausen. Stängs den
   // kommer den inte tillbaka förrän nästa paus; en omladdning av sidan visar den igen.
   const pause = p.playout.currentPause ?? null
@@ -55,15 +56,6 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
   }, [Boolean(pause)])
 
   const [expanded, setExpanded] = useState(false)
-  useEffect(() => {
-    if (!expanded) return
-    function onKeyDown(event: KeyboardEvent) {
-      // En öppen dialog äger Esc (den stänger sig själv); annars stänger Esc det expanderade läget.
-      if (event.key === 'Escape' && !document.querySelector('[role="dialog"]')) setExpanded(false)
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [expanded])
 
   const nowItem =
     p.playout.currentAgendaItem?.label ??
@@ -151,7 +143,7 @@ export function LiveWorkspace({ project: p, actions, health }: LiveWorkspaceProp
           type="button"
           aria-pressed={expanded}
           aria-label={expanded ? 'Stäng expanderad vy' : 'Expandera'}
-          title={expanded ? 'Stäng expanderad vy (Esc)' : 'Expandera listorna till hela fönstret'}
+          title={expanded ? 'Stäng expanderad vy' : 'Expandera listorna till hela fönstret'}
           onClick={() => setExpanded((value) => !value)}
         >
           <Icon name={expanded ? 'close' : 'open_in_full'} size={20} />

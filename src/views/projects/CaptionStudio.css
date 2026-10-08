@@ -6,12 +6,34 @@
   flex-direction: column;
   background: var(--panel);
   color: var(--ink);
+  /* Lagret tonas fram över projektet, så det syns att det ligger ovanpå samma sida (UNG-182). */
+  animation: cs-layer-in 160ms ease-out;
+}
+
+@keyframes cs-layer-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-scrim {
+    animation: none;
+  }
+}
+
+.cs-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
 }
 
 .cs-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 16px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--line-soft);

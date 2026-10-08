@@ -69,11 +69,13 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, po
   return (
     <div class="cs-scrim" role="dialog" aria-modal="true" aria-label="Skapa undertexter">
       <header class="cs-head">
-        <div>
+        <button class="btn btn-sm cs-back" type="button" title="Tillbaka till projektet" onClick={onClose}>
+          <Icon name="arrow_back" size={18} /> Tillbaka till projektet
+        </button>
+        <div class="cs-title">
           <h2>Undertexter</h2>
           <div class="cs-sub">{projectName}</div>
         </div>
-        <button class="ib" type="button" aria-label="Stäng" title="Stäng" onClick={onClose}>✕</button>
       </header>
 
       <CaptionDummy posterUrl={posterUrl} />

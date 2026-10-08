@@ -297,8 +297,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
 
   function onSearchKeyDown(event: KeyboardEvent) {
     if (event.key === 'Escape') {
-      // Esc rensar sökningen och lämnar fältet; det stänger inget annat (t.ex. expanderat läge) i samma tryck.
-      event.stopPropagation()
+      // Esc rensar sökningen och lämnar fältet.
       clearSearch()
       searchRef.current?.blur()
     } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { notifyJobsChanged } from '../../app/jobsBus'
+import { shouldTogglePlayback, spaceTargetKind } from './captionKeysLogic'
+import { cueCharCount, isLongCue } from './captionLengthLogic'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
@@ -416,6 +418,14 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     seekTo(cue.start, true)
   }
 
+  // Mellanslag (UNG-171): växlar spela/paus på videon där den står, utan att välja eller flytta något.
+  function togglePlayback() {
+    const video = videoRef.current
+    if (!video) return
+    if (video.paused) void video.play().catch(() => undefined)
+    else video.pause()
+  }
+
   function ctrlEnter(index: number) {
     const cue = cues[index]
     if (!cue) return
@@ -542,6 +552,17 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
         doRedo()
         return
       }
+      if (event.key === ' ') {
+        const element = event.target instanceof HTMLElement ? event.target : null
+        const kind = element ? spaceTargetKind(element.tagName, element.isContentEditable, (selector) => element.closest(selector) !== null) : 'other'
+        // Redigerarens eget lager är en dialog; en dialog till (bekräftelse, publicera) äger tangenterna.
+        const otherDialogOpen = document.querySelectorAll('[role="dialog"]').length > 1
+        if (shouldTogglePlayback(event, kind, otherDialogOpen)) {
+          event.preventDefault() // ingen sidrullning, och ingen ny aktivering av en fokuserad spelknapp
+          togglePlayback()
+        }
+        return
+      }
       if (event.key !== 'Escape' || confirmClose || pendingMerge !== null) return
       if (event.target instanceof HTMLTextAreaElement) return
       requestClose()
@@ -615,6 +636,9 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   return (
     <div class="ce-scrim" role="dialog" aria-modal="true" aria-label="Redigera undertexter">
       <header class="ce-head">
+        <button class="btn btn-sm ce-back" type="button" title="Tillbaka till projektet (Esc)" onClick={requestClose}>
+          <Icon name="arrow_back" size={18} /> Tillbaka till projektet
+        </button>
         <div class="ce-title">
           <h2>Redigera undertexter</h2>
           <div class="ce-sub">
@@ -659,7 +683,6 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
           >
             {publishing ? 'Publicerar…' : publishLabel}
           </button>
-          <button class="btn btn-sm" type="button" title="Stäng redigeraren (Esc)" onClick={requestClose}>Stäng</button>
         </div>
       </header>
 
@@ -818,6 +841,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                     status === 'outside' ? 'is-outside' : status === 'edge' ? 'is-edge' : '',
                     diff.changedIds.has(cue.id) ? 'is-changed' : '',
                     issue?.error ? 'has-error' : '',
+                    isLongCue(cue.text) ? 'is-long' : '',
                   ].filter(Boolean).join(' ')
                   return (
                     <div key={cue.id} class={classes} style={{ top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}>
@@ -826,13 +850,19 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                         role="button"
                         aria-label={index === playIndex && playing ? 'Pausa' : `Välj och spela replik ${index + 1}`}
                         title={index === playIndex && playing ? 'Pausa' : 'Välj repliken och spela från dess start (klicka igen för paus)'}
+                        tabIndex={0}
                         onClick={() => playRow(index)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault()
+                            playRow(index)
+                          }
+                        }}
                       >
-                        {index === playIndex && (
-                          <span class="ce-playbtn" aria-hidden="true">
-                            <Icon name={playing ? 'pause' : 'play_arrow'} size={20} />
-                          </span>
-                        )}
+                        {/* Spelknappen visas alltid för den spelande raden, och för övriga rader när kolumnen hovras eller har fokus (UNG-173). */}
+                        <span class={`ce-playbtn${index === playIndex ? '' : ' is-ghost'}`} aria-hidden="true">
+                          <Icon name={index === playIndex && playing ? 'pause' : 'play_arrow'} size={20} />
+                        </span>
                       </div>
                       <div class="ce-text">
                         <textarea
@@ -864,6 +894,11 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                             </span>
                           )
                         })()}
+                        {isLongCue(cue.text) && (
+                          <span class="ce-longcue" role="note" aria-label={`Lång replik, ${cueCharCount(cue.text)} tecken`}>
+                            {cueCharCount(cue.text)} tecken
+                          </span>
+                        )}
                         {issue?.error && <div class="ce-counters" role="alert"><span class="is-over">{issue.message}</span></div>}
                       </div>
                       <button class="ce-time ce-num" type="button" title="Spela den här repliken (klicka igen för paus)" onClick={() => playRow(index)}>{index + 1}</button>

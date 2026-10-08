@@ -320,7 +320,6 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
         class="ce-wave"
         style={{ width: `${WAVEFORM_WIDTH}px`, height: `${props.height}px` }}
         aria-label="Vågform för ljudet. Klicka för att hoppa i videon, dra en gräns för att flytta den."
-        title="Ljudets vågform. Klicka för att hoppa i videon. Dra en gräns (linje) för att flytta den, så flödar texten över. Alt stänger av fästningen. Hjulet rullar listan. Orange ljud saknar replik."
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}

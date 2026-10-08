@@ -776,22 +776,9 @@
   cursor: text;
 }
 
-.od-chapter-play {
-  display: inline-grid;
-  place-items: center;
-  flex: none;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: var(--btn-primary-bg);
-  color: var(--btn-primary-fg);
+/* Ett klick på raden väljer den (UNG-176). */
+.od-chapter-row.is-selectable {
   cursor: pointer;
-}
-
-.od-chapter-play:hover {
-  background: var(--btn-primary-bg-hover);
 }
 
 .od-chapter-edit {

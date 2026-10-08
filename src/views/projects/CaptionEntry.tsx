@@ -27,7 +27,7 @@ export function CaptionEntry({ projectId, projectName, videoDurationSeconds, pos
         class={`btn btn-sm caption-entry${entry.kind === 'edit' ? ' btn-primary' : ''}`}
         type="button"
         disabled={Boolean(entry.disabledReason)}
-        title={entry.disabledReason ?? (entry.kind === 'progress' ? 'Undertexterna genereras. Öppna för att följa framsteget.' : undefined)}
+        title={entry.disabledReason ?? (entry.kind === 'progress' ? 'Undertexterna genereras. Öppna för att följa framsteget.' : 'Öppnar undertextredigeraren')}
         onClick={() => setOpen(true)}
       >
         <Icon name="closed_caption" size={18} /> {entry.label}
