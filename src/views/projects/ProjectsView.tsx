@@ -8,6 +8,7 @@ import { JobProgress } from '../../components/JobProgress'
 import { JobsContext } from '../../app/jobsContext'
 import { RenameModal } from '../../components/RenameModal'
 import { CreateProjectDialog } from './CreateProjectDialog'
+import { recordingDurationLabel } from './recordingDuration'
 import { attachPlan } from './createProjectLists'
 import type { ListChoices } from './createProjectLists'
 import { requestMeetingBinding } from './meetingBindingRequest'
@@ -550,6 +551,7 @@ export function ProjectsView({
                 <div class="project-list-head" aria-hidden="true">
                   <span class="col-name">Projekt</span>
                   <span class="col-date">Datum</span>
+                  <span class="col-duration">Längd</span>
                   <span class="col-mode">Läge</span>
                   <span class="col-visibility">Synlighet</span>
                   <span class="col-captions">Undertexter</span>
@@ -585,6 +587,7 @@ export function ProjectsView({
                         )
                       })()}
                       <span class="col-date">{formatShortDate(p.createdAt)}</span>
+                      <span class="col-duration">{recordingDurationLabel(p.recording)}</span>
                       <span class="col-mode">
                         <span class={`mode-chip mode-${MODE_TONE[p.publicMode]}`}>{MODE_LABEL[p.publicMode]}</span>
                       </span>

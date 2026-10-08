@@ -361,7 +361,7 @@ function toProjectLite(dto: ServerProject): Project {
       streamStartedAt: dto.technicalHealth.streamStartedAt,
       recordingState: dto.technicalHealth.recordingState as RecordingState | null,
     },
-    recording: dto.recording ? { id: dto.recording.id, state: dto.recording.state as RecordingState, hlsUrl: dto.recording.hlsUrl, source: dto.recording.source, progress: dto.recording.progress, phase: dto.recording.phase, captions: dto.recording.captions ?? null } : null,
+    recording: dto.recording ? { id: dto.recording.id, state: dto.recording.state as RecordingState, hlsUrl: dto.recording.hlsUrl, source: dto.recording.source, progress: dto.recording.progress, phase: dto.recording.phase, captions: dto.recording.captions ?? null, durationSeconds: dto.recording.durationSeconds } : null,
     publication: { state: dto.publication.state as PublicationState },
     publicationHistory: dto.publicationHistory.map((entry): PublicationHistory => ({
       id: entry.id,

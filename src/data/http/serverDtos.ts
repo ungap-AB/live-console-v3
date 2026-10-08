@@ -85,6 +85,7 @@ export interface ServerRecordingRef {
   progress?: number
   phase?: string
   availabilityReason?: string
+  durationSeconds?: number
   captions?: { language: string; label: string; cueCount: number; lastCueEndSeconds: number; uploadedAt: string; url: string } | null
 }
 
