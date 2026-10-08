@@ -9,13 +9,15 @@ interface VideoStatusRowProps {
   /** Åtgärderna (undertexter, ladda upp video) finns bara när något av dem går att göra. */
   actionsAvailable: boolean
   onOpenActions: () => void
+  /** Öppnar dialogen Exportera och importera. */
+  onOpenExport?: () => void
   /** Knappen för att skapa/redigera undertexter (UNG-165), före "…"-knappen. */
   captionAction?: ComponentChildren
 }
 
 // UNG-101: en rad ovanför videofönstret med det som pågår kring videon (bearbetning) och vilken undertext som hör till
 // den, med "…" till höger som öppnar dialogen där åtgärderna görs.
-export function VideoStatusRow({ recording, actionsAvailable, onOpenActions, captionAction }: VideoStatusRowProps) {
+export function VideoStatusRow({ recording, actionsAvailable, onOpenActions, onOpenExport, captionAction }: VideoStatusRowProps) {
   const ready = recording?.state === 'recorded' || recording?.state === 'trimmed' || recording?.state === 'published'
   const processing = recording?.state === 'processing' && (recording.source === 'upload')
   const awaiting = recording?.state === 'awaitingApproval'
@@ -39,6 +41,11 @@ export function VideoStatusRow({ recording, actionsAvailable, onOpenActions, cap
         )}
       </div>
       {ready && captionAction}
+      {onOpenExport && (
+        <button class="ib video-status-more" type="button" aria-label="Exportera och importera" title="Exportera och importera" onClick={onOpenExport}>
+          <Icon name="ios_share" size={20} />
+        </button>
+      )}
       <button
         class="ib video-status-more"
         type="button"

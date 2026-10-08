@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Chapter, ChapterImportResult, CueKind, Project, ProjectRecording, Recording } from '../../data/types'
-import { notifyJobsChanged } from '../../app/jobsBus'
-import { readNotifyByEmail } from '../../app/notifyPreference'
 import { formatBytes, formatDateTime, formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
@@ -11,7 +9,8 @@ import { Icon } from '../../components/Icon'
 import { VideoStatusRow } from './VideoStatusRow'
 import { CaptionEntry } from './CaptionEntry'
 import { VideoActionsDialog } from './VideoActionsDialog'
-import type { DownloadState } from './DownloadPanel'
+import { ExportImportDialog } from './ExportImportDialog'
+import type { VideoTab } from './videoDialogLogic'
 import { videoActionsAvailable } from './videoDialogLogic'
 import { PublishProgressDialog } from './PublishProgressDialog'
 import { PublishOutcomeDialog } from './PublishOutcomeDialog'
@@ -95,7 +94,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   // operatör har ingen tillgång till Videoarkivet där samma funktion redan
   // finns, så den behövs här också. Nyckel = recording-id (original ELLER
   // trim har olika id:n). Servern kör jobbet; framsteget visas i jobbfältet (UNG-80).
-  const [downloads, setDownloads] = useState<Record<string, DownloadState>>({})
 
   // Misslyckad transkodning: servern tar bort inspelningsraden, så projektet går
   // från "bearbetas" (upload) till ingen inspelning alls — berätta varför.
@@ -110,6 +108,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const [lastSteppedId, setLastSteppedId] = useState<string | null>(null)
   const [orderWarning, setOrderWarning] = useState<string | null>(null)
   const [showVideoDialog, setShowVideoDialog] = useState(false)
+  // Flik som "Video och undertexter" öppnas på när den öppnas från Exportera och importera.
+  const [videoDialogTab, setVideoDialogTab] = useState<VideoTab | undefined>(undefined)
+  const [showExportDialog, setShowExportDialog] = useState(false)
   // UNG-103: punkter vars talare är hopfällda (chapterId för punkten).
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set())
   const [uploadNote, setUploadNote] = useState('')
@@ -279,13 +280,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
   const uploadedRecording = isOperatorSupplied(p.recording?.source)
   // UNG-102: en extern HLS-adress kopieras inte — den kan inte trimmas och inte laddas ned som MP4.
   const externalVideo = isExternalSource(p.recording?.source)
-  // UNG-132: nedladdning (original och trimmad) ligger i dialogen "Video och undertexter".
-  const downloadPossible = !isAfter && Boolean(source) && !awaitingApproval
-  const downloadBlockedReason = awaitingApproval
-    ? 'Godkänn eller ignorera den uppladdade videon först.'
-    : isAfter
-      ? 'Videon går att ladda ner när den är publicerad som ondemand.'
-      : 'Det finns ingen video att ladda ner.'
   const recordingReady = p.recording?.state === 'recorded' || p.recording?.state === 'trimmed' || p.recording?.state === 'published'
   const captionsEnabled = recordingReady && !awaitingApproval && !uploadPending
   const uploadBlockedReason = p.publication.state === 'published'
@@ -332,30 +326,6 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
       else next.add(groupId)
       return next
     })
-  }
-
-  // Jobbet (HLS → MP4 via MediaConvert, UNG-58) kan ta flera minuter för en
-  // hel sändning — client.recordings.download pollar internt tills klart.
-  // En synlig länk (inte window.open) — ett sent popup-anrop blockeras ofta
-  // tyst av webbläsaren efter en flerminuters väntan. Fungerar för BÅDE
-  // original och trimmad inspelning — id:t avgör vilken.
-  async function downloadRecording(recordingId: string) {
-    setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'starting' } }))
-    try {
-      const job = await client.recordings.startDownload(recordingId, { notifyByEmail: readNotifyByEmail() })
-      if (job.url) {
-        setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'ready', url: job.url } }))
-      } else {
-        // Servern kör jobbet; framsteget visas i jobbfältet och en toast säger till när filen är klar.
-        setDownloads((prev) => ({ ...prev, [recordingId]: { status: 'queued' } }))
-        notifyJobsChanged()
-      }
-    } catch (error) {
-      setDownloads((prev) => ({
-        ...prev,
-        [recordingId]: { status: 'error', message: error instanceof Error ? error.message : 'Nedladdningen kunde inte förberedas.' },
-      }))
-    }
   }
 
   async function cancelPendingUpload() {
@@ -996,8 +966,9 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
               <div class="od-mock-trim" aria-label={isAfter ? 'Trimning' : 'Trim-förhandsvisning'}>
                 <VideoStatusRow
                   recording={p.recording}
-                  actionsAvailable={videoActionsAvailable({ captionsEnabled, uploadEnabled: canUpload, downloadEnabled: downloadPossible })}
-                  onOpenActions={() => setShowVideoDialog(true)}
+                  actionsAvailable={videoActionsAvailable({ captionsEnabled, uploadEnabled: canUpload })}
+                  onOpenActions={() => { setVideoDialogTab(undefined); setShowVideoDialog(true) }}
+                  onOpenExport={() => setShowExportDialog(true)}
                   captionAction={captionsEnabled ? (
                     <CaptionEntry
                       projectId={p.id}
@@ -1155,15 +1126,17 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
                 uploadEnabled={canUpload}
                 uploadBlockedReason={uploadBlockedReason}
                 replacing={!!source}
-                downloadEnabled={downloadPossible}
-                downloadBlockedReason={downloadBlockedReason}
-                externalVideo={externalVideo}
-                sourceId={source?.id}
-                trimmedId={recording?.kind === 'trimmed' ? recording.id : undefined}
-                downloads={downloads}
-                onDownload={(recordingId) => void downloadRecording(recordingId)}
+                initialTab={videoDialogTab}
                 onChanged={() => void actions.refreshProject()}
                 onClose={() => setShowVideoDialog(false)}
+              />
+            )}
+            {showExportDialog && (
+              <ExportImportDialog
+                project={p}
+                onClose={() => setShowExportDialog(false)}
+                onImportChapters={chaptersReadOnly || awaitingApproval ? undefined : () => setShowImport(true)}
+                onOpenVideoActions={(tab) => { setVideoDialogTab(tab); setShowVideoDialog(true) }}
               />
             )}
             <footer class="od-trim-footer">

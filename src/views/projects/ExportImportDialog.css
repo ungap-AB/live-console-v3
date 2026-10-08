@@ -1,0 +1,129 @@
+/* Dialogen Exportera och importera: grupper av rader, varje rad med rubrik, förklaring, knappar och återkoppling på raden. */
+.ei-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding-top: 14px;
+  min-height: 360px;
+}
+
+.ei-group h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.ei-help {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.ei-option {
+  margin-bottom: 8px;
+}
+
+.ei-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.ei-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+}
+
+.ei-row:first-child {
+  border-top: 0;
+}
+
+.ei-head {
+  flex: 1 1 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ei-head small {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.ei-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ei-row.is-disabled .ei-head strong {
+  color: var(--ink-3);
+}
+
+.ei-reason {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* Återkopplingen sitter på raden där man gjorde något, och tar hela radens bredd. */
+.ei-status {
+  flex: 1 1 100%;
+  margin: 0;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.ei-status.is-ok {
+  color: var(--open-fg);
+  background: var(--open-bg);
+}
+
+.ei-status.is-error {
+  color: var(--warn);
+  background: var(--warn-bg);
+}
+
+.ei-preview {
+  flex: 1 1 100%;
+  font-size: 12px;
+}
+
+.ei-preview summary {
+  cursor: pointer;
+  color: var(--ink-2);
+}
+
+.ei-text {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  max-height: 180px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  user-select: all;
+}
+
+.ei-notes {
+  flex: 1 1 100%;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--warn);
+}

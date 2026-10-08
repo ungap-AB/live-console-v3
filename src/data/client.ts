@@ -218,6 +218,8 @@ export interface Client {
     discardCaptionDraft(id: string): Promise<void>
     /** Sparar utkastets VTT-fil via webbläsaren. */
     downloadCaptionDraft(id: string): Promise<void>
+    /** UNG-194: kapitel för arkivering som Word-dokument (servern bygger det). */
+    exportChaptersDocx(id: string): Promise<Blob>
     setPoster(id: string, file: File): Promise<Project>
     removePoster(id: string): Promise<Project>
     setVisibility(id: string, visibility: Visibility): Promise<Project>

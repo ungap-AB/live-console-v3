@@ -3,7 +3,6 @@ import type { ProjectCaptions } from '../../data/types'
 import { Modal } from '../../components/Modal'
 import { Tabs } from '../../components/Tabs'
 import { CaptionsPanel } from './CaptionsPanel'
-import { DownloadPanel, type DownloadState } from './DownloadPanel'
 import { UploadPanel } from './UploadPanel'
 import { VIDEO_TABS, defaultVideoTab, type VideoTab } from './videoDialogLogic'
 import './VideoActionsDialog.css'
@@ -21,28 +20,20 @@ interface VideoActionsDialogProps {
   uploadBlockedReason?: string
   /** Det finns redan en video som en ny ersätter först när den godkänts. */
   replacing: boolean
-  /** Nedladdning (UNG-132): original och trimmad version, flyttad hit från under videorutan. */
-  downloadEnabled: boolean
-  downloadBlockedReason?: string
-  externalVideo: boolean
-  sourceId?: string
-  trimmedId?: string
-  downloads: Record<string, DownloadState>
-  onDownload: (recordingId: string) => void
   /** Flik som dialogen öppnas på (annars den första som går att använda). */
   initialTab?: VideoTab
   onChanged: () => void
   onClose: () => void
 }
 
-// UNG-101/132: åtgärderna kring projektets video samlade på ett ställe, i flikarna Undertexter, Ladda upp och Ladda ner. Panelerna förblir
+// UNG-101/132: åtgärderna kring projektets video samlade på ett ställe, i flikarna Undertexter och Ladda upp (nedladdning och export finns i Exportera och importera). Panelerna förblir
 // monterade när man byter flik (annars skulle en pågående uppladdning avbrytas); inaktiva paneler döljs bara.
 // Dialogen får inte stängas medan en fil överförs från webbläsaren — därefter fortsätter allt i bakgrunden.
 export function VideoActionsDialog({
   projectId, projectName, captionsEnabled, captions, videoDurationSeconds, uploadEnabled, uploadBlockedReason, replacing,
-  downloadEnabled, downloadBlockedReason, externalVideo, sourceId, trimmedId, downloads, onDownload, initialTab, onChanged, onClose,
+  initialTab, onChanged, onClose,
 }: VideoActionsDialogProps) {
-  const [tab, setTab] = useState<VideoTab>(() => defaultVideoTab({ captionsEnabled, uploadEnabled, downloadEnabled }, initialTab))
+  const [tab, setTab] = useState<VideoTab>(() => defaultVideoTab({ captionsEnabled, uploadEnabled }, initialTab))
   const [captionsBusy, setCaptionsBusy] = useState(false)
   const [uploadBusy, setUploadBusy] = useState(false)
   const busy = captionsBusy || uploadBusy
@@ -106,17 +97,6 @@ export function VideoActionsDialog({
       )}
       </div>
 
-      <div class={`vad-panel${tab === 'download' ? '' : ' is-inactive'}`} role="tabpanel" id="vad-panel-download" aria-labelledby="vad-tab-download" aria-hidden={tab !== 'download'}>
-        <DownloadPanel
-          projectName={projectName}
-          sourceId={downloadEnabled ? sourceId : undefined}
-          trimmedId={trimmedId}
-          externalVideo={externalVideo}
-          blockedReason={downloadBlockedReason}
-          downloads={downloads}
-          onDownload={onDownload}
-        />
-      </div>
       </div>
     </Modal>
   )

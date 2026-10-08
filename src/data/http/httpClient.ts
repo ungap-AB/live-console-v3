@@ -888,6 +888,9 @@ export const httpClient: Client = {
       anchor.remove()
       setTimeout(() => URL.revokeObjectURL(url), 10_000)
     },
+    exportChaptersDocx(id) {
+      return apiBlob(`/projects/${id}/export/chapters.docx`)
+    },
     async setPoster(id, file) {
       const body = new FormData()
       body.append('file', file, file.name)

@@ -12,6 +12,7 @@ import { recordingDurationLabel } from './recordingDuration'
 import { attachPlan } from './createProjectLists'
 import type { ListChoices } from './createProjectLists'
 import { requestMeetingBinding } from './meetingBindingRequest'
+import { ExportImportDialog } from './ExportImportDialog'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
 import { formatShortDate } from '../../app/time'
@@ -113,6 +114,7 @@ export function ProjectsView({
   const [toast, setToast] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Project | null>(null)
   const [renaming, setRenaming] = useState<Project | null>(null)
+  const [exporting, setExporting] = useState<Project | null>(null)
 
   useEffect(() => {
     if (resource.data) setProjects(resource.data)
@@ -629,6 +631,8 @@ export function ProjectsView({
                                   () => setToast('Det gick inte att kopiera länken.'),
                                 ),
                             },
+                            // UNG-193/194: all export och import samlad i en dialog (kapitel, video), med återkoppling på raden.
+                            { label: 'Exportera och importera…', onClick: () => setExporting(p) },
                             { label: 'Byt namn', onClick: () => setRenaming(p) },
                             {
                               label: 'Flytta till papperskorgen',
@@ -665,6 +669,17 @@ export function ProjectsView({
             gallringstiden löper ut.
           </p>
         </ConfirmModal>
+      )}
+
+      {exporting && (
+        <ExportImportDialog
+          project={exporting}
+          onClose={() => setExporting(null)}
+          onOpenProject={() => {
+            onSelectedIdChange(exporting.id)
+            onScreenChange(screenForMode(exporting.publicMode))
+          }}
+        />
       )}
 
       {renaming && (
