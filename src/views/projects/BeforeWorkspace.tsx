@@ -7,6 +7,7 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import type { ProjectActions } from './actions'
 import { MeetingBindingModal } from './MeetingBindingModal'
+import { consumeMeetingBindingRequest } from './meetingBindingRequest'
 import { linkedResourceLabel } from './preparationLabels'
 import { PlayoutColumns } from './PlayoutColumns'
 import { useModeChange } from './useModeChange'
@@ -35,7 +36,8 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [openPicker, setOpenPicker] = useState<'agenda' | 'namelist' | null>(null)
   const [notUsed, setNotUsed] = useState<string[]>([])
-  const [showMeeting, setShowMeeting] = useState(false)
+  // UNG-189: öppnas direkt när man valt "Koppla till Meeting" i skapa-dialogen.
+  const [showMeeting, setShowMeeting] = useState(() => consumeMeetingBindingRequest(p.id))
   const { selectMode } = useModeChange(p, actions)
 
   const hasIngest = p.channel !== null

@@ -8,6 +8,9 @@ import { JobProgress } from '../../components/JobProgress'
 import { JobsContext } from '../../app/jobsContext'
 import { RenameModal } from '../../components/RenameModal'
 import { CreateProjectDialog } from './CreateProjectDialog'
+import { attachPlan } from './createProjectLists'
+import type { ListChoices } from './createProjectLists'
+import { requestMeetingBinding } from './meetingBindingRequest'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
 import { formatShortDate } from '../../app/time'
@@ -228,12 +231,31 @@ export function ProjectsView({
     await attempt(fn)
   }
 
-  async function createProject(name: string, layoutSourceProjectId: string | null) {
-    const created = await client.projects.create({ name, layoutSourceProjectId: layoutSourceProjectId ?? undefined })
+  async function createProject(name: string, layoutSourceProjectId: string | null, lists: ListChoices) {
+    let created = await client.projects.create({ name, layoutSourceProjectId: layoutSourceProjectId ?? undefined })
+    // UNG-189: valda listor kopplas efter skapandet. Misslyckas en koppling finns projektet kvar och ett meddelande säger vilken.
+    const plan = attachPlan(lists)
+    const failed: string[] = []
+    if (plan.agendaId) {
+      try {
+        created = await client.projects.setAgenda(created.id, plan.agendaId)
+      } catch {
+        failed.push('dagordningen')
+      }
+    }
+    if (plan.namelistId) {
+      try {
+        created = await client.projects.setNameList(created.id, plan.namelistId)
+      } catch {
+        failed.push('namnlistan')
+      }
+    }
+    if (plan.openMeeting) requestMeetingBinding(created.id)
     setProjects((prev) => [created, ...prev])
     onSelectedIdChange(created.id)
     onScreenChange(screenForMode(created.publicMode))
     onCreatingChange(false)
+    if (failed.length > 0) setToast(`Projektet skapades, men ${failed.join(' och ')} kunde inte kopplas. Koppla ${failed.length > 1 ? 'dem' : 'den'} i projektet.`)
   }
 
   async function deleteProject(project: Project) {
@@ -655,7 +677,7 @@ export function ProjectsView({
       )}
 
       {creating && (
-        <CreateProjectDialog projects={projects} onCancel={() => onCreatingChange(false)} onCreate={(name, source) => void createProject(name, source)} />
+        <CreateProjectDialog projects={projects} onCancel={() => onCreatingChange(false)} onCreate={(name, source, lists) => void createProject(name, source, lists)} />
       )}
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
