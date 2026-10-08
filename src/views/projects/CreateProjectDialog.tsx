@@ -58,7 +58,7 @@ export function CreateProjectDialog({ projects, onCancel, onCreate }: CreateProj
             ))}
             <option value={NONE}>Ingen (tomma texter och standardvärden)</option>
           </select>
-          <small>Kopierar meddelandetexterna, textens placering och Mux-inställningen. Posterbilden följer inte med.</small>
+          <small>Kopierar meddelandetexterna, textens placering, Mux-inställningen och posterbilden.</small>
         </label>
       )}
     </Modal>

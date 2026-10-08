@@ -102,7 +102,7 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
     >
       <section class="ps-section">
         <h3>Layout från ett annat projekt</h3>
-        <p class="ps-help">Hämta texter, textplacering och Mux-inställning från ett annat projekt. De ersätter dessa inställningar, efter bekräftelse.</p>
+        <p class="ps-help">Hämta texter, textplacering, Mux-inställning och posterbild från ett annat projekt. De ersätter dessa inställningar, efter bekräftelse.</p>
         <div class="ps-poster-actions">
           <button class="btn btn-sm" type="button" onClick={() => setInheriting(true)}>
             Hämta layout från projekt…

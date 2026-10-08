@@ -40,7 +40,7 @@ export function InheritLayoutDialog({ project, actions, onCancel, onDone }: Inhe
   return (
     <Modal
       title="Hämta layout från projekt"
-      subtitle="Ersätter spelarens texter, textplacering och Mux-inställning med en kopia av det valda projektets."
+      subtitle="Ersätter spelarens texter, textplacering, Mux-inställning och posterbild med en kopia av det valda projektets."
       onClose={onCancel}
       footer={
         <>
@@ -79,7 +79,7 @@ export function InheritLayoutDialog({ project, actions, onCancel, onDone }: Inhe
                 </li>
               ))}
             </ul>
-            <p class="cp-note">Osparade ändringar i spelarinställningarna går förlorade. Posterbilden påverkas inte.</p>
+            <p class="cp-note">Osparade ändringar i spelarinställningarna går förlorade.</p>
           </div>
         )
       )}

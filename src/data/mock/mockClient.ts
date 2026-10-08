@@ -810,6 +810,7 @@ export const mockClient: Client = {
         textPlacement: layoutSource?.textPlacement ?? 'middle',
         muxEnabled: layoutSource?.muxEnabled ?? false,
         muxRespectDoNotTrack: layoutSource?.muxRespectDoNotTrack ?? false,
+        posterUrl: layoutSource?.posterUrl ?? null,
         muxEnvKey: 'os3srhrpsr4mfcc3tdlv25lo3',
         visibility: 'closed',
         publicMode: 'before',
@@ -842,6 +843,7 @@ export const mockClient: Client = {
       project.textPlacement = source.textPlacement
       project.muxEnabled = source.muxEnabled
       project.muxRespectDoNotTrack = source.muxRespectDoNotTrack
+      project.posterUrl = source.posterUrl ?? null
       return delay(projectSnapshot(project))
     },
     async rename(id, name, texts) {

@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { defaultLayoutSource, describeLayoutValue, LAYOUT_FIELDS, layoutDiff, layoutOf, layoutSourceOptions } from './layoutInherit.ts'
 import type { LayoutFields } from './layoutInherit.ts'
 
-const base: LayoutFields = { beforeText: '', liveText: '', afterText: '', ondemandText: '', textPlacement: 'middle', muxEnabled: false, muxRespectDoNotTrack: false }
+const base: LayoutFields = { beforeText: '', liveText: '', afterText: '', ondemandText: '', textPlacement: 'middle', muxEnabled: false, muxRespectDoNotTrack: false, posterUrl: null }
 
 test('källorna är senast skapade först, och projektet som ska få layouten utelämnas', () => {
   const projects = [
@@ -48,4 +48,13 @@ test('värden visas läsbart: tom text, placering, på/av och kortade texter', (
   assert.equal(describeLayoutValue('textPlacement', 'top'), 'Överkant')
   assert.equal(describeLayoutValue('muxRespectDoNotTrack', true), 'På')
   assert.ok(describeLayoutValue('afterText', 'x'.repeat(200)).length <= 71)
+})
+
+test('posterbilden räknas som layout: den ersätts när någon av projekten har en bild, och förblir orörd när ingen har det', () => {
+  const withPoster: LayoutFields = { ...base, posterUrl: 'https://cdn/players/a/poster-1.png' }
+  const otherPoster: LayoutFields = { ...base, posterUrl: 'https://cdn/players/b/poster-2.png' }
+  assert.deepEqual(layoutDiff(base, withPoster).map((c) => [c.key, c.from, c.to]), [['posterUrl', 'Ingen bild', 'Bild']])
+  assert.deepEqual(layoutDiff(withPoster, base).map((c) => [c.key, c.from, c.to]), [['posterUrl', 'Bild', 'Ingen bild']])
+  assert.deepEqual(layoutDiff(withPoster, otherPoster).map((c) => [c.key, c.from, c.to]), [['posterUrl', 'Bild', 'Bild']])
+  assert.deepEqual(layoutDiff(base, base), [])
 })
