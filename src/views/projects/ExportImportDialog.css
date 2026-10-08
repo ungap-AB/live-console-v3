@@ -1,10 +1,15 @@
 /* Dialogen Exportera och importera: grupper av rader, varje rad med rubrik, förklaring, knappar och återkoppling på raden. */
+/* Fast storlek: dialogen ska inte hoppa när man byter flik. Höjden rymmer fliken med mest innehåll (Kapitel med sina fyra rader); blir
+   något ändå högre, till exempel med en återkopplingsrad eller en uppfälld förhandsvisning, scrollar rutan i stället för att växa. */
+.ei-dialog.modal {
+  height: min(660px, 85vh);
+}
+
 .ei-panel {
   display: flex;
   flex-direction: column;
   gap: 14px;
   padding-top: 14px;
-  min-height: 400px;
 }
 
 /* Undertabbarnas innehåll: lite luft mot flikraden, och dialogen behåller sin höjd när man byter flik. */
