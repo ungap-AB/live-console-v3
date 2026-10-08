@@ -30,6 +30,7 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
   const [activeTextField, setActiveTextField] = useState<PlayerTextKey>(PLAYER_TEXT_FIELDS[0].key)
   const [muxEnabled, setMuxEnabled] = useState(project.muxEnabled)
   const [muxRespectDnt, setMuxRespectDnt] = useState(project.muxRespectDoNotTrack)
+  const [dvrEnabled, setDvrEnabled] = useState(project.dvrEnabled)
   const [posterFile, setPosterFile] = useState<File | null>(null)
   const [posterRemoved, setPosterRemoved] = useState(false)
   const [posterError, setPosterError] = useState<string | null>(null)
@@ -45,7 +46,7 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
   // Exempeltexten i förhandsvisningen: den valda flikens text, annars spelarens standardtext eller ett exempel.
   const activeField = PLAYER_TEXT_FIELDS.find((field) => field.key === activeTextField) ?? PLAYER_TEXT_FIELDS[0]
   const previewText = texts[activeField.key].trim() || activeField.fallback || 'Exempeltext'
-  const changed = changedSettings(project, texts, placement, muxEnabled, muxRespectDnt)
+  const changed = changedSettings(project, texts, placement, muxEnabled, muxRespectDnt, dvrEnabled)
   const dirty = changed !== null || posterFile !== null || (posterRemoved && Boolean(project.posterUrl))
 
   function choosePoster(file: File | undefined) {
@@ -204,6 +205,23 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
         </div>
         {posterError && <p class="ps-error" role="alert">{posterError}</p>}
         <p class="ps-help">JPG, PNG eller WebP, högst 5 MB. Rekommenderat format 16:9, t.ex. 1920×1080.</p>
+      </section>
+
+      <section class="ps-section">
+        <h3>Spola tillbaka i livesändning</h3>
+        <p class="ps-help">
+          Tittarna kan pausa livesändningen, spola tillbaka och hoppa till en tidigare dagordningspunkt, och sedan gå tillbaka till live.
+          Bara det som sändes publikt går att se i efterhand.
+        </p>
+        <label class="ps-switch">
+          <input
+            type="checkbox"
+            checked={dvrEnabled}
+            onChange={(e) => setDvrEnabled((e.target as HTMLInputElement).checked)}
+          />
+          <span>Låt tittarna spola tillbaka</span>
+        </label>
+        <span class="ps-help">Av som standard. Börjar gälla för tittare som laddar om spelaren.</span>
       </section>
 
       <section class="ps-section">

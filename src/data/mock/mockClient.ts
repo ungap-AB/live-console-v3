@@ -810,6 +810,7 @@ export const mockClient: Client = {
         textPlacement: layoutSource?.textPlacement ?? 'middle',
         muxEnabled: layoutSource?.muxEnabled ?? false,
         muxRespectDoNotTrack: layoutSource?.muxRespectDoNotTrack ?? false,
+        dvrEnabled: false,
         posterUrl: layoutSource?.posterUrl ?? null,
         muxEnvKey: 'os3srhrpsr4mfcc3tdlv25lo3',
         visibility: 'closed',

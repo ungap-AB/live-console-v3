@@ -165,6 +165,8 @@ export interface Project {
   muxEnvKey?: string | null
   /** Respektera tittarens "Do Not Track". Av som standard: mätningen är anonym och cookiefri. */
   muxRespectDoNotTrack: boolean
+  /** UNG-5: tittare får spola tillbaka i en pågående sändning (DVR). */
+  dvrEnabled: boolean
   visibility: Visibility
   publicMode: PublicMode
   afterReason: AfterReason | null

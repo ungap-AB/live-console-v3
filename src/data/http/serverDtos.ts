@@ -134,6 +134,7 @@ export interface ServerProject {
   muxEnabled?: boolean
   muxEnvKey?: string | null
   muxRespectDoNotTrack?: boolean
+  dvrEnabled?: boolean
   visibility: string
   publicMode: string
   afterReason: string | null

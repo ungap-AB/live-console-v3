@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { POSTER_MAX_BYTES, PLAYER_TEXT_FIELDS, TEXT_PLACEMENT_OPTIONS, changedSettings, changedTexts, textsOf, validatePosterFile } from './playerSettings.ts'
 
-const project = { beforeText: 'a', liveText: '', afterText: 'c', ondemandText: '', textPlacement: 'middle' as const, muxEnabled: false, muxRespectDoNotTrack: false }
+const project = { beforeText: 'a', liveText: '', afterText: 'c', ondemandText: '', textPlacement: 'middle' as const, muxEnabled: false, muxRespectDoNotTrack: false, dvrEnabled: false }
 
 test('alla fyra lägen har ett textfält, i visningsordning', () => {
   assert.deepEqual(PLAYER_TEXT_FIELDS.map((f) => f.key), ['beforeText', 'liveText', 'afterText', 'ondemandText'])
@@ -51,4 +51,6 @@ test('changedSettings tar med placeringen bara när den ändrats, tillsammans me
   assert.deepEqual(changedSettings(project, { ...textsOf(project), afterText: 'Slut' }, 'middle', false, false), { afterText: 'Slut' })
   assert.deepEqual(changedSettings(project, textsOf(project), 'middle', true, false), { muxEnabled: true })
   assert.deepEqual(changedSettings(project, textsOf(project), 'middle', false, true), { muxRespectDoNotTrack: true })
+  assert.deepEqual(changedSettings(project, textsOf(project), 'middle', false, false, true), { dvrEnabled: true })
+  assert.equal(changedSettings({ ...project, dvrEnabled: true }, textsOf(project), 'middle', false, false), null) // utan ny uppgift gäller projektets
 })
