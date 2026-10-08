@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { chaptersExportAvailability, copiedMessage, importAvailability, savedMessage, videoDownloadAvailability } from './exportImportLogic.ts'
+import { chaptersExportAvailability, importAvailability, savedMessage, videoDownloadAvailability } from './exportImportLogic.ts'
 
 const rec = (state: string, source = 'Live-sändning') => ({ id: 'r1', state: state as 'recorded', source })
 
@@ -31,6 +31,5 @@ test('import görs inne i projektet: från listan är raderna inaktiva med en f�
 })
 
 test('meddelandena nämner vad som hände', () => {
-  assert.equal(copiedMessage(12), '12 kapitel kopierades. Klistra in dem i videons beskrivning på YouTube.')
   assert.equal(savedMessage('KF - kapitel.docx'), 'Sparad som "KF - kapitel.docx". Filen ligger bland dina hämtade filer.')
 })

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Chapter } from '../../data/types.ts'
 import {
-  buildExportChapters, canExportChapters, exportFileName, videoWindowOf, formatYoutubeTime, toUngapChaptersJson, toWebVttChapters, toYoutubeChapters,
+  buildExportChapters, canExportChapters, exportFileName, toUngapChaptersJson, toWebVttChapters, videoWindowOf,
 } from './chapterExport.ts'
 
 const chapter = (id: string, kind: Chapter['kind'], label: string, offsetSeconds: number, extra: Partial<Chapter> = {}): Chapter => ({ chapterId: id, kind, label, offsetSeconds, ...extra })
@@ -59,60 +59,6 @@ test('kapitlet vid trimstarten behålls (inget extra flyttas)', () => {
   assert.deepEqual(chapters.map((c) => [c.title, c.start]), [['§ 12 Budget 2027', 0], ['§ 13 Ny detaljplan', 1475], ['§ 14 Motion', 2245]])
 })
 
-test('YouTube: m:ss-format under en timme, hh:mm:ss på alla rader när något kapitel passerar en timme', () => {
-  assert.equal(formatYoutubeTime(222, false), '03:42')
-  assert.equal(formatYoutubeTime(2825, false), '47:05')
-  assert.equal(formatYoutubeTime(4368, true), '01:12:48')
-  const short = toYoutubeChapters(buildExportChapters(meeting, whole), 3600)
-  assert.equal(short.text.split('\n')[0], '00:00 Mötets öppnande')
-  assert.ok(short.valid)
-  const long = toYoutubeChapters([
-    { id: '1', kind: 'agendaItem', title: 'A', start: 0, end: 755 }, { id: '2', kind: 'agendaItem', title: 'B', start: 755, end: 3822 },
-    { id: '3', kind: 'agendaItem', title: 'C', start: 3822, end: 8287 },
-  ], 8287)
-  assert.equal(long.text, '00:00:00 A\n00:12:35 B\n01:03:42 C')
-})
-
-test('YouTube: en inledande rad läggs till när första kapitlet börjar efter 00:00, och det förklaras', () => {
-  const result = toYoutubeChapters([
-    { id: '1', kind: 'agendaItem', title: 'A', start: 30, end: 100 }, { id: '2', kind: 'agendaItem', title: 'B', start: 100, end: 200 },
-  ], 300)
-  assert.equal(result.text.split('\n')[0], '00:00 Start')
-  assert.equal(result.count, 3)
-  assert.ok(result.valid)
-  assert.ok(result.notes.some((note) => note.includes('inledande rad')))
-})
-
-test('YouTube: kapitel kortare än tio sekunder hoppas över, men aldrig det första', () => {
-  const result = toYoutubeChapters([
-    { id: '1', kind: 'agendaItem', title: 'A', start: 0, end: 5 }, { id: '2', kind: 'agendaItem', title: 'B', start: 5, end: 100 },
-    { id: '3', kind: 'agendaItem', title: 'C', start: 100, end: 104 }, { id: '4', kind: 'agendaItem', title: 'D', start: 104, end: 300 },
-  ], 300)
-  assert.equal(result.text, '00:00 A\n00:05 B\n01:44 D')
-  assert.ok(result.notes.some((note) => note.includes('hoppades över')))
-})
-
-test('YouTube: det sista kapitlet måste också vara minst tio sekunder mot videons slut', () => {
-  const result = toYoutubeChapters([
-    { id: '1', kind: 'agendaItem', title: 'A', start: 0, end: 100 }, { id: '2', kind: 'agendaItem', title: 'B', start: 100, end: 200 },
-    { id: '3', kind: 'agendaItem', title: 'C', start: 200, end: 205 }, { id: '4', kind: 'agendaItem', title: 'D', start: 295, end: 300 },
-  ], 300)
-  assert.equal(result.text, '00:00 A\n01:40 B\n03:20 C')
-})
-
-test('YouTube: färre än tre kapitel ger en förklaring men text att kopiera, och inga kapitel ger tomt', () => {
-  const two = toYoutubeChapters([
-    { id: '1', kind: 'agendaItem', title: 'A', start: 0, end: 100 }, { id: '2', kind: 'agendaItem', title: 'B', start: 100, end: 200 },
-  ], 200)
-  assert.equal(two.valid, false)
-  assert.equal(two.count, 2)
-  assert.ok(two.notes.some((note) => note.includes('minst 3')))
-  const none = toYoutubeChapters([], 200)
-  assert.equal(none.text, '')
-  assert.equal(none.count, 0)
-  assert.equal(none.valid, false)
-})
-
 test('WebVTT-kapitel: intervall och titel, tider med millisekunder, specialtecken skyddade', () => {
   const vtt = toWebVttChapters([
     { id: '1', kind: 'agendaItem', title: 'Mötets öppnande', start: 0, end: 755 },
@@ -136,7 +82,7 @@ test('ungap Chapters (.json): versionssatt, alla sorter, i videons tid', () => {
 })
 
 test('filnamn utan tecken som operativsystemen inte tål', () => {
-  assert.equal(exportFileName('KF 7/10: budget?', 'kapitel youtube', 'txt'), 'KF 7 10 budget - kapitel youtube.txt')
+  assert.equal(exportFileName('KF 7/10: budget?', 'kapitel', 'vtt'), 'KF 7 10 budget - kapitel.vtt')
   assert.equal(exportFileName('   ', 'kapitel', 'json'), 'projekt - kapitel.json')
 })
 

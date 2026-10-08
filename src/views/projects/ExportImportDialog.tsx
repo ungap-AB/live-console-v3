@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
+import { useEffect, useMemo, useState } from 'preact/hooks'
 import type { ComponentChildren } from 'preact'
 import { client } from '../../data'
 import type { Project } from '../../data/types'
 import { Modal } from '../../components/Modal'
 import { Tabs } from '../../components/Tabs'
 import { ShareDialog } from '../../components/ShareDialog'
-import { buildExportChapters, exportFileName, toUngapChaptersJson, toWebVttChapters, toYoutubeChapters } from './chapterExport'
+import { buildExportChapters, exportFileName, toUngapChaptersJson, toWebVttChapters } from './chapterExport'
 import { loadChapterExportData, type ChapterExportData } from './chapterExportData'
 import {
-  chaptersExportAvailability, copiedMessage, importAvailability, savedMessage, videoDownloadAvailability, type Availability, type ImportHandlers,
+  chaptersExportAvailability, importAvailability, savedMessage, videoDownloadAvailability, type Availability, type ImportHandlers,
 } from './exportImportLogic'
 import { DownloadButton } from './RecordingDownload'
 import { useRecordingDownloads } from './useRecordingDownloads'
@@ -75,10 +75,8 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
   const [mode, setMode] = useState<Mode>('export')
   const [includeSpeakers, setIncludeSpeakers] = useState(false)
   const [statuses, setStatuses] = useState<Record<string, RowStatus>>({})
-  const [copied, setCopied] = useState(false)
   const [wordBusy, setWordBusy] = useState(false)
   const [shareRecordingId, setShareRecordingId] = useState<string | null>(null)
-  const copyTimer = useRef<number | undefined>(undefined)
   const { downloads, start: startDownload } = useRecordingDownloads()
 
   const chaptersAvailability = chaptersExportAvailability(project)
@@ -110,34 +108,18 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
     return () => { cancelled = true }
   }, [recordingId, videoAvailability.enabled])
 
-  useEffect(() => () => window.clearTimeout(copyTimer.current), [])
-
   const exports = useMemo(() => {
     if (!chapterData) return null
     const selected = buildExportChapters(chapterData.chapters, chapterData.window, { includeSpeakers })
     const everything = buildExportChapters(chapterData.chapters, chapterData.window, { includeSpeakers: true })
     return {
       count: selected.length,
-      youtube: toYoutubeChapters(selected, chapterData.window.durationSeconds, project.name),
       vtt: toWebVttChapters(selected),
       json: toUngapChaptersJson(everything, { title: project.name, durationSeconds: chapterData.window.durationSeconds }),
     }
   }, [chapterData, includeSpeakers, project.name])
 
   const report = (id: string, kind: RowStatus['kind'], text: string) => setStatuses((current) => ({ ...current, [id]: { kind, text } }))
-
-  const copyYoutube = async () => {
-    if (!exports) return
-    try {
-      await navigator.clipboard.writeText(exports.youtube.text)
-      report('youtube', 'ok', copiedMessage(exports.youtube.count))
-      setCopied(true)
-      window.clearTimeout(copyTimer.current)
-      copyTimer.current = window.setTimeout(() => setCopied(false), 3000)
-    } catch {
-      report('youtube', 'error', 'Det gick inte att kopiera. Markera texten och kopiera själv.')
-    }
-  }
 
   const saveText = (id: string, suffix: string, extension: string, content: string, type: string) => {
     const fileName = exportFileName(project.name, suffix, extension)
@@ -195,26 +177,11 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
               {chaptersAvailability.enabled && (
                 <label class="ps-switch ei-option">
                   <input type="checkbox" checked={includeSpeakers} onChange={(event) => setIncludeSpeakers((event.target as HTMLInputElement).checked)} />
-                  <span>Ta med talare som egna kapitel (YouTube och WebVTT)</span>
+                  <span>Ta med talare som egna kapitel (WebVTT)</span>
                 </label>
               )}
               <ul class="ei-list">
-                <Row title="YouTube-kapitel" description="Text att klistra in i videons beskrivning på YouTube." availability={chapterRowAvailability} status={statuses.youtube}>
-                  {exports && (
-                    <>
-                      <details class="ei-preview">
-                        <summary>Visa texten</summary>
-                        <pre class="ei-text" aria-label="YouTube-kapitel">{exports.youtube.text}</pre>
-                      </details>
-                      <button class="btn btn-sm" type="button" onClick={() => void copyYoutube()}>{copied ? 'Kopierat ✓' : 'Kopiera'}</button>
-                      <button class="btn btn-sm" type="button" onClick={() => saveText('youtube', 'kapitel youtube', 'txt', exports.youtube.text + '\n', 'text/plain;charset=utf-8')}>Ladda ner .txt</button>
-                      {exports.youtube.notes.length > 0 && (
-                        <ul class="ei-notes">{exports.youtube.notes.map((note) => <li key={note}>{note}</li>)}</ul>
-                      )}
-                    </>
-                  )}
-                </Row>
-                <Row title="WebVTT-kapitel (.vtt)" description="Kapitel som tidsintervall, för spelare och plattformar som läser WebVTT-kapitel." availability={chapterRowAvailability} status={statuses.vtt}>
+                <Row title="WebVTT-kapitel (.vtt)" description="Kapitel som tidsintervall i WebVTT. Fungerar bland annat för YouTube och för spelare som läser WebVTT-kapitel." availability={chapterRowAvailability} status={statuses.vtt}>
                   <button class="btn btn-sm" type="button" onClick={() => exports && saveText('vtt', 'kapitel', 'vtt', exports.vtt, 'text/vtt;charset=utf-8')}>Ladda ner</button>
                 </Row>
                 <Row title="ungap Chapters (.json)" description="Presenters eget format med alla kapitel och talare, för säkerhetskopia och flytt." availability={chapterRowAvailability} status={statuses.json}>
