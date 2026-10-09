@@ -637,3 +637,107 @@ button.ce-time:hover {
   color: var(--muted, #5b6672);
   font-size: 0.85em;
 }
+
+/* UNG-147: rättningar inlästa från Word. Granskningsfältet, markeringar på raderna och låsta rader. */
+.ce-review {
+  flex: 0 0 auto;
+  padding: 8px 16px;
+  font-size: 13px;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--line);
+}
+.ce-review-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.ce-review-count {
+  color: var(--ink-2);
+}
+.ce-review-spacer {
+  flex: 1 1 auto;
+}
+.ce-review-warnings {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--warn);
+}
+.ce-review-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line-soft);
+}
+.ce-review-row {
+  font-weight: 600;
+}
+.ce-review-conflict {
+  color: var(--warn);
+}
+.ce-link {
+  margin-left: 8px;
+  padding: 0;
+  font: inherit;
+  color: var(--focus);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.ce-row.is-wordchanged {
+  box-shadow: inset 4px 0 0 var(--focus);
+  background: var(--odm-bg);
+}
+.ce-row.is-wordconflict {
+  box-shadow: inset 4px 0 0 var(--warn);
+  background: var(--warn-bg);
+}
+.ce-row.is-locked .ce-text textarea {
+  opacity: 0.6;
+  cursor: default;
+  background: var(--accent-soft);
+}
+.ce-wordbadge {
+  position: absolute;
+  right: 14px;
+  bottom: 8px;
+  padding: 0 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--odm);
+  background: var(--odm-bg);
+  border: 1px solid var(--odm-line);
+  border-radius: 9px;
+  pointer-events: none;
+}
+.ce-wordbadge.is-conflict,
+.ce-wordbadge.is-removed {
+  color: var(--warn);
+  background: var(--warn-bg);
+  border-color: var(--warn-line);
+}
+.ce-row.has-wordbadge .ce-longcue {
+  right: 130px;
+}
+.ce-word-hints {
+  margin: 0.5rem 0;
+  padding-left: 1.2rem;
+  color: var(--ink-2);
+  font-size: 0.9em;
+}
+.ce-word-file {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0.8rem 0;
+}
+.ce-word-advanced {
+  margin-top: 0.6rem;
+  font-size: 0.9em;
+}
+.ce-word-advanced select {
+  max-width: 100%;
+}

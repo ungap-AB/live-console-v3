@@ -410,6 +410,45 @@ export interface CaptionMaster {
   legacy: boolean
 }
 
+/** UNG-147: en replik i förslaget från ett rättat Word-manus. Id = replikens id i mastern (för nya rutor: den de delats ur). */
+export interface WordImportCue {
+  id: number
+  start: number
+  end: number
+  text: string
+  state: 'unchanged' | 'changed' | 'added'
+  /** Texten före rättningen (för ändrade rutor). */
+  before?: string
+  /** split = delad ur en längre ruta, fast = svårläst tempo. */
+  flags: ('split' | 'fast')[]
+}
+
+export interface WordImportConflict {
+  id: number
+  currentText: string
+  baseText: string
+  wordText: string
+}
+
+export interface WordImportWarning {
+  code: 'base_unverified' | 'base_unchecked' | 'tracked_changes' | 'much_removed' | 'master_changed'
+  message: string
+}
+
+export interface WordImportResult {
+  baseVersion: number
+  currentVersion: number
+  baseVerified?: boolean
+  trackedInsertions: number
+  trackedDeletions: number
+  summary: { wordsAdded: number; wordsRemoved: number; changedCues: number; addedCues: number; removedCues: number; conflicts: number; checkCues: number }
+  /** Hela den föreslagna listan: nuvarande master med rättningarna ilagda. */
+  cues: WordImportCue[]
+  removed: { id: number; start: number; end: number; text: string }[]
+  conflicts: WordImportConflict[]
+  warnings: WordImportWarning[]
+}
+
 /** UNG-149: ljudets energikurva för originalet (en byte per ram, decibelskala), som vågformsbandet ritar. */
 export interface CaptionEnergy {
   intervalMs: number
@@ -422,7 +461,7 @@ export interface CaptionVersionInfo {
   version: number
   createdAtUtc: string
   createdByName?: string
-  reason: 'generated' | 'edit' | 'restore'
+  reason: 'generated' | 'edit' | 'restore' | 'word'
   cueCount: number
   published: boolean
   current: boolean

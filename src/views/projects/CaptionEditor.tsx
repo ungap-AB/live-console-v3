@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { notifyJobsChanged } from '../../app/jobsBus'
-import { shouldTogglePlayback, spaceAction, spaceTargetKind } from './captionKeysLogic'
+import { shouldCaptureTab, shouldTogglePlayback, spaceAction, spaceTargetKind, tabOriginIndex, tabTargetIndex, tabTargetKind } from './captionKeysLogic'
 import { cueCharCount, isLongCue } from './captionLengthLogic'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { client } from '../../data'
 import { ApiError } from '../../data/http/fetchJson'
-import type { CaptionDraft, CaptionEnergy, CaptionGeneration, CaptionMaster } from '../../data/types'
+import type { CaptionDraft, CaptionEnergy, CaptionGeneration, CaptionMaster, WordImportResult } from '../../data/types'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import { formatHms } from '../../app/time'
@@ -26,6 +26,9 @@ import { cueIndexAt, type GrabRole } from './captionWaveformLogic'
 import { approveBlockedReason, groupCorrections, type CorrectionGroup } from './autoCaptionsLogic'
 import { ownCorrections } from './captionCorrectionsLogic'
 import { CorrectionsPanel } from './CorrectionsPanel'
+import { WordImportDialog } from './WordImportDialog'
+import { WordReviewBar } from './WordReviewBar'
+import { buildReview, isLocked, nextReviewIndex, openConflicts, reviewIndexes, conflictKey, type WordReview } from './wordImportLogic'
 import './CaptionEditor.css'
 
 const ROW_HEIGHT = 84
@@ -87,6 +90,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   const [speakersReady, setSpeakersReady] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
   // Gränsen (replikindex) som dras, med antal ord i de två berörda replikerna när draget började (för orden-just-nu-märket).
+  // UNG-147: rättningar inlästa från Word. review = granskningsläget (null när det inte pågår eller är avslutat), fromWord = det som sparas kommer från Word.
+  const [review, setReview] = useState<WordReview | null>(null)
+  const [fromWord, setFromWord] = useState(false)
+  const [wordDialog, setWordDialog] = useState<{ baseChoice: boolean } | null>(null)
   const [dragBoundary, setDragBoundary] = useState<{ index: number; role: GrabRole; baseBefore: number; baseAfter: number } | null>(null)
 
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -122,6 +129,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     setCues(list)
     setSaved(list)
     setHistory(emptyHistory())
+    setReview(null)
+    setFromWord(false)
     focusBase.current = null
   }
 
@@ -371,6 +380,60 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
 
   const newId = () => tempId.current--
 
+  // Tab och Skift+Tab: nästa/föregående rad, från den aktiva raden (UNG-219). Under granskning av Word-rättningar hoppar de bara mellan
+  // ändrade rutor (och rutor med konflikt); finns ingen åt det hållet står fokus kvar.
+  function tabFrom(origin: number, backwards: boolean) {
+    if (review) {
+      const next = nextReviewIndex(reviewIndexes(cues, review), origin, backwards)
+      if (next === null) {
+        setNotice(backwards ? 'Ingen ändrad ruta före den här.' : 'Ingen ändrad ruta efter den här.')
+        focusRow(Math.min(cues.length - 1, Math.max(0, origin)))
+      } else {
+        setNotice('')
+        focusRow(next)
+      }
+      return
+    }
+    focusRow(tabTargetIndex(origin, backwards, cues.length))
+  }
+
+  function startWordReview(result: WordImportResult) {
+    if (!master || result.currentVersion !== master.version) {
+      setWordDialog(null)
+      setNotice('Undertexterna har ändrats under inläsningen. Läs in filen igen.')
+      return
+    }
+    const built = buildReview(result, newId)
+    setHistory(record(commitTypingTo(history), cues))
+    setCues(derive(built.cues))
+    setReview(built.review)
+    setFromWord(true)
+    setWordDialog(null)
+    setNotice('')
+    const stops = reviewIndexes(built.cues, built.review)
+    if (stops.length > 0) {
+      focusRow(stops[0])
+      seekTo(built.cues[stops[0]].start, false)
+    }
+  }
+
+  function updateReview(change: (current: WordReview) => void) {
+    setReview((current) => {
+      if (!current) return current
+      const next: WordReview = { ...current, unlocked: new Set(current.unlocked), resolved: new Set(current.resolved) }
+      change(next)
+      return next
+    })
+  }
+
+  function discardWordReview() {
+    setHistory(record(commitTypingTo(history), cues))
+    setCues(derive(saved))
+    setReview(null)
+    setFromWord(false)
+    setNotice('')
+  }
+
   function startMerge(firstIndex: number) {
     const info = mergeInfo(cues, firstIndex)
     if (!info) {
@@ -506,7 +569,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     setSaveError('')
     try {
       // Tomma repliker (t.ex. en ny ruta som lämnats tom) tas bort tyst.
-      const next = await client.projects.saveCaptionMaster(projectId, { ifVersion: master.version, cues: savePayload(sortedForSave(withoutEmpty(cues))) })
+      const next = await client.projects.saveCaptionMaster(projectId, { ifVersion: master.version, cues: savePayload(sortedForSave(withoutEmpty(cues))), ...(fromWord ? { reason: 'word' as const } : {}) })
       adopt(next)
       onSaved?.()
       return next
@@ -594,6 +657,17 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
         }
         return
       }
+      if (event.key === 'Tab') {
+        // UNG-219: efter ett klick i videon eller vågformen utgår Tab också från den aktiva raden. Knappar, fält och andra dialoger sköter sin egen.
+        const element = event.target instanceof HTMLElement ? event.target : null
+        const kind = element ? tabTargetKind(element.tagName, (selector) => element.closest(selector) !== null) : 'surface'
+        const otherDialogOpen = document.querySelectorAll('[role="dialog"]').length > 1
+        if (shouldCaptureTab(event, kind, otherDialogOpen) && cues.length > 0) {
+          event.preventDefault()
+          tabFrom(tabOriginIndex(activeIndex, selectedIndex, null), event.shiftKey)
+        }
+        return
+      }
       if (event.key !== 'Escape' || confirmClose || pendingMerge !== null) return
       if (event.target instanceof HTMLTextAreaElement) return
       requestClose()
@@ -622,6 +696,12 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     const area = event.currentTarget as HTMLTextAreaElement
     const atStart = area.selectionStart === 0 && area.selectionEnd === 0
     const atEnd = area.selectionStart === area.value.length && area.selectionEnd === area.value.length
+    // Låsta rader (ej ändrade i Word) går inte att ändra med tangenterna heller, bara att hoppa förbi.
+    const locked = review !== null && isLocked(review, cues[index].id)
+    if (locked && event.key !== 'Tab' && event.key !== 'Escape' && !(event.key === 'Enter' && !event.ctrlKey && !event.metaKey && !event.shiftKey)) {
+      if (event.key === 'Enter' || event.key === 'Backspace' || event.key === 'Delete') event.preventDefault()
+      return
+    }
     if (event.key === 'Escape') {
       event.preventDefault()
       event.stopPropagation()
@@ -644,7 +724,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
       }
     } else if (event.key === 'Tab') {
       event.preventDefault()
-      focusRow(event.shiftKey ? index - 1 : index + 1)
+      // UNG-219: från den aktiva raden (den replik som videon står på), inte från den textruta som senast hade fokus.
+      tabFrom(tabOriginIndex(activeIndex, selectedIndex, index), event.shiftKey)
     } else if (event.key === 'Backspace' && atStart && index > 0 && !readOnly) {
       // Som i en textredigerare: Backspace i början slår ihop med föregående replik.
       event.preventDefault()
@@ -688,6 +769,15 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
             Följ med
           </label>
           <span class="ce-dirty" aria-live="polite">{dirty ? `${changeCount} osparade ändringar` : master ? 'Sparat' : ''}</span>
+          <button
+            class="btn btn-sm"
+            type="button"
+            disabled={!master || readOnly || saving || publishing || regenerating}
+            title="Läser in ett rättat manus (Word) och föreslår ändringarna i undertexterna"
+            onClick={() => setWordDialog({ baseChoice: false })}
+          >
+            Läs in från Word…
+          </button>
           {onRegenerated && (
             <button
               class="btn btn-sm"
@@ -743,6 +833,24 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
       )}
 
       {!master && !loadError && <div key="loading" class="ce-loading">Hämtar undertexter…</div>}
+
+      {review && (
+        <WordReviewBar
+          key="word-review"
+          review={review}
+          cues={cues}
+          selectedIndex={selectedIndex}
+          stopCount={reviewIndexes(cues, review).length}
+          onNext={() => tabFrom(tabOriginIndex(activeIndex, selectedIndex, null), false)}
+          onPrevious={() => tabFrom(tabOriginIndex(activeIndex, selectedIndex, null), true)}
+          onUnlockAll={() => updateReview((next) => { for (const cue of cues) next.unlocked.add(cue.id) })}
+          onUnlockOne={(id) => updateReview((next) => { next.unlocked.add(id) })}
+          onResolve={(id, conflictIndex) => updateReview((next) => { next.resolved.add(conflictKey(id, conflictIndex)) })}
+          onDiscard={discardWordReview}
+          onFinish={() => setReview(null)}
+          onChangeBase={() => setWordDialog({ baseChoice: true })}
+        />
+      )}
 
       {master && (
         <div key="body" class="ce-body">
@@ -869,6 +977,12 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                   const index = first + offset
                   const status = rangeStatus(cue, publishedStart, publishedEnd)
                   const issue = issueByIndex.get(index)
+                  const locked = review !== null && isLocked(review, cue.id)
+                  const wordChanged = review?.changedIds.has(cue.id) ?? false
+                  const wordConflict = review !== null && openConflicts(review, cue.id).length > 0
+                  const wordFlags = review?.flags.get(cue.id) ?? []
+                  const wordRemoved = review?.removedIds.has(cue.id) ?? false
+                  const wordBadgeText = wordConflict ? 'Konflikt' : wordRemoved ? 'Borttagen i Word' : wordChanged ? (wordFlags.includes('split') ? 'Delad' : 'Ändrad i Word') : ''
                   const classes = [
                     'ce-row',
                     index === activeIndex ? 'is-active' : '',
@@ -877,6 +991,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                     diff.changedIds.has(cue.id) ? 'is-changed' : '',
                     issue?.error ? 'has-error' : '',
                     isLongCue(cue.text) ? 'is-long' : '',
+                    locked ? 'is-locked' : '',
+                    wordChanged ? 'is-wordchanged' : '',
+                    wordConflict ? 'is-wordconflict' : '',
+                    wordBadgeText ? 'has-wordbadge' : '',
                   ].filter(Boolean).join(' ')
                   return (
                     <div key={cue.id} class={classes} style={{ top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}>
@@ -907,7 +1025,9 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                           }}
                           rows={3}
                           value={cue.text}
-                          readOnly={readOnly}
+                          readOnly={readOnly || locked}
+                          title={locked ? 'Låst: ändrades inte i Word. Dubbelklicka för att låsa upp.' : undefined}
+                          onDblClick={locked ? () => updateReview((next) => { next.unlocked.add(cue.id) }) : undefined}
                           aria-label={`Text för replik ${index + 1}`}
                           onInput={(event) => {
                             // Skrivning är en ändring för sig: utgångsläget sparas första gången något skrivs i rutan.
@@ -929,6 +1049,9 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                             </span>
                           )
                         })()}
+                        {wordBadgeText && (
+                          <span class={`ce-wordbadge${wordConflict ? ' is-conflict' : ''}${wordRemoved ? ' is-removed' : ''}`} aria-label={wordBadgeText}>{wordBadgeText}</span>
+                        )}
                         {isLongCue(cue.text) && (
                           <span class="ce-longcue" role="note" aria-label={`Lång replik, ${cueCharCount(cue.text)} tecken`}>
                             {cueCharCount(cue.text)} tecken
@@ -945,7 +1068,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                       >
                         {formatCueTime(cue.start)}
                       </button>
-                      {!readOnly && (
+                      {!readOnly && !locked && (
                         <div class="ce-row-actions">
                           <button class="ce-icon" type="button" title="Ta bort repliken" onClick={() => apply(deleteCue(cues, index))}>
                             <Icon name="delete" size={16} />
@@ -978,6 +1101,16 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
             {' '}{seconds(pendingInfo.durationSeconds)} s.
           </p>
         </ConfirmModal>
+      )}
+
+      {wordDialog && (
+        <WordImportDialog
+          projectId={projectId}
+          blockedByEdits={dirty && !review}
+          startWithBaseChoice={wordDialog.baseChoice}
+          onClose={() => setWordDialog(null)}
+          onResult={startWordReview}
+        />
       )}
 
       {confirmRegenerate && (

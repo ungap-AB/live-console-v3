@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { shouldTogglePlayback, spaceAction, spaceTargetKind } from './captionKeysLogic.ts'
+import { shouldCaptureTab, shouldTogglePlayback, spaceAction, spaceTargetKind, tabOriginIndex, tabTargetIndex, tabTargetKind } from './captionKeysLogic.ts'
 
 const space = { key: ' ', ctrlKey: false, metaKey: false, altKey: false, repeat: false }
 const none = () => false
@@ -50,4 +50,39 @@ test('med placering spelar mellanslag från den, och pausar tillbaka till den', 
   assert.deepEqual(spaceAction(12.5, true), { kind: 'playFrom', time: 12.5 })
   assert.deepEqual(spaceAction(12.5, false), { kind: 'pauseBack', time: 12.5 })
   assert.deepEqual(spaceAction(0, true), { kind: 'playFrom', time: 0 }) // en placering vid noll är fortfarande en placering
+})
+
+// ---- UNG-219: Tab från den aktiva raden ----
+
+test('Tab utgår från den aktiva raden, inte från den fokuserade textrutan, medan videon spelar', () => {
+  // Fokus ligger kvar i rad 3 men videon har gått vidare till rad 10: Tab går till rad 11.
+  assert.equal(tabOriginIndex(10, 3, 3), 10)
+  assert.equal(tabTargetIndex(tabOriginIndex(10, 3, 3), false, 100), 11)
+  assert.equal(tabTargetIndex(tabOriginIndex(10, 3, 3), true, 100), 9)
+})
+
+test('utan aktiv rad (en lucka mellan repliker) utgår Tab från den fokuserade textrutan, annars från den valda raden', () => {
+  assert.equal(tabOriginIndex(-1, 7, 4), 4)
+  assert.equal(tabOriginIndex(-1, 7, null), 7)
+})
+
+test('Tab stannar vid första och sista raden och gör inget utan rader', () => {
+  assert.equal(tabTargetIndex(0, true, 5), 0)
+  assert.equal(tabTargetIndex(4, false, 5), 4)
+  assert.equal(tabTargetIndex(2, false, 0), -1)
+})
+
+test('Tab fångas på ytor i redigeraren (video, vågform, listans bakgrund, tom fokus) men inte på knappar, fält eller i en annan dialog', () => {
+  const tab = { key: 'Tab', ctrlKey: false, metaKey: false, altKey: false }
+  assert.equal(tabTargetKind('BODY', none), 'surface')
+  assert.equal(tabTargetKind('VIDEO', only('video, .ce-wave, .ce-wave-slot, .ce-list')), 'surface')
+  assert.equal(tabTargetKind('CANVAS', only('video, .ce-wave, .ce-wave-slot, .ce-list')), 'surface')
+  assert.equal(tabTargetKind('TEXTAREA', none), 'text')
+  assert.equal(tabTargetKind('BUTTON', none), 'other')
+  assert.equal(shouldCaptureTab(tab, 'surface', false), true)
+  assert.equal(shouldCaptureTab(tab, 'text', false), false)
+  assert.equal(shouldCaptureTab(tab, 'other', false), false)
+  assert.equal(shouldCaptureTab(tab, 'surface', true), false)
+  assert.equal(shouldCaptureTab({ ...tab, key: 'Enter' }, 'surface', false), false)
+  assert.equal(shouldCaptureTab({ ...tab, ctrlKey: true }, 'surface', false), false)
 })

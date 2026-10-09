@@ -212,7 +212,10 @@ export interface Client {
     approveCaptionDraft(id: string, version?: number): Promise<import('./types').CaptionGeneration>
     /** UNG-138: mastern som radlista. Spara med den version du utgick från (409 om någon annan hunnit före). */
     getCaptionMaster(id: string): Promise<import('./types').CaptionMaster>
-    saveCaptionMaster(id: string, input: { ifVersion: number; cues: { start: number; end: number; text: string }[] }): Promise<import('./types').CaptionMaster>
+    /** reason: 'word' när rättningar lästs in från Word (UNG-147), annars en vanlig redigering. */
+    saveCaptionMaster(id: string, input: { ifVersion: number; cues: { start: number; end: number; text: string }[]; reason?: 'word' }): Promise<import('./types').CaptionMaster>
+    /** UNG-147: läser ett rättat manus (.docx) och föreslår ändringar i undertexterna. Sparar inget. baseVersion = annan bas än den dokumentet pekar ut. */
+    importWordCorrections(id: string, file: File, baseVersion?: number): Promise<import('./types').WordImportResult>
     /** UNG-149: ljudets energikurva för vågformsbandet, eller null om den saknas (äldre utkast). */
     getCaptionEnergy(id: string): Promise<import('./types').CaptionEnergy | null>
     listCaptionVersions(id: string): Promise<import('./types').CaptionVersionInfo[]>

@@ -20,6 +20,7 @@ import type {
   ProjectRecording,
   CaptionGeneration,
   CaptionMaster,
+  WordImportResult,
   CaptionVersionInfo,
   ProjectCaptions,
   PublicMode,
@@ -862,6 +863,11 @@ export const httpClient: Client = {
     },
     saveCaptionMaster(id, input) {
       return api<CaptionMaster>(`/projects/${id}/captions/master`, { method: 'PUT', body: input })
+    },
+    importWordCorrections(id, file, baseVersion) {
+      const body = new FormData()
+      body.append('file', file, file.name)
+      return api<WordImportResult>(`/projects/${id}/captions/word-import`, { method: 'POST', body, query: baseVersion === undefined ? undefined : { baseVersion } })
     },
     async getCaptionEnergy(id) {
       try {
