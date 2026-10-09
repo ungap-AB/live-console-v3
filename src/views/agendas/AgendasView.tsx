@@ -7,7 +7,7 @@ import { SplitPane } from '../../components/SplitPane'
 import { StatusChip } from '../../components/StatusChip'
 import { OverflowMenu } from '../../components/OverflowMenu'
 import { EditableItemList } from '../../components/EditableItemList'
-import { Modal } from '../../components/Modal'
+import { ImportTextDialog } from '../../components/ImportTextDialog'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { PdfAttachmentsModal } from '../../components/PdfAttachmentsModal'
@@ -43,8 +43,6 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
   const [renaming, setRenaming] = useState<Agenda | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<Agenda | null>(null)
   const [importing, setImporting] = useState<Agenda | null>(null)
-  const [importText, setImportText] = useState('')
-  const [importError, setImportError] = useState<string | null>(null)
   const [usedByOpen, setUsedByOpen] = useState(false)
   const usedByRef = useRef<HTMLSpanElement>(null)
   useDismiss(usedByOpen, usedByRef, () => setUsedByOpen(false))
@@ -190,37 +188,6 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
 
   function openImport(agenda: Agenda) {
     setImporting(agenda)
-    setImportText('')
-    setImportError(null)
-  }
-
-  function parseImport(text: string): string[] {
-    return text.replace(/\r\n?/g, '\n').split('\n').map((line) => line.trim()).filter(Boolean)
-  }
-
-  async function importItems() {
-    if (!importing) return
-    const titles = parseImport(importText)
-    if (titles.length === 0) {
-      setImportError('Klistra in minst en punkt, en punkt per rad.')
-      return
-    }
-    let working = importing
-    const items: AgendaItem[] = []
-    for (let index = 0; index < titles.length; index += 1) {
-      const title = titles[index]
-      const existing = working.items[index]
-      if (existing) {
-        items.push({ ...existing, position: index + 1, title, reference: undefined })
-      } else {
-        working = await client.agendas.addItem(working.id, { title })
-        const added = working.items[working.items.length - 1]
-        items.push({ ...added, position: index + 1, title, reference: undefined })
-      }
-    }
-    const updated = await client.agendas.replaceItems(working.id, items)
-    replaceSelected(updated)
-    setImporting(null)
   }
 
   return (
@@ -428,34 +395,16 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
       )}
 
       {importing && (
-        <Modal
-          title="Importera dagordning"
-          subtitle="En punkt per rad. Befintliga punkter ersätts."
+        <ImportTextDialog
+          kind="agenda"
+          existingCount={importing.items.length}
           onClose={() => setImporting(null)}
-          footer={
-            <>
-              <button class="btn btn-sm" type="button" onClick={() => setImporting(null)}>
-                Avbryt
-              </button>
-              <button class="btn btn-sm primary" type="button" onClick={() => void importItems()}>
-                Importera
-              </button>
-            </>
-          }
-        >
-          <textarea
-            class="agenda-import-textarea"
-            rows={12}
-            value={importText}
-            placeholder={'Kommunfullmäktiges sammanträde\nVal av justerare\nFrågor'}
-            onInput={(event) => {
-              setImportText(event.currentTarget.value)
-              setImportError(null)
-            }}
-            autofocus
-          />
-          {importError && <p class="form-error">{importError}</p>}
-        </Modal>
+          run={async (text, mode) => {
+            const result = await client.agendas.importItems(importing.id, text, mode)
+            replaceSelected(result.agenda)
+            return result
+          }}
+        />
       )}
 
       {pdfItem && selected && (

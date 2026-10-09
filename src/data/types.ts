@@ -71,6 +71,25 @@ export interface Agenda {
   sourceMeetingId?: string | null
 }
 
+/** UNG-197: lägg till sist (standard) eller ersätt befintliga efter position. */
+export type ImportMode = 'append' | 'replace'
+
+/** Created = nya, Replaced = befintliga som fick ny text, Removed = befintliga som föll bort, Skipped = tomma rader. */
+export interface TextImportCounts {
+  created: number
+  replaced: number
+  removed: number
+  skipped: number
+}
+
+export interface AgendaImportResult extends TextImportCounts {
+  agenda: Agenda
+}
+
+export interface NameListImportResult extends TextImportCounts {
+  nameList: NameList
+}
+
 export interface MeetingSummary {
   id: number
   title: string

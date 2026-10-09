@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Agenda, AgendaItem, NameList, NameListPerson, Project } from '../../data/types'
+import type { Agenda, AgendaItem, ImportMode, NameList, NameListPerson, Project, TextImportCounts } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { AttachedListPicker } from '../../components/AttachedListPicker'
 import { EditableItemList } from '../../components/EditableItemList'
 import { PdfAttachmentsModal } from '../../components/PdfAttachmentsModal'
-import { Modal } from '../../components/Modal'
+import { ImportTextDialog } from '../../components/ImportTextDialog'
 import { OverflowMenu } from '../../components/OverflowMenu'
 import { Icon } from '../../components/Icon'
 import { CheckIcon, PdfIcon, PlayIcon, StopIcon } from '../../components/icons'
@@ -59,8 +59,6 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
   useEffect(() => setNameList(nameListResource.data ?? null), [nameListResource.data])
 
   const [importKind, setImportKind] = useState<'agenda' | 'namelist' | null>(null)
-  const [importText, setImportText] = useState('')
-  const [importError, setImportError] = useState<string | null>(null)
   // UNG-178: sorteringen är en vy (ändrar inte den lagrade listan) och minns valet per projekt.
   const sortKey = `ungap-live-console:person-sort:${p.id}`
   const [personSort, setPersonSort] = useState<PersonSort>(() => {
@@ -203,56 +201,31 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
 
   function openImport(kind: 'agenda' | 'namelist') {
     setImportKind(kind)
-    setImportText('')
-    setImportError(null)
   }
 
-  function parseImport(text: string): string[] {
-    return text.replace(/\r\n?/g, '\n').split('\n').map((line) => line.trim()).filter(Boolean)
-  }
-
-  async function importAgenda(text: string) {
-    let working = agenda
-    if (!working) {
-      working = await client.agendas.create({ name: p.name, description: 'Utkast' })
-      await actions.setAgenda(working.id)
+  // UNG-197: ett anrop med hela texten. Saknas dagordningen/namnlistan skapas den först (och kopplas till projektet).
+  async function importAgenda(text: string, mode: ImportMode): Promise<TextImportCounts> {
+    let target = agenda
+    if (!target) {
+      target = await client.agendas.create({ name: p.name, description: 'Utkast' })
+      await actions.setAgenda(target.id)
       allAgendasResource.reload()
     }
-    const titles = parseImport(text)
-    const items: AgendaItem[] = []
-    for (let index = 0; index < titles.length; index += 1) {
-      const title = titles[index]
-      const existing = working.items[index]
-      if (existing) items.push({ ...existing, position: index + 1, title, reference: undefined })
-      else {
-        working = await client.agendas.addItem(working.id, { title })
-        const added = working.items[working.items.length - 1]
-        items.push({ ...added, position: index + 1, title, reference: undefined })
-      }
-    }
-    setAgenda(await client.agendas.replaceItems(working.id, items))
+    const result = await client.agendas.importItems(target.id, text, mode)
+    setAgenda(result.agenda)
+    return result
   }
 
-  async function importNameList(text: string) {
-    let working = nameList
-    if (!working) {
-      working = await client.namelists.create({ name: p.name, description: 'Utkast' })
-      await actions.setNameList(working.id)
+  async function importNameList(text: string, mode: ImportMode): Promise<TextImportCounts> {
+    let target = nameList
+    if (!target) {
+      target = await client.namelists.create({ name: p.name, description: 'Utkast' })
+      await actions.setNameList(target.id)
       allNameListsResource.reload()
     }
-    const names = parseImport(text)
-    const existingPeople = working.people.slice()
-    const imported: NameListPerson[] = []
-    for (const name of names) {
-      working = await client.namelists.addPerson(working.id, { name })
-      imported.push(working.people[working.people.length - 1])
-    }
-    setNameList(
-      await client.namelists.replacePeople(
-        working.id,
-        [...existingPeople, ...imported].map((person, index) => ({ ...person, position: index + 1 })),
-      ),
-    )
+    const result = await client.namelists.importPeople(target.id, text, mode)
+    setNameList(result.nameList)
+    return result
   }
 
   // ---- Sök (UNG-130) ----
@@ -337,17 +310,6 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
       event.preventDefault()
       playMarked()
     }
-  }
-
-  async function submitImport() {
-    const values = parseImport(importText)
-    if (values.length === 0) {
-      setImportError(importKind === 'agenda' ? 'Klistra in minst en punkt, en punkt per rad.' : 'Klistra in minst ett namn, ett namn per rad.')
-      return
-    }
-    if (importKind === 'agenda') await importAgenda(importText)
-    if (importKind === 'namelist') await importNameList(importText)
-    setImportKind(null)
   }
 
   return (
@@ -588,30 +550,12 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
       )}
 
       {importKind && (
-        <Modal
-          title={importKind === 'agenda' ? 'Importera dagordning' : 'Importera namn'}
-          subtitle={importKind === 'agenda' ? 'En punkt per rad. Befintliga punkter ersätts.' : 'Ett namn per rad. Nya namn läggs till efter befintliga.'}
+        <ImportTextDialog
+          kind={importKind}
+          existingCount={importKind === 'agenda' ? agenda?.items.length ?? 0 : nameList?.people.length ?? 0}
           onClose={() => setImportKind(null)}
-          footer={
-            <>
-              <button class="btn btn-sm" type="button" onClick={() => setImportKind(null)}>Avbryt</button>
-              <button class="btn btn-sm primary" type="button" onClick={() => void submitImport()}>Importera</button>
-            </>
-          }
-        >
-          <textarea
-            class="playout-import-textarea"
-            rows={12}
-            value={importText}
-            placeholder={importKind === 'agenda' ? 'Kommunfullmäktiges sammanträde\nVal av justerare\nFrågor' : 'Anna Andersson\nBo Berg\nCecilia Carlsson'}
-            onInput={(event) => {
-              setImportText(event.currentTarget.value)
-              setImportError(null)
-            }}
-            autofocus
-          />
-          {importError && <p class="form-error">{importError}</p>}
-        </Modal>
+          run={(text, mode) => (importKind === 'agenda' ? importAgenda(text, mode) : importNameList(text, mode))}
+        />
       )}
       {renameError && <Toast message={renameError} onDismiss={() => setRenameError(null)} />}
     </>

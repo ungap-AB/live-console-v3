@@ -62,6 +62,8 @@ export interface Client {
     setTemplate(id: string, isTemplate: boolean): Promise<Agenda>
     replaceItems(id: string, items: AgendaItem[]): Promise<Agenda>
     addItem(id: string, item: Omit<AgendaItem, 'id' | 'position'>): Promise<Agenda>
+    /** UNG-197: hela den inklistrade texten i ett anrop; servern delar upp och sparar allt eller inget. */
+    importItems(id: string, text: string, mode: import('./types').ImportMode): Promise<import('./types').AgendaImportResult>
     updateItem(id: string, itemId: string, item: Omit<AgendaItem, 'id' | 'position'>): Promise<Agenda>
     removeItem(id: string, itemId: string): Promise<Agenda>
     addAttachments(id: string, itemId: string, input: AgendaAttachmentInput): Promise<Agenda>
@@ -81,6 +83,8 @@ export interface Client {
     trash(id: string): Promise<void>
     replacePeople(id: string, people: NameListPerson[]): Promise<NameList>
     addPerson(id: string, person: Omit<NameListPerson, 'id' | 'position'>): Promise<NameList>
+    /** UNG-197: som importItems, för namn. */
+    importPeople(id: string, text: string, mode: import('./types').ImportMode): Promise<import('./types').NameListImportResult>
     updatePerson(
       id: string,
       personId: string,

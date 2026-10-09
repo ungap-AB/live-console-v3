@@ -6,7 +6,7 @@ import { SplitPane } from '../../components/SplitPane'
 import { StatusChip } from '../../components/StatusChip'
 import { OverflowMenu } from '../../components/OverflowMenu'
 import { EditableItemList } from '../../components/EditableItemList'
-import { Modal } from '../../components/Modal'
+import { ImportTextDialog } from '../../components/ImportTextDialog'
 import { RenameModal } from '../../components/RenameModal'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { SearchIcon, EditIcon } from '../../components/icons'
@@ -40,8 +40,6 @@ export function NameListsView({ selectionScope, initialSelectedId, onInitialSele
   const [renaming, setRenaming] = useState<NameList | null>(null)
   const [confirmTrash, setConfirmTrash] = useState<NameList | null>(null)
   const [importing, setImporting] = useState<NameList | null>(null)
-  const [importText, setImportText] = useState('')
-  const [importError, setImportError] = useState<string | null>(null)
 
   useEffect(() => {
     if (listsResource.data) setNamelists(listsResource.data)
@@ -192,41 +190,6 @@ export function NameListsView({ selectionScope, initialSelectedId, onInitialSele
 
   function openImport(list: NameList) {
     setImporting(list)
-    setImportText('')
-    setImportError(null)
-  }
-
-  function parseImport(text: string): string[] {
-    return text.replace(/\r\n?/g, '\n').split('\n').map((line) => line.trim()).filter(Boolean)
-  }
-
-  async function importPeople() {
-    if (!importing) return
-    const names = parseImport(importText)
-    if (names.length === 0) {
-      setImportError('Klistra in minst ett namn, ett namn per rad.')
-      return
-    }
-
-    let working = importing
-    const importedIds: string[] = []
-    for (const name of names) {
-      const id = await addPerson(working)
-      importedIds.push(id)
-      working = { ...working, people: [...working.people, { id, position: working.people.length + 1, name }] }
-    }
-
-    const people = [
-      ...importing.people,
-      ...importedIds.map((id, index) => ({
-        id,
-        position: importing.people.length + index + 1,
-        name: names[index],
-      })),
-    ]
-    const updated = await client.namelists.replacePeople(importing.id, people)
-    replaceSelected(updated)
-    setImporting(null)
   }
 
   return (
@@ -393,34 +356,16 @@ export function NameListsView({ selectionScope, initialSelectedId, onInitialSele
       )}
 
       {importing && (
-        <Modal
-          title="Importera namn"
-          subtitle="Ett namn per rad. Nya namn läggs till efter befintliga."
+        <ImportTextDialog
+          kind="namelist"
+          existingCount={importing.people.length}
           onClose={() => setImporting(null)}
-          footer={
-            <>
-              <button class="btn btn-sm" type="button" onClick={() => setImporting(null)}>
-                Avbryt
-              </button>
-              <button class="btn btn-sm primary" type="button" onClick={() => void importPeople()}>
-                Importera
-              </button>
-            </>
-          }
-        >
-          <textarea
-            class="namelist-import-textarea"
-            rows={12}
-            value={importText}
-            placeholder={'Anna Andersson\nBo Berg\nCecilia Carlsson'}
-            onInput={(event) => {
-              setImportText(event.currentTarget.value)
-              setImportError(null)
-            }}
-            autofocus
-          />
-          {importError && <p class="form-error">{importError}</p>}
-        </Modal>
+          run={async (text, mode) => {
+            const result = await client.namelists.importPeople(importing.id, text, mode)
+            replaceSelected(result.nameList)
+            return result
+          }}
+        />
       )}
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>

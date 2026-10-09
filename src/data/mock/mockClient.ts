@@ -251,6 +251,18 @@ export const mockClient: Client = {
       agenda.changedAt = new Date().toISOString()
       return delay(clone(agenda))
     },
+    async importItems(id, text, mode) {
+      const titles = text.replace(/\r\n?/g, '\n').split('\n').map((line) => line.trim())
+      const lines = titles.filter(Boolean)
+      const agenda = findAgenda(id)
+      const kept = mode === 'replace' ? agenda.items.slice(0, lines.length).map((it, i) => ({ ...it, position: i + 1, title: lines[i], reference: undefined })) : agenda.items
+      const added = lines.slice(mode === 'replace' ? kept.length : 0).map((title, i) => ({ id: `${id}i${nextId++}`, position: kept.length + i + 1, title }))
+      const removed = mode === 'replace' ? Math.max(0, agenda.items.length - lines.length) : 0
+      agenda.items = [...kept, ...added]
+      agenda.itemCount = agenda.items.length
+      agenda.changedAt = new Date().toISOString()
+      return delay({ agenda: clone(agenda), created: added.length, replaced: mode === 'replace' ? kept.length : 0, removed, skipped: titles.length - lines.length })
+    },
     async addItem(id, item) {
       const agenda = findAgenda(id)
       const newItem: AgendaItem = { id: `${id}i${nextId++}`, position: agenda.items.length + 1, ...item }
@@ -367,6 +379,18 @@ export const mockClient: Client = {
       list.personCount = people.length
       list.changedAt = new Date().toISOString()
       return delay(clone(list))
+    },
+    async importPeople(id, text, mode) {
+      const names = text.replace(/\r\n?/g, '\n').split('\n').map((line) => line.trim())
+      const lines = names.filter(Boolean)
+      const list = findNameList(id)
+      const kept = mode === 'replace' ? list.people.slice(0, lines.length).map((p, i) => ({ ...p, position: i + 1, name: lines[i], party: undefined, role: undefined })) : list.people
+      const added = lines.slice(mode === 'replace' ? kept.length : 0).map((name, i) => ({ id: `${id}p${nextId++}`, position: kept.length + i + 1, name }))
+      const removed = mode === 'replace' ? Math.max(0, list.people.length - lines.length) : 0
+      list.people = [...kept, ...added]
+      list.personCount = list.people.length
+      list.changedAt = new Date().toISOString()
+      return delay({ nameList: clone(list), created: added.length, replaced: mode === 'replace' ? kept.length : 0, removed, skipped: names.length - lines.length })
     },
     async addPerson(id, person) {
       const list = findNameList(id)

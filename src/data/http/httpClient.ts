@@ -509,6 +509,10 @@ export const httpClient: Client = {
     async replaceItems(id, items) {
       return toAgenda(await api<ServerAgenda>(`/agendas/${id}/items`, { method: 'PUT', body: { items } }))
     },
+    async importItems(id, text, mode) {
+      const dto = await api<{ agenda: ServerAgenda; created: number; replaced: number; removed: number; skipped: number }>(`/agendas/${id}/items/import`, { method: 'POST', body: { text, mode } })
+      return { agenda: toAgenda(dto.agenda), created: dto.created, replaced: dto.replaced, removed: dto.removed, skipped: dto.skipped }
+    },
     async addItem(id, item) {
       return toAgenda(await api<ServerAgenda>(`/agendas/${id}/items`, { method: 'POST', body: item }))
     },
@@ -561,6 +565,10 @@ export const httpClient: Client = {
     },
     async replacePeople(id, people) {
       return toNameList(await api<ServerNameList>(`/namelists/${id}/people`, { method: 'PUT', body: { people } }))
+    },
+    async importPeople(id, text, mode) {
+      const dto = await api<{ nameList: ServerNameList; created: number; replaced: number; removed: number; skipped: number }>(`/namelists/${id}/people/import`, { method: 'POST', body: { text, mode } })
+      return { nameList: toNameList(dto.nameList), created: dto.created, replaced: dto.replaced, removed: dto.removed, skipped: dto.skipped }
     },
     async addPerson(id, person) {
       return toNameList(await api<ServerNameList>(`/namelists/${id}/people`, { method: 'POST', body: person }))
