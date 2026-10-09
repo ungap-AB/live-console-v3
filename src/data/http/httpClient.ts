@@ -894,6 +894,9 @@ export const httpClient: Client = {
     exportChaptersDocx(id) {
       return apiBlob(`/projects/${id}/export/chapters.docx`)
     },
+    exportManuscriptDocx(id, scope) {
+      return apiBlob(`/projects/${id}/captions/manuscript.docx?scope=${scope}`)
+    },
     async setPoster(id, file) {
       const body = new FormData()
       body.append('file', file, file.name)

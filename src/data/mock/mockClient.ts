@@ -897,6 +897,9 @@ export const mockClient: Client = {
     async exportChaptersDocx() {
       throw new Error('Word-export finns inte i mock-läget')
     },
+    async exportManuscriptDocx() {
+      throw new Error('Word-export finns inte i mock-läget')
+    },
     async setPoster(id, file) {
       const p = findProject(id)
       p.posterUrl = URL.createObjectURL(file)

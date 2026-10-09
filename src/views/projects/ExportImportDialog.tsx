@@ -185,6 +185,21 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
     }
   }
 
+  // UNG-141: manus ur arbetskopian av undertexterna (senast sparade version), ordnat efter punkter och talare, utan tidsstämplar.
+  const saveManuscript = async (scope: 'published' | 'whole') => {
+    setCaptionBusy(`manuscript-${scope}`)
+    try {
+      const blob = await client.projects.exportManuscriptDocx(project.id, scope)
+      const fileName = exportFileName(project.name, 'manus', 'docx')
+      saveFile(fileName, blob, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+      report('captions-manuscript', 'ok', savedMessage(fileName))
+    } catch (reason) {
+      report('captions-manuscript', 'error', reason instanceof Error ? reason.message : 'Manuset kunde inte skapas.')
+    } finally {
+      setCaptionBusy(null)
+    }
+  }
+
   const saveCaptionDraft = async () => {
     setCaptionBusy('draft')
     try {
@@ -276,6 +291,10 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
                 </Row>
                 <Row title="Undertexter (.srt)" description="SRT, för redigeringsprogram och plattformar som inte läser WebVTT." availability={publishedCaptions} status={statuses['captions-srt']}>
                   <button class="btn btn-sm" type="button" disabled={captionBusy !== null} onClick={() => void saveCaptions('srt')}>{captionBusy === 'srt' ? 'Hämtar…' : 'Ladda ner'}</button>
+                </Row>
+                <Row title="Manus (Word)" description="Hela transkriberingen som löpande text under dagordningspunkter och talare, utan tidsstämplar. Dokumentet säger om texten är ett ogranskat utkast eller godkänd." availability={draftCaptions} status={statuses['captions-manuscript']}>
+                  <button class="btn btn-sm" type="button" disabled={captionBusy !== null} onClick={() => void saveManuscript('published')}>{captionBusy === 'manuscript-published' ? 'Skapar…' : 'Publicerad del'}</button>
+                  <button class="btn btn-sm" type="button" disabled={captionBusy !== null} onClick={() => void saveManuscript('whole')}>{captionBusy === 'manuscript-whole' ? 'Skapar…' : 'Hela inspelningen'}</button>
                 </Row>
                 <Row title="Utkast för redigering (.vtt)" description="Hela utkastet, med eventuella ändringar som inte är publicerade, i originalinspelningens tid." availability={draftCaptions} status={statuses['captions-draft']}>
                   <button class="btn btn-sm" type="button" disabled={captionBusy !== null} onClick={() => void saveCaptionDraft()}>{captionBusy === 'draft' ? 'Hämtar…' : 'Ladda ner'}</button>
