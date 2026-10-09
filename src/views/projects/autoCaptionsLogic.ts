@@ -41,6 +41,46 @@ export function estimatedWaitText(videoDurationSeconds: number | undefined): str
   return minutes <= 1 ? 'någon minut' : `ungefär ${minutes} minuter`
 }
 
+// UNG-213: uppskattning medan jobbet går. Grov regel per ljudtimme: ca 5 minuter för ljud och transkribering (se estimatedWaitText) och
+// ca 11 minuter till för talarbyten (uppmätt RTF 0,19 på x86 med två vCPU, UNG-202). Långa möten kan avvika, därför "ungefär".
+const TRANSCRIBE_MINUTES_PER_HOUR = 5
+const SPEAKERS_MINUTES_PER_HOUR = 11
+/** Först över så här mycket framsteg extrapoleras en återstående tid: ljudsteget (0 till 10 %) står still och hoppar. */
+const EXTRAPOLATE_FROM_PERCENT = 15
+
+export function estimatedTotalMinutes(videoDurationSeconds: number | undefined, includeSpeakers: boolean): number | null {
+  if (!videoDurationSeconds || videoDurationSeconds <= 0) return null
+  const perHour = TRANSCRIBE_MINUTES_PER_HOUR + (includeSpeakers ? SPEAKERS_MINUTES_PER_HOUR : 0)
+  return Math.max(2, Math.round((videoDurationSeconds / 3600) * perHour))
+}
+
+const minutesText = (minutes: number) => (minutes <= 1 ? 'ungefär 1 minut' : `ungefär ${minutes} minuter`)
+
+export interface JobEstimateInput {
+  videoDurationSeconds: number | undefined
+  includeSpeakers: boolean
+  /** Jobbets start (ISO). */
+  startedAtUtc: string
+  /** Framsteg 0 till 100, om känt. */
+  progress: number | undefined
+  nowMs: number
+}
+
+/** "Beräknad tid: ungefär 12 minuter, startade 11:39. Ungefär 7 minuter kvar." Den sista meningen först när framsteget räcker för att extrapolera. */
+export function jobEstimateText(input: JobEstimateInput): string {
+  const started = new Date(input.startedAtUtc)
+  const total = estimatedTotalMinutes(input.videoDurationSeconds, input.includeSpeakers)
+  const clock = `${String(started.getHours()).padStart(2, '0')}:${String(started.getMinutes()).padStart(2, '0')}`
+  let text = `Beräknad tid: ${total === null ? 'några minuter' : minutesText(total)}, startade ${clock}.`
+  const progress = input.progress
+  if (progress !== undefined && progress >= EXTRAPOLATE_FROM_PERCENT && progress < 100) {
+    const elapsedMinutes = Math.max(0, (input.nowMs - started.getTime()) / 60_000)
+    const remaining = Math.round((elapsedMinutes * (100 - progress)) / progress)
+    text += remaining < 1 ? ' Klart om en liten stund.' : ` ${minutesText(remaining)[0].toUpperCase()}${minutesText(remaining).slice(1)} kvar.`
+  }
+  return text
+}
+
 /**
  * Varför utkastet inte går att godkänna (annars null). Stale gäller bara äldre utkast som skapades på den trimmade videons
  * tidslinje (före mastern på originalets tidslinje): de kan inte räknas om och ska ersättas av en ny generering.

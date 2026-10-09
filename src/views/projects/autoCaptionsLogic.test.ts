@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { CaptionDraft, MediaJob } from '../../data/types.ts'
-import { approveBlockedReason, autoCaptionsPhase, draftState, estimatedWaitText, groupCorrections } from './autoCaptionsLogic.ts'
+import { approveBlockedReason, autoCaptionsPhase, draftState, estimatedTotalMinutes, estimatedWaitText, groupCorrections, jobEstimateText } from './autoCaptionsLogic.ts'
 
 function job(state: MediaJob['state'], createdAtUtc = '2026-10-06T10:00:00Z'): MediaJob {
   return { id: 'cj1', kind: 'captions', state, recordingId: 'r1', createdAtUtc }
@@ -59,4 +59,38 @@ test('utkastets läge: ogranskat, publicerat eller publicerat med ändringar', (
   assert.equal(draftState({ approvedAtUtc: '2026-10-06T10:00:00Z', unpublishedChanges: false }), 'published')
   assert.equal(draftState({ approvedAtUtc: '2026-10-06T10:00:00Z', unpublishedChanges: true }), 'changed')
   assert.equal(draftState({ unpublishedChanges: true }), 'unreviewed')
+})
+
+// Tiderna byggs i lokal tid, så testerna gäller i vilken tidszon som helst.
+const at = (hours: number, minutes: number) => new Date(2026, 9, 9, hours, minutes).getTime()
+const input = (overrides: Partial<Parameters<typeof jobEstimateText>[0]> = {}) => ({
+  videoDurationSeconds: 7200, includeSpeakers: false, startedAtUtc: new Date(at(11, 39)).toISOString(), progress: undefined, nowMs: at(11, 41), ...overrides,
+})
+
+test('uppskattningen: kort och lång video, med och utan talarbyten', () => {
+  assert.equal(estimatedTotalMinutes(600, false), 2)
+  assert.equal(estimatedTotalMinutes(7200, false), 10)
+  assert.equal(estimatedTotalMinutes(7200, true), 32) // 2 timmar: ca 5 + 11 minuter per timme
+  assert.equal(estimatedTotalMinutes(undefined, true), null)
+  assert.equal(estimatedTotalMinutes(0, false), null)
+})
+
+test('texten under ljudsteget och tidigt visar bara den totala uppskattningen och starttiden', () => {
+  assert.equal(jobEstimateText(input({ progress: 4 })), 'Beräknad tid: ungefär 10 minuter, startade 11:39.')
+  assert.equal(jobEstimateText(input({ progress: undefined })), 'Beräknad tid: ungefär 10 minuter, startade 11:39.')
+  assert.equal(jobEstimateText(input({ progress: 14 })), 'Beräknad tid: ungefär 10 minuter, startade 11:39.')
+})
+
+test('med talarbyten blir uppskattningen längre, och okänd längd ger "några minuter"', () => {
+  assert.equal(jobEstimateText(input({ includeSpeakers: true })), 'Beräknad tid: ungefär 32 minuter, startade 11:39.')
+  assert.equal(jobEstimateText(input({ videoDurationSeconds: undefined })), 'Beräknad tid: några minuter, startade 11:39.')
+})
+
+test('sent framsteg ger en återstående tid extrapolerad ur förfluten tid', () => {
+  // 6 minuter gått och 40 % klart: 9 minuter kvar.
+  assert.equal(jobEstimateText(input({ progress: 40, nowMs: at(11, 45) })), 'Beräknad tid: ungefär 10 minuter, startade 11:39. Ungefär 9 minuter kvar.')
+  assert.match(jobEstimateText(input({ progress: 50, nowMs: at(11, 40) })), /Ungefär 1 minut kvar\./)
+  assert.match(jobEstimateText(input({ progress: 99, nowMs: at(11, 49) })), /Klart om en liten stund\./)
+  // Klart (100 %) eller ingen förfluten tid ger ingen återstående tid.
+  assert.doesNotMatch(jobEstimateText(input({ progress: 100 })), /kvar/)
 })

@@ -741,3 +741,25 @@ button.ce-time:hover {
 .ce-word-advanced select {
   max-width: 100%;
 }
+
+/* UNG-211: knappen "Slå på ljudet" uppe i hörnet, ovanför undertexten och spelarens kontroller. */
+.ce-unmute {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.ce-unmute:hover {
+  background: rgba(0, 0, 0, 0.92);
+}

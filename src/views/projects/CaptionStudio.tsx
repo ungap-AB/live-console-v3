@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { CaptionGeneration } from '../../data/types'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import { JobProgress } from '../../components/JobProgress'
 import type { AutoCaptionsPhase } from './autoCaptionsLogic'
-import { estimatedWaitText } from './autoCaptionsLogic'
+import { estimatedWaitText, jobEstimateText } from './autoCaptionsLogic'
 import { studioView } from './captionEntryLogic'
 import { CaptionEditor } from './CaptionEditor'
 import './CaptionStudio.css'
@@ -32,6 +32,13 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, po
   const [notify, setNotify] = useState(false)
   const [includeSpeakers, setIncludeSpeakers] = useState(false)
   const [confirmCancel, setConfirmCancel] = useState(false)
+  // UNG-213: klockan som den återstående tiden räknas mot, tickar medan jobbet går.
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (view !== 'progress') return
+    const timer = window.setInterval(() => setNow(Date.now()), 15_000)
+    return () => window.clearInterval(timer)
+  }, [view])
 
   if (view === 'editor') {
     return <CaptionEditor projectId={projectId} projectName={projectName} onClose={onClose} onSaved={() => { onChanged(); void refresh() }} onRegenerated={setGeneration} />
@@ -86,6 +93,9 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, po
             <>
               <h3>Undertexterna skapas</h3>
               <JobProgress progress={job.progress} phase={job.phase} />
+              <p class="cs-text cs-estimate" aria-live="polite">
+                {jobEstimateText({ videoDurationSeconds, includeSpeakers: job.includeSpeakers === true, startedAtUtc: job.createdAtUtc, progress: job.progress, nowMs: now })}
+              </p>
               <p class="cs-text">Ljudet tas fram, skrivs ut och delas upp i repliker. Sedan kan du redigera dem här. Du kan stänga fönstret: jobbet fortsätter, och du följer det på knappen ovanför videon.</p>
               <div class="cs-actions">
                 <button class="btn btn-sm" type="button" disabled={busy} onClick={() => setConfirmCancel(true)}>Avbryt</button>

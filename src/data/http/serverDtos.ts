@@ -309,6 +309,7 @@ export interface ServerMediaJob {
   completedAtUtc?: string
   startedByUserId?: string
   startedByName?: string
+  includeSpeakers?: boolean
 }
 
 export interface ServerUploadJob {

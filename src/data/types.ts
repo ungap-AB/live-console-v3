@@ -587,6 +587,8 @@ export interface MediaJob {
   completedAtUtc?: string
   startedByUserId?: string
   startedByName?: string
+  /** UNG-213: undertextjobbet analyserar också talarbyten (längre uppskattad tid). */
+  includeSpeakers?: boolean
 }
 
 // UNG-80 steg 4: operatörens delningar av nedladdningar (loggen sparas tolv månader efter utgång).

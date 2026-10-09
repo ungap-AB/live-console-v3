@@ -26,6 +26,7 @@ import { cueIndexAt, type GrabRole } from './captionWaveformLogic'
 import { approveBlockedReason, groupCorrections, type CorrectionGroup } from './autoCaptionsLogic'
 import { ownCorrections } from './captionCorrectionsLogic'
 import { CorrectionsPanel } from './CorrectionsPanel'
+import { showUnmute, unmuted } from './videoSoundLogic'
 import { WordImportDialog } from './WordImportDialog'
 import { exportFileName } from './chapterExport'
 import { saveFile } from './ExportImportDialog'
@@ -68,6 +69,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   const [currentTime, setCurrentTime] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [videoError, setVideoError] = useState('')
+  // UNG-211: videon är mutad eller har volym noll (följer videoelementets egna händelser, så det gäller även mute via kontrollerna eller tangentbordet).
+  const [soundOff, setSoundOff] = useState(false)
   const [confirmClose, setConfirmClose] = useState(false)
   const [pendingMerge, setPendingMerge] = useState<number | null>(null)
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -232,6 +235,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     player.attachHTMLVideoElement(video)
     player.load(hlsUrl)
     const onTime = () => setCurrentTime(video.currentTime)
+    const onSound = () => setSoundOff(showUnmute({ muted: video.muted, volume: video.volume }))
+    onSound()
+    video.addEventListener('volumechange', onSound)
+    video.addEventListener('loadedmetadata', onSound)
     const onPlay = () => setPlaying(true)
     const onPause = () => setPlaying(false)
     video.addEventListener('timeupdate', onTime)
@@ -239,6 +246,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     video.addEventListener('pause', onPause)
     return () => {
       video.removeEventListener('timeupdate', onTime)
+      video.removeEventListener('volumechange', onSound)
+      video.removeEventListener('loadedmetadata', onSound)
       video.removeEventListener('play', onPlay)
       video.removeEventListener('pause', onPause)
       player.pause()
@@ -885,8 +894,28 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
         <div key="body" class="ce-body">
           <section class="ce-video" aria-label="Video">
             <div class="ce-stage">
-              <video ref={videoRefCallback} controls playsInline preload="metadata" onPointerDown={() => setAnchor(null)} onKeyDown={() => setAnchor(null)} />
-              {activeCue && <div class="ce-overlay" aria-hidden="true">{activeCue.text}</div>}
+              <video key="video" ref={videoRefCallback} controls playsInline preload="metadata" onPointerDown={() => setAnchor(null)} onKeyDown={() => setAnchor(null)} />
+              {activeCue && <div key="overlay" class="ce-overlay" aria-hidden="true">{activeCue.text}</div>}
+              {soundOff && (
+                <button
+                  key="unmute"
+                  class="ce-unmute"
+                  type="button"
+                  tabIndex={-1}
+                  // Tar inte fokus från textrutan man redigerar i.
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    const video = videoRef.current
+                    if (!video) return
+                    const next = unmuted({ muted: video.muted, volume: video.volume })
+                    video.muted = next.muted
+                    video.volume = next.volume
+                  }}
+                >
+                  <Icon name="volume_up" size={18} />
+                  Slå på ljudet
+                </button>
+              )}
             </div>
             {videoError && <p class="ce-error-text" role="alert">{videoError}</p>}
 
