@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Chapter, ChapterImportResult, CueKind, Project, ProjectRecording, Recording } from '../../data/types'
+import type { Chapter, ChapterImportResult, CueKind, ForkResult, Project, ProjectRecording, Recording } from '../../data/types'
 import { formatBytes, formatDateTime, formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
@@ -33,6 +33,7 @@ interface OndemandViewProps {
   project: Project
   actions: ProjectActions
   onBack: () => void
+  onForked?: (result: ForkResult) => void
 }
 
 // Så länge ett klick på en kapitelrad väntar på att bli ett dubbelklick (redigera texten) innan raden väljs.
@@ -50,7 +51,7 @@ const CHAPTER_KIND: Record<CueKind, string> = {
 // i "Byt sändning"-dialogen, så operatören inte råkar välja fel av misstag.
 const VERY_SHORT_RECORDING_SECONDS = 60
 
-export function OndemandView({ project: p, actions, onBack }: OndemandViewProps) {
+export function OndemandView({ project: p, actions, onBack, onForked }: OndemandViewProps) {
   const { selectMode, dialog } = useModeChange(p, actions)
   const live = useLiveChannel(p.channel?.id ?? null)
   const [showIngestInfo, setShowIngestInfo] = useState(false)
@@ -952,6 +953,7 @@ export function OndemandView({ project: p, actions, onBack }: OndemandViewProps)
         project={p}
         actions={actions}
         onBack={onBack}
+        onForked={onForked}
         onModeSelect={handleModeSelect}
         channel={live.channel}
         health={live.health}

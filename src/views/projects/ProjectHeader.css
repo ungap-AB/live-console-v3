@@ -462,3 +462,71 @@
 .pv-switching .pv-spinner {
   margin-left: 0;
 }
+
+/* UNG-198: etikett för "endast live" och varningsikonen vid live-HLS-adressen. */
+.pv-liveonly {
+  flex: none;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 6px;
+  color: var(--warn);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+}
+
+.pv-live-hls .pv-hint {
+  color: var(--warn);
+  cursor: help;
+}
+
+.ingest-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* UNG-198: dialogen "Skapa ondemand-projekt" och härkomstetiketten. */
+.fk-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0.8rem 0;
+}
+
+.fk-help {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.fk-from {
+  margin: 0.8rem 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fk-from legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.fk-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pv-fork {
+  flex: none;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  color: var(--ink-2);
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}

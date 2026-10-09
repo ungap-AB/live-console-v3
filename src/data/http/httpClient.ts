@@ -353,6 +353,8 @@ function toProjectLite(dto: ServerProject): Project {
     muxRespectDoNotTrack: dto.muxRespectDoNotTrack ?? false,
     dvrEnabled: dto.dvrEnabled ?? false,
     exclamationsAsSpeakers: dto.exclamationsAsSpeakers ?? false,
+    liveOnly: dto.liveOnly ?? false,
+    forkedFrom: dto.forkedFromProjectId ? { projectId: dto.forkedFromProjectId, name: dto.forkedFromName ?? undefined, atUtc: dto.forkedAtUtc ?? undefined } : undefined,
     captionStatus: toCaptionStatus(dto.captionStatus),
     visibility: dto.visibility as Visibility,
     publicMode: dto.publicMode as PublicMode,
@@ -830,6 +832,10 @@ export const httpClient: Client = {
     async inheritLayout(id, sourceProjectId) {
       const dto = await api<ServerProject>(`/projects/${id}/layout/inherit`, { method: 'POST', body: { source: { type: 'project', id: sourceProjectId } } })
       return toProjectFull(dto)
+    },
+    async forkProject(id, input) {
+      const dto = await api<{ project: ServerProject; warnings: { code: string; message: string }[] }>(`/projects/${id}/fork`, { method: 'POST', body: input })
+      return { project: await toProjectFull(dto.project), warnings: dto.warnings }
     },
     async rename(id, name, texts) {
       const dto = await api<ServerProject>(`/projects/${id}`, { method: 'PATCH', body: { name, ...texts } })

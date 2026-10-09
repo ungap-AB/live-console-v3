@@ -136,6 +136,10 @@ export interface ServerProject {
   muxRespectDoNotTrack?: boolean
   dvrEnabled?: boolean
   exclamationsAsSpeakers?: boolean
+  liveOnly?: boolean
+  forkedFromProjectId?: string | null
+  forkedFromName?: string | null
+  forkedAtUtc?: string | null
   visibility: string
   publicMode: string
   afterReason: string | null

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Project } from '../../data/types'
+import type { ForkResult, Project } from '../../data/types'
 import type { ProjectActions } from './actions'
 import { BeforeWorkspace } from './BeforeWorkspace'
 import { LiveWorkspace } from './LiveWorkspace'
@@ -12,11 +12,12 @@ interface LivesandningProps {
   actions: ProjectActions
   meetingDomain: string
   onBack: () => void
+  onForked?: (result: ForkResult) => void
 }
 
 // Livesändning: gemensam header överst, innehållet beror på läget.
 // Before är förberedelser, Live är ren sändningskontroll.
-export function Livesandning({ project: p, actions, meetingDomain, onBack }: LivesandningProps) {
+export function Livesandning({ project: p, actions, meetingDomain, onBack, onForked }: LivesandningProps) {
   const live = useLiveChannel(p.channel?.id ?? null)
   // Delas mellan headerns "Ingest info"-knapp och BeforeWorkspaces
   // motsvarande menyval — en enda panel, oavsett vilken som öppnar den.
@@ -55,6 +56,7 @@ export function Livesandning({ project: p, actions, meetingDomain, onBack }: Liv
         project={p}
         actions={actions}
         onBack={onBack}
+        onForked={onForked}
         channel={live.channel}
         health={live.health}
         streamKey={live.streamKey}

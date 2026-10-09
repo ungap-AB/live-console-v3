@@ -51,17 +51,18 @@ export function changedTexts(project: Pick<Project, PlayerTextKey>, draft: Playe
   return Object.keys(changed).length > 0 ? changed : null
 }
 
-export type PlayerSettingsChanges = Partial<PlayerTexts> & { textPlacement?: TextPlacement; muxEnabled?: boolean; muxRespectDoNotTrack?: boolean; dvrEnabled?: boolean; exclamationsAsSpeakers?: boolean }
+export type PlayerSettingsChanges = Partial<PlayerTexts> & { textPlacement?: TextPlacement; muxEnabled?: boolean; muxRespectDoNotTrack?: boolean; dvrEnabled?: boolean; exclamationsAsSpeakers?: boolean; liveOnly?: boolean }
 
 /** Texter, placering och mätning som ändrats mot projektet, eller null om inget ändrats. */
 export function changedSettings(
-  project: Pick<Project, PlayerTextKey | 'textPlacement' | 'muxEnabled' | 'muxRespectDoNotTrack' | 'dvrEnabled' | 'exclamationsAsSpeakers'>,
+  project: Pick<Project, PlayerTextKey | 'textPlacement' | 'muxEnabled' | 'muxRespectDoNotTrack' | 'dvrEnabled' | 'exclamationsAsSpeakers' | 'liveOnly'>,
   texts: PlayerTexts,
   placement: TextPlacement,
   muxEnabled: boolean,
   muxRespectDoNotTrack: boolean,
   dvrEnabled: boolean = project.dvrEnabled,
   exclamationsAsSpeakers: boolean = project.exclamationsAsSpeakers,
+  liveOnly: boolean = project.liveOnly,
 ): PlayerSettingsChanges | null {
   const changed: PlayerSettingsChanges = { ...changedTexts(project, texts) }
   if (placement !== project.textPlacement) changed.textPlacement = placement
@@ -69,6 +70,7 @@ export function changedSettings(
   if (muxRespectDoNotTrack !== project.muxRespectDoNotTrack) changed.muxRespectDoNotTrack = muxRespectDoNotTrack
   if (dvrEnabled !== project.dvrEnabled) changed.dvrEnabled = dvrEnabled
   if (exclamationsAsSpeakers !== project.exclamationsAsSpeakers) changed.exclamationsAsSpeakers = exclamationsAsSpeakers
+  if (liveOnly !== project.liveOnly) changed.liveOnly = liveOnly
   return Object.keys(changed).length > 0 ? changed : null
 }
 

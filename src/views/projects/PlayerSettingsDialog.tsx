@@ -32,6 +32,7 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
   const [muxRespectDnt, setMuxRespectDnt] = useState(project.muxRespectDoNotTrack)
   const [dvrEnabled, setDvrEnabled] = useState(project.dvrEnabled)
   const [exclamationsAsSpeakers, setExclamationsAsSpeakers] = useState(project.exclamationsAsSpeakers)
+  const [liveOnly, setLiveOnly] = useState(project.liveOnly)
   const [posterFile, setPosterFile] = useState<File | null>(null)
   const [posterRemoved, setPosterRemoved] = useState(false)
   const [posterError, setPosterError] = useState<string | null>(null)
@@ -47,7 +48,7 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
   // Exempeltexten i förhandsvisningen: den valda flikens text, annars spelarens standardtext eller ett exempel.
   const activeField = PLAYER_TEXT_FIELDS.find((field) => field.key === activeTextField) ?? PLAYER_TEXT_FIELDS[0]
   const previewText = texts[activeField.key].trim() || activeField.fallback || 'Exempeltext'
-  const changed = changedSettings(project, texts, placement, muxEnabled, muxRespectDnt, dvrEnabled, exclamationsAsSpeakers)
+  const changed = changedSettings(project, texts, placement, muxEnabled, muxRespectDnt, dvrEnabled, exclamationsAsSpeakers, liveOnly)
   const dirty = changed !== null || posterFile !== null || (posterRemoved && Boolean(project.posterUrl))
 
   function choosePoster(file: File | undefined) {
@@ -223,6 +224,19 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
           <span>Räkna utrop som talare</span>
         </label>
         <span class="ps-help">Av som standard. Utrop (fria texter som visas som namnskylt) listas då också under punkten.</span>
+      </section>
+
+      <section class="ps-section">
+        <h3>Endast live</h3>
+        <p class="ps-help">
+          En markör för projekt som bara ska användas för livetittning, till exempel ett heldagspass som inte ska läggas ut som ondemand i sin
+          helhet. Den ändrar inget: inspelning, spola tillbaka och att skapa ondemand-projekt fungerar som vanligt. Den visas som en etikett i
+          projektlistan och i projektets huvud, och du kan ta bort den när du vill.
+        </p>
+        <label class="ps-switch">
+          <input type="checkbox" checked={liveOnly} onChange={(e) => setLiveOnly((e.target as HTMLInputElement).checked)} />
+          <span>Markera som endast live</span>
+        </label>
       </section>
 
       <section class="ps-section">

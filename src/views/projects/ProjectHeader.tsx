@@ -6,12 +6,16 @@ import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import { Icon } from '../../components/Icon'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Clock } from '../../components/Clock'
-import type { Channel, ChannelHealth, Project } from '../../data/types'
+import type { Channel, ChannelHealth, ForkResult, Project } from '../../data/types'
 import type { ProjectActions } from './actions'
 import { ModeSelector } from './ModeSelector'
 import { EncoderStatusChip, ViewersChip } from './LiveStatusBadges'
 import { encoderStatusOf, viewerCountOf } from './liveStatus'
 import { IngestInfo } from './IngestInfo'
+import { LiveHlsField } from './LiveHlsField'
+import { ForkDialog } from './ForkDialog'
+import { forkSource } from './forkLogic'
+import { formatShortDate } from '../../app/time'
 import { PlayerSettingsDialog } from './PlayerSettingsDialog'
 import './ProjectHeader.css'
 
@@ -27,6 +31,8 @@ interface ProjectHeaderProps {
   onShowIngestInfoChange: (show: boolean) => void
   /** Knappen som expanderar live-vyn (UNG-179), till höger i huvudet. Saknas utanför läget Live. */
   expand?: { expanded: boolean; onToggle: () => void }
+  /** UNG-198: anropas när ett projekt skapats ur det här. Saknas den visas inte knappen Skapa ondemand-projekt. */
+  onForked?: (result: ForkResult) => void
 }
 
 // Spelarlänken visas utan protokoll.
@@ -37,7 +43,7 @@ function displayUrl(url: string): string {
 // Gemensam för Livesändning och Ondemand. showIngestInfo ägs av föräldern så
 // att t.ex. BeforeWorkspaces "Visa ingest-info"-menyval kan slå på samma
 // panel som knappen här i headern, istället för att ha en egen kopia.
-export function ProjectHeader({ project: p, actions, onBack, onModeSelect, channel = null, health = null, streamKey = null, showIngestInfo, onShowIngestInfoChange, expand }: ProjectHeaderProps) {
+export function ProjectHeader({ project: p, actions, onBack, onModeSelect, channel = null, health = null, streamKey = null, showIngestInfo, onShowIngestInfoChange, expand, onForked }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
   const [closingIngestInfo, setClosingIngestInfo] = useState(false)
@@ -47,6 +53,7 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
   const [showIframeMenu, setShowIframeMenu] = useState(false)
   const [showPlayerSettings, setShowPlayerSettings] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [showFork, setShowFork] = useState(false)
   const [previewError, setPreviewError] = useState<string | null>(null)
   const previewVideoRef = useRef<HTMLVideoElement>(null)
   const iframeMenuRef = useRef<HTMLDivElement>(null)
@@ -213,6 +220,12 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
         ) : (
           <>
             <h1 class="pv-title">{p.name}</h1>
+            {p.forkedFrom && (
+              <span class="pv-fork" title="Det här projektet är skapat ur en annan sändning eller inspelning">
+                Forkat från {p.forkedFrom.name ?? 'ett annat projekt'}{p.forkedFrom.atUtc ? `, ${formatShortDate(p.forkedFrom.atUtc)}` : ''}
+              </span>
+            )}
+            {p.liveOnly && <span class="pv-liveonly" title="Markerat som endast live. Det ändrar inget beteende, och markören tas bort i spelarinställningarna.">Endast live</span>}
             <button
               class="pv-icon-btn"
               type="button"
@@ -254,6 +267,12 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
           <Icon name="videocam" size={17} />
           <span>Preview</span>
         </button>
+        {onForked && forkSource(p, health?.livePhase) && (
+          <button class="pv-ingest-button" type="button" title="Skapar ett nytt projekt av sändningen (eller inspelningen) att trimma och publicera som ondemand" onClick={() => setShowFork(true)}>
+            <Icon name="call_split" size={17} />
+            <span>Skapa ondemand-projekt…</span>
+          </button>
+        )}
         <span class="spacer" />
         <span class="pv-clock"><Clock /></span>
         {expand && (
@@ -372,7 +391,19 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
           </div>
         </div>
 
+        {channel && p.publicMode === 'live' && <LiveHlsField url={channel.playbackUrl} />}
+        {p.publicMode === 'ondemand' && p.recording?.hlsUrl && p.recording.state !== 'awaitingApproval' && (
+          <LiveHlsField url={p.recording.hlsUrl} label="Ondemand-HLS (publicerad video)" warning={null} copyLabel="Kopiera ondemand-HLS-adressen" />
+        )}
+
       </div>
+
+      {showFork && onForked && (() => {
+        const source = forkSource(p, health?.livePhase)
+        return source && (
+          <ForkDialog project={p} source={source} onClose={() => setShowFork(false)} onForked={(result) => { setShowFork(false); onForked(result) }} />
+        )
+      })()}
 
       {showPlayerSettings && (
         <PlayerSettingsDialog project={p} actions={actions} onClose={() => setShowPlayerSettings(false)} />

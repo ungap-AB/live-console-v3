@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { CueKind, PlayoutState, Project, PublicMode, TimelineEvent, Visibility } from '../../data/types'
+import type { CueKind, ForkResult, PlayoutState, Project, PublicMode, TimelineEvent, Visibility } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { OverflowMenu } from '../../components/OverflowMenu'
 import { Icon } from '../../components/Icon'
@@ -10,6 +10,7 @@ import { RenameModal } from '../../components/RenameModal'
 import { CreateProjectDialog } from './CreateProjectDialog'
 import { recordingDurationLabel } from './recordingDuration'
 import { attachPlan } from './createProjectLists'
+import { forkWarningText } from './forkLogic'
 import type { ListChoices } from './createProjectLists'
 import { requestMeetingBinding } from './meetingBindingRequest'
 import { ExportImportDialog } from './ExportImportDialog'
@@ -232,6 +233,14 @@ export function ProjectsView({
 
   async function withErrorToast(fn: () => Promise<void>): Promise<void> {
     await attempt(fn)
+  }
+
+  // UNG-198: ett projekt har skapats ur ett annat. Det öppnas direkt (som efter Nytt projekt) och en toast säger vad som hänt, med ev. varning.
+  function handleForked(result: ForkResult) {
+    setProjects((prev) => [result.project, ...prev.filter((p) => p.id !== result.project.id)])
+    onSelectedIdChange(result.project.id)
+    onScreenChange(screenForMode(result.project.publicMode))
+    setToast(`Projektet skapades. Trimma, skapa undertexter och publicera det som ondemand.${result.warnings.length > 0 ? ` ${forkWarningText(result.warnings)}` : ''}`)
   }
 
   async function createProject(name: string, layoutSourceProjectId: string | null, lists: ListChoices) {
@@ -537,12 +546,14 @@ export function ProjectsView({
             actions={actions}
             meetingDomain={meetingDomain}
             onBack={() => onSelectedIdChange(null)}
+            onForked={handleForked}
           />
         ) : selected && screen === 'ondemand' ? (
           <OndemandView
             project={selected}
             actions={actions}
             onBack={() => onSelectedIdChange(null)}
+            onForked={handleForked}
           />
         ) : (
           <div class="project-list">
@@ -592,6 +603,7 @@ export function ProjectsView({
                       <span class="col-duration">{recordingDurationLabel(p.recording)}</span>
                       <span class="col-mode">
                         <span class={`mode-chip mode-${MODE_TONE[p.publicMode]}`}>{MODE_LABEL[p.publicMode]}</span>
+                        {p.liveOnly && <span class="liveonly-chip" title="Markerat som endast live">Endast live</span>}
                       </span>
                       <span class={`col-visibility vis-${p.visibility}`}>
                         <Icon name={p.visibility === 'open' ? 'visibility' : 'visibility_off'} size={16} />

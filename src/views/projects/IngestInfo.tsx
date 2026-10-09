@@ -21,7 +21,7 @@ export function IngestInfo({ channel, streamKey, trailingAction }: IngestInfoPro
         <CopyField value={streamKey} mask monospace />
       </div>
       <div class="field">
-        <label>HLS-URL</label>
+        <label>Live-HLS-adress (för TV och andra uppspelare)</label>
         <CopyField value={channel?.playbackUrl ?? null} placeholder="Hämtar…" monospace />
       </div>
       {trailingAction}

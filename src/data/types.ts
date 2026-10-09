@@ -169,6 +169,10 @@ export interface Project {
   dvrEnabled: boolean
   /** UNG-192: utrop räknas som talare i spelarens dagordningslista under live. */
   exclamationsAsSpeakers: boolean
+  /** UNG-198: markören "endast live" (ändrar inget beteende, visas som etikett). */
+  liveOnly: boolean
+  /** UNG-198: projektet är forkat ur ett annat projekts sändning eller inspelning. */
+  forkedFrom?: { projectId: string; name?: string; atUtc?: string }
   visibility: Visibility
   publicMode: PublicMode
   afterReason: AfterReason | null
@@ -223,6 +227,12 @@ export interface PublicationHistory {
 
 // pauseIn/pauseOut (UNG-119): en paus är två händelser i tidslinjen. Texten ligger i etiketten på pauseIn.
 export type CueKind = 'agendaItem' | 'person' | 'exclamation' | 'pauseIn' | 'pauseOut'
+
+/** UNG-198: svar när ett projekt skapats ur en sändning eller inspelning. Varningen outside_public: delar sändes aldrig publikt. */
+export interface ForkResult {
+  project: Project
+  warnings: { code: string; message: string }[]
+}
 
 export interface TimelineEvent {
   id: string

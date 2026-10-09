@@ -812,6 +812,7 @@ export const mockClient: Client = {
         muxRespectDoNotTrack: layoutSource?.muxRespectDoNotTrack ?? false,
         dvrEnabled: false,
         exclamationsAsSpeakers: false,
+        liveOnly: false,
         posterUrl: layoutSource?.posterUrl ?? null,
         muxEnvKey: 'os3srhrpsr4mfcc3tdlv25lo3',
         visibility: 'closed',
@@ -847,6 +848,9 @@ export const mockClient: Client = {
       project.muxRespectDoNotTrack = source.muxRespectDoNotTrack
       project.posterUrl = source.posterUrl ?? null
       return delay(projectSnapshot(project))
+    },
+    async forkProject() {
+      throw new Error('Att skapa projekt ur en sändning finns inte i mock-läget')
     },
     async rename(id, name, texts) {
       const p = findProject(id)
