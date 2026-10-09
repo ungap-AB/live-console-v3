@@ -3,6 +3,7 @@ import { notifyJobsChanged } from '../../app/jobsBus'
 import { client } from '../../data'
 import type { CaptionGeneration } from '../../data/types'
 import { autoCaptionsPhase, type AutoCaptionsPhase } from './autoCaptionsLogic'
+import { shouldPollGeneration } from './speakersLogic'
 
 const POLL_MS = 4000
 
@@ -41,11 +42,12 @@ export function useCaptionGeneration(projectId: string): {
     if (generation) previousPhase.current = phase
   }, [phase, generation === null])
 
+  const polling = shouldPollGeneration(generation)
   useEffect(() => {
-    if (phase !== 'running') return
+    if (!polling) return
     const timer = setInterval(() => void refresh(), POLL_MS)
     return () => clearInterval(timer)
-  }, [phase, projectId])
+  }, [polling, projectId])
 
   return { generation, setGeneration, refresh, phase }
 }

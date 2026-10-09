@@ -7,6 +7,7 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { JobProgress } from '../../components/JobProgress'
 import { CaptionEditor } from './CaptionEditor'
 import { approveBlockedReason, autoCaptionsPhase, draftState, estimatedWaitText } from './autoCaptionsLogic'
+import { shouldPollGeneration, speakersView } from './speakersLogic'
 
 interface AutoCaptionsProps {
   projectId: string
@@ -30,6 +31,7 @@ export function AutoCaptions({ projectId, projectName = '', videoDurationSeconds
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notify, setNotify] = useState(false)
+  const [includeSpeakers, setIncludeSpeakers] = useState(false)
   const [confirm, setConfirm] = useState<'approve' | 'discard' | 'cancel' | null>(null)
   const [editing, setEditing] = useState(false)
   const alive = useRef(true)
@@ -64,11 +66,13 @@ export function AutoCaptions({ projectId, projectName = '', videoDurationSeconds
     if (generation) previousPhase.current = phase
   }, [phase, generation !== null])
 
+  // Pollar medan ett undertextjobb eller en talaranalys pågår (UNG-205).
+  const polling = shouldPollGeneration(generation)
   useEffect(() => {
-    if (phase !== 'running') return
+    if (!polling) return
     const timer = setInterval(() => void refresh(), POLL_MS)
     return () => clearInterval(timer)
-  }, [phase, projectId])
+  }, [polling, projectId])
 
   async function run(action: () => Promise<void>, failure: string) {
     setBusy(true)
@@ -85,9 +89,14 @@ export function AutoCaptions({ projectId, projectName = '', videoDurationSeconds
   // Jobblistan hämtas om direkt så jobbet syns i jobbfältet och Jobb-vyn (UNG-159).
   const start = () =>
     run(async () => {
-      setGeneration(await client.projects.generateCaptions(projectId, notify))
+      setGeneration(await client.projects.generateCaptions(projectId, notify, includeSpeakers && generation?.speakersAvailable === true))
       notifyJobsChanged()
     }, 'Det gick inte att starta undertextningen.')
+  const analyzeSpeakers = () =>
+    run(async () => {
+      setGeneration(await client.projects.analyzeSpeakers(projectId))
+      notifyJobsChanged()
+    }, 'Det gick inte att starta analysen av talarbyten.')
   const approve = () =>
     run(async () => {
       setConfirm(null)
@@ -148,6 +157,10 @@ export function AutoCaptions({ projectId, projectName = '', videoDurationSeconds
         />
       )}
 
+      {(phase === 'draft' || generation.speakers?.state === 'analyzing') && speakersView(generation, formatDateTime).visible && (
+        <SpeakersRow generation={generation} busy={busy} onAnalyze={analyzeSpeakers} />
+      )}
+
       {phase === 'idle' && (
         <>
           <StartButton busy={busy} disabled={!generation.canGenerate} label="Skapa undertexter automatiskt" onStart={start} />
@@ -155,6 +168,12 @@ export function AutoCaptions({ projectId, projectName = '', videoDurationSeconds
             <input type="checkbox" checked={notify} onChange={(event) => setNotify(event.currentTarget.checked)} />
             Mejla mig när det är klart
           </label>
+          {generation.speakersAvailable && (
+            <label class="captions-notify">
+              <input type="checkbox" checked={includeSpeakers} onChange={(event) => setIncludeSpeakers(event.currentTarget.checked)} />
+              Analysera också talarbyten (för manus i Word)
+            </label>
+          )}
           <p class="captions-help">
             Tar {estimatedWaitText(videoDurationSeconds)}. Du får ett utkast att granska. Det syns inte för tittarna förrän du godkänner det.
           </p>
@@ -199,6 +218,29 @@ export function AutoCaptions({ projectId, projectName = '', videoDurationSeconds
         <ConfirmModal title="Avbryta?" confirmLabel="Avbryt jobbet" danger onCancel={() => setConfirm(null)} onConfirm={() => void cancel()}>
           <p>Skapandet stoppas och inget utkast sparas. Du kan starta det igen när som helst.</p>
         </ConfirmModal>
+      )}
+    </div>
+  )
+}
+
+// UNG-205: talarbyten för manus (Word). Analyseras i efterhand med en knapp, eller följer med när undertexterna skapas.
+function SpeakersRow({ generation, busy, onAnalyze }: { generation: CaptionGeneration; busy: boolean; onAnalyze: () => void }) {
+  const view = speakersView(generation, formatDateTime)
+  return (
+    <div class="captions-speakers">
+      <h4>Talarbyten</h4>
+      <p class="captions-current">{view.text}</p>
+      {view.state === 'analyzing' && <JobProgress progress={view.progress} phase="SPEAKERS" />}
+      {view.actionLabel && (
+        <div class="captions-actions">
+          <button class="btn btn-sm" type="button" disabled={busy || view.blockedReason !== null} onClick={onAnalyze}>
+            {view.actionLabel}
+          </button>
+        </div>
+      )}
+      {view.blockedReason && view.actionLabel && <p class="captions-help">{view.blockedReason}</p>}
+      {view.state === 'none' && !view.blockedReason && (
+        <p class="captions-help">Används för att bryta stycke när talaren byter i manuset. Tar några minuter och ändrar inte undertexterna.</p>
       )}
     </div>
   )

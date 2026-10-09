@@ -205,7 +205,9 @@ export interface Client {
     /** UNG-126: senaste automatiska genereringen (jobb + utkast) för projektets uppspelningsinspelning. */
     getCaptionGeneration(id: string): Promise<import('./types').CaptionGeneration>
     /** Startar automatisk undertextning. Ett redan pågående jobb för inspelningen återanvänds. */
-    generateCaptions(id: string, notifyByEmail: boolean): Promise<import('./types').CaptionGeneration>
+    generateCaptions(id: string, notifyByEmail: boolean, includeSpeakers?: boolean): Promise<import('./types').CaptionGeneration>
+    /** UNG-205: analyserar bara talarbyten för ett projekt som redan har undertexter (ingen ny transkribering). */
+    analyzeSpeakers(id: string): Promise<import('./types').CaptionGeneration>
     /** Godkänner utkastet: det publiceras som projektets undertext (samma väg som en uppladdad VTT-fil). */
     approveCaptionDraft(id: string, version?: number): Promise<import('./types').CaptionGeneration>
     /** UNG-138: mastern som radlista. Spara med den version du utgick från (409 om någon annan hunnit före). */

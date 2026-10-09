@@ -433,6 +433,20 @@ export interface CaptionGeneration {
   job?: MediaJob
   draft?: CaptionDraft
   canGenerate: boolean
+  /** UNG-205: läget för talarbyten (analyseras med en egen knapp eller följer med genereringen). */
+  speakers?: CaptionSpeakers
+  /** Talarbyten går att analysera i den här miljön (annars döljs knappen och valet). */
+  speakersAvailable?: boolean
+}
+
+/** UNG-205: talarbyten (diarization) för originalet. none = inte analyserade, analyzing = jobb pågår, ready = sparade, failed = senaste jobbet misslyckades. */
+export interface CaptionSpeakers {
+  state: 'none' | 'analyzing' | 'ready' | 'failed'
+  progress?: number
+  turnCount: number
+  createdAtUtc?: string
+  method?: string
+  error?: string
 }
 
 export interface ProjectRecording {
@@ -485,7 +499,7 @@ export interface DownloadJob {
 // UNG-80 steg 2: ett mediajobb i jobbfältet (servern äger slutförandet, se MediaJobObserver).
 export interface MediaJob {
   id: string
-  kind: 'download' | 'upload' | 'captions'
+  kind: 'download' | 'upload' | 'captions' | 'speakers'
   state: 'processing' | 'done' | 'error' | 'canceled'
   recordingId: string
   projectId?: string

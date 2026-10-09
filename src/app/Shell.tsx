@@ -248,12 +248,19 @@ function describeFinishedJob(
 ): ShellToast {
   const name = job.projectName ?? job.recordingName ?? 'inspelningen'
   if (job.state === 'error') {
-    const what = job.kind === 'download' ? 'Nedladdningen' : job.kind === 'captions' ? 'Undertexterna' : 'Bearbetningen'
+    const what = job.kind === 'download' ? 'Nedladdningen' : job.kind === 'captions' ? 'Undertexterna' : job.kind === 'speakers' ? 'Analysen av talarbyten' : 'Bearbetningen'
     return { message: `${what} för ${name} misslyckades.` }
   }
   if (job.kind === 'captions') {
     return {
       message: `Undertextutkastet för ${name} är klart och väntar på granskning.`,
+      actionLabel: job.projectId ? 'Öppna projektet' : undefined,
+      onAction: job.projectId ? () => onOpenProject(job.projectId!) : undefined,
+    }
+  }
+  if (job.kind === 'speakers') {
+    return {
+      message: `Talarbytena för ${name} är analyserade.`,
       actionLabel: job.projectId ? 'Öppna projektet' : undefined,
       onAction: job.projectId ? () => onOpenProject(job.projectId!) : undefined,
     }

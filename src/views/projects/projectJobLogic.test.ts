@@ -32,4 +32,5 @@ test('ikon per jobbtyp', () => {
   assert.equal(jobKindIcon('download'), 'download')
   assert.equal(jobKindIcon('captions'), 'closed_caption')
   assert.equal(jobKindIcon('upload'), 'upload')
+  assert.equal(jobKindIcon('speakers'), 'record_voice_over')
 })

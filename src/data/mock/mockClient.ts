@@ -867,6 +867,9 @@ export const mockClient: Client = {
     async generateCaptions() {
       throw new Error('Automatiska undertexter finns inte i mock-läget')
     },
+    async analyzeSpeakers() {
+      throw new Error('Automatiska undertexter finns inte i mock-läget')
+    },
     async approveCaptionDraft() {
       throw new Error('Automatiska undertexter finns inte i mock-läget')
     },

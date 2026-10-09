@@ -25,9 +25,9 @@ export function activeJobsByProject(jobs: readonly MediaJob[]): Map<string, Proj
 }
 
 export function jobKindIcon(kind: MediaJob['kind']): string {
-  return kind === 'download' ? 'download' : kind === 'captions' ? 'closed_caption' : 'upload'
+  return kind === 'download' ? 'download' : kind === 'captions' ? 'closed_caption' : kind === 'speakers' ? 'record_voice_over' : 'upload'
 }
 
 export function jobKindLabel(kind: MediaJob['kind']): string {
-  return kind === 'download' ? 'Nedladdning' : kind === 'captions' ? 'Undertexter' : 'Uppladdning'
+  return kind === 'download' ? 'Nedladdning' : kind === 'captions' ? 'Undertexter' : kind === 'speakers' ? 'Talarbyten' : 'Uppladdning'
 }

@@ -10,6 +10,8 @@ const PHASE_LABEL: Record<string, string> = {
   PREPARING: 'Förbereder transkriberingen',
   TRANSCRIBING: 'Transkriberar',
   PROCESSING: 'Rättar och bygger undertexter',
+  // Talarbyten (UNG-205).
+  SPEAKERS: 'Analyserar talarbyten',
 }
 
 export function jobPhaseLabel(phase?: string | null): string {

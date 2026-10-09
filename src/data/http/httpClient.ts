@@ -845,8 +845,14 @@ export const httpClient: Client = {
     getCaptionGeneration(id) {
       return api<CaptionGeneration>(`/projects/${id}/captions/generation`)
     },
-    generateCaptions(id, notifyByEmail) {
-      return api<CaptionGeneration>(`/projects/${id}/captions/generate`, { method: 'POST', query: { notifyByEmail: notifyByEmail ? 'true' : undefined } })
+    generateCaptions(id, notifyByEmail, includeSpeakers) {
+      return api<CaptionGeneration>(`/projects/${id}/captions/generate`, {
+        method: 'POST',
+        query: { notifyByEmail: notifyByEmail ? 'true' : undefined, includeSpeakers: includeSpeakers ? 'true' : undefined },
+      })
+    },
+    analyzeSpeakers(id) {
+      return api<CaptionGeneration>(`/projects/${id}/captions/speakers/analyze`, { method: 'POST' })
     },
     approveCaptionDraft(id, version) {
       return api<CaptionGeneration>(`/projects/${id}/captions/draft/approve`, { method: 'POST', query: { version } })
