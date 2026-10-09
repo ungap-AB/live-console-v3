@@ -30,6 +30,7 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, po
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notify, setNotify] = useState(false)
+  const [includeSpeakers, setIncludeSpeakers] = useState(false)
   const [confirmCancel, setConfirmCancel] = useState(false)
 
   if (view === 'editor') {
@@ -40,7 +41,8 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, po
     setBusy(true)
     setError('')
     try {
-      setGeneration(await client.projects.generateCaptions(projectId, notify))
+      // UNG-205: talarbyten följer med genereringen bara när servern har dem påslagna.
+      setGeneration(await client.projects.generateCaptions(projectId, notify, includeSpeakers && generation?.speakersAvailable === true))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Det gick inte att starta undertextningen.')
     } finally {
@@ -102,6 +104,12 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, po
                 <input type="checkbox" checked={notify} onChange={(event) => setNotify(event.currentTarget.checked)} />
                 Mejla mig när det är klart
               </label>
+              {generation?.speakersAvailable && (
+                <label class="cs-notify">
+                  <input type="checkbox" checked={includeSpeakers} onChange={(event) => setIncludeSpeakers(event.currentTarget.checked)} />
+                  Analysera också talarbyten (för manus i Word)
+                </label>
+              )}
               {!canGenerate && <p class="cs-error">Undertexter går inte att skapa automatiskt för den här videon.</p>}
               <div class="cs-actions">
                 <button class="btn btn-sm btn-primary" type="button" disabled={busy || !canGenerate} onClick={() => void start()}>
