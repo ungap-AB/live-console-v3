@@ -27,6 +27,9 @@ import { approveBlockedReason, groupCorrections, type CorrectionGroup } from './
 import { ownCorrections } from './captionCorrectionsLogic'
 import { CorrectionsPanel } from './CorrectionsPanel'
 import { WordImportDialog } from './WordImportDialog'
+import { exportFileName } from './chapterExport'
+import { saveFile } from './ExportImportDialog'
+import { Modal } from '../../components/Modal'
 import { WordReviewBar } from './WordReviewBar'
 import { buildReview, isLocked, nextReviewIndex, openConflicts, reviewIndexes, conflictKey, type WordReview } from './wordImportLogic'
 import './CaptionEditor.css'
@@ -93,6 +96,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   // UNG-147: rättningar inlästa från Word. review = granskningsläget (null när det inte pågår eller är avslutat), fromWord = det som sparas kommer från Word.
   const [review, setReview] = useState<WordReview | null>(null)
   const [fromWord, setFromWord] = useState(false)
+  const [exportChoice, setExportChoice] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [wordDialog, setWordDialog] = useState<{ baseChoice: boolean } | null>(null)
   const [dragBoundary, setDragBoundary] = useState<{ index: number; role: GrabRole; baseBefore: number; baseAfter: number } | null>(null)
 
@@ -395,6 +400,21 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
       return
     }
     focusRow(tabTargetIndex(origin, backwards, cues.length))
+  }
+
+  // Manus (Word) ur den sparade versionen. Är projektet trimmat får operatören välja publicerad del eller hela inspelningen.
+  async function exportWord(scope: 'published' | 'whole') {
+    setExportChoice(false)
+    setExporting(true)
+    try {
+      const blob = await client.projects.exportManuscriptDocx(projectId, scope)
+      saveFile(exportFileName(projectName, 'manus', 'docx'), blob, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+      setNotice(dirty ? 'Manuset är gjort av den sparade versionen. Dina osparade ändringar ingår inte.' : '')
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : 'Manuset kunde inte skapas.')
+    } finally {
+      setExporting(false)
+    }
   }
 
   function startWordReview(result: WordImportResult) {
@@ -772,6 +792,15 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
           <button
             class="btn btn-sm"
             type="button"
+            disabled={!master || readOnly || exporting}
+            title="Skriver ut undertexterna som ett manus i Word, att rätta och sedan läsa in här (görs av den sparade versionen)"
+            onClick={() => (master?.publishedStartSeconds !== undefined ? setExportChoice(true) : void exportWord('whole'))}
+          >
+            {exporting ? 'Skapar…' : 'Exportera till Word'}
+          </button>
+          <button
+            class="btn btn-sm"
+            type="button"
             disabled={!master || readOnly || saving || publishing || regenerating}
             title="Läser in ett rättat manus (Word) och föreslår ändringarna i undertexterna"
             onClick={() => setWordDialog({ baseChoice: false })}
@@ -1101,6 +1130,17 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
             {' '}{seconds(pendingInfo.durationSeconds)} s.
           </p>
         </ConfirmModal>
+      )}
+
+      {exportChoice && (
+        <Modal title="Exportera till Word" onClose={() => setExportChoice(false)}>
+          <p>Vilken del av videon ska manuset gälla? Du kan läsa in det rättade manuset här igen oavsett val.</p>
+          <div class="modal-actions">
+            <button class="btn btn-sm" type="button" onClick={() => setExportChoice(false)}>Avbryt</button>
+            <button class="btn btn-sm" type="button" onClick={() => void exportWord('whole')}>Hela inspelningen</button>
+            <button class="btn btn-sm btn-primary" type="button" onClick={() => void exportWord('published')}>Publicerad del</button>
+          </div>
+        </Modal>
       )}
 
       {wordDialog && (

@@ -36,7 +36,7 @@ const MODES = [
   { id: 'import', label: 'Importera' },
 ] as const
 
-function saveFile(fileName: string, content: string | Blob, type: string) {
+export function saveFile(fileName: string, content: string | Blob, type: string) {
   const url = URL.createObjectURL(content instanceof Blob ? content : new Blob([content], { type }))
   const link = document.createElement('a')
   link.href = url
