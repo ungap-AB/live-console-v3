@@ -109,7 +109,7 @@ export function ForkDialog({ project, source, onClose, onForked }: ForkDialogPro
           </label>
         )}
         {customError && <span class="ce-error-text" role="alert">{customError}</span>}
-        <span class="fk-help">Du väljer exakt början och slut när du trimmar i det nya projektet. Ett senare val gör bara trimvyn kortare att arbeta i.</span>
+        <span class="fk-help">Fork är inte gjord för tajta klipp: starten läggs på närmaste segment och kan bli upp till 10 sekunder tidigare. Du väljer exakt början och slut när du trimmar i det nya projektet.</span>
       </fieldset>
       {error && <p class="ce-error-text" role="alert">{error}</p>}
     </Modal>
