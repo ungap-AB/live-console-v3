@@ -15,7 +15,6 @@ import { IngestInfo } from './IngestInfo'
 import { LiveHlsField } from './LiveHlsField'
 import { ForkDialog } from './ForkDialog'
 import { forkSource } from './forkLogic'
-import { formatShortDate } from '../../app/time'
 import { PlayerSettingsDialog } from './PlayerSettingsDialog'
 import './ProjectHeader.css'
 
@@ -220,11 +219,6 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
         ) : (
           <>
             <h1 class="pv-title">{p.name}</h1>
-            {p.forkedFrom && (
-              <span class="pv-fork" title="Det här projektet är skapat ur en annan sändning eller inspelning">
-                Forkat från {p.forkedFrom.name ?? 'ett annat projekt'}{p.forkedFrom.atUtc ? `, ${formatShortDate(p.forkedFrom.atUtc)}` : ''}
-              </span>
-            )}
             {p.liveOnly && <span class="pv-liveonly" title="Markerat som endast live. Det ändrar inget beteende, och markören tas bort i spelarinställningarna.">Endast live</span>}
             <button
               class="pv-icon-btn"
@@ -268,9 +262,9 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
           <span>Preview</span>
         </button>
         {onForked && forkSource(p, health?.livePhase) && (
-          <button class="pv-ingest-button" type="button" title="Skapar ett nytt projekt av sändningen (eller inspelningen) att trimma och publicera som ondemand" onClick={() => setShowFork(true)}>
+          <button class="pv-ingest-button" type="button" title="Skapa ondemand-projekt: skapar ett nytt projekt av sändningen (eller inspelningen) att trimma och publicera som ondemand" onClick={() => setShowFork(true)}>
             <Icon name="call_split" size={17} />
-            <span>Skapa ondemand-projekt…</span>
+            <span>Fork</span>
           </button>
         )}
         <span class="spacer" />

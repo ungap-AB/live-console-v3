@@ -849,6 +849,9 @@ export const mockClient: Client = {
       project.posterUrl = source.posterUrl ?? null
       return delay(projectSnapshot(project))
     },
+    async forkWindow() {
+      throw new Error('Att skapa projekt ur en sändning finns inte i mock-läget')
+    },
     async forkProject() {
       throw new Error('Att skapa projekt ur en sändning finns inte i mock-läget')
     },

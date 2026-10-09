@@ -197,6 +197,7 @@ export interface Client {
     /** Ersätter projektets spelarlayout (texter, placering, Mux) med en kopia av ett annat projekts (UNG-180). */
     inheritLayout(id: string, sourceProjectId: string): Promise<Project>
     /** UNG-198: skapar ett nytt projekt (läget After, stängt) ur projektets pågående sändning eller avslutade inspelning. Källan och strömmen rörs inte. */
+    forkWindow(id: string): Promise<import('./types').ForkWindow>
     forkProject(id: string, input: { name?: string; fromUtc?: string }): Promise<import('./types').ForkResult>
     rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText' | 'textPlacement' | 'muxEnabled' | 'muxRespectDoNotTrack' | 'dvrEnabled' | 'exclamationsAsSpeakers' | 'liveOnly'>>): Promise<Project>
     trash(id: string): Promise<void>

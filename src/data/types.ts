@@ -234,6 +234,13 @@ export interface ForkResult {
   warnings: { code: string; message: string }[]
 }
 
+/** UNG-198: fönstret en fork kan börja i (för tidväljaren): den pågående sändningen hittills, eller den färdiga inspelningen. */
+export interface ForkWindow {
+  source: 'live' | 'recording'
+  startUtc: string
+  endUtc: string
+}
+
 export interface TimelineEvent {
   id: string
   kind: CueKind

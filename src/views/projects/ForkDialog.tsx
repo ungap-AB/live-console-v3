@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { ForkResult, Project } from '../../data/types'
+import type { ForkResult, ForkWindow, Project } from '../../data/types'
 import { Modal } from '../../components/Modal'
-import { forkFromOptions, type ForkFromOption, type ForkSource } from './forkLogic'
+import { clockValue, forkFromOptions, timeInWindow, type ForkFromOption, type ForkSource } from './forkLogic'
 
 interface ForkDialogProps {
   project: Project
@@ -16,6 +16,9 @@ export function ForkDialog({ project, source, onClose, onForked }: ForkDialogPro
   const [name, setName] = useState('')
   const [options, setOptions] = useState<ForkFromOption[]>(() => forkFromOptions([]))
   const [choice, setChoice] = useState('start')
+  // Egen starttid (tidväljare): klockslaget i lokal tid, inom fönstret som servern anger.
+  const [window_, setWindow] = useState<ForkWindow | null>(null)
+  const [time, setTime] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -25,15 +28,26 @@ export function ForkDialog({ project, source, onClose, onForked }: ForkDialogPro
       (playout) => { if (!cancelled && playout) setOptions(forkFromOptions(playout.timeline)) },
       () => { /* förslagen är bara en hjälp; "från början" finns alltid */ },
     )
+    client.projects.forkWindow(project.id).then(
+      (value) => {
+        if (cancelled) return
+        setWindow(value)
+        setTime((current) => current || clockValue(value.startUtc))
+      },
+      () => { /* utan fönster finns inte tidväljaren; förslagen räcker */ },
+    )
     return () => { cancelled = true }
   }, [project.id])
+
+  const custom = choice === 'time' && window_ ? timeInWindow(time, window_) : null
+  const customError = custom && 'error' in custom ? custom.error : ''
 
   async function create() {
     if (busy) return
     setBusy(true)
     setError('')
     try {
-      const fromUtc = options.find((option) => option.key === choice)?.fromUtc ?? undefined
+      const fromUtc = choice === 'time' ? (custom && 'iso' in custom ? custom.iso : undefined) : options.find((option) => option.key === choice)?.fromUtc ?? undefined
       onForked(await client.projects.forkProject(project.id, { name: name.trim() || undefined, fromUtc }))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Projektet kunde inte skapas.')
@@ -50,7 +64,7 @@ export function ForkDialog({ project, source, onClose, onForked }: ForkDialogPro
       footer={(
         <>
           <button class="btn btn-sm" type="button" disabled={busy} onClick={onClose}>Avbryt</button>
-          <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={() => void create()}>
+          <button class="btn btn-sm btn-primary" type="button" disabled={busy || Boolean(customError)} onClick={() => void create()}>
             {busy ? 'Skapar…' : 'Skapa projekt'}
           </button>
         </>
@@ -78,6 +92,23 @@ export function ForkDialog({ project, source, onClose, onForked }: ForkDialogPro
             <span>{option.label}</span>
           </label>
         ))}
+        {window_ && (
+          <label class="fk-option">
+            <input type="radio" name="fork-from" checked={choice === 'time'} onChange={() => setChoice('time')} />
+            <span>Från klockan</span>
+            <input
+              class="fk-time"
+              type="time"
+              step={60}
+              value={time}
+              aria-label="Starttid för det nya projektet"
+              onFocus={() => setChoice('time')}
+              onInput={(event) => { setTime(event.currentTarget.value); setChoice('time') }}
+            />
+            <span class="fk-help">{window_.source === 'live' ? `Sändningen har pågått sedan ${clockValue(window_.startUtc)}.` : `Inspelningen gäller ${clockValue(window_.startUtc)}–${clockValue(window_.endUtc)}.`}</span>
+          </label>
+        )}
+        {customError && <span class="ce-error-text" role="alert">{customError}</span>}
         <span class="fk-help">Du väljer exakt början och slut när du trimmar i det nya projektet. Ett senare val gör bara trimvyn kortare att arbeta i.</span>
       </fieldset>
       {error && <p class="ce-error-text" role="alert">{error}</p>}

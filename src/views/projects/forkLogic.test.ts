@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { TimelineEvent } from '../../data/types.ts'
-import { forkFromOptions, forkSource, forkWarningText } from './forkLogic.ts'
+import { clockValue, forkFromOptions, forkSource, forkWarningText, timeInWindow } from './forkLogic.ts'
 
 const rec = (state: string, source?: string) => ({ id: 'r1', state: state as never, source })
 
@@ -42,4 +42,28 @@ test('utan paus eller punkt finns bara början', () => {
 test('varningstexten sätter ihop serverns meddelanden', () => {
   assert.equal(forkWarningText([]), '')
   assert.equal(forkWarningText([{ code: 'a', message: 'Ett.' }, { code: 'b', message: 'Två.' }]), 'Ett. Två.')
+})
+
+// Tiderna byggs i lokal tid, så testerna gäller i vilken tidszon som helst.
+const local = (day: number, hours: number, minutes: number, seconds = 0) => new Date(2026, 9, day, hours, minutes, seconds).toISOString()
+
+test('ett klockslag blir en tid i fönstret, på rätt dag', () => {
+  const window = { startUtc: local(9, 9, 0, 25), endUtc: local(9, 14, 30) }
+  assert.deepEqual(timeInWindow('11:30', window), { iso: local(9, 11, 30) })
+  assert.deepEqual(timeInWindow('9:45', window), { iso: local(9, 9, 45) })
+  // Över midnatt: 01:15 hör till nästa dag.
+  const night = { startUtc: local(9, 22, 0), endUtc: local(10, 3, 0) }
+  assert.deepEqual(timeInWindow('23:10', night), { iso: local(9, 23, 10) })
+  assert.deepEqual(timeInWindow('01:15', night), { iso: local(10, 1, 15) })
+})
+
+test('ett klockslag precis utanför kanten räknas som kanten, längre utanför ger ett fel med fönstret', () => {
+  const window = { startUtc: local(9, 9, 0, 25), endUtc: local(9, 14, 30) }
+  assert.deepEqual(timeInWindow('09:00', window), { iso: window.startUtc }) // 25 s före: det är början
+  const early = timeInWindow('08:30', window)
+  assert.ok('error' in early && /09:00.*14:30/.test(early.error))
+  assert.ok('error' in timeInWindow('15:00', window))
+  assert.ok('error' in timeInWindow('25:00', window))
+  assert.ok('error' in timeInWindow('abc', window))
+  assert.equal(clockValue(local(9, 9, 5)), '09:05')
 })

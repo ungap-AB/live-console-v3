@@ -21,6 +21,7 @@ import type {
   CaptionGeneration,
   CaptionMaster,
   WordImportResult,
+  ForkWindow,
   CaptionVersionInfo,
   ProjectCaptions,
   PublicMode,
@@ -832,6 +833,9 @@ export const httpClient: Client = {
     async inheritLayout(id, sourceProjectId) {
       const dto = await api<ServerProject>(`/projects/${id}/layout/inherit`, { method: 'POST', body: { source: { type: 'project', id: sourceProjectId } } })
       return toProjectFull(dto)
+    },
+    forkWindow(id) {
+      return api<ForkWindow>(`/projects/${id}/fork/window`)
     },
     async forkProject(id, input) {
       const dto = await api<{ project: ServerProject; warnings: { code: string; message: string }[] }>(`/projects/${id}/fork`, { method: 'POST', body: input })
