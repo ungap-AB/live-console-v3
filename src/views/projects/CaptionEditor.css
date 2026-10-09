@@ -623,3 +623,17 @@ button.ce-time:hover {
   gap: 4px;
   margin-left: auto;
 }
+
+/* UNG-205: valen i bekräftelsen av "Skapa på nytt". */
+.ce-regen-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.ce-regen-hint {
+  margin: 0.4rem 0 0;
+  color: var(--muted, #5b6672);
+  font-size: 0.85em;
+}

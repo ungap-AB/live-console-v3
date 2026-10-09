@@ -80,6 +80,11 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   // "Skapa på nytt" i huvudet: nytt jobb från ljudet, efter bekräftelse.
   const [canRegenerate, setCanRegenerate] = useState(false)
   const [confirmRegenerate, setConfirmRegenerate] = useState(false)
+  // Valen vid "Skapa på nytt" är samma som när undertexterna skapas första gången (mejla, och talarbyten när servern har dem påslagna, UNG-205).
+  const [regenNotify, setRegenNotify] = useState(false)
+  const [regenSpeakers, setRegenSpeakers] = useState(false)
+  const [speakersAvailable, setSpeakersAvailable] = useState(false)
+  const [speakersReady, setSpeakersReady] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
   // Gränsen (replikindex) som dras, med antal ord i de två berörda replikerna när draget började (för orden-just-nu-märket).
   const [dragBoundary, setDragBoundary] = useState<{ index: number; role: GrabRole; baseBefore: number; baseAfter: number } | null>(null)
@@ -144,6 +149,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
         setMachine(groupCorrections(generation.draft?.corrections ?? []))
         setDraftInfo(generation.draft ?? null)
         setCanRegenerate(generation.canGenerate)
+        setSpeakersAvailable(generation.speakersAvailable === true)
+        setSpeakersReady(generation.speakers?.state === 'ready')
       },
       () => { if (!cancelled) setMachine([]) },
     )
@@ -523,7 +530,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     setRegenerating(true)
     setSaveError('')
     try {
-      const generation = await client.projects.generateCaptions(projectId, false)
+      const generation = await client.projects.generateCaptions(projectId, regenNotify, regenSpeakers && speakersAvailable)
       notifyJobsChanged()
       onRegenerated?.(generation)
     } catch (err) {
@@ -986,6 +993,19 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
             nuvarande publicerade undertexter ligger kvar för tittarna tills du godkänner det nya utkastet.
             {dirty ? ` Dina ${changeCount} osparade ändringar går förlorade.` : ''}
           </p>
+          <label class="ce-regen-option">
+            <input type="checkbox" checked={regenNotify} onChange={(event) => setRegenNotify(event.currentTarget.checked)} />
+            Mejla mig när det är klart
+          </label>
+          {speakersAvailable && (
+            <label class="ce-regen-option">
+              <input type="checkbox" checked={regenSpeakers} onChange={(event) => setRegenSpeakers(event.currentTarget.checked)} />
+              Analysera också talarbyten (för manus i Word)
+            </label>
+          )}
+          {speakersAvailable && speakersReady && !regenSpeakers && (
+            <p class="ce-regen-hint">Talarbyten som redan är analyserade behålls: de hör till ljudet, inte till texten.</p>
+          )}
         </ConfirmModal>
       )}
 
