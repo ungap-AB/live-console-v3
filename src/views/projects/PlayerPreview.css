@@ -1,0 +1,29 @@
+/* UNG-252: den inbäddade spelaren som förhandsvisning. */
+
+.pp {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.pp-frame {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+
+.pp-frame iframe {
+  display: block;
+  width: 100%;
+  height: 560px;
+  border: 0;
+}
+
+.pp-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}

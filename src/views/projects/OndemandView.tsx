@@ -31,6 +31,7 @@ import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ChapterImportDialog } from './ChapterImportDialog'
 import { ProjectHeader } from './ProjectHeader'
+import { PlayerPreview } from './PlayerPreview'
 import { useModeChange } from './useModeChange'
 import { useLiveChannel } from './useLiveChannel'
 import './OndemandView.css'
@@ -94,6 +95,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   const [chaptersRefreshing, setChaptersRefreshing] = useState(false)
   const chaptersProjectRef = useRef<string | null>(null)
   const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false)
+  // UNG-252: ökar när något publicerats eller sparats, så att den inbäddade spelaren laddas om.
+  const [previewVersion, setPreviewVersion] = useState(0)
   const [projectRecordings, setProjectRecordings] = useState<ProjectRecording[]>([])
   const [switchingRecording, setSwitchingRecording] = useState(false)
   const [showRecordingPicker, setShowRecordingPicker] = useState(false)
@@ -826,7 +829,10 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     } finally {
       setPublishing(false)
       if (failedStep) setPublishOutcome({ kind: 'failed', step: failedStep })
-      else if (succeeded) setPublishOutcome({ kind: 'published', wasPublished })
+      else if (succeeded) {
+        setPublishOutcome({ kind: 'published', wasPublished })
+        setPreviewVersion((version) => version + 1)
+      }
     }
   }
 
@@ -956,7 +962,10 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                       projectName={p.name}
                       videoDurationSeconds={recording?.durationSeconds}
                       posterUrl={p.posterUrl}
-                      onChanged={() => void actions.refreshProject()}
+                      onChanged={() => {
+                        setPreviewVersion((version) => version + 1)
+                        void actions.refreshProject()
+                      }}
                       onChaptersChanged={() => {
                         // UNG-229: kapitel ändrade i undertextredigeraren: hämta om listan och markera ändringen som opublicerad.
                         setHasUnpublishedChanges(true)
@@ -1114,6 +1123,9 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                 onImportChapters={chaptersReadOnly || awaitingApproval ? undefined : () => setShowImport(true)}
                 onOpenVideoActions={(tab) => { setVideoDialogTab(tab); setShowVideoDialog(true) }}
               />
+            )}
+            {p.playerUrl && !awaitingApproval && (
+              <PlayerPreview url={p.playerUrl} published={p.publication.state === 'published'} version={previewVersion} />
             )}
             <footer class="od-trim-footer">
             </footer>
