@@ -1066,6 +1066,11 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
         class={`ce-chrow${agenda ? ' is-agenda' : ''}${group?.child ? ' is-child' : ''}${isCurrent ? ' is-current' : ''}${outside ? ' is-outside' : ''}${selectedChapterId === chapter.id ? ' is-selected' : ''}`}
         style={{ top: `${layout.top(rowIndex)}px`, height: `${layout.height(rowIndex)}px` }}
         onPointerDown={() => setSelectedChapterId(chapter.id)}
+        onClick={(event) => {
+          // Ett klick på raden (namn, typ eller tom yta) hoppar i videon till kapitlet. Knappar och fält sköter sig själva.
+          if ((event.target as HTMLElement).closest('button, input')) return
+          seekTo(chapter.time, false)
+        }}
       >
         {group?.toggle ? (
           <button
