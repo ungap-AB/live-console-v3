@@ -398,7 +398,6 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
       const boundary = inBand && latest.current.editable ? boundaryAt(position.y) : null
       const chapter = inBand && boundary === null ? chapterAt(position.y) : null
       canvas.style.cursor = boundary !== null ? 'ns-resize' : 'pointer'
-      canvas.title = chapter !== null ? latest.current.chapterMarks?.[chapter]?.label ?? '' : ''
       if (boundary !== hovered.current || chapter !== hoveredChapter.current) {
         hovered.current = boundary
         hoveredChapter.current = chapter

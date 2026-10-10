@@ -957,6 +957,11 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                       videoDurationSeconds={recording?.durationSeconds}
                       posterUrl={p.posterUrl}
                       onChanged={() => void actions.refreshProject()}
+                      onChaptersChanged={() => {
+                        // UNG-229: kapitel ändrade i undertextredigeraren: hämta om listan och markera ändringen som opublicerad.
+                        setHasUnpublishedChanges(true)
+                        void reloadChaptersNow()
+                      }}
                     />
                   ) : undefined}
                 />

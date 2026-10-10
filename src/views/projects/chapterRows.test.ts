@@ -82,3 +82,46 @@ test('typtexter', () => {
   assert.equal(chapterKindText('pauseIn'), 'Paus')
   assert.equal(chapterKindText('x'), '')
 })
+
+// ---- UNG-229 ----
+import { addChapter, changeCount, diffChapters, isNewChapter, removeChapter, renameChapter, setChapterTime, sortChapters } from './chapterRows.ts'
+
+test('en ny tid hålls i hela sekunder, aldrig före noll, och listan hålls sorterad', () => {
+  const list = [chapter('a', 'agendaItem', 10), chapter('b', 'person', 50), chapter('c', 'person', 90)]
+  assert.deepEqual(setChapterTime(list, 'a', 70.6).map((c) => [c.id, c.time]), [['b', 50], ['a', 71], ['c', 90]])
+  assert.equal(setChapterTime(list, 'b', -4).find((c) => c.id === 'b')?.time, 0)
+  assert.deepEqual(sortChapters([chapter('x', 'person', 5), chapter('y', 'person', 5), chapter('z', 'person', 1)]).map((c) => c.id), ['z', 'x', 'y'])
+})
+
+test('namnbyte, borttagning och tillägg', () => {
+  const list = [chapter('a', 'agendaItem', 10), chapter('b', 'person', 50)]
+  assert.equal(renameChapter(list, 'b', 'Ny').find((c) => c.id === 'b')?.label, 'Ny')
+  assert.deepEqual(removeChapter(list, 'a').map((c) => c.id), ['b'])
+  const added = addChapter(list, { id: 'new-1', kind: 'person', label: 'Mira', time: 30.2 })
+  assert.deepEqual(added.map((c) => c.id), ['a', 'new-1', 'b'])
+  assert.equal(added[1].time, 30)
+  assert.equal(isNewChapter('new-1'), true)
+  assert.equal(isNewChapter('5f2'), false)
+})
+
+test('skillnaden mot det sparade: borttaget, ändrat (bara de fält som ändrats) och nytt', () => {
+  const saved = [chapter('a', 'agendaItem', 10), chapter('b', 'person', 50), chapter('c', 'person', 90)]
+  const current = [
+    { ...chapter('a', 'agendaItem', 10), label: 'A2' },
+    { ...chapter('b', 'person', 55) },
+    chapter('new-1', 'person', 70),
+  ]
+  const changes = diffChapters(saved, current)
+  assert.deepEqual(changes.removed, ['c'])
+  assert.deepEqual(changes.changed, [{ id: 'a', label: 'A2' }, { id: 'b', time: 55 }])
+  assert.deepEqual(changes.added.map((c) => c.id), ['new-1'])
+  assert.equal(changeCount(changes), 4)
+  assert.equal(changeCount(diffChapters(saved, saved)), 0)
+})
+
+test('en ändring som tagits tillbaka räknas inte som ändring', () => {
+  const saved = [chapter('a', 'agendaItem', 10)]
+  const edited = setChapterTime(saved, 'a', 99)
+  assert.equal(changeCount(diffChapters(saved, edited)), 1)
+  assert.equal(changeCount(diffChapters(saved, setChapterTime(edited, 'a', 10))), 0)
+})

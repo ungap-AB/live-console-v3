@@ -7,7 +7,7 @@ import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { client } from '../../data'
 import { ApiError } from '../../data/http/fetchJson'
-import type { Chapter, CaptionDraft, CaptionEnergy, CaptionGeneration, CaptionMaster, WordImportResult } from '../../data/types'
+import type { CaptionDraft, CaptionEnergy, CaptionGeneration, CaptionMaster, CueKind, WordImportResult } from '../../data/types'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import { formatHms } from '../../app/time'
@@ -23,7 +23,10 @@ import { estimateSplitTime, moveBoundary } from './captionFlow'
 import { deriveTimes, speechRuns } from './captionTimingLogic'
 import { emptyHistory, record, redo, undo, type History } from './captionHistory'
 import { CaptionWaveform, WAVEFORM_WIDTH, type ChapterMark } from './CaptionWaveform'
-import { chapterKindText, chapterLayout, currentChapters, mergeRows, positionedChapters } from './chapterRows'
+import {
+  NEW_CHAPTER_PREFIX, addChapter as addChapterTo, changeCount as chapterChangeTotal, chapterKindText, chapterLayout, currentChapters,
+  diffChapters, mergeRows, positionedChapters, removeChapter, renameChapter, setChapterTime, sortChapters, type EditorChapter,
+} from './chapterRows'
 import { cueIndexAt, timeAtRow, type GrabRole } from './captionWaveformLogic'
 import { approveBlockedReason, groupCorrections, type CorrectionGroup } from './autoCaptionsLogic'
 import { ownCorrections } from './captionCorrectionsLogic'
@@ -52,6 +55,14 @@ interface CaptionEditorProps {
   onSaved?: () => void
   /** Anropas när "Skapa på nytt" har startat ett nytt jobb, så att omgivande vy kan visa framsteget (redigeraren stängs då). */
   onRegenerated?: (generation: CaptionGeneration) => void
+  /** Anropas efter att kapitel sparats (utkastet ändrat), så att omgivande vy kan hämta om kapitlen och visa opublicerade ändringar. */
+  onChaptersSaved?: () => void
+}
+
+/** Allt som går att ångra: replikerna och kapitlen i ett steg (UNG-229). */
+interface Snapshot {
+  cues: EditCue[]
+  chapters: EditorChapter[]
 }
 
 const seconds = (value: number) => value.toFixed(1).replace('.', ',')
@@ -59,12 +70,12 @@ const seconds = (value: number) => value.toFixed(1).replace('.', ',')
 // UNG-140/143: redigerare för undertexterna (mastern, original-tidslinje). Video med aktuell replik över bilden och en virtualiserad
 // radlista där texten rättas på plats. Rutor kan slås ihop (exakt tid), delas, orden kan flyttas mellan grannar, tider justeras,
 // rader läggs till och tas bort, och allt går att ångra tills man sparar. Sparas som en version (versionskontroll mot servern).
-export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRegenerated }: CaptionEditorProps) {
+export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRegenerated, onChaptersSaved }: CaptionEditorProps) {
   const [master, setMaster] = useState<CaptionMaster | null>(null)
   const [loadError, setLoadError] = useState('')
   const [cues, setCues] = useState<EditCue[]>([])
   const [saved, setSaved] = useState<EditCue[]>([])
-  const [history, setHistory] = useState<History<EditCue[]>>(emptyHistory)
+  const [history, setHistory] = useState<History<Snapshot>>(emptyHistory)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [notice, setNotice] = useState('')
@@ -107,6 +118,20 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   const [exporting, setExporting] = useState(false)
   const [wordDialog, setWordDialog] = useState<{ baseChoice: boolean } | null>(null)
   const [dragBoundary, setDragBoundary] = useState<{ index: number; role: GrabRole; baseBefore: number; baseAfter: number } | null>(null)
+  // UNG-228/229: kapitlen (punkter och personer med position). chapterList är arbetskopian och savedChapters det servern har. 'none' = inga
+  // kapitel att visa eller ändra (projektet är inte i After/Ondemand, eller listan är den skrivskyddade historiken).
+  const [chapterState, setChapterState] = useState<'loading' | 'ok' | 'none'>('loading')
+  const [chapterList, setChapterList] = useState<EditorChapter[]>([])
+  const [savedChapters, setSavedChapters] = useState<EditorChapter[]>([])
+  const [showChapters, setShowChapters] = useState(true)
+  const [editingChapter, setEditingChapter] = useState<string | null>(null)
+  const [chapterDraft, setChapterDraft] = useState('')
+  const [addChapterOpen, setAddChapterOpen] = useState(false)
+  const [addKind, setAddKind] = useState<'agendaItem' | 'person'>('agendaItem')
+  const [addLabel, setAddLabel] = useState('')
+  const newChapterCounter = useRef(0)
+  // Enter och blur kan båda avsluta ett namnbyte; bara det första räknas.
+  const chapterEditFinished = useRef(true)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const listRef = useRef<HTMLDivElement | null>(null)
@@ -178,6 +203,21 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     return () => { cancelled = true }
   }, [projectId])
 
+  useEffect(() => {
+    let cancelled = false
+    client.projects.chapters(projectId).then(
+      (list) => {
+        if (cancelled) return
+        const positioned = positionedChapters(list)
+        setChapterList(positioned)
+        setSavedChapters(positioned)
+        setChapterState(list.some((chapter) => chapter.readOnly) ? 'none' : 'ok')
+      },
+      () => { if (!cancelled) setChapterState('none') },
+    )
+    return () => { cancelled = true }
+  }, [projectId])
+
   // UNG-149/152: ljudets energikurva till vågformsbandet. Saknas den (eller kan inte hämtas) fungerar redigeraren som förut.
   useEffect(() => {
     let cancelled = false
@@ -203,12 +243,16 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
 
   // Det sparade jämförs i härledd form: annars ser varje replik ändrad ut (gul kant) så fort en enda redigering härlett om alla tider.
   const diff = useMemo(() => diffState(derive(saved), cues), [saved, cues, timing])
-  const dirty = diff.dirty
-  const changeCount = diff.changedIds.size + diff.removed + (diff.reordered && diff.changedIds.size + diff.removed === 0 ? 1 : 0)
+  const chapterChanges = useMemo(() => diffChapters(savedChapters, chapterList), [savedChapters, chapterList])
+  const chaptersDirty = chapterChangeTotal(chapterChanges) > 0
+  const cuesDirty = diff.dirty
+  // Undertexter och kapitel är ett enda "osparat": en Spara, en Ångra (UNG-229).
+  const dirty = cuesDirty || chaptersDirty
+  const changeCount = diff.changedIds.size + diff.removed + (diff.reordered && diff.changedIds.size + diff.removed === 0 ? 1 : 0) + chapterChangeTotal(chapterChanges)
   const readOnly = master?.legacy ?? false
   // Publicera i huvudet: publicerad = den sparade versionen är den godkända och inget är ändrat sedan dess.
   const hasPublished = master?.publishedVersion !== undefined && master?.publishedVersion !== null
-  const upToDate = Boolean(master) && hasPublished && master?.publishedVersion === master?.version && !dirty
+  const upToDate = Boolean(master) && hasPublished && master?.publishedVersion === master?.version && !cuesDirty
   const publishLabel = upToDate ? 'Publicerad' : hasPublished ? 'Publicera ändringar' : 'Godkänn och publicera'
   const publishBlocked = draftInfo ? approveBlockedReason(draftInfo) : null
   const issues = useMemo(() => validateCues(cues), [cues])
@@ -296,28 +340,17 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     return () => observer.disconnect()
   }, [listElement])
 
-  // UNG-228: kapitlen (punkter och personer med position) hämtas en gång och visas som egna rader bland replikerna. Skrivskyddat än så länge.
-  const [chapterInputs, setChapterInputs] = useState<Chapter[]>([])
-  const [showChapters, setShowChapters] = useState(true)
-  useEffect(() => {
-    let cancelled = false
-    client.projects.chapters(projectId).then(
-      (list) => { if (!cancelled) setChapterInputs(list) },
-      () => { if (!cancelled) setChapterInputs([]) },
-    )
-    return () => { cancelled = true }
-  }, [projectId])
-  const allChapters = useMemo(() => positionedChapters(chapterInputs), [chapterInputs])
+  // UNG-228: kapitlen visas som egna rader bland replikerna.
   // Ordgranskningsläget (Word) har låsta rader och egen navigering: där visas inga kapitel.
-  const chaptersVisible = showChapters && allChapters.length > 0 && review === null
-  const listRows = useMemo(() => (chaptersVisible ? mergeRows(cues, allChapters) : null), [chaptersVisible, cues, allChapters])
+  const chaptersVisible = showChapters && chapterState === 'ok' && chapterList.length > 0 && review === null
+  const listRows = useMemo(() => (chaptersVisible ? mergeRows(cues, chapterList) : null), [chaptersVisible, cues, chapterList])
 
   // UNG-227/228: listans geometri som en layout: en rad per replik, med kapitelrader emellan när de visas.
   const layout = useMemo(
     () => (listRows ? chapterLayout(cues, listRows, ROW_HEIGHT, CHAPTER_ROW_HEIGHT) : uniformCueLayout(cues, ROW_HEIGHT)),
     [cues, listRows],
   )
-  const nowChapters = useMemo(() => currentChapters(allChapters, currentTime), [allChapters, currentTime])
+  const nowChapters = useMemo(() => currentChapters(chapterList, currentTime), [chapterList, currentTime])
   const chapterMarks = useMemo<ChapterMark[]>(() => {
     if (!listRows) return []
     const marks: ChapterMark[] = []
@@ -335,7 +368,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     return marks
   }, [listRows, nowChapters])
   // Punkten och personen vid listans övre kant: det man läser just nu. (Kapitelrader ligger kvar som rubrik överst.)
-  const topChapters = chaptersVisible ? currentChapters(allChapters, timeAtRow(layout.spans, rowPosition(layout, scrollTop)) + 0.001) : null
+  const topChapters = chaptersVisible ? currentChapters(chapterList, timeAtRow(layout.spans, rowPosition(layout, scrollTop)) + 0.001) : null
   const { first, last } = windowRows(layout, scrollTop, viewportHeight)
 
   function revealRow(index: number) {
@@ -395,13 +428,13 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   }
 
   // Skrivning i en ruta är en ändring för sig: den sparas i historiken när rutan lämnas (eller vid ångra), inte per tecken.
-  function commitTypingTo(base: History<EditCue[]>): History<EditCue[]> {
+  function commitTypingTo(base: History<Snapshot>): History<Snapshot> {
     const typing = focusBase.current
     focusBase.current = null
     if (!typing) return base
     const before = typing.cues.find((cue) => cue.id === typing.id)
     const now = cues.find((cue) => cue.id === typing.id)
-    return before && now && before.text !== now.text ? record(base, typing.cues) : base
+    return before && now && before.text !== now.text ? record(base, { cues: typing.cues, chapters: chapterList }) : base
   }
 
   function apply(result: OpResult): boolean {
@@ -410,29 +443,78 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
       return false
     }
     setNotice('')
-    setHistory(record(commitTypingTo(history), cues))
+    setHistory(record(commitTypingTo(history), { cues, chapters: chapterList }))
     setCues(derive(result.cues))
     focusRow(result.focusIndex, result.caret)
     return true
   }
 
+  // UNG-229: en ändring av kapitlen är ett steg i samma historik som ändringar av replikerna.
+  function applyChapters(next: EditorChapter[]) {
+    setNotice('')
+    setHistory(record(commitTypingTo(history), { cues, chapters: chapterList }))
+    setChapterList(sortChapters(next))
+  }
+
+  function chapterHere(id: string) {
+    if (readOnly) return
+    applyChapters(setChapterTime(chapterList, id, playhead()))
+  }
+
+  function chapterDelete(id: string) {
+    if (readOnly) return
+    if (editingChapter === id) setEditingChapter(null)
+    applyChapters(removeChapter(chapterList, id))
+  }
+
+  function beginChapterEdit(chapter: EditorChapter) {
+    if (readOnly) return
+    chapterEditFinished.current = false
+    setEditingChapter(chapter.id)
+    setChapterDraft(chapter.label)
+  }
+
+  function finishChapterEdit(commit: boolean) {
+    if (chapterEditFinished.current) return
+    chapterEditFinished.current = true
+    const id = editingChapter
+    setEditingChapter(null)
+    if (!commit || id === null) return
+    const label = chapterDraft.trim()
+    const current = chapterList.find((chapter) => chapter.id === id)
+    if (current && label !== '' && label !== current.label) applyChapters(renameChapter(chapterList, id, label))
+  }
+
+  function addChapterHere() {
+    if (readOnly) return
+    newChapterCounter.current += 1
+    const fallback = addKind === 'agendaItem' ? 'Ny punkt' : 'Ny person'
+    applyChapters(addChapterTo(chapterList, { id: `${NEW_CHAPTER_PREFIX}${newChapterCounter.current}`, kind: addKind, label: addLabel.trim() || fallback, time: playhead() }))
+    setAddLabel('')
+    setAddChapterOpen(false)
+  }
+
   function doUndo() {
     const base = commitTypingTo(history)
-    const result = undo(base, cues)
+    const result = undo(base, { cues, chapters: chapterList })
     if (!result) {
       setHistory(base)
       return
     }
     setHistory(result.history)
-    setCues(derive(result.value))
+    setCues(derive(result.value.cues))
+    setChapterList(result.value.chapters)
+    setEditingChapter(null)
     setNotice('')
   }
 
   function doRedo() {
-    const result = redo(history, cues)
+    const result = redo(history, { cues, chapters: chapterList })
     if (!result) return
     setHistory(result.history)
-    setCues(derive(result.value))
+    setCues(derive(result.value.cues))
+    setChapterList(result.value.chapters)
+    setEditingChapter(null)
     setNotice('')
   }
 
@@ -477,7 +559,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
       return
     }
     const built = buildReview(result, newId)
-    setHistory(record(commitTypingTo(history), cues))
+    setHistory(record(commitTypingTo(history), { cues, chapters: chapterList }))
     setCues(derive(built.cues))
     setReview(built.review)
     setFromWord(true)
@@ -500,7 +582,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   }
 
   function discardWordReview() {
-    setHistory(record(commitTypingTo(history), cues))
+    setHistory(record(commitTypingTo(history), { cues, chapters: chapterList }))
     setCues(derive(saved))
     setReview(null)
     setFromWord(false)
@@ -544,7 +626,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     dragBase.current = null
     setDragBoundary(null)
     if (!base || cuesRef.current === base) return
-    setHistory(record(commitTypingTo(history), base))
+    setHistory(record(commitTypingTo(history), { cues: base, chapters: chapterList }))
   }
 
   // Start (gränsen) vid en tid utan att texten flödar: Starta här och nudge.
@@ -631,7 +713,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   // ---- Spara och stäng ----
   // Sparar och ger den nya mastern (eller null om något hindrade eller gick fel).
   async function saveMaster(): Promise<CaptionMaster | null> {
-    if (!master || !dirty || saving || readOnly) return null
+    if (!master || !cuesDirty || saving || readOnly) return null
     const error = issues.find((issue) => issue.error)
     if (error) {
       setNotice(`Replik ${error.index + 1}: ${error.message}`)
@@ -655,8 +737,43 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     }
   }
 
+  // UNG-229: kapitlen sparas som utkast (ett anrop per ändring). Misslyckas något läses det servern har om, så att det som återstår går att spara igen.
+  async function saveChapters(): Promise<boolean> {
+    if (chapterChangeTotal(chapterChanges) === 0) return true
+    setSaving(true)
+    setSaveError('')
+    try {
+      for (const id of chapterChanges.removed) await client.projects.deleteDraftChapter(projectId, id)
+      for (const item of chapterChanges.changed) {
+        await client.projects.updateDraftChapter(projectId, item.id, {
+          ...(item.label !== undefined ? { label: item.label } : {}),
+          ...(item.time !== undefined ? { offsetSeconds: item.time } : {}),
+        })
+      }
+      for (const item of chapterChanges.added) await client.projects.addChapter(projectId, { kind: item.kind as CueKind, label: item.label, offsetSeconds: item.time })
+      const fresh = positionedChapters(await client.projects.chapters(projectId))
+      setChapterList(fresh)
+      setSavedChapters(fresh)
+      setHistory(emptyHistory())
+      setNotice('Kapitlen är sparade som utkast och går live först när du publicerar ondemand.')
+      onChaptersSaved?.()
+      return true
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Kapitlen kunde inte sparas.')
+      try {
+        setSavedChapters(positionedChapters(await client.projects.chapters(projectId)))
+      } catch {
+        // Det som servern har går inte att läsa nu; arbetskopian ligger kvar.
+      }
+      return false
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function save() {
-    await saveMaster()
+    if (cuesDirty && !(await saveMaster())) return
+    if (chaptersDirty) await saveChapters()
   }
 
   // Skapa på nytt: startar ett nytt jobb från ljudet. Det nya utkastet ersätter arbetsversionen (den gamla finns kvar som tidigare version)
@@ -684,11 +801,12 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     setSaveError('')
     try {
       let version = master.version
-      if (dirty) {
+      if (cuesDirty) {
         const saved = await saveMaster()
         if (!saved) return
         version = saved.version
       }
+      if (chaptersDirty && !(await saveChapters())) return
       await client.projects.approveCaptionDraft(projectId, version)
       await load()
       onSaved?.()
@@ -1033,30 +1151,66 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
           </section>
 
           <section class="ce-list-wrap" aria-label="Repliker">
-            {allChapters.length > 0 && review === null && (
+            {chapterState === 'ok' && review === null && (
               <div class="ce-chapterbar">
-                <button
-                  class={`ce-chip${showChapters ? ' is-on' : ''}`}
-                  type="button"
-                  aria-pressed={showChapters}
-                  title={showChapters ? 'Dölj kapitlen i listan' : 'Visa kapitlen i listan'}
-                  onClick={() => setShowChapters(!showChapters)}
-                >
-                  Kapitel · {allChapters.length}
-                </button>
+                {chapterList.length > 0 && (
+                  <button
+                    class={`ce-chip${showChapters ? ' is-on' : ''}`}
+                    type="button"
+                    aria-pressed={showChapters}
+                    onClick={() => setShowChapters(!showChapters)}
+                  >
+                    Kapitel · {chapterList.length}
+                  </button>
+                )}
+                {!readOnly && (
+                  <button class="ce-chip" type="button" aria-expanded={addChapterOpen} onClick={() => setAddChapterOpen(!addChapterOpen)}>
+                    + Kapitel här
+                  </button>
+                )}
                 {topChapters && (
                   <span class="ce-chapterbar-now" aria-live="polite">
                     {topChapters.agenda ? (
                       <>
                         <span class="ce-chapterbar-kind">Punkt</span>
-                        <span class="ce-chapterbar-label" title={topChapters.agenda.label}>{topChapters.agenda.label}</span>
-                        {topChapters.person && <span class="ce-chapterbar-person" title={topChapters.person.label}>· {topChapters.person.label}</span>}
+                        <span class="ce-chapterbar-label">{topChapters.agenda.label}</span>
+                        {topChapters.person && <span class="ce-chapterbar-person">· {topChapters.person.label}</span>}
                       </>
                     ) : (
                       <span class="ce-chapterbar-none">Före första kapitlet</span>
                     )}
                   </span>
                 )}
+              </div>
+            )}
+            {chapterState === 'ok' && review === null && addChapterOpen && !readOnly && (
+              <div class="ce-addchapter">
+                <div class="ce-addchapter-kind" role="group" aria-label="Typ av kapitel">
+                  <button class={`ce-chip${addKind === 'agendaItem' ? ' is-on' : ''}`} type="button" aria-pressed={addKind === 'agendaItem'} onClick={() => setAddKind('agendaItem')}>Punkt</button>
+                  <button class={`ce-chip${addKind === 'person' ? ' is-on' : ''}`} type="button" aria-pressed={addKind === 'person'} onClick={() => setAddKind('person')}>Person</button>
+                </div>
+                <input
+                  class="ce-addchapter-name"
+                  type="text"
+                  value={addLabel}
+                  placeholder={addKind === 'agendaItem' ? 'Namn på punkten' : 'Personens namn'}
+                  aria-label="Kapitlets namn"
+                  onInput={(event) => setAddLabel(event.currentTarget.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      addChapterHere()
+                    } else if (event.key === 'Escape') {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      setAddChapterOpen(false)
+                    }
+                  }}
+                />
+                <button class="btn btn-sm btn-primary" type="button" onClick={addChapterHere}>
+                  Lägg till vid {formatCueTime(currentTime)}
+                </button>
+                <button class="btn btn-sm" type="button" onClick={() => setAddChapterOpen(false)}>Avbryt</button>
               </div>
             )}
             <div class="ce-list-head" aria-hidden="true" style={energy ? { marginLeft: `${WAVEFORM_WIDTH}px` } : undefined}>
@@ -1116,21 +1270,54 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                         style={{ top: `${layout.top(rowIndex)}px`, height: `${layout.height(rowIndex)}px` }}
                       >
                         <span />
-                        <div class="ce-chrow-main" title={chapter.label}>
+                        <div class="ce-chrow-main">
                           <span class="ce-chrow-kind">{chapterKindText(chapter.kind)}</span>
-                          <span class="ce-chrow-label">{chapter.label}</span>
+                          {editingChapter === chapter.id ? (
+                            <input
+                              class="ce-chrow-input"
+                              type="text"
+                              value={chapterDraft}
+                              aria-label="Kapitlets namn"
+                              ref={(element) => { if (element && !chapterEditFinished.current) element.focus() }}
+                              onInput={(event) => setChapterDraft(event.currentTarget.value)}
+                              onBlur={() => finishChapterEdit(true)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                  event.preventDefault()
+                                  finishChapterEdit(true)
+                                } else if (event.key === 'Escape') {
+                                  event.preventDefault()
+                                  event.stopPropagation()
+                                  finishChapterEdit(false)
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span class="ce-chrow-label" onDblClick={() => beginChapterEdit(chapter)}>{chapter.label}</span>
+                          )}
                         </div>
                         <span />
                         <button
                           class="ce-time"
                           type="button"
                           tabIndex={-1}
-                          title="Spela från kapitlet"
+                          aria-label={`Spela från kapitlet ${chapter.label}`}
                           onClick={() => seekTo(chapter.time, true)}
                         >
                           {formatCueTime(chapter.time)}
                         </button>
-                        <span />
+                        {!readOnly ? (
+                          <div class="ce-row-actions">
+                            <button class="ce-icon" type="button" tabIndex={-1} aria-label={`Sätt ${chapter.label} till videons position`} onClick={() => chapterHere(chapter.id)}>
+                              <Icon name="my_location" size={16} />
+                            </button>
+                            <button class="ce-icon" type="button" tabIndex={-1} aria-label={`Ta bort ${chapter.label}`} onClick={() => chapterDelete(chapter.id)}>
+                              <Icon name="delete" size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <span />
+                        )}
                       </div>
                     )
                   }

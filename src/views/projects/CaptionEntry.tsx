@@ -10,11 +10,13 @@ interface CaptionEntryProps {
   videoDurationSeconds?: number
   posterUrl?: string | null
   onChanged: () => void
+  /** Kapitel sparades i redigeraren. */
+  onChaptersChanged?: () => void
 }
 
 // UNG-165: knappen ovanför videofönstret som leder direkt till att skapa eller redigera undertexter. Etiketten följer serverns läge
 // (skapa, genererar n %, redigera). Knappen äger också studion (redigeraren med skapandet som overlay) och dess öppna/stängda läge.
-export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged }: CaptionEntryProps) {
+export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged }: CaptionEntryProps) {
   const captions = useCaptionGeneration(projectId)
   // Öppnas direkt när man kommit hit via knappen i projektlistan.
   const [open, setOpen] = useState(() => consumeCaptionStudio(projectId))
@@ -43,6 +45,7 @@ export function CaptionEntry({ projectId, projectName, videoDurationSeconds, pos
           setGeneration={captions.setGeneration}
           refresh={captions.refresh}
           onChanged={onChanged}
+          onChaptersChanged={onChaptersChanged}
           onClose={() => {
             setOpen(false)
             void captions.refresh()

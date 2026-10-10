@@ -880,3 +880,53 @@ button.ce-time:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ---- UNG-229: redigera kapitel ---- */
+.ce-chrow:hover .ce-row-actions,
+.ce-chrow:focus-within .ce-row-actions {
+  visibility: visible;
+}
+
+.ce-chrow-label {
+  cursor: text;
+}
+
+.ce-chrow-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 2px 6px;
+  font: inherit;
+  color: var(--ink);
+  background: var(--field-bg);
+  border: 1px solid var(--focus);
+  border-radius: 4px;
+}
+
+.ce-addchapter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.ce-addchapter-kind {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.ce-addchapter-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--field-bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
