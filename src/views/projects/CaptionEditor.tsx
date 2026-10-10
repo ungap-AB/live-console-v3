@@ -12,8 +12,9 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import { formatHms } from '../../app/time'
 import {
-  activeCueIndex, formatCueTime, rangeStatus, savePayload, scrollToReveal, windowRange,
+  activeCueIndex, formatCueTime, rangeStatus, savePayload,
 } from './captionEditorLogic'
+import { scrollToRevealRow, uniformCueLayout, windowRows } from './rowLayout'
 import {
   LONG_GAP_SECONDS, addCue, deleteCue, diffState, mergeInfo, mergeWithNext, shiftFrom,
   newCueTime, sortedForSave, splitCue, validateCues, withoutEmpty, type EditCue, type OpResult,
@@ -292,12 +293,14 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     return () => observer.disconnect()
   }, [listElement])
 
-  const { first, last } = windowRange(scrollTop, viewportHeight, ROW_HEIGHT, cues.length)
+  // UNG-227: listans geometri som en layout (idag en rad per replik, alla lika höga).
+  const layout = useMemo(() => uniformCueLayout(cues, ROW_HEIGHT), [cues])
+  const { first, last } = windowRows(layout, scrollTop, viewportHeight)
 
   function revealRow(index: number) {
     const element = listRef.current
     if (!element) return
-    const next = scrollToReveal(index, element.scrollTop, element.clientHeight, ROW_HEIGHT)
+    const next = scrollToRevealRow(layout, layout.cueRow(index), element.scrollTop, element.clientHeight)
     if (next !== element.scrollTop) {
       element.scrollTop = next
       setScrollTop(next)
@@ -999,7 +1002,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                 energy={energy}
                 scrollTop={scrollTop}
                 height={viewportHeight}
-                rowHeight={ROW_HEIGHT}
+                layout={layout}
                 selectedIndex={selectedIndex}
                 activeIndex={activeIndex}
                 getTime={playhead}
@@ -1030,7 +1033,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                 if (event.target === event.currentTarget) stopFollowing()
               }}
             >
-              <div class="ce-spacer" style={{ height: `${cues.length * ROW_HEIGHT}px` }}>
+              <div class="ce-spacer" style={{ height: `${layout.total}px` }}>
                 {cues.slice(first, last).map((cue, offset) => {
                   const index = first + offset
                   const status = rangeStatus(cue, publishedStart, publishedEnd)
@@ -1055,7 +1058,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                     wordBadgeText ? 'has-wordbadge' : '',
                   ].filter(Boolean).join(' ')
                   return (
-                    <div key={cue.id} class={classes} style={{ top: `${index * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}>
+                    <div key={cue.id} class={classes} style={{ top: `${layout.top(layout.cueRow(index))}px`, height: `${layout.height(layout.cueRow(index))}px` }}>
                       <div
                         class="ce-playcol"
                         role="button"

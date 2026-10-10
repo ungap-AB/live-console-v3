@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef } from 'preact/hooks'
 import type { CaptionEnergy } from '../../data/types'
 import {
-  bandProfile, cueIndexAt, grabRole, snapToSpeech, speechThreshold, timeToY, viewWindow, visibleSpans, yToTime, type CueSpan, type GrabRole, type TimeWindow,
+  bandProfile, cueIndexAt, grabRole, snapToSpeech, speechThreshold, timeToY, viewWindowForLayout, visibleSpans, yToTime, type CueSpan, type GrabRole, type TimeWindow,
 } from './captionWaveformLogic'
+import { rowPosition, type RowLayout } from './rowLayout'
 
 /** Bredd på vågformsbandet och på solfjädern med kopplingslinjer mellan bandet och raderna (CSS-pixlar). */
 export const BAND_WIDTH = 84
@@ -17,7 +18,8 @@ interface CaptionWaveformProps {
   energy: CaptionEnergy
   scrollTop: number
   height: number
-  rowHeight: number
+  /** Listans geometri (UNG-227): radernas överkant och höjd. Replikindex är oförändrat, men raderna kan vara fler än replikerna. */
+  layout: RowLayout
   selectedIndex: number
   activeIndex: number
   /** Videons position i originalets tid; läses vid varje ritning så att spelhuvudet är jämnt under uppspelning. */
@@ -55,8 +57,8 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
   const hovered = useRef<number | null>(null)
 
   const currentWindow = () => {
-    const { cues, scrollTop, height, rowHeight } = latest.current
-    return frozen.current ?? viewWindow(cues, scrollTop, height, rowHeight)
+    const { scrollTop, height, layout } = latest.current
+    return frozen.current ?? viewWindowForLayout(layout, scrollTop, height)
   }
 
   // Ett fel i ritningen ska aldrig stoppa resten av redigeraren: det loggas och bandet ritas om vid nästa rendering.
@@ -72,7 +74,7 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
     if (!canvas || !ctx) return
-    const { cues, energy, scrollTop, height, rowHeight, selectedIndex, activeIndex, getTime, publishedStart, publishedEnd } = latest.current
+    const { cues, energy, scrollTop, height, layout, selectedIndex, activeIndex, getTime, publishedStart, publishedEnd } = latest.current
     if (height <= 0) return
     const dpr = window.devicePixelRatio || 1
     const pixelHeight = Math.round(height * dpr)
@@ -174,10 +176,12 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     }
 
     // Kopplingslinjer från radgränserna i listan (strecket ovanför varje rad) till gränsernas lägen i bandet.
-    const firstRow = Math.max(0, Math.floor(scrollTop / rowHeight))
-    const lastRow = Math.min(cues.length - 1, Math.ceil((scrollTop + height) / rowHeight))
-    const link = (index: number) => ({ band: startY(index), row: index * rowHeight - scrollTop })
-    for (let index = firstRow; index <= lastRow; index++) {
+    const firstRow = Math.max(0, Math.floor(rowPosition(layout, scrollTop)))
+    const lastRow = Math.min(layout.count - 1, Math.ceil(rowPosition(layout, scrollTop + height)))
+    const link = (index: number) => ({ band: startY(index), row: layout.top(layout.cueRow(index)) - scrollTop })
+    for (let rowIndex = firstRow; rowIndex <= lastRow; rowIndex++) {
+      const index = layout.cueIndex(rowIndex)
+      if (index < 0) continue
       const { band, row } = link(index)
       if (band < -30 || band > height + 30) continue // utanför fönstret (fokusläge): ingen linje
       const strong = index === startLine || index === endLine || index === emphasisedBoundary
@@ -195,7 +199,8 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     for (const index of [activeIndex, selectedIndex]) {
       if (index < 0 || index >= cues.length) continue
       const top = link(index)
-      const next = cues[index + 1] ? link(index + 1) : { band: timeToY(cues[index].end, win, height), row: (index + 1) * rowHeight - scrollTop }
+      const ownRow = layout.cueRow(index)
+      const next = cues[index + 1] ? link(index + 1) : { band: timeToY(cues[index].end, win, height), row: layout.top(ownRow) + layout.height(ownRow) - scrollTop }
       ctx.globalAlpha = index === selectedIndex ? 0.2 : 0.1
       ctx.fillStyle = focus
       ctx.beginPath()

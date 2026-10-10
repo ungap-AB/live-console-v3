@@ -3,6 +3,7 @@
 // som bandet visar härleds ur listans scrollposition, och kopplingslinjer översätter mellan axlarna.
 
 import type { CaptionEnergy } from '../../data/types'
+import { rowPosition, uniformCueLayout, type RowLayout } from './rowLayout.ts'
 
 export interface CueSpan {
   start: number
@@ -39,10 +40,20 @@ export function timeAtRow(cues: readonly CueSpan[], row: number): number {
  */
 export function viewWindow(cues: readonly CueSpan[], scrollTop: number, viewportHeight: number, rowHeight: number, minSeconds = 8): TimeWindow {
   if (cues.length === 0 || rowHeight <= 0) return { t0: 0, t1: minSeconds }
+  return viewWindowForLayout(uniformCueLayout(cues, rowHeight), scrollTop, viewportHeight, minSeconds)
+}
+
+/**
+ * Som viewWindow, men för en radlayout (UNG-227): raderna kan ha olika höjd och vara repliker eller kapitel. Tiden vid en y-position
+ * interpoleras mellan radernas ankartider i radrum, så en rad är lika "lång" i tid oavsett hur hög den är. Med enbart lika höga
+ * replikrader är resultatet detsamma som viewWindow.
+ */
+export function viewWindowForLayout(layout: RowLayout, scrollTop: number, viewportHeight: number, minSeconds = 8): TimeWindow {
+  if (layout.count === 0) return { t0: 0, t1: minSeconds }
   // Överst i listan går bandet en rad längre upp (ljudet före första repliken); övergången är mjuk och försvinner efter en rads scroll.
-  const row = scrollTop / rowHeight
-  let t0 = timeAtRow(cues, row < 1 ? 2 * row - 1 : row)
-  let t1 = timeAtRow(cues, (scrollTop + viewportHeight) / rowHeight)
+  const row = rowPosition(layout, scrollTop)
+  let t0 = timeAtRow(layout.spans, row < 1 ? 2 * row - 1 : row)
+  let t1 = timeAtRow(layout.spans, rowPosition(layout, scrollTop + viewportHeight))
   if (t1 - t0 < minSeconds) {
     const middle = (t0 + t1) / 2
     t0 = middle - minSeconds / 2

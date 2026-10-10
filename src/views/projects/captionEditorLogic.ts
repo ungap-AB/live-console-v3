@@ -40,7 +40,7 @@ export function hasLineWarning(text: string): boolean {
   return lines.length > MAX_LINES || lines.some((line) => line.tooLong)
 }
 
-/** Fönster att rendera i en lång lista med fast radhöjd (virtualisering). Last är exklusivt. */
+/** Fönster att rendera i en lång lista med fast radhöjd (virtualisering). Last är exklusivt. Referens för rowLayout.windowRows (UNG-227). */
 export function windowRange(scrollTop: number, viewportHeight: number, rowHeight: number, total: number, overscan = 6): { first: number; last: number } {
   if (total <= 0 || rowHeight <= 0) return { first: 0, last: 0 }
   const first = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan)
@@ -48,7 +48,7 @@ export function windowRange(scrollTop: number, viewportHeight: number, rowHeight
   return { first: Math.min(first, total), last: Math.max(last, Math.min(first, total)) }
 }
 
-/** Scrollposition som gör rad index synlig (eller samma som idag om den redan syns). */
+/** Scrollposition som gör rad index synlig (eller samma som idag om den redan syns). Referens för rowLayout.scrollToRevealRow (UNG-227). */
 export function scrollToReveal(index: number, scrollTop: number, viewportHeight: number, rowHeight: number): number {
   const top = index * rowHeight
   const bottom = top + rowHeight
