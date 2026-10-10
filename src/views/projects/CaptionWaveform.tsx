@@ -271,22 +271,6 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
         }
       })
       ctx.globalAlpha = 1
-      // Namnflaggan för kapitellinjen som pekaren står på.
-      const flagged = hoveredChapter.current !== null ? marks[hoveredChapter.current] : undefined
-      if (flagged) {
-        const y = timeToY(flagged.time, win, height)
-        ctx.font = '600 11px system-ui, sans-serif'
-        let text = flagged.label
-        const maxWidth = WAVEFORM_WIDTH - 12
-        while (text.length > 1 && ctx.measureText(text).width > maxWidth - 10) text = text.slice(0, -1)
-        if (text !== flagged.label) text = `${text.trimEnd()}…`
-        const width = Math.min(maxWidth, ctx.measureText(text).width + 10)
-        const top = Math.min(height - 20, Math.max(2, y - 22))
-        ctx.fillStyle = color('--ink', '#1c2430')
-        ctx.fillRect(4, top, width, 18)
-        ctx.fillStyle = '#fff'
-        ctx.fillText(text, 9, top + 13)
-      }
     }
 
     // Placeringen (UNG-184): en tunn streckad linje med en liten spets åt höger, på det ställe mellanslag spelar från.

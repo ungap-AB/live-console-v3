@@ -936,3 +936,19 @@ button.ce-time:hover {
   outline: 2px solid color-mix(in srgb, var(--live) 70%, transparent);
   outline-offset: -2px;
 }
+
+/* ---- UNG-231: bara kapitel ---- */
+.ce-chrow.is-child .ce-chrow-main {
+  padding-left: 24px;
+}
+
+.ce-chrow-toggle {
+  justify-self: center;
+}
+
+.ce-chrow-count {
+  flex: none;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-3);
+}

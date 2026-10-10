@@ -15,6 +15,7 @@ import {
   activeCueIndex, formatCueTime, rangeStatus, savePayload,
 } from './captionEditorLogic'
 import { rowPosition, scrollToRevealRow, uniformCueLayout, windowRows } from './rowLayout'
+import { chapterGroupInfo, collapsibleGroupIds, visibleChapters } from './chapterGroups'
 import {
   LONG_GAP_SECONDS, addCue, deleteCue, diffState, mergeInfo, mergeWithNext, shiftFrom,
   newCueTime, sortedForSave, splitCue, validateCues, withoutEmpty, type EditCue, type OpResult,
@@ -124,6 +125,12 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   const [chapterList, setChapterList] = useState<EditorChapter[]>([])
   const [savedChapters, setSavedChapters] = useState<EditorChapter[]>([])
   const [showChapters, setShowChapters] = useState(true)
+  // UNG-231: filtret Undertexter. Med bara Kapitel på blir listan en kompakt översikt utan vågform, där talarna är grupperade under sin punkt
+  // och hopfällda tills man öppnar punkten.
+  const [showCues, setShowCues] = useState(true)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set())
+  // Tiden vid listans övre kant när läget byts, så att listan hamnar på samma ställe i det nya läget.
+  const modeScrollTime = useRef<number | null>(null)
   const [editingChapter, setEditingChapter] = useState<string | null>(null)
   const [chapterDraft, setChapterDraft] = useState('')
   const [addChapterOpen, setAddChapterOpen] = useState(false)
@@ -348,14 +355,52 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
 
   // UNG-228: kapitlen visas som egna rader bland replikerna.
   // Ordgranskningsläget (Word) har låsta rader och egen navigering: där visas inga kapitel.
-  const chaptersVisible = showChapters && chapterState === 'ok' && chapterList.length > 0 && review === null
-  const listRows = useMemo(() => (chaptersVisible ? mergeRows(cues, chapterList) : null), [chaptersVisible, cues, chapterList])
+  const chaptersAvailable = chapterState === 'ok' && chapterList.length > 0 && review === null
+  const chaptersVisible = showChapters && chaptersAvailable
+  const chaptersOnly = chaptersVisible && !showCues
+  const listRows = useMemo(() => (chaptersVisible && !chaptersOnly ? mergeRows(cues, chapterList) : null), [chaptersVisible, chaptersOnly, cues, chapterList])
 
-  // UNG-227/228: listans geometri som en layout: en rad per replik, med kapitelrader emellan när de visas.
-  const layout = useMemo(
-    () => (listRows ? chapterLayout(cues, listRows, ROW_HEIGHT, CHAPTER_ROW_HEIGHT) : uniformCueLayout(cues, ROW_HEIGHT)),
-    [cues, listRows],
-  )
+  // UNG-231: bara kapitel. Talarna hör till punkten före dem (lös gruppering ur tidsordningen) och är hopfällda tills punkten öppnas.
+  // Ett markerat kapitel håller sin grupp öppen.
+  const chapterOnlyRows = useMemo(() => {
+    if (!chaptersOnly) return []
+    const items = chapterList.map((chapter) => ({ chapterId: chapter.id, kind: chapter.kind }))
+    const info = chapterGroupInfo(items)
+    const collapsed = new Set(collapsibleGroupIds(items).filter((id) => !expandedGroups.has(id)))
+    const visible = visibleChapters(items, collapsed, [selectedChapterId])
+    const rows: { chapter: EditorChapter; group: { toggle?: { open: boolean; count: number; onToggle: () => void }; child?: boolean } }[] = []
+    chapterList.forEach((chapter, index) => {
+      if (!visible[index]) return
+      const entry = info[index]
+      if (entry.isHeader && entry.childCount > 0) {
+        const open = !collapsed.has(chapter.id)
+        rows.push({
+          chapter,
+          group: {
+            toggle: {
+              open,
+              count: entry.childCount,
+              onToggle: () => setExpandedGroups((current) => {
+                const next = new Set(current)
+                if (next.has(chapter.id)) next.delete(chapter.id)
+                else next.add(chapter.id)
+                return next
+              }),
+            },
+          },
+        })
+      } else {
+        rows.push({ chapter, group: { child: entry.groupId !== null && !entry.isHeader } })
+      }
+    })
+    return rows
+  }, [chaptersOnly, chapterList, expandedGroups, selectedChapterId])
+
+  // UNG-227/228/231: listans geometri som en layout: en rad per replik (med kapitelrader emellan när de visas), eller bara kapitelrader.
+  const layout = useMemo(() => {
+    if (chaptersOnly) return uniformCueLayout(chapterOnlyRows.map((row) => ({ start: row.chapter.time, end: row.chapter.time })), CHAPTER_ROW_HEIGHT)
+    return listRows ? chapterLayout(cues, listRows, ROW_HEIGHT, CHAPTER_ROW_HEIGHT) : uniformCueLayout(cues, ROW_HEIGHT)
+  }, [cues, listRows, chaptersOnly, chapterOnlyRows])
   const nowChapters = useMemo(() => currentChapters(chapterList, currentTime), [chapterList, currentTime])
   const chapterMarks = useMemo<ChapterMark[]>(() => {
     if (!listRows) return []
@@ -381,13 +426,34 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
 
   function revealRow(index: number) {
     const element = listRef.current
-    if (!element) return
+    if (!element || chaptersOnly) return
     const next = scrollToRevealRow(layout, layout.cueRow(index), element.scrollTop, element.clientHeight)
     if (next !== element.scrollTop) {
       element.scrollTop = next
       setScrollTop(next)
     }
   }
+
+  // UNG-231: byte mellan lägena (båda, bara kapitel, bara undertexter) behåller platsen i mötet: tiden vid listans övre kant i det gamla
+  // läget blir listans övre kant i det nya. Minst ett av filtren är alltid på.
+  function changeFilter(next: { cues: boolean; chapters: boolean }) {
+    modeScrollTime.current = timeAtRow(layout.spans, rowPosition(layout, scrollTop))
+    setShowCues(next.cues)
+    setShowChapters(next.chapters)
+  }
+
+  useEffect(() => {
+    const time = modeScrollTime.current
+    if (time === null) return
+    modeScrollTime.current = null
+    const element = listRef.current
+    if (!element || layout.count === 0) return
+    // Första raden vars ankartid ligger vid eller efter tiden (annars sista raden).
+    let row = layout.spans.findIndex((span) => span.start >= time - 0.001)
+    if (row < 0) row = layout.count - 1
+    element.scrollTop = layout.top(row)
+    setScrollTop(element.scrollTop)
+  }, [chaptersOnly, chaptersVisible])
 
   // Raden får fokus (och markören sin plats) så snart den finns i listan, efter att den scrollats fram vid behov.
   function focusRow(index: number, caret?: number) {
@@ -905,7 +971,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
         const element = event.target instanceof HTMLElement ? event.target : null
         const kind = element ? tabTargetKind(element.tagName, (selector) => element.closest(selector) !== null) : 'surface'
         const otherDialogOpen = document.querySelectorAll('[role="dialog"]').length > 1
-        if (shouldCaptureTab(event, kind, otherDialogOpen) && cues.length > 0) {
+        if (shouldCaptureTab(event, kind, otherDialogOpen) && cues.length > 0 && !chaptersOnly) {
           event.preventDefault()
           tabFrom(tabOriginIndex(activeIndex, selectedIndex, null), event.shiftKey)
         }
@@ -982,6 +1048,90 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   function parsedShift(): number | null {
     const value = Number.parseFloat(shiftInput.replace(',', '.'))
     return Number.isFinite(value) && value !== 0 ? value : null
+  }
+
+  // En kapitelrad (UNG-228/229/231). group = rubrik med hopfällbara talare (bara-kapitel-läget) eller en talare under en punkt.
+  function renderChapterRow(
+    chapter: EditorChapter,
+    rowIndex: number,
+    group?: { toggle?: { open: boolean; count: number; onToggle: () => void }; child?: boolean },
+  ) {
+    const isCurrent = chapter.id === nowChapters.agenda?.id || chapter.id === nowChapters.person?.id
+    const shownTime = chapterDragTime?.id === chapter.id ? chapterDragTime.time : chapter.time
+    const outside = publishedStart !== undefined && publishedEnd !== undefined && (shownTime < publishedStart || shownTime > publishedEnd)
+    const agenda = chapter.kind === 'agendaItem'
+    return (
+      <div
+        key={`chapter-${chapter.id}`}
+        class={`ce-chrow${agenda ? ' is-agenda' : ''}${group?.child ? ' is-child' : ''}${isCurrent ? ' is-current' : ''}${outside ? ' is-outside' : ''}${selectedChapterId === chapter.id ? ' is-selected' : ''}`}
+        style={{ top: `${layout.top(rowIndex)}px`, height: `${layout.height(rowIndex)}px` }}
+        onPointerDown={() => setSelectedChapterId(chapter.id)}
+      >
+        {group?.toggle ? (
+          <button
+            class="ce-icon ce-chrow-toggle"
+            type="button"
+            tabIndex={-1}
+            aria-expanded={group.toggle.open}
+            aria-label={`${group.toggle.open ? 'Dölj' : 'Visa'} talarna under ${chapter.label}`}
+            onClick={group.toggle.onToggle}
+          >
+            <Icon name={group.toggle.open ? 'expand_more' : 'chevron_right'} size={18} />
+          </button>
+        ) : (
+          <span />
+        )}
+        <div class="ce-chrow-main">
+          <span class="ce-chrow-kind">{chapterKindText(chapter.kind)}</span>
+          {editingChapter === chapter.id ? (
+            <input
+              class="ce-chrow-input"
+              type="text"
+              value={chapterDraft}
+              aria-label="Kapitlets namn"
+              ref={(element) => { if (element && !chapterEditFinished.current) element.focus() }}
+              onInput={(event) => setChapterDraft(event.currentTarget.value)}
+              onBlur={() => finishChapterEdit(true)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  finishChapterEdit(true)
+                } else if (event.key === 'Escape') {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  finishChapterEdit(false)
+                }
+              }}
+            />
+          ) : (
+            <span class="ce-chrow-label" onDblClick={() => beginChapterEdit(chapter)}>{chapter.label}</span>
+          )}
+          {group?.toggle && !group.toggle.open && <span class="ce-chrow-count">{group.toggle.count} talare</span>}
+        </div>
+        <span />
+        <button
+          class="ce-time"
+          type="button"
+          tabIndex={-1}
+          aria-label={`Spela från kapitlet ${chapter.label}`}
+          onClick={() => seekTo(chapter.time, true)}
+        >
+          {formatCueTime(shownTime)}
+        </button>
+        {!readOnly ? (
+          <div class="ce-row-actions">
+            <button class="ce-icon" type="button" tabIndex={-1} aria-label={`Sätt ${chapter.label} till videons position`} onClick={() => chapterHere(chapter.id)}>
+              <Icon name="my_location" size={16} />
+            </button>
+            <button class="ce-icon" type="button" tabIndex={-1} aria-label={`Ta bort ${chapter.label}`} onClick={() => chapterDelete(chapter.id)}>
+              <Icon name="delete" size={16} />
+            </button>
+          </div>
+        ) : (
+          <span />
+        )}
+      </div>
+    )
   }
 
   const publishedStart = master?.publishedStartSeconds
@@ -1206,14 +1356,25 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
             {chapterState === 'ok' && review === null && (
               <div class="ce-chapterbar">
                 {chapterList.length > 0 && (
-                  <button
-                    class={`ce-chip${showChapters ? ' is-on' : ''}`}
-                    type="button"
-                    aria-pressed={showChapters}
-                    onClick={() => setShowChapters(!showChapters)}
-                  >
-                    Kapitel · {chapterList.length}
-                  </button>
+                  <>
+                    {/* Minst ett av filtren är alltid på: släcks det ena när det andra redan är släckt händer ingenting. */}
+                    <button
+                      class={`ce-chip${showCues ? ' is-on' : ''}`}
+                      type="button"
+                      aria-pressed={showCues}
+                      onClick={() => { if (!showCues || showChapters) changeFilter({ cues: !showCues, chapters: true }) }}
+                    >
+                      Undertexter · {cues.length}
+                    </button>
+                    <button
+                      class={`ce-chip${showChapters ? ' is-on' : ''}`}
+                      type="button"
+                      aria-pressed={showChapters}
+                      onClick={() => { if (!showChapters || showCues) changeFilter({ cues: true, chapters: !showChapters }) }}
+                    >
+                      Kapitel · {chapterList.length}
+                    </button>
+                  </>
                 )}
                 {!readOnly && (
                   <button class="ce-chip" type="button" aria-expanded={addChapterOpen} onClick={() => setAddChapterOpen(!addChapterOpen)}>
@@ -1265,11 +1426,13 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                 <button class="btn btn-sm" type="button" onClick={() => setAddChapterOpen(false)}>Avbryt</button>
               </div>
             )}
-            <div class="ce-list-head" aria-hidden="true" style={energy ? { marginLeft: `${WAVEFORM_WIDTH}px` } : undefined}>
-              <span /><span>Text</span><span>#</span><span>Start</span><span />
-            </div>
+            {!chaptersOnly && (
+              <div class="ce-list-head" aria-hidden="true" style={energy ? { marginLeft: `${WAVEFORM_WIDTH}px` } : undefined}>
+                <span /><span>Text</span><span>#</span><span>Start</span><span />
+              </div>
+            )}
             <div class="ce-list-main">
-            {energy && (
+            {energy && !chaptersOnly && (
               <CaptionWaveform
                 cues={cues}
                 energy={energy}
@@ -1316,71 +1479,11 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
               <div class="ce-spacer" style={{ height: `${layout.total}px` }}>
                 {Array.from({ length: Math.max(0, last - first) }, (_, offset) => first + offset).map((rowIndex) => {
                   const listRow = listRows ? listRows[rowIndex] : null
-                  if (listRow && listRow.kind === 'chapter') {
-                    const { chapter } = listRow
-                    const isCurrent = chapter.id === nowChapters.agenda?.id || chapter.id === nowChapters.person?.id
-                    const shownTime = chapterDragTime?.id === chapter.id ? chapterDragTime.time : chapter.time
-                    const outside = publishedStart !== undefined && publishedEnd !== undefined && (shownTime < publishedStart || shownTime > publishedEnd)
-                    const agenda = chapter.kind === 'agendaItem'
-                    return (
-                      <div
-                        key={`chapter-${chapter.id}`}
-                        class={`ce-chrow${agenda ? ' is-agenda' : ''}${isCurrent ? ' is-current' : ''}${outside ? ' is-outside' : ''}${selectedChapterId === chapter.id ? ' is-selected' : ''}`}
-                        style={{ top: `${layout.top(rowIndex)}px`, height: `${layout.height(rowIndex)}px` }}
-                        onPointerDown={() => setSelectedChapterId(chapter.id)}
-                      >
-                        <span />
-                        <div class="ce-chrow-main">
-                          <span class="ce-chrow-kind">{chapterKindText(chapter.kind)}</span>
-                          {editingChapter === chapter.id ? (
-                            <input
-                              class="ce-chrow-input"
-                              type="text"
-                              value={chapterDraft}
-                              aria-label="Kapitlets namn"
-                              ref={(element) => { if (element && !chapterEditFinished.current) element.focus() }}
-                              onInput={(event) => setChapterDraft(event.currentTarget.value)}
-                              onBlur={() => finishChapterEdit(true)}
-                              onKeyDown={(event) => {
-                                if (event.key === 'Enter') {
-                                  event.preventDefault()
-                                  finishChapterEdit(true)
-                                } else if (event.key === 'Escape') {
-                                  event.preventDefault()
-                                  event.stopPropagation()
-                                  finishChapterEdit(false)
-                                }
-                              }}
-                            />
-                          ) : (
-                            <span class="ce-chrow-label" onDblClick={() => beginChapterEdit(chapter)}>{chapter.label}</span>
-                          )}
-                        </div>
-                        <span />
-                        <button
-                          class="ce-time"
-                          type="button"
-                          tabIndex={-1}
-                          aria-label={`Spela från kapitlet ${chapter.label}`}
-                          onClick={() => seekTo(chapter.time, true)}
-                        >
-                          {formatCueTime(shownTime)}
-                        </button>
-                        {!readOnly ? (
-                          <div class="ce-row-actions">
-                            <button class="ce-icon" type="button" tabIndex={-1} aria-label={`Sätt ${chapter.label} till videons position`} onClick={() => chapterHere(chapter.id)}>
-                              <Icon name="my_location" size={16} />
-                            </button>
-                            <button class="ce-icon" type="button" tabIndex={-1} aria-label={`Ta bort ${chapter.label}`} onClick={() => chapterDelete(chapter.id)}>
-                              <Icon name="delete" size={16} />
-                            </button>
-                          </div>
-                        ) : (
-                          <span />
-                        )}
-                      </div>
-                    )
+                  if (chaptersOnly) {
+                    const entry = chapterOnlyRows[rowIndex]
+                    return entry ? renderChapterRow(entry.chapter, rowIndex, entry.group) : null
                   }
+                  if (listRow && listRow.kind === 'chapter') return renderChapterRow(listRow.chapter, rowIndex)
                   const index = listRow ? listRow.index : rowIndex
                   const cue = cues[index]
                   if (!cue) return null
