@@ -13,7 +13,8 @@ export function spaceTargetKind(tagName: string, isContentEditable: boolean, mat
   const tag = tagName.toUpperCase()
   if (isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return 'text'
   if (tag === 'VIDEO') return 'video'
-  if (matches('.ce-time, .ce-playcol')) return 'playcontrol'
+  // Kapitelradens knappar (UNG-231) räknas hit: ett klick på dem lämnar fokus kvar, och mellanslag ska ändå växla uppspelningen.
+  if (matches('.ce-time, .ce-playcol, .ce-chrow')) return 'playcontrol'
   if (tag === 'BUTTON' || tag === 'A' || tag === 'SUMMARY' || matches('button, a, [role="button"]')) return 'button'
   return 'other'
 }
@@ -73,7 +74,8 @@ export function tabTargetKind(tagName: string, matches: (selector: string) => bo
   const tag = tagName.toUpperCase()
   if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return 'text'
   if (tag === 'BODY' || tag === 'HTML') return 'surface'
-  if (matches('video, .ce-wave, .ce-wave-slot, .ce-list')) return 'surface'
+  // Kapitelraden (UNG-231) är också en yta: Tab därifrån hoppar mellan kapitel/repliker som från listan.
+  if (matches('video, .ce-wave, .ce-wave-slot, .ce-list, .ce-chrow')) return 'surface'
   return 'other'
 }
 

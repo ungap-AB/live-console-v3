@@ -962,6 +962,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                         setHasUnpublishedChanges(true)
                         void reloadChaptersNow()
                       }}
+                      // Trimningen följer med in i redigeraren (samma tillstånd som trimvyn; tillämpas vid Publicera ondemand).
+                      trim={showTrimControls && !externalVideo ? { start: mockTrimStart, end: mockTrimEnd, onChange: changeTrim } : undefined}
                     />
                   ) : undefined}
                 />

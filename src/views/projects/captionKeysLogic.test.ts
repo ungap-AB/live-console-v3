@@ -75,8 +75,8 @@ test('Tab stannar vid första och sista raden och gör inget utan rader', () => 
 test('Tab fångas på ytor i redigeraren (video, vågform, listans bakgrund, tom fokus) men inte på knappar, fält eller i en annan dialog', () => {
   const tab = { key: 'Tab', ctrlKey: false, metaKey: false, altKey: false }
   assert.equal(tabTargetKind('BODY', none), 'surface')
-  assert.equal(tabTargetKind('VIDEO', only('video, .ce-wave, .ce-wave-slot, .ce-list')), 'surface')
-  assert.equal(tabTargetKind('CANVAS', only('video, .ce-wave, .ce-wave-slot, .ce-list')), 'surface')
+  assert.equal(tabTargetKind('VIDEO', only('video, .ce-wave, .ce-wave-slot, .ce-list, .ce-chrow')), 'surface')
+  assert.equal(tabTargetKind('CANVAS', only('video, .ce-wave, .ce-wave-slot, .ce-list, .ce-chrow')), 'surface')
   assert.equal(tabTargetKind('TEXTAREA', none), 'text')
   assert.equal(tabTargetKind('BUTTON', none), 'other')
   assert.equal(shouldCaptureTab(tab, 'surface', false), true)
@@ -85,4 +85,15 @@ test('Tab fångas på ytor i redigeraren (video, vågform, listans bakgrund, tom
   assert.equal(shouldCaptureTab(tab, 'surface', true), false)
   assert.equal(shouldCaptureTab({ ...tab, key: 'Enter' }, 'surface', false), false)
   assert.equal(shouldCaptureTab({ ...tab, ctrlKey: true }, 'surface', false), false)
+})
+
+// ---- UNG-231 ----
+test('knappar på en kapitelrad släpper igenom mellanslag som uppspelning och Tab som hopp', () => {
+  const inChapterRow = (selector: string) => selector.split(',').map((part) => part.trim()).includes('.ce-chrow')
+  assert.equal(spaceTargetKind('BUTTON', false, inChapterRow), 'playcontrol')
+  assert.equal(shouldTogglePlayback(space, spaceTargetKind('BUTTON', false, inChapterRow), false), true)
+  assert.equal(tabTargetKind('BUTTON', inChapterRow), 'surface')
+  // Namnfältet i raden är ett fält: det hanterar sina egna tangenter.
+  assert.equal(spaceTargetKind('INPUT', false, inChapterRow), 'text')
+  assert.equal(tabTargetKind('INPUT', inChapterRow), 'text')
 })

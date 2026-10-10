@@ -952,3 +952,11 @@ button.ce-time:hover {
   font-weight: 400;
   color: var(--ink-3);
 }
+
+/* ---- Trimning i redigeraren: reglage med Start här/Slut här och trimbalken under videon ---- */
+.ce-trim {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}

@@ -24,6 +24,10 @@ import { estimateSplitTime, moveBoundary } from './captionFlow'
 import { deriveTimes, speechRuns } from './captionTimingLogic'
 import { emptyHistory, record, redo, undo, type History } from './captionHistory'
 import { CaptionWaveform, WAVEFORM_WIDTH, type ChapterMark } from './CaptionWaveform'
+import { TrimBar } from '../../components/TrimBar'
+import { PositionScrubber } from '../../components/PositionScrubber'
+import { VideoPositionControls } from '../../components/VideoPositionControls'
+import { playEndFrom, type TrimRange } from '../../components/trimBarLogic'
 import {
   NEW_CHAPTER_PREFIX, addChapter as addChapterTo, changeCount as chapterChangeTotal, chapterKindText, chapterLayout, currentChapters,
   diffChapters, mergeRows, positionedChapters, removeChapter, renameChapter, setChapterTime, sortChapters, type EditorChapter,
@@ -58,6 +62,11 @@ interface CaptionEditorProps {
   onRegenerated?: (generation: CaptionGeneration) => void
   /** Anropas efter att kapitel sparats (utkastet ändrat), så att omgivande vy kan hämta om kapitlen och visa opublicerade ändringar. */
   onChaptersSaved?: () => void
+  /**
+   * Trimningen (UNG-236/ondemand): den del av originalet som publiceras, i originalets tid. Ägs av omgivande vy, som tillämpar den vid
+   * Publicera ondemand. Saknas den visas inga trimkontroller i redigeraren.
+   */
+  trim?: { start: number; end: number; onChange: (range: TrimRange) => void }
 }
 
 /** Allt som går att ångra: replikerna och kapitlen i ett steg (UNG-229). */
@@ -68,10 +77,16 @@ interface Snapshot {
 
 const seconds = (value: number) => value.toFixed(1).replace('.', ',')
 
+// Efter ett musklick lämnas fokus inte kvar på knappen: annars skulle mellanslag aktivera knappen igen och Tab gå till nästa knapp i stället
+// för att styra redigeraren (UNG-231). Ett tangentbordsklick (detail 0) behåller fokus.
+function blurAfterMouse(event: MouseEvent) {
+  if (event.detail > 0) (event.currentTarget as HTMLElement).blur()
+}
+
 // UNG-140/143: redigerare för undertexterna (mastern, original-tidslinje). Video med aktuell replik över bilden och en virtualiserad
 // radlista där texten rättas på plats. Rutor kan slås ihop (exakt tid), delas, orden kan flyttas mellan grannar, tider justeras,
 // rader läggs till och tas bort, och allt går att ångra tills man sparar. Sparas som en version (versionskontroll mot servern).
-export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRegenerated, onChaptersSaved }: CaptionEditorProps) {
+export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRegenerated, onChaptersSaved, trim }: CaptionEditorProps) {
   const [master, setMaster] = useState<CaptionMaster | null>(null)
   const [loadError, setLoadError] = useState('')
   const [cues, setCues] = useState<EditCue[]>([])
@@ -655,6 +670,31 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     focusRow(tabTargetIndex(origin, backwards, cues.length))
   }
 
+  // Bara kapitel (UNG-231): Tab/Skift+Tab till nästa/föregående synliga kapitelrad. Utgår från det markerade kapitlet, annars det som
+  // pågår vid videons position. Kapitlet markeras och videon hoppar dit.
+  function tabChapter(backwards: boolean) {
+    const rows = chapterOnlyRows
+    if (rows.length === 0) return
+    let origin = rows.findIndex((row) => row.chapter.id === selectedChapterId)
+    if (origin < 0) {
+      rows.forEach((row, index) => {
+        if (row.chapter.time <= currentTime + 0.001) origin = index
+      })
+    }
+    const target = tabTargetIndex(origin, backwards, rows.length)
+    const chapter = rows[target].chapter
+    setSelectedChapterId(chapter.id)
+    seekTo(chapter.time, false)
+    const element = listRef.current
+    if (element) {
+      const next = scrollToRevealRow(layout, target, element.scrollTop, element.clientHeight)
+      if (next !== element.scrollTop) {
+        element.scrollTop = next
+        setScrollTop(next)
+      }
+    }
+  }
+
   // Manus (Word) ur den sparade versionen. Är projektet trimmat får operatören välja publicerad del eller hela inspelningen.
   async function exportWord(scope: 'published' | 'whole') {
     setExportChoice(false)
@@ -971,9 +1011,17 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
         const element = event.target instanceof HTMLElement ? event.target : null
         const kind = element ? tabTargetKind(element.tagName, (selector) => element.closest(selector) !== null) : 'surface'
         const otherDialogOpen = document.querySelectorAll('[role="dialog"]').length > 1
-        if (shouldCaptureTab(event, kind, otherDialogOpen) && cues.length > 0 && !chaptersOnly) {
-          event.preventDefault()
-          tabFrom(tabOriginIndex(activeIndex, selectedIndex, null), event.shiftKey)
+        if (shouldCaptureTab(event, kind, otherDialogOpen)) {
+          if (chaptersOnly) {
+            // Bara kapitel (UNG-231): Tab hoppar mellan kapitelraderna. I övriga lägen hoppar den bara mellan repliker.
+            if (chapterOnlyRows.length > 0) {
+              event.preventDefault()
+              tabChapter(event.shiftKey)
+            }
+          } else if (cues.length > 0) {
+            event.preventDefault()
+            tabFrom(tabOriginIndex(activeIndex, selectedIndex, null), event.shiftKey)
+          }
         }
         return
       }
@@ -1139,8 +1187,12 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     )
   }
 
-  const publishedStart = master?.publishedStartSeconds
-  const publishedEnd = master?.publishedEndSeconds
+  // Med trimkontroller (trim) är det den pågående trimningen som visas som "publiceras": den tonar ned det som tas bort, direkt när
+  // balkarna flyttas. Annars gäller den trimning som servern känner till.
+  const publishedStart = trim ? trim.start : master?.publishedStartSeconds
+  const publishedEnd = trim ? trim.end : master?.publishedEndSeconds
+  const trimDuration = master?.originalDurationSeconds ?? 0
+  const showTrim = Boolean(trim) && trimDuration > 0
   const pendingInfo = pendingMerge === null ? null : mergeInfo(cues, pendingMerge)
 
   return (
@@ -1265,6 +1317,17 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
             <div class="ce-stage">
               <video key="video" ref={videoRefCallback} controls playsInline preload="metadata" onPointerDown={() => setAnchor(null)} onKeyDown={() => setAnchor(null)} />
               {activeCue && <div key="overlay" class="ce-overlay" aria-hidden="true">{activeCue.text}</div>}
+              {showTrim && (
+                <VideoPositionControls
+                  key="position"
+                  overlay
+                  position={currentTime}
+                  duration={trimDuration}
+                  playing={playing}
+                  onSeek={(seconds) => seekTo(seconds, false)}
+                  onTogglePlay={togglePlayback}
+                />
+              )}
               {soundOff && (
                 <button
                   key="unmute"
@@ -1287,6 +1350,33 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
               )}
             </div>
             {videoError && <p class="ce-error-text" role="alert">{videoError}</p>}
+
+            {showTrim && trim && (
+              <div key="trim" class="ce-trim" aria-label="Trimning">
+                <PositionScrubber
+                  position={currentTime}
+                  duration={trimDuration}
+                  start={trim.start}
+                  end={trim.end}
+                  onSeek={(seconds) => seekTo(seconds, false)}
+                  onChange={trim.onChange}
+                />
+                <TrimBar
+                  duration={trimDuration}
+                  start={trim.start}
+                  end={trim.end}
+                  position={currentTime}
+                  chapters={chapterList.map((chapter) => ({ time: chapter.time, label: chapter.label }))}
+                  onChange={trim.onChange}
+                  onSeek={(seconds) => {
+                    videoRef.current?.pause()
+                    seekTo(seconds, false)
+                  }}
+                  onPlayFromStart={() => seekTo(trim.start, true)}
+                  onPlayEnd={() => seekTo(playEndFrom(trim.start, trim.end), true)}
+                />
+              </div>
+            )}
 
             {SHOW_TOOLS_TAB ? (
               <div class="ce-tabs" role="tablist" aria-label="Under videon">
@@ -1367,7 +1457,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                       class={`ce-chip${showCues ? ' is-on' : ''}`}
                       type="button"
                       aria-pressed={showCues}
-                      onClick={() => { if (!showCues || showChapters) changeFilter({ cues: !showCues, chapters: true }) }}
+                      onClick={(event) => {
+                        blurAfterMouse(event)
+                        if (!showCues || showChapters) changeFilter({ cues: !showCues, chapters: true })
+                      }}
                     >
                       Undertexter · {cues.length}
                     </button>
@@ -1375,14 +1468,25 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                       class={`ce-chip${showChapters ? ' is-on' : ''}`}
                       type="button"
                       aria-pressed={showChapters}
-                      onClick={() => { if (!showChapters || showCues) changeFilter({ cues: true, chapters: !showChapters }) }}
+                      onClick={(event) => {
+                        blurAfterMouse(event)
+                        if (!showChapters || showCues) changeFilter({ cues: true, chapters: !showChapters })
+                      }}
                     >
                       Kapitel · {chapterList.length}
                     </button>
                   </>
                 )}
                 {!readOnly && (
-                  <button class="ce-chip" type="button" aria-expanded={addChapterOpen} onClick={() => setAddChapterOpen(!addChapterOpen)}>
+                  <button
+                    class="ce-chip"
+                    type="button"
+                    aria-expanded={addChapterOpen}
+                    onClick={(event) => {
+                      blurAfterMouse(event)
+                      setAddChapterOpen(!addChapterOpen)
+                    }}
+                  >
                     + Kapitel här
                   </button>
                 )}
