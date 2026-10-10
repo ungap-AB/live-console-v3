@@ -7,14 +7,14 @@ import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { client } from '../../data'
 import { ApiError } from '../../data/http/fetchJson'
-import type { CaptionDraft, CaptionEnergy, CaptionGeneration, CaptionMaster, WordImportResult } from '../../data/types'
+import type { Chapter, CaptionDraft, CaptionEnergy, CaptionGeneration, CaptionMaster, WordImportResult } from '../../data/types'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import { formatHms } from '../../app/time'
 import {
   activeCueIndex, formatCueTime, rangeStatus, savePayload,
 } from './captionEditorLogic'
-import { scrollToRevealRow, uniformCueLayout, windowRows } from './rowLayout'
+import { rowPosition, scrollToRevealRow, uniformCueLayout, windowRows } from './rowLayout'
 import {
   LONG_GAP_SECONDS, addCue, deleteCue, diffState, mergeInfo, mergeWithNext, shiftFrom,
   newCueTime, sortedForSave, splitCue, validateCues, withoutEmpty, type EditCue, type OpResult,
@@ -22,8 +22,9 @@ import {
 import { estimateSplitTime, moveBoundary } from './captionFlow'
 import { deriveTimes, speechRuns } from './captionTimingLogic'
 import { emptyHistory, record, redo, undo, type History } from './captionHistory'
-import { CaptionWaveform, WAVEFORM_WIDTH } from './CaptionWaveform'
-import { cueIndexAt, type GrabRole } from './captionWaveformLogic'
+import { CaptionWaveform, WAVEFORM_WIDTH, type ChapterMark } from './CaptionWaveform'
+import { chapterKindText, chapterLayout, currentChapters, mergeRows, positionedChapters } from './chapterRows'
+import { cueIndexAt, timeAtRow, type GrabRole } from './captionWaveformLogic'
 import { approveBlockedReason, groupCorrections, type CorrectionGroup } from './autoCaptionsLogic'
 import { ownCorrections } from './captionCorrectionsLogic'
 import { CorrectionsPanel } from './CorrectionsPanel'
@@ -37,6 +38,8 @@ import { buildReview, isLocked, nextReviewIndex, openConflicts, reviewIndexes, c
 import './CaptionEditor.css'
 
 const ROW_HEIGHT = 84
+/** Kapitelrader är enkelradiga (UNG-228). */
+const CHAPTER_ROW_HEIGHT = 40
 
 // Fliken Verktyg är dold tillsvidare; med bara en flik visas rättningarna under en rubrik i stället för en flikrad.
 const SHOW_TOOLS_TAB = false
@@ -293,8 +296,46 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     return () => observer.disconnect()
   }, [listElement])
 
-  // UNG-227: listans geometri som en layout (idag en rad per replik, alla lika höga).
-  const layout = useMemo(() => uniformCueLayout(cues, ROW_HEIGHT), [cues])
+  // UNG-228: kapitlen (punkter och personer med position) hämtas en gång och visas som egna rader bland replikerna. Skrivskyddat än så länge.
+  const [chapterInputs, setChapterInputs] = useState<Chapter[]>([])
+  const [showChapters, setShowChapters] = useState(true)
+  useEffect(() => {
+    let cancelled = false
+    client.projects.chapters(projectId).then(
+      (list) => { if (!cancelled) setChapterInputs(list) },
+      () => { if (!cancelled) setChapterInputs([]) },
+    )
+    return () => { cancelled = true }
+  }, [projectId])
+  const allChapters = useMemo(() => positionedChapters(chapterInputs), [chapterInputs])
+  // Ordgranskningsläget (Word) har låsta rader och egen navigering: där visas inga kapitel.
+  const chaptersVisible = showChapters && allChapters.length > 0 && review === null
+  const listRows = useMemo(() => (chaptersVisible ? mergeRows(cues, allChapters) : null), [chaptersVisible, cues, allChapters])
+
+  // UNG-227/228: listans geometri som en layout: en rad per replik, med kapitelrader emellan när de visas.
+  const layout = useMemo(
+    () => (listRows ? chapterLayout(cues, listRows, ROW_HEIGHT, CHAPTER_ROW_HEIGHT) : uniformCueLayout(cues, ROW_HEIGHT)),
+    [cues, listRows],
+  )
+  const nowChapters = useMemo(() => currentChapters(allChapters, currentTime), [allChapters, currentTime])
+  const chapterMarks = useMemo<ChapterMark[]>(() => {
+    if (!listRows) return []
+    const marks: ChapterMark[] = []
+    listRows.forEach((row, rowIndex) => {
+      if (row.kind !== 'chapter') return
+      const { chapter } = row
+      marks.push({
+        row: rowIndex,
+        time: chapter.time,
+        kind: chapter.kind,
+        label: chapter.label,
+        current: chapter.id === nowChapters.agenda?.id || chapter.id === nowChapters.person?.id,
+      })
+    })
+    return marks
+  }, [listRows, nowChapters])
+  // Punkten och personen vid listans övre kant: det man läser just nu. (Kapitelrader ligger kvar som rubrik överst.)
+  const topChapters = chaptersVisible ? currentChapters(allChapters, timeAtRow(layout.spans, rowPosition(layout, scrollTop)) + 0.001) : null
   const { first, last } = windowRows(layout, scrollTop, viewportHeight)
 
   function revealRow(index: number) {
@@ -992,6 +1033,32 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
           </section>
 
           <section class="ce-list-wrap" aria-label="Repliker">
+            {allChapters.length > 0 && review === null && (
+              <div class="ce-chapterbar">
+                <button
+                  class={`ce-chip${showChapters ? ' is-on' : ''}`}
+                  type="button"
+                  aria-pressed={showChapters}
+                  title={showChapters ? 'Dölj kapitlen i listan' : 'Visa kapitlen i listan'}
+                  onClick={() => setShowChapters(!showChapters)}
+                >
+                  Kapitel · {allChapters.length}
+                </button>
+                {topChapters && (
+                  <span class="ce-chapterbar-now" aria-live="polite">
+                    {topChapters.agenda ? (
+                      <>
+                        <span class="ce-chapterbar-kind">Punkt</span>
+                        <span class="ce-chapterbar-label" title={topChapters.agenda.label}>{topChapters.agenda.label}</span>
+                        {topChapters.person && <span class="ce-chapterbar-person" title={topChapters.person.label}>· {topChapters.person.label}</span>}
+                      </>
+                    ) : (
+                      <span class="ce-chapterbar-none">Före första kapitlet</span>
+                    )}
+                  </span>
+                )}
+              </div>
+            )}
             <div class="ce-list-head" aria-hidden="true" style={energy ? { marginLeft: `${WAVEFORM_WIDTH}px` } : undefined}>
               <span /><span>Text</span><span>#</span><span>Start</span><span />
             </div>
@@ -1003,6 +1070,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                 scrollTop={scrollTop}
                 height={viewportHeight}
                 layout={layout}
+                chapterMarks={chapterMarks}
                 selectedIndex={selectedIndex}
                 activeIndex={activeIndex}
                 getTime={playhead}
@@ -1034,8 +1102,41 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
               }}
             >
               <div class="ce-spacer" style={{ height: `${layout.total}px` }}>
-                {cues.slice(first, last).map((cue, offset) => {
-                  const index = first + offset
+                {Array.from({ length: Math.max(0, last - first) }, (_, offset) => first + offset).map((rowIndex) => {
+                  const listRow = listRows ? listRows[rowIndex] : null
+                  if (listRow && listRow.kind === 'chapter') {
+                    const { chapter } = listRow
+                    const isCurrent = chapter.id === nowChapters.agenda?.id || chapter.id === nowChapters.person?.id
+                    const outside = publishedStart !== undefined && publishedEnd !== undefined && (chapter.time < publishedStart || chapter.time > publishedEnd)
+                    const agenda = chapter.kind === 'agendaItem'
+                    return (
+                      <div
+                        key={`chapter-${chapter.id}`}
+                        class={`ce-chrow${agenda ? ' is-agenda' : ''}${isCurrent ? ' is-current' : ''}${outside ? ' is-outside' : ''}`}
+                        style={{ top: `${layout.top(rowIndex)}px`, height: `${layout.height(rowIndex)}px` }}
+                      >
+                        <span />
+                        <div class="ce-chrow-main" title={chapter.label}>
+                          <span class="ce-chrow-kind">{chapterKindText(chapter.kind)}</span>
+                          <span class="ce-chrow-label">{chapter.label}</span>
+                        </div>
+                        <span />
+                        <button
+                          class="ce-time"
+                          type="button"
+                          tabIndex={-1}
+                          title="Spela från kapitlet"
+                          onClick={() => seekTo(chapter.time, true)}
+                        >
+                          {formatCueTime(chapter.time)}
+                        </button>
+                        <span />
+                      </div>
+                    )
+                  }
+                  const index = listRow ? listRow.index : rowIndex
+                  const cue = cues[index]
+                  if (!cue) return null
                   const status = rangeStatus(cue, publishedStart, publishedEnd)
                   const issue = issueByIndex.get(index)
                   const locked = review !== null && isLocked(review, cue.id)
@@ -1058,7 +1159,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                     wordBadgeText ? 'has-wordbadge' : '',
                   ].filter(Boolean).join(' ')
                   return (
-                    <div key={cue.id} class={classes} style={{ top: `${layout.top(layout.cueRow(index))}px`, height: `${layout.height(layout.cueRow(index))}px` }}>
+                    <div key={cue.id} class={classes} style={{ top: `${layout.top(rowIndex)}px`, height: `${layout.height(rowIndex)}px` }}>
                       <div
                         class="ce-playcol"
                         role="button"

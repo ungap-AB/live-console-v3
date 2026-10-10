@@ -13,6 +13,17 @@ export const WAVEFORM_WIDTH = BAND_WIDTH + FAN_WIDTH
 /** Hur nära (pixlar) en gräns ska träffas för att kunna tas tag i. */
 const GRAB_PIXELS = 8
 
+/** Ett kapitel som markeras i bandet (UNG-228): en linje vid kapitlets tid och en kopplingslinje till kapitelraden i listan. */
+export interface ChapterMark {
+  /** Radens index i listans layout. */
+  row: number
+  time: number
+  kind: string
+  label: string
+  /** Pågår vid videons position. */
+  current: boolean
+}
+
 interface CaptionWaveformProps {
   cues: readonly CueSpan[]
   energy: CaptionEnergy
@@ -20,6 +31,8 @@ interface CaptionWaveformProps {
   height: number
   /** Listans geometri (UNG-227): radernas överkant och höjd. Replikindex är oförändrat, men raderna kan vara fler än replikerna. */
   layout: RowLayout
+  /** Kapitel som ritas som egna linjer och kopplingslinjer ovanpå gränserna (äkta överlagring, annan färg). */
+  chapterMarks?: readonly ChapterMark[]
   selectedIndex: number
   activeIndex: number
   /** Videons position i originalets tid; läses vid varje ritning så att spelhuvudet är jämnt under uppspelning. */
@@ -55,6 +68,8 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
   const dragging = useRef<number | null>(null)
   const dragRole = useRef<GrabRole>('end')
   const hovered = useRef<number | null>(null)
+  // Kapitellinjen (index i chapterMarks) som pekaren står på, för namnflaggan.
+  const hoveredChapter = useRef<number | null>(null)
 
   const currentWindow = () => {
     const { scrollTop, height, layout } = latest.current
@@ -213,6 +228,58 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     }
     ctx.globalAlpha = 1
 
+    // Kapitlen (UNG-228): en egen linje i bandet (grön, tjockare för en punkt) och en kopplingslinje till kapitelraden, ovanpå gränserna.
+    const marks = latest.current.chapterMarks ?? []
+    if (marks.length > 0) {
+      const green = color('--live', '#0a8f3c')
+      ctx.fillStyle = green
+      ctx.strokeStyle = green
+      marks.forEach((mark, markIndex) => {
+        const bandY = timeToY(mark.time, win, height)
+        const rowY = layout.top(mark.row) + layout.height(mark.row) / 2 - scrollTop
+        const bandVisible = bandY >= -4 && bandY <= height + 4
+        const rowVisible = rowY >= -30 && rowY <= height + 30
+        if (!bandVisible && !rowVisible) return
+        const agenda = mark.kind === 'agendaItem'
+        const emphasised = mark.current || hoveredChapter.current === markIndex
+        ctx.globalAlpha = emphasised ? 1 : 0.8
+        if (bandVisible) {
+          const thickness = (agenda ? 2.5 : 1.5) + (emphasised ? 1 : 0)
+          ctx.fillRect(0, bandY - thickness / 2, BAND_WIDTH, thickness)
+          ctx.beginPath()
+          ctx.moveTo(BAND_WIDTH, bandY - 6)
+          ctx.lineTo(BAND_WIDTH, bandY + 6)
+          ctx.lineTo(BAND_WIDTH - 8, bandY)
+          ctx.closePath()
+          ctx.fill()
+        }
+        if (bandY > -30 && bandY < height + 30 && rowVisible) {
+          ctx.lineWidth = (agenda ? 2 : 1.5) + (emphasised ? 0.5 : 0)
+          ctx.beginPath()
+          ctx.moveTo(BAND_WIDTH, bandY)
+          ctx.lineTo(WAVEFORM_WIDTH, rowY)
+          ctx.stroke()
+        }
+      })
+      ctx.globalAlpha = 1
+      // Namnflaggan för kapitellinjen som pekaren står på.
+      const flagged = hoveredChapter.current !== null ? marks[hoveredChapter.current] : undefined
+      if (flagged) {
+        const y = timeToY(flagged.time, win, height)
+        ctx.font = '600 11px system-ui, sans-serif'
+        let text = flagged.label
+        const maxWidth = WAVEFORM_WIDTH - 12
+        while (text.length > 1 && ctx.measureText(text).width > maxWidth - 10) text = text.slice(0, -1)
+        if (text !== flagged.label) text = `${text.trimEnd()}…`
+        const width = Math.min(maxWidth, ctx.measureText(text).width + 10)
+        const top = Math.min(height - 20, Math.max(2, y - 22))
+        ctx.fillStyle = color('--ink', '#1c2430')
+        ctx.fillRect(4, top, width, 18)
+        ctx.fillStyle = '#fff'
+        ctx.fillText(text, 9, top + 13)
+      }
+    }
+
     // Placeringen (UNG-184): en tunn streckad linje med en liten spets åt höger, på det ställe mellanslag spelar från.
     if (latest.current.anchor !== null) {
       const anchorY = timeToY(latest.current.anchor, win, height)
@@ -304,16 +371,37 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     if (index >= 0) onSelect(index)
   }
 
+  // Kapitellinjen (index i chapterMarks) närmast pekaren, om någon ligger inom greppavstånd och ingen replikgräns gör det.
+  function chapterAt(y: number): number | null {
+    const { chapterMarks, height } = latest.current
+    if (!chapterMarks || chapterMarks.length === 0) return null
+    const win = currentWindow()
+    let best: number | null = null
+    let bestDistance = GRAB_PIXELS + 0.001
+    chapterMarks.forEach((mark, markIndex) => {
+      const distance = Math.abs(timeToY(mark.time, win, height) - y)
+      if (distance < bestDistance) {
+        bestDistance = distance
+        best = markIndex
+      }
+    })
+    return best
+  }
+
   function onPointerMove(event: PointerEvent) {
     const position = local(event)
     const canvas = canvasRef.current
     if (!position || !canvas) return
     const index = dragging.current
     if (index === null) {
-      const boundary = position.x <= BAND_WIDTH && latest.current.editable ? boundaryAt(position.y) : null
+      const inBand = position.x <= BAND_WIDTH
+      const boundary = inBand && latest.current.editable ? boundaryAt(position.y) : null
+      const chapter = inBand && boundary === null ? chapterAt(position.y) : null
       canvas.style.cursor = boundary !== null ? 'ns-resize' : 'pointer'
-      if (boundary !== hovered.current) {
+      canvas.title = chapter !== null ? latest.current.chapterMarks?.[chapter]?.label ?? '' : ''
+      if (boundary !== hovered.current || chapter !== hoveredChapter.current) {
         hovered.current = boundary
+        hoveredChapter.current = chapter
         draw()
       }
       return
@@ -325,8 +413,9 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
   }
 
   function onPointerLeave() {
-    if (dragging.current !== null || hovered.current === null) return
+    if (dragging.current !== null || (hovered.current === null && hoveredChapter.current === null)) return
     hovered.current = null
+    hoveredChapter.current = null
     draw()
   }
 

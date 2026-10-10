@@ -763,3 +763,120 @@ button.ce-time:hover {
 .ce-unmute:hover {
   background: rgba(0, 0, 0, 0.92);
 }
+
+/* ---- UNG-228: kapitel i listan ---- */
+.ce-chapterbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 13px;
+}
+
+.ce-chip {
+  flex: none;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--btn-bg);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.ce-chip.is-on {
+  border-color: var(--focus);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--focus) 10%, var(--panel));
+}
+
+.ce-chapterbar-now {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ce-chapterbar-kind {
+  flex: none;
+  font-size: 11px;
+  padding: 1px 6px;
+  border: 1px solid var(--live);
+  border-radius: 9px;
+  color: var(--live);
+}
+
+.ce-chapterbar-label {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ce-chapterbar-person {
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ce-chapterbar-none {
+  color: var(--ink-3);
+}
+
+.ce-chrow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 34px 1fr 44px 76px 40px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+  background: color-mix(in srgb, var(--live) 7%, var(--panel));
+  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--live) 70%, transparent);
+  font-size: 13.5px;
+}
+
+.ce-chrow.is-agenda {
+  font-weight: 600;
+  background: color-mix(in srgb, var(--live) 12%, var(--panel));
+  box-shadow: inset 6px 0 0 var(--live);
+}
+
+.ce-chrow.is-current {
+  background: color-mix(in srgb, var(--live) 20%, var(--panel));
+}
+
+.ce-chrow.is-outside {
+  opacity: 0.45;
+}
+
+.ce-chrow-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 8px;
+}
+
+.ce-chrow-kind {
+  flex: none;
+  font-size: 11px;
+  font-weight: 400;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--ink-2);
+}
+
+.ce-chrow-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
