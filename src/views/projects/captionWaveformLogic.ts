@@ -202,3 +202,20 @@ export function snapToSpeech(energy: CaptionEnergy, threshold: number, time: num
   }
   return best >= 0 ? Math.round(best * step * 1000) / 1000 : time
 }
+
+/**
+ * UNG-230: vilken linje ett tryck i bandet tar tag i när både en replikgräns och en kapitellinje ligger inom greppavstånd. Den markerade
+ * raden vinner (ett markerat kapitel, annars gränserna på den markerade repliken). Annars gäller den närmaste, och vid lika avstånd
+ * repliken. Ligger bara en av dem inom avstånd gäller den. Ingen av dem: null.
+ */
+export function chooseGrab(
+  cue: { distance: number; onSelected: boolean } | null,
+  chapter: { distance: number; selected: boolean } | null,
+): 'cue' | 'chapter' | null {
+  if (cue === null && chapter === null) return null
+  if (chapter === null) return 'cue'
+  if (cue === null) return 'chapter'
+  if (chapter.selected) return 'chapter'
+  if (cue.onSelected) return 'cue'
+  return chapter.distance < cue.distance ? 'chapter' : 'cue'
+}

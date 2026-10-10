@@ -162,3 +162,26 @@ test('fästning: start går till närmaste stigande kant och slut till närmaste
   assert.ok(Math.abs(snapToSpeech(energy, threshold, 1.3, 'start', 0.5) - 1.0) < 0.03) // men inom ett större
   assert.equal(snapToSpeech(energyOf([1, 2]), 1, 0.01, 'start'), 0.01) // för kort kurva
 })
+
+// ---- UNG-230 ----
+import { chooseGrab } from './captionWaveformLogic.ts'
+
+test('en ensam linje inom avstånd tas, och ingen alls ger inget grepp', () => {
+  assert.equal(chooseGrab(null, null), null)
+  assert.equal(chooseGrab({ distance: 5, onSelected: false }, null), 'cue')
+  assert.equal(chooseGrab(null, { distance: 5, selected: false }), 'chapter')
+})
+
+test('det markerade kapitlet vinner över en närmare replikgräns', () => {
+  assert.equal(chooseGrab({ distance: 1, onSelected: false }, { distance: 7, selected: true }), 'chapter')
+})
+
+test('gränserna på den markerade repliken vinner över ett närmare kapitel', () => {
+  assert.equal(chooseGrab({ distance: 7, onSelected: true }, { distance: 1, selected: false }), 'cue')
+})
+
+test('utan markering gäller den närmaste, och vid lika avstånd repliken', () => {
+  assert.equal(chooseGrab({ distance: 4, onSelected: false }, { distance: 2, selected: false }), 'chapter')
+  assert.equal(chooseGrab({ distance: 2, onSelected: false }, { distance: 4, selected: false }), 'cue')
+  assert.equal(chooseGrab({ distance: 3, onSelected: false }, { distance: 3, selected: false }), 'cue')
+})

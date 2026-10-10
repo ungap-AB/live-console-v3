@@ -130,6 +130,12 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   const [addKind, setAddKind] = useState<'agendaItem' | 'person'>('agendaItem')
   const [addLabel, setAddLabel] = useState('')
   const newChapterCounter = useRef(0)
+  // UNG-230: det markerade kapitlet (vinner vid grepp i bandet) och ett kapitel som dras (tiden gäller bara under draget; listans ordning
+  // ligger fast tills det släpps, och först då blir det ett steg i historiken).
+  const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null)
+  const [chapterDragTime, setChapterDragTime] = useState<{ id: string; time: number } | null>(null)
+  const chapterDragRef = useRef<{ id: string; time: number } | null>(null)
+  const chapterRevealRef = useRef<string | null>(null)
   // Enter och blur kan båda avsluta ett namnbyte; bara det första räknas.
   const chapterEditFinished = useRef(true)
 
@@ -358,15 +364,17 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
       if (row.kind !== 'chapter') return
       const { chapter } = row
       marks.push({
+        id: chapter.id,
         row: rowIndex,
-        time: chapter.time,
+        time: chapterDragTime?.id === chapter.id ? chapterDragTime.time : chapter.time,
         kind: chapter.kind,
         label: chapter.label,
         current: chapter.id === nowChapters.agenda?.id || chapter.id === nowChapters.person?.id,
+        selected: chapter.id === selectedChapterId,
       })
     })
     return marks
-  }, [listRows, nowChapters])
+  }, [listRows, nowChapters, chapterDragTime, selectedChapterId])
   // Punkten och personen vid listans övre kant: det man läser just nu. (Kapitelrader ligger kvar som rubrik överst.)
   const topChapters = chaptersVisible ? currentChapters(chapterList, timeAtRow(layout.spans, rowPosition(layout, scrollTop)) + 0.001) : null
   const { first, last } = windowRows(layout, scrollTop, viewportHeight)
@@ -384,6 +392,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   // Raden får fokus (och markören sin plats) så snart den finns i listan, efter att den scrollats fram vid behov.
   function focusRow(index: number, caret?: number) {
     pendingFocus.current = { index, caret }
+    setSelectedChapterId(null)
     setSelectedIndex(index)
     setFocusTick((tick) => tick + 1)
   }
@@ -404,6 +413,21 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
       revealRow(pending.index)
     }
   }, [focusTick, scrollTop, first, last, cues])
+
+  // UNG-230: ett kapitel som dragits och släppts scrollas fram på sin nya plats.
+  useEffect(() => {
+    const id = chapterRevealRef.current
+    if (!id || !listRows) return
+    chapterRevealRef.current = null
+    const row = listRows.findIndex((item) => item.kind === 'chapter' && item.chapter.id === id)
+    const element = listRef.current
+    if (row < 0 || !element) return
+    const next = scrollToRevealRow(layout, row, element.scrollTop, element.clientHeight)
+    if (next !== element.scrollTop) {
+      element.scrollTop = next
+      setScrollTop(next)
+    }
+  }, [listRows])
 
   // Listan följer med uppspelningen, men inte medan operatören skriver.
   useEffect(() => {
@@ -459,6 +483,34 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   function chapterHere(id: string) {
     if (readOnly) return
     applyChapters(setChapterTime(chapterList, id, playhead()))
+  }
+
+  function chapterDragStart(id: string) {
+    if (readOnly) return
+    setSelectedChapterId(id)
+    chapterDragRef.current = null
+    setNotice('')
+  }
+
+  function chapterDragMove(id: string, time: number) {
+    if (readOnly) return
+    const limit = master?.originalDurationSeconds && master.originalDurationSeconds > 0 ? master.originalDurationSeconds : Number.POSITIVE_INFINITY
+    const next = { id, time: Math.min(limit, Math.max(0, Math.round(time))) }
+    chapterDragRef.current = next
+    setChapterDragTime(next)
+    seekTo(next.time, false, true)
+  }
+
+  // Släpps kapitlet sorteras det in på sin nya plats (ett steg i historiken) och listan scrollar så att raden syns.
+  function chapterDragEnd() {
+    const drag = chapterDragRef.current
+    chapterDragRef.current = null
+    setChapterDragTime(null)
+    if (!drag) return
+    const chapter = chapterList.find((item) => item.id === drag.id)
+    if (!chapter || chapter.time === drag.time) return
+    chapterRevealRef.current = drag.id
+    applyChapters(setChapterTime(chapterList, drag.id, drag.time))
   }
 
   function chapterDelete(id: string) {
@@ -1237,11 +1289,17 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                   if (kind === 'place') setAnchor(time)
                   seekTo(time, false, true)
                 }}
-                onSelect={setSelectedIndex}
+                onSelect={(index) => {
+                  setSelectedChapterId(null)
+                  setSelectedIndex(index)
+                }}
                 onScrollBy={scrollListBy}
                 onDragStart={dragStart}
                 onDrag={dragMove}
                 onDragEnd={dragEnd}
+                onChapterDragStart={chapterDragStart}
+                onChapterDrag={chapterDragMove}
+                onChapterDragEnd={chapterDragEnd}
               />
             )}
             <div
@@ -1261,13 +1319,15 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                   if (listRow && listRow.kind === 'chapter') {
                     const { chapter } = listRow
                     const isCurrent = chapter.id === nowChapters.agenda?.id || chapter.id === nowChapters.person?.id
-                    const outside = publishedStart !== undefined && publishedEnd !== undefined && (chapter.time < publishedStart || chapter.time > publishedEnd)
+                    const shownTime = chapterDragTime?.id === chapter.id ? chapterDragTime.time : chapter.time
+                    const outside = publishedStart !== undefined && publishedEnd !== undefined && (shownTime < publishedStart || shownTime > publishedEnd)
                     const agenda = chapter.kind === 'agendaItem'
                     return (
                       <div
                         key={`chapter-${chapter.id}`}
-                        class={`ce-chrow${agenda ? ' is-agenda' : ''}${isCurrent ? ' is-current' : ''}${outside ? ' is-outside' : ''}`}
+                        class={`ce-chrow${agenda ? ' is-agenda' : ''}${isCurrent ? ' is-current' : ''}${outside ? ' is-outside' : ''}${selectedChapterId === chapter.id ? ' is-selected' : ''}`}
                         style={{ top: `${layout.top(rowIndex)}px`, height: `${layout.height(rowIndex)}px` }}
+                        onPointerDown={() => setSelectedChapterId(chapter.id)}
                       >
                         <span />
                         <div class="ce-chrow-main">
@@ -1304,7 +1364,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                           aria-label={`Spela från kapitlet ${chapter.label}`}
                           onClick={() => seekTo(chapter.time, true)}
                         >
-                          {formatCueTime(chapter.time)}
+                          {formatCueTime(shownTime)}
                         </button>
                         {!readOnly ? (
                           <div class="ce-row-actions">
@@ -1384,6 +1444,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                             setText(index, event.currentTarget.value)
                           }}
                           onFocus={() => {
+                            setSelectedChapterId(null)
                             setSelectedIndex(index)
                             seekTo(cue.start, false)
                           }}

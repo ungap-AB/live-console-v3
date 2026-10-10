@@ -930,3 +930,9 @@ button.ce-time:hover {
   border: 1px solid var(--line);
   border-radius: 6px;
 }
+
+/* ---- UNG-230: markerat kapitel ---- */
+.ce-chrow.is-selected {
+  outline: 2px solid color-mix(in srgb, var(--live) 70%, transparent);
+  outline-offset: -2px;
+}

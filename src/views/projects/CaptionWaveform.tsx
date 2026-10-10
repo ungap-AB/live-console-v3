@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'preact/hooks'
 import type { CaptionEnergy } from '../../data/types'
 import {
-  bandProfile, cueIndexAt, grabRole, snapToSpeech, speechThreshold, timeToY, viewWindowForLayout, visibleSpans, yToTime, type CueSpan, type GrabRole, type TimeWindow,
+  bandProfile, chooseGrab, cueIndexAt, grabRole, snapToSpeech, speechThreshold, timeToY, viewWindowForLayout, visibleSpans, yToTime, type CueSpan, type GrabRole, type TimeWindow,
 } from './captionWaveformLogic'
 import { rowPosition, type RowLayout } from './rowLayout'
 
@@ -15,6 +15,7 @@ const GRAB_PIXELS = 8
 
 /** Ett kapitel som markeras i bandet (UNG-228): en linje vid kapitlets tid och en kopplingslinje till kapitelraden i listan. */
 export interface ChapterMark {
+  id: string
   /** Radens index i listans layout. */
   row: number
   time: number
@@ -22,6 +23,8 @@ export interface ChapterMark {
   label: string
   /** Pågår vid videons position. */
   current: boolean
+  /** Är den markerade raden (vinner vid grepp, UNG-230). */
+  selected: boolean
 }
 
 interface CaptionWaveformProps {
@@ -52,6 +55,10 @@ interface CaptionWaveformProps {
   onDragStart: (index: number, role: GrabRole) => void
   onDrag: (index: number, time: number, role: GrabRole) => void
   onDragEnd: () => void
+  /** UNG-230: en kapitellinje tas tag i, dras (tid i originalets tidslinje) och släpps. Ändrar bara kapitlets tid. */
+  onChapterDragStart?: (id: string) => void
+  onChapterDrag?: (id: string, time: number) => void
+  onChapterDragEnd?: () => void
 }
 
 // UNG-152/160/161: vågformen som ett vertikalt band till vänster om replikrutorna. Tiden löper nedåt som listan. Operatören arbetar
@@ -70,6 +77,8 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
   const hovered = useRef<number | null>(null)
   // Kapitellinjen (index i chapterMarks) som pekaren står på, för namnflaggan.
   const hoveredChapter = useRef<number | null>(null)
+  // Kapitellinjen som dras (index i chapterMarks), och dess id så att draget överlever att listan ritas om.
+  const draggingChapter = useRef<{ index: number; id: string } | null>(null)
 
   const currentWindow = () => {
     const { scrollTop, height, layout } = latest.current
@@ -241,7 +250,7 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
         const rowVisible = rowY >= -30 && rowY <= height + 30
         if (!bandVisible && !rowVisible) return
         const agenda = mark.kind === 'agendaItem'
-        const emphasised = mark.current || hoveredChapter.current === markIndex
+        const emphasised = mark.current || mark.selected || hoveredChapter.current === markIndex || draggingChapter.current?.id === mark.id
         ctx.globalAlpha = emphasised ? 1 : 0.8
         if (bandVisible) {
           const thickness = (agenda ? 2.5 : 1.5) + (emphasised ? 1 : 0)
@@ -332,27 +341,58 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     return { x: event.clientX - rect.left, y: event.clientY - rect.top }
   }
 
-  // Gränsen (replikindex) närmast pekaren, om någon ligger inom greppavstånd.
-  function boundaryAt(y: number): number | null {
+  // Gränsen (replikindex) närmast pekaren, om någon ligger inom greppavstånd, med avståndet.
+  function boundaryHit(y: number): { index: number; distance: number } | null {
     const { cues, height } = latest.current
     const win = currentWindow()
-    let best: number | null = null
+    let best: { index: number; distance: number } | null = null
     let bestDistance = GRAB_PIXELS + 0.001
     for (const span of visibleSpans(cues, win, height)) {
       const distance = Math.abs(span.y0 - y)
       if (distance < bestDistance) {
         bestDistance = distance
-        best = span.index
+        best = { index: span.index, distance }
       }
     }
     return best
+  }
+
+  // Vad ett grepp vid y tar tag i: replikgräns eller kapitellinje (UNG-230), enligt chooseGrab.
+  function grabAt(y: number): { kind: 'cue'; index: number } | { kind: 'chapter'; index: number } | null {
+    const { selectedIndex, chapterMarks, editable } = latest.current
+    const cue = editable ? boundaryHit(y) : null
+    const chapterIndex = editable ? chapterAt(y) : null
+    const chapterMark = chapterIndex !== null ? chapterMarks?.[chapterIndex] : undefined
+    const chapter = chapterIndex !== null && chapterMark && latest.current.onChapterDragStart
+      ? { index: chapterIndex, distance: Math.abs(timeToY(chapterMark.time, currentWindow(), latest.current.height) - y), selected: chapterMark.selected }
+      : null
+    const chosen = chooseGrab(
+      cue ? { distance: cue.distance, onSelected: cue.index === selectedIndex || cue.index === selectedIndex + 1 } : null,
+      chapter ? { distance: chapter.distance, selected: chapter.selected } : null,
+    )
+    if (chosen === 'cue' && cue) return { kind: 'cue', index: cue.index }
+    if (chosen === 'chapter' && chapter) return { kind: 'chapter', index: chapter.index }
+    return null
   }
 
   function onPointerDown(event: PointerEvent) {
     const position = local(event)
     const canvas = canvasRef.current
     if (!position || !canvas || position.x > BAND_WIDTH) return
-    const boundary = latest.current.editable ? boundaryAt(position.y) : null
+    const grab = grabAt(position.y)
+    if (grab && grab.kind === 'chapter') {
+      const mark = latest.current.chapterMarks?.[grab.index]
+      if (mark) {
+        event.preventDefault()
+        canvas.setPointerCapture(event.pointerId)
+        frozen.current = currentWindow()
+        draggingChapter.current = { index: grab.index, id: mark.id }
+        latest.current.onChapterDragStart?.(mark.id)
+        latest.current.onSeek(mark.time, 'boundary')
+        return
+      }
+    }
+    const boundary = grab && grab.kind === 'cue' ? grab.index : null
     if (boundary !== null) {
       event.preventDefault()
       canvas.setPointerCapture(event.pointerId)
@@ -392,12 +432,21 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     const position = local(event)
     const canvas = canvasRef.current
     if (!position || !canvas) return
+    const draggedChapter = draggingChapter.current
+    if (draggedChapter) {
+      const { height, energy, onChapterDrag } = latest.current
+      let time = Math.max(0, yToTime(Math.min(height, Math.max(0, position.y)), currentWindow(), height))
+      if (!event.altKey) time = snapToSpeech(energy, threshold, time, 'start')
+      onChapterDrag?.(draggedChapter.id, time)
+      return
+    }
     const index = dragging.current
     if (index === null) {
       const inBand = position.x <= BAND_WIDTH
-      const boundary = inBand && latest.current.editable ? boundaryAt(position.y) : null
-      const chapter = inBand && boundary === null ? chapterAt(position.y) : null
-      canvas.style.cursor = boundary !== null ? 'ns-resize' : 'pointer'
+      const grab = inBand ? grabAt(position.y) : null
+      const boundary = grab && grab.kind === 'cue' ? grab.index : null
+      const chapter = grab && grab.kind === 'chapter' ? grab.index : inBand && boundary === null ? chapterAt(position.y) : null
+      canvas.style.cursor = grab !== null ? 'ns-resize' : 'pointer'
       if (boundary !== hovered.current || chapter !== hoveredChapter.current) {
         hovered.current = boundary
         hoveredChapter.current = chapter
@@ -412,13 +461,20 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
   }
 
   function onPointerLeave() {
-    if (dragging.current !== null || (hovered.current === null && hoveredChapter.current === null)) return
+    if (dragging.current !== null || draggingChapter.current !== null || (hovered.current === null && hoveredChapter.current === null)) return
     hovered.current = null
     hoveredChapter.current = null
     draw()
   }
 
   function endDrag(event: PointerEvent) {
+    if (draggingChapter.current !== null) {
+      canvasRef.current?.releasePointerCapture(event.pointerId)
+      draggingChapter.current = null
+      frozen.current = null
+      latest.current.onChapterDragEnd?.()
+      return
+    }
     if (dragging.current === null) return
     canvasRef.current?.releasePointerCapture(event.pointerId)
     dragging.current = null
