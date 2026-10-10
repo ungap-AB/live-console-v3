@@ -21,6 +21,12 @@ import type { PublishStep, PublishStepKey } from './publishProgress'
 import { UploadPanel } from './UploadPanel'
 import { isExternalSource, isOperatorSupplied } from './recordingSource'
 import { chapterGroupInfo, collapsibleGroupIds, visibleChapters } from './chapterGroups'
+import { TrimBar } from '../../components/TrimBar'
+import { VideoPositionControls } from '../../components/VideoPositionControls'
+import { PositionScrubber } from '../../components/PositionScrubber'
+import { playEndFrom, type TrimRange } from '../../components/trimBarLogic'
+import { canMoveHere, chapterNote, chapterNoteText, moveMessage, type ChapterMove } from './trimSummaryLogic'
+import './TrimChapters.css'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ChapterImportDialog } from './ChapterImportDialog'
@@ -68,7 +74,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   const [previewPosition, setPreviewPosition] = useState(0)
   const [draftOffsets, setDraftOffsets] = useState<Record<number, number>>({})
   const [savedOffsets, setSavedOffsets] = useState<Record<number, number>>({})
-  const [undoVisible, setUndoVisible] = useState(false)
+  // UNG-235: senaste kapitelflytten (Flytta hit), som kan ångras.
+  const [lastMove, setLastMove] = useState<ChapterMove | null>(null)
   const [selectedChapter, setSelectedChapter] = useState<number | null>(null)
   const [previewPlaying, setPreviewPlaying] = useState(false)
   const [chapterLabels, setChapterLabels] = useState<Record<number, string>>({})
@@ -581,6 +588,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable) return
+      // UNG-236: trimbalkens balkar och reglaget sköter sina egna piltangenter.
+      if (event.defaultPrevented || target?.closest('[role="slider"]')) return
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
       event.preventDefault()
       seekBy(event.key === 'ArrowLeft' ? (event.shiftKey ? -1 : -5) : (event.shiftKey ? 1 : 5))
@@ -600,73 +609,19 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     setPreviewPosition(video.currentTime)
   }
 
-  function setTrimIn() {
-    const nextTrimStart = Math.round(previewPosition)
-    setMockTrimStart(nextTrimStart)
-    if (isAfter && nextTrimStart !== defaultTrimStart) setHasUnpublishedChanges(true)
+  // UNG-233/234: balkarna och ringarna ger ett nytt intervall. Ändrat mot den sparade trimningen räknas som en opublicerad ändring.
+  function changeTrim(range: TrimRange) {
+    setMockTrimStart(range.start)
+    setMockTrimEnd(range.end)
+    if (isAfter && (range.start !== defaultTrimStart || range.end !== defaultTrimEnd)) setHasUnpublishedChanges(true)
   }
 
-  function setTrimOut() {
-    const nextTrimEnd = Math.round(previewPosition)
-    setMockTrimEnd(nextTrimEnd)
-    if (isAfter && nextTrimEnd !== defaultTrimEnd) setHasUnpublishedChanges(true)
-  }
-
-  function goToTrimIn() {
+  function playFrom(seconds: number) {
     const video = previewVideoRef.current
     if (!video) return
-    video.currentTime = mockTrimStart
-    setPreviewPosition(mockTrimStart)
-  }
-
-  function goToTrimOut() {
-    const video = previewVideoRef.current
-    if (!video) return
-    video.currentTime = mockTrimEnd
-    setPreviewPosition(mockTrimEnd)
-  }
-
-  function returnToSavedOffset() {
-    if (selectedChapter === null) {
-      setDraftOffsets({})
-      return
-    }
-    const chapter = chapters[selectedChapter]
-    if (!chapter) return
-    const savedOffset = savedOffsets[selectedChapter] ?? chapter.offsetSeconds
-    setDraftOffsets((current) => {
-      const next = { ...current }
-      delete next[selectedChapter]
-      return next
-    })
-    const video = previewVideoRef.current
-    if (video) {
-      video.currentTime = savedOffset
-      setPreviewPosition(savedOffset)
-    }
-  }
-
-  function undoToOriginalOffset() {
-    if (selectedChapter === null) return
-    setUndoVisible(false)
-    const chapter = chapters[selectedChapter]
-    if (!chapter) return
-    const originalOffset = chapter.offsetSeconds
-    setDraftOffsets((current) => {
-      const next = { ...current }
-      delete next[selectedChapter]
-      return next
-    })
-    setSavedOffsets((current) => {
-      const next = { ...current }
-      delete next[selectedChapter]
-      return next
-    })
-    const video = previewVideoRef.current
-    if (video) {
-      video.currentTime = originalOffset
-      setPreviewPosition(originalOffset)
-    }
+    video.currentTime = seconds
+    setPreviewPosition(seconds)
+    void video.play().then(() => setPreviewPlaying(true)).catch(() => undefined)
   }
 
   async function resetVideoToOriginal(): Promise<boolean> {
@@ -675,7 +630,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     setMockTrimEnd(source?.durationSeconds ?? mockTrimDuration)
     setDraftOffsets({})
     setSavedOffsets({})
-    setUndoVisible(false)
+    setLastMove(null)
     setChapterLabels({})
     setSelectedChapter(null)
     setPreviewSeekSeconds(null)
@@ -711,7 +666,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     const chapter = chapters[index]
     if (!chapter) return
     pausePreview()
-    setUndoVisible(false)
     setSelectedChapter(index)
     // UNG-119: ett tryck på en pausrad hoppar till där pausen avslutas (nästa pauseOut), som i spelaren.
     const target = chapter.kind === 'pauseIn' ? chapters.findIndex((candidate, at) => at > index && candidate.kind === 'pauseOut') : -1
@@ -731,28 +685,41 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     }
   }
 
-  async function saveSelectedChapter() {
-    if (selectedChapter === null) return
-    const nextOffset = Math.round(previewPosition)
-    setDraftOffsets((current) => ({ ...current, [selectedChapter]: nextOffset }))
+  // UNG-235: Flytta hit sätter kapitlets tid till videons position och sparar den i utkastet direkt. Senaste flytten kan ångras.
+  async function moveChapterHere(index: number) {
+    const chapter = chapters[index]
+    if (!chapter || chaptersReadOnly) return
+    const from = savedOffsets[index] ?? chapter.offsetSeconds
+    const to = Math.round(previewPosition)
+    if (to === from) return
+    setSyncNote('')
     try {
-      if (p.publicMode === 'ondemand') {
-        const chapter = chapters[selectedChapter]
-        await client.projects.updateDraftChapter(p.id, chapter.chapterId, { offsetSeconds: nextOffset })
-      } else {
-        const chapter = chapters[selectedChapter]
-        await client.projects.updateDraftChapter(p.id, chapter.chapterId, { offsetSeconds: nextOffset })
-      }
-      setSavedOffsets((current) => ({ ...current, [selectedChapter]: nextOffset }))
+      await client.projects.updateDraftChapter(p.id, chapter.chapterId, { offsetSeconds: to })
+      setSavedOffsets((current) => ({ ...current, [index]: to }))
+      setSelectedChapter(index)
       setHasUnpublishedChanges(true)
-      setUndoVisible(true)
-      setDraftOffsets((current) => {
-        const next = { ...current }
-        delete next[selectedChapter]
-        return next
-      })
-    } catch {
-      // Keep the draft visible so the operator can retry.
+      setLastMove({ chapterId: chapter.chapterId, label: chapterLabels[index] ?? chapter.label, from, to })
+    } catch (error) {
+      setSyncNote(error instanceof Error ? error.message : 'Kapitlets tid kunde inte sättas.')
+    }
+  }
+
+  async function undoMove() {
+    const move = lastMove
+    if (!move) return
+    const index = chapters.findIndex((chapter) => chapter.chapterId === move.chapterId)
+    if (index < 0) {
+      setLastMove(null)
+      return
+    }
+    setSyncNote('')
+    try {
+      await client.projects.updateDraftChapter(p.id, move.chapterId, { offsetSeconds: move.from })
+      setSavedOffsets((current) => ({ ...current, [index]: move.from }))
+      setLastMove(null)
+      seekVideo(move.from)
+    } catch (error) {
+      setSyncNote(error instanceof Error ? error.message : 'Flytten kunde inte ångras.')
     }
   }
 
@@ -786,7 +753,12 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed')
   const canPublishOndemand = !chaptersReadOnly && !broadcastInProgress && !uploadPending && syncState !== 'pending' && (isAfter || hasUnpublishedChanges || trimDirty || stagedUpload)
   const videoDuration = previewVideoRef.current?.duration || mockTrimDuration
-  const canReturnToSaved = selectedChapter !== null && draftOffsets[selectedChapter] !== undefined
+  const trimDuration = mockTrimDuration > 0 ? mockTrimDuration : Number.isFinite(videoDuration) ? videoDuration : 0
+  // Kapitel med position i videon: markeringar i trimbalken.
+  const trimBarChapters = chapters
+    .map((chapter, index) => ({ time: chapter.synced === false ? null : savedOffsets[index] ?? draftOffsets[index] ?? chapter.offsetSeconds, label: chapterLabels[index] ?? chapter.label }))
+    .filter((item): item is { time: number; label: string } => item.time !== null)
+  const showTrimControls = isAfter && !awaitingApproval && !chaptersReadOnly && !broadcastInProgress && !recordingProcessing && trimDuration > 0
 
   // Hämtar kapitlen direkt (och väntar in dem) så att publiceringsdialogen kan stå kvar tills listan är på plats.
   async function reloadChaptersNow() {
@@ -962,6 +934,13 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
         onShowIngestInfoChange={setShowIngestInfo}
       />
       <div class="od">
+        {showTrimControls && (
+          <ol class="od-steps" aria-label="Ordning">
+            <li class="is-current"><span>1</span> Klipp början och slutet</li>
+            <li><span>2</span> Kapitel (vid behov)</li>
+            <li><span>3</span> Publicera</li>
+          </ol>
+        )}
         <div class="od-cols">
           <section class="od-col" aria-label="Trimning">
             {(source || previewUrl || broadcastInProgress || recordingProcessing) && (
@@ -1014,7 +993,19 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                       )}
                     </div>
                   ) : (
-                    <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
+                    <>
+                      <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
+                      {showTrimControls && (
+                        <VideoPositionControls
+                          overlay
+                          position={previewPosition}
+                          duration={trimDuration}
+                          playing={previewPlaying}
+                          onSeek={seekVideo}
+                          onTogglePlay={togglePreviewPlayback}
+                        />
+                      )}
+                    </>
                   )}
                 </div>
                 {isAfter && projectRecordings.length > 1 && !uploadPending && (
@@ -1029,58 +1020,34 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                     </button>
                   </div>
                 )}
-                {isAfter && !awaitingApproval && <div class={`od-selected-chapter${selectedChapter !== null && chapters[selectedChapter] ? ' has-selected-chapter' : ''}${broadcastInProgress || recordingProcessing ? ' is-broadcasting' : ''}`}>
-                  {selectedChapter !== null && chapters[selectedChapter] ? (
-                    <div class="od-selected-chapter-heading">
-                      <button class="od-chapter-nav" type="button" aria-label="Föregående kapitel" title="Föregående kapitel" disabled={selectedChapter <= 0} onClick={() => selectChapter(selectedChapter - 1)}>
-                        <Icon name="chevron_left" size={20} />
-                      </button>
-                      <div class="od-selected-chapter-label">
-                      {chapterLabels[selectedChapter] ?? chapters[selectedChapter].label}
-                      </div>
-                      <button class="od-chapter-nav" type="button" aria-label="Nästa kapitel" title="Nästa kapitel" disabled={selectedChapter >= chapters.length - 1} onClick={() => selectChapter(selectedChapter + 1)}>
-                        <Icon name="chevron_right" size={20} />
-                      </button>
-                    </div>
-                  ) : (
-                    <span class="od-selected-chapter-empty">
-                      Klicka på kapitlets <Icon name="skip_next" size={16} />-knapp för att justera det
-                    </span>
-                  )}
-                  {!chaptersReadOnly && <div class="od-time-controls" aria-label="Videoposition">
-                    <div class="od-trim-in-group">
-                      <button class="od-trim-go-button od-trim-go-in" type="button" aria-label="Gå till trimningens start" title="Gå till IN" disabled={!isAfter || externalVideo} onClick={goToTrimIn}>
-                        <Icon name="skip_previous" size={18} />
-                      </button>
-                      <button class="od-trim-boundary-button od-trim-in" type="button" disabled={!isAfter || externalVideo} onClick={setTrimIn}>IN</button>
-                    </div>
-                    <div class="od-controls-middle">
-                      <button class="btn btn-sm" type="button" disabled={selectedChapter === null || previewPosition <= 0} onClick={() => seekBy(-10)}>−10 s</button>
-                      <button class="btn btn-sm" type="button" disabled={selectedChapter === null || previewPosition <= 0} onClick={() => seekBy(-5)}>−5 s</button>
-                      <output>{formatHms(previewPosition)}</output>
-                      <button class="btn btn-sm" type="button" disabled={selectedChapter === null || previewPosition >= videoDuration} onClick={() => seekBy(5)}>+5 s</button>
-                      <button class="btn btn-sm" type="button" disabled={selectedChapter === null || previewPosition >= videoDuration} onClick={() => seekBy(10)}>+10 s</button>
-                    </div>
-                    <div class="od-trim-out-group">
-                      <button class="od-trim-boundary-button od-trim-out" type="button" disabled={!isAfter || externalVideo} onClick={setTrimOut}>OUT</button>
-                      <button class="od-trim-go-button od-trim-go-out" type="button" aria-label="Gå till trimningens slut" title="Gå till OUT" disabled={!isAfter || externalVideo} onClick={goToTrimOut}>
-                        <Icon name="skip_next" size={18} />
-                      </button>
-                    </div>
-                  </div>}
-                  {!chaptersReadOnly && <div class="od-selected-chapter-controls">
-                    <div class="od-selected-chapter-actions">
-                      <div class="od-main-commit-group">
-                        <button class="btn btn-sm od-commit-button" type="button" aria-label="Tillbaka till sparad tid" title="Tillbaka till sparad tid" disabled={!canReturnToSaved} onClick={returnToSavedOffset}>Tillbaka</button>
-                        <button class="btn btn-sm od-commit-button" type="button" aria-label="Spela eller pausa" title="Spela eller pausa" onClick={togglePreviewPlayback}>
-                          <Icon name={previewPlaying ? 'pause' : 'play_arrow'} size={18} />
-                        </button>
-                        <button class="btn btn-sm od-commit-button" type="button" aria-label="Cue tidsändring" title="Cue tidsändring" disabled={selectedChapter === null} onClick={() => void saveSelectedChapter()}>Cue</button>
-                      </div>
-                      {undoVisible && <button class="btn btn-sm od-commit-button od-undo-button" type="button" aria-label="Ångra tidsändring" title="Ångra tidsändring" onClick={undoToOriginalOffset}>Ångra</button>}
-                    </div>
-                  </div>}
-                </div>}
+                {showTrimControls && (
+                  <div class="od-trim-controls">
+                    <PositionScrubber
+                      position={previewPosition}
+                      duration={trimDuration}
+                      start={mockTrimStart}
+                      end={mockTrimEnd}
+                      disabled={externalVideo}
+                      onSeek={seekVideo}
+                      onChange={changeTrim}
+                    />
+                    <TrimBar
+                      duration={trimDuration}
+                      start={mockTrimStart}
+                      end={mockTrimEnd}
+                      position={previewPosition}
+                      chapters={trimBarChapters}
+                      disabled={externalVideo}
+                      onChange={changeTrim}
+                      onSeek={(seconds) => {
+                        pausePreview()
+                        seekVideo(seconds)
+                      }}
+                      onPlayFromStart={() => playFrom(mockTrimStart)}
+                      onPlayEnd={() => playFrom(playEndFrom(mockTrimStart, mockTrimEnd))}
+                    />
+                  </div>
+                )}
                 {stepperVisible && stepTarget && (
                   <SyncStepper
                     target={stepTarget}
@@ -1223,7 +1190,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                 {chapters.map((chapter, index) => visibleFlags[index] ? (
                   <li
                     key={chapter.chapterId}
-                    class={`od-chapter-row kind-${chapter.kind}${!chaptersReadOnly && chapter.synced !== false ? ' is-selectable' : ''}${groupInfo[index].isHeader ? ' is-group-header' : ''}${selectedChapter === index ? ' is-selected' : ''}${chapter.synced === false ? ' is-unsynced' : ''}${(guide?.step === 1 && chapter.anchorable) || stepperVisible ? ' is-pickable' : ''}${stepperVisible && stepTarget?.chapterId === chapter.chapterId ? ' is-step-target' : ''}${guide?.anchorId === chapter.chapterId ? ' is-anchor' : ''}`}
+                    class={`od-chapter-row kind-${chapter.kind}${!chaptersReadOnly && chapter.synced !== false ? ' is-selectable' : ''}${groupInfo[index].isHeader ? ' is-group-header' : ''}${selectedChapter === index ? ' is-selected' : ''}${chapter.synced === false ? ' is-unsynced' : ''}${(guide?.step === 1 && chapter.anchorable) || stepperVisible ? ' is-pickable' : ''}${stepperVisible && stepTarget?.chapterId === chapter.chapterId ? ' is-step-target' : ''}${guide?.anchorId === chapter.chapterId ? ' is-anchor' : ''}${isAfter && chapter.synced !== false && chapterNote(savedOffsets[index] ?? draftOffsets[index] ?? chapter.offsetSeconds, undefined, mockTrimStart, mockTrimEnd) === 'removed' ? ' is-outside' : ''}`}
                     tabIndex={!chaptersReadOnly && chapter.synced !== false ? 0 : undefined}
                     aria-current={selectedChapter === index ? 'true' : undefined}
                     onClick={(event) => {
@@ -1279,6 +1246,22 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                     {groupInfo[index].isHeader && groupInfo[index].childCount > 0 && collapsedGroups.has(chapter.chapterId) && (
                       <span class="od-chapter-count">{groupInfo[index].childCount} talare</span>
                     )}
+                    {isAfter && !chaptersReadOnly && chapter.synced !== false && (() => {
+                      const shownTime = savedOffsets[index] ?? draftOffsets[index] ?? chapter.offsetSeconds
+                      const note = chapterNote(shownTime, chapter.offsetSeconds, mockTrimStart, mockTrimEnd)
+                      return note ? <span class={`od-chapter-note is-${note}`}>{chapterNoteText(note)}</span> : null
+                    })()}
+                    {isAfter && !chaptersReadOnly && chapter.synced !== false && !guide && !stepperVisible && (
+                      <button
+                        class="btn btn-sm od-chapter-move"
+                        type="button"
+                        disabled={!canMoveHere(savedOffsets[index] ?? draftOffsets[index] ?? chapter.offsetSeconds, previewPosition)}
+                        title={canMoveHere(savedOffsets[index] ?? draftOffsets[index] ?? chapter.offsetSeconds, previewPosition) ? 'Sätt kapitlets tid till videons position' : 'Kapitlet ligger redan här'}
+                        onClick={() => void moveChapterHere(index)}
+                      >
+                        Flytta hit
+                      </button>
+                    )}
                     {!chaptersReadOnly && (p.publicMode === 'ondemand' || p.publicMode === 'after') && (
                       deletingChapter === index ? (
                         <button class="od-chapter-delete is-confirm" type="button" aria-label={`Bekräfta radering av ${chapter.label}`} title="Bekräfta radering" onClick={() => void deleteChapter(index)}>
@@ -1303,7 +1286,14 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                 <button class="btn btn-sm" type="button" onClick={() => setShowImport(true)}>Importera kapitel…</button>
               </div>
             )}
+            {lastMove && !chaptersReadOnly && (
+              <div class="tcl-toast" role="status">
+                <span>{moveMessage(lastMove)}</span>
+                <button class="btn btn-sm" type="button" onClick={() => void undoMove()}>Ångra</button>
+              </div>
+            )}
             <footer class="od-chapters-footer">
+              {(hasUnpublishedChanges || trimDirty) && !chaptersReadOnly && <span class="od-unpublished">Opublicerade ändringar</span>}
               {(isAfter || p.publicMode === 'ondemand') && (
                 <>
                   {isAfter && <button class="btn btn-sm" type="button" disabled={chaptersReadOnly || uploadPending} onClick={() => setConfirmUndoAll(true)}>

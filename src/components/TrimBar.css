@@ -1,0 +1,138 @@
+/* UNG-233: trimbalken. Spåret är mörkt oavsett tema (som videoytan), så att de vita balkarna syns. */
+
+.trimbar {
+  --trimbar-handle-inset: 4px;
+  --trimbar-play-size: 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.trimbar-surface {
+  position: relative;
+  height: 56px;
+  padding: 0 var(--trimbar-handle-inset);
+  touch-action: none;
+  cursor: ew-resize;
+  user-select: none;
+}
+
+.trimbar.is-disabled .trimbar-surface {
+  cursor: default;
+}
+
+.trimbar-track {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: var(--trimbar-handle-inset);
+  right: var(--trimbar-handle-inset);
+  overflow: hidden;
+  background: #1a1e25;
+  border-radius: 6px;
+}
+
+.trimbar-cut {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(135deg, #2f3641 0 6px, #1a1e25 6px 12px);
+}
+
+.trimbar-keep {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #2f6fd0;
+  opacity: 0.9;
+}
+
+.trimbar-chapter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #fff;
+}
+
+.trimbar-chapter.is-outside {
+  background: #6b7480;
+}
+
+.trimbar-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #e0a43a;
+}
+
+/* Balkarna är vita och reagerar inte på pekaren själva: ytan under dem tar tag i den närmaste. De går att fokusera för tangentbordet. */
+.trimbar-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  margin-left: -4px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1.5px #12151a;
+  pointer-events: none;
+}
+
+.trimbar-handle:focus-visible {
+  outline: 2px solid #e0a43a;
+  outline-offset: 2px;
+}
+
+/* Spelknapparna hänger under balkarna. Ligger balkarna nära varandra skjuts knapparna isär så att de inte täcker varandra. */
+.trimbar-plays {
+  position: relative;
+  height: var(--trimbar-play-size);
+}
+
+.trimbar-play {
+  position: absolute;
+  top: 0;
+  aspect-ratio: 1 / 1;
+  box-sizing: border-box;
+  width: var(--trimbar-play-size);
+  height: var(--trimbar-play-size);
+  min-width: var(--trimbar-play-size);
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #2f6fd0;
+  color: #fff;
+  cursor: pointer;
+  transform: translateX(-50%);
+}
+
+.trimbar-play:hover:not(:disabled) {
+  background: #3b7be0;
+}
+
+.trimbar-play:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.trimbar-play-start {
+  left: clamp(
+    calc(var(--trimbar-play-size) / 2),
+    min(var(--trimbar-start), calc(var(--trimbar-end) - var(--trimbar-play-size) - 4px)),
+    calc(100% - var(--trimbar-play-size) * 1.5 - 4px)
+  );
+}
+
+.trimbar-play-end {
+  left: clamp(
+    calc(var(--trimbar-play-size) * 1.5 + 4px),
+    max(var(--trimbar-end), calc(var(--trimbar-start) + var(--trimbar-play-size) + 4px)),
+    calc(100% - var(--trimbar-play-size) / 2)
+  );
+}
