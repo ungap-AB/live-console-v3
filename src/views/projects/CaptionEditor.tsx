@@ -1718,14 +1718,6 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
           </div>
         </div>
         <div class="ce-actions">
-          <label class="ce-follow">
-            <input type="checkbox" checked={follow} onChange={(event) => setFollow(event.currentTarget.checked)} />
-            Följ med
-          </label>
-          <span class="ce-dirty" aria-live="polite">
-            {dirty ? `${changeCount} osparade ändringar` : master ? 'Sparat' : ''}
-            {actions.unpublishedBadge && <span class="ce-unpublished"> · Opublicerade ändringar</span>}
-          </span>
           {hasCaptions && (
           <button
             class="btn btn-sm"
@@ -1797,24 +1789,6 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
               {publishing ? 'Publicerar…' : 'Publicera ändringar'}
             </button>
           )}
-          <OverflowMenu
-            label="Fler undertextåtgärder"
-            items={[
-              {
-                label: 'Läs in VTT-fil…',
-                disabled: !master || readOnly || saving || publishing || regenerating || captionsBusy,
-                title: 'Läser in en egen undertextfil som utkast',
-                onClick: () => { setVttError(''); setShowVttImport(true) },
-              },
-              {
-                label: 'Ta bort undertexter…',
-                danger: true,
-                disabled: !hasCaptions || readOnly || saving || publishing || regenerating || captionsBusy,
-                title: hasCaptions ? 'Tar bort undertexterna, även för tittarna' : 'Projektet har inga undertexter',
-                onClick: () => setConfirmRemoveCaptions(true),
-              },
-            ]}
-          />
           <button class="btn btn-sm" type="button" title="Stäng redigeraren (Esc)" onClick={requestClose}>Stäng</button>
         </div>
       </header>
@@ -2090,8 +2064,9 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
           </section>
 
           <section class="ce-list-wrap" aria-label="Repliker">
-            {chapterState === 'ok' && review === null && (
-              <div class="ce-chapterbar">
+            <div class="ce-chapterbar">
+              {chapterState === 'ok' && review === null && (
+              <>
                 {(chapterList.length > 0 || !hasCaptions) && (
                   <>
                     {/* Minst ett av filtren är alltid på: släcks det ena när det andra redan är släckt händer ingenting. */}
@@ -2162,8 +2137,38 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                     )}
                   </span>
                 )}
+              </>
+              )}
+              {/* Gäller hela listan: följ videon, osparat/opublicerat och fler undertextåtgärder. */}
+              <div class="ce-chapterbar-end">
+                <label class="ce-follow">
+                  <input type="checkbox" checked={follow} onChange={(event) => setFollow(event.currentTarget.checked)} />
+                  Följ med
+                </label>
+                <span class="ce-dirty" aria-live="polite">
+                  {dirty ? `${changeCount} osparade ändringar` : master ? 'Sparat' : ''}
+                  {actions.unpublishedBadge && <span class="ce-unpublished"> · Opublicerade ändringar</span>}
+                </span>
+                <OverflowMenu
+                  label="Fler undertextåtgärder"
+                  items={[
+                    {
+                      label: 'Läs in VTT-fil…',
+                      disabled: !master || readOnly || saving || publishing || regenerating || captionsBusy,
+                      title: 'Läser in en egen undertextfil som utkast',
+                      onClick: () => { setVttError(''); setShowVttImport(true) },
+                    },
+                    {
+                      label: 'Ta bort undertexter…',
+                      danger: true,
+                      disabled: !hasCaptions || readOnly || saving || publishing || regenerating || captionsBusy,
+                      title: hasCaptions ? 'Tar bort undertexterna, även för tittarna' : 'Projektet har inga undertexter',
+                      onClick: () => setConfirmRemoveCaptions(true),
+                    },
+                  ]}
+                />
               </div>
-            )}
+            </div>
             {chapterState === 'ok' && review === null && addChapterOpen && !readOnly && (
               <div class="ce-addchapter">
                 <div class="ce-addchapter-kind" role="group" aria-label="Typ av kapitel">
