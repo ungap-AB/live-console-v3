@@ -59,6 +59,8 @@ interface CaptionEditorProps {
   projectId: string
   projectName: string
   onClose: () => void
+  /** UNG-250: ökas när redigeraren ska stängas utifrån (bakåtknappen); frågar om osparat som Stäng. */
+  closeSignal?: number
   /** Anropas efter en lyckad sparning, så att omgivande vy kan hämta om status. */
   onSaved?: () => void
   /** Anropas när "Skapa på nytt" har startat ett nytt jobb, så att omgivande vy kan visa framsteget (redigeraren stängs då). */
@@ -137,7 +139,7 @@ function blurAfterMouse(event: MouseEvent) {
 // UNG-140/143: redigerare för undertexterna (mastern, original-tidslinje). Video med aktuell replik över bilden och en virtualiserad
 // radlista där texten rättas på plats. Rutor kan slås ihop (exakt tid), delas, orden kan flyttas mellan grannar, tider justeras,
 // rader läggs till och tas bort, och allt går att ångra tills man sparar. Sparas som en version (versionskontroll mot servern).
-export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRegenerated, onChaptersSaved, trim, trimLock, createFailed, chapterTools }: CaptionEditorProps) {
+export function CaptionEditor({ projectId, projectName, onClose, closeSignal, onSaved, onRegenerated, onChaptersSaved, trim, trimLock, createFailed, chapterTools }: CaptionEditorProps) {
   const [master, setMaster] = useState<CaptionMaster | null>(null)
   // UNG-248: projektet har undertexter. Utan dem är redigeraren bara-kapitel-läget, med video och trimbalk, och Skapa undertexter i huvudet.
   const [hasCaptions, setHasCaptions] = useState(true)
@@ -1419,6 +1421,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     if (dirty) setConfirmClose(true)
     else onClose()
   }
+
+  useEffect(() => {
+    if (closeSignal) requestClose()
+  }, [closeSignal])
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {

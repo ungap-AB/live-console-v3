@@ -14,3 +14,16 @@ export function parseProjectLink(hash: string): ProjectLink | null {
   const projectId = id ? decodeURIComponent(id) : null
   return projectId || openJobs ? { projectId, openJobs } : null
 }
+
+// UNG-250: editorn har en egen adress per projekt, #/projects/{id}/edit, så att omladdning och delade länkar öppnar den direkt och
+// bakåtknappen stänger den.
+export function editorHref(projectId: string): string {
+  return `#/projects/${encodeURIComponent(projectId)}/edit`
+}
+
+/** Projektet vars editor adressen pekar på, eller null. */
+export function parseEditorLink(hash: string): string | null {
+  const [path] = hash.replace(/^#/, '').split('?')
+  const [, section, id, sub] = path.split('/')
+  return section === 'projects' && id && sub === 'edit' ? decodeURIComponent(id) : null
+}

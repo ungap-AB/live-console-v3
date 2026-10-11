@@ -28,12 +28,14 @@ interface CaptionStudioProps {
   trimLock?: { onUnpublish: () => void }
   /** UNG-249: projektets uppgifter för kapitelverktygen i redigeraren. */
   chapterTools?: EditorChapterTools
+  /** UNG-250: ökas när editorn ska stängas utifrån (bakåtknappen). */
+  closeSignal?: number
   onClose: () => void
 }
 
 // UNG-165: undertextstudion. Medan undertexterna skapas visas framsteget som en overlay över en dummy av redigeraren, så att man anar nästa
 // steg; annars öppnas redigeraren. UNG-248: även utan undertexter (trim och kapitel), och undertexter skapas därifrån.
-export function CaptionStudio({ projectId, projectName, videoDurationSeconds, posterUrl, generation, phase, setGeneration, refresh, onChanged, onChaptersChanged, trim, trimLock, chapterTools, onClose }: CaptionStudioProps) {
+export function CaptionStudio({ projectId, projectName, videoDurationSeconds, posterUrl, generation, phase, setGeneration, refresh, onChanged, onChaptersChanged, trim, trimLock, chapterTools, closeSignal, onClose }: CaptionStudioProps) {
   const view = studioView(phase)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -47,9 +49,15 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, po
   }, [view])
 
   const job = generation?.job
-  if (view === 'editor' || !job) {
+  const showEditor = view === 'editor' || !job
+  // Framstegsvyn har inget osparat: bakåt stänger direkt (redigeraren hanterar signalen själv).
+  useEffect(() => {
+    if (closeSignal && !showEditor) onClose()
+  }, [closeSignal])
+
+  if (showEditor) {
     const createFailed = phase === 'failed' ? (job?.errorMessage ?? 'okänt fel.') : undefined
-    return <CaptionEditor projectId={projectId} projectName={projectName} onClose={onClose} onSaved={() => { onChanged(); void refresh() }} onRegenerated={setGeneration} onChaptersSaved={onChaptersChanged} trim={trim} trimLock={trimLock} createFailed={createFailed} chapterTools={chapterTools} />
+    return <CaptionEditor projectId={projectId} projectName={projectName} onClose={onClose} onSaved={() => { onChanged(); void refresh() }} onRegenerated={setGeneration} onChaptersSaved={onChaptersChanged} trim={trim} trimLock={trimLock} createFailed={createFailed} chapterTools={chapterTools} closeSignal={closeSignal} />
   }
 
   async function cancel() {

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../data'
 import { onSessionLost } from '../data/http/fetchJson'
 import type { CurrentUser } from '../data/types'
-import { parseProjectLink } from './projectLink'
+import { parseEditorLink, parseProjectLink } from './projectLink'
 import { routeHref, useCredentialToken, useRoute, useShareToken } from './router'
 import { Shell } from './Shell'
 import { CredentialLinkView } from './CredentialLinkView'
@@ -122,6 +122,13 @@ export function App() {
   useEffect(() => {
     if (!authed) return
     function followLink() {
+      // UNG-250: editorns adress ligger kvar (den följer editorn); projektet öppnas i ondemand-vyn där editorn finns.
+      const editorProjectId = parseEditorLink(window.location.hash)
+      if (editorProjectId) {
+        setActiveProjectId(editorProjectId)
+        setProjectScreen('ondemand')
+        return
+      }
       const link = parseProjectLink(window.location.hash)
       if (!link) return
       if (link.openJobs) window.location.hash = routeHref('jobs')
