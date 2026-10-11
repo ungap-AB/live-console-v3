@@ -1,7 +1,7 @@
 import { Icon } from '../../components/Icon'
 import type { EncoderStatus } from './liveStatus'
 
-// Signalstatus och tittarantal som små märken. Används av projektets huvud och av det expanderade live-läget (UNG-179).
+// Signalstatus och tittarantal som små märken. Används av projektets huvud och av utspelningsvyn i Live (UNG-179, UNG-269).
 export function EncoderStatusChip({ status }: { status: EncoderStatus }) {
   return (
     <div class={`pv-encoder-status is-${status.tone}`} role="status">

@@ -158,11 +158,6 @@
   border-radius: 6px;
 }
 
-.before-project-workspace .pcols {
-  height: auto;
-  flex: 1 1 auto;
-}
-
 .pcol {
   flex: 1 1 0;
   min-width: 0;

@@ -1,4 +1,5 @@
-import { useRef, useState } from 'preact/hooks'
+import type { ComponentChildren } from 'preact'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { ChannelHealth, Project } from '../../data/types'
 import { useDismiss } from '../../app/useDismiss'
@@ -7,6 +8,9 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import type { ProjectActions } from './actions'
 import { MeetingBindingModal } from './MeetingBindingModal'
+import { OverviewShell } from './OverviewShell'
+import { PlayerSettingsDialog } from './PlayerSettingsDialog'
+import { PlayoutOverlay, type PlayoutAddress } from './PlayoutOverlay'
 import { consumeMeetingBindingRequest } from './meetingBindingRequest'
 import { linkedResourceLabel } from './preparationLabels'
 import { PlayoutColumns } from './PlayoutColumns'
@@ -15,6 +19,8 @@ import { useNameList } from './useNameList'
 import './BeforeWorkspace.css'
 
 interface BeforeWorkspaceProps {
+  /** Projektets rubrik (ProjectHeader), överst i översiktsskalet. */
+  header: ComponentChildren
   project: Project
   actions: ProjectActions
   health: ChannelHealth | null
@@ -23,10 +29,13 @@ interface BeforeWorkspaceProps {
   showIngestInfo: boolean
   onShowIngestInfoChange: (show: boolean) => void
   meetingDomain: string
+  /** Utspelningsvyns adress ägs av Livesandning, så att vyn står kvar öppen när läget går från Before till Live. */
+  playout: PlayoutAddress
 }
 
-// Arbetsyta för förberedelser i läget Before.
-export function BeforeWorkspace({ project: p, actions, health, refresh, stopPolling, showIngestInfo, onShowIngestInfoChange, meetingDomain }: BeforeWorkspaceProps) {
+// Läget Before. UNG-268: översikt till vänster (status, förberedelser, spelarens bild och text), spelaren till höger; utspelningen av
+// dagordning och namnlista ligger i en överlagrad arbetsvy som döljer spelaren.
+export function BeforeWorkspace({ header, project: p, actions, health, refresh, stopPolling, showIngestInfo, onShowIngestInfoChange, meetingDomain, playout }: BeforeWorkspaceProps) {
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
     [p.agendaId],
@@ -38,7 +47,11 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
   const [notUsed, setNotUsed] = useState<string[]>([])
   // UNG-189: öppnas direkt när man valt "Koppla till Meeting" i skapa-dialogen.
   const [showMeeting, setShowMeeting] = useState(() => consumeMeetingBindingRequest(p.id))
+  const [showPlayerSettings, setShowPlayerSettings] = useState(false)
   const { selectMode } = useModeChange(p, actions)
+  // Spelaren laddas om när det tittarna ser i Before ändras (från dialogen här eller i rubriken).
+  const [playerVersion, setPlayerVersion] = useState(0)
+  useEffect(() => setPlayerVersion((v) => v + 1), [p.beforeText, p.posterUrl, p.textPlacement])
 
   const hasIngest = p.channel !== null
   const receivingSignal = health?.livePhase === 'live'
@@ -102,15 +115,61 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
   }
 
   return (
-    <div class="bw">
+    <OverviewShell
+      header={header}
+      player={p.playerUrl ? { url: p.playerUrl, published: true, version: playerVersion } : null}
+      workOpen={playout.open}
+      overlays={<>
+        {playout.open && (
+          <PlayoutOverlay projectName={p.name} onClose={playout.closePlayout}>
+            <PlayoutColumns project={p} actions={actions} openPicker={openPicker} onPickerClosed={() => setOpenPicker(null)} />
+          </PlayoutOverlay>
+        )}
+        {showPlayerSettings && <PlayerSettingsDialog project={p} actions={actions} onClose={() => setShowPlayerSettings(false)} />}
+        {confirmTeardown && (
+          <ConfirmModal
+            title="Riva ingest?"
+            confirmLabel="Riv ingest"
+            danger
+            onCancel={() => setConfirmTeardown(false)}
+            onConfirm={() => void teardownIngest()}
+          >
+            <p>Ingest-resursen tas bort. För att sända behöver du skapa en ny ingest och använda en ny stream key i enkodern.</p>
+          </ConfirmModal>
+        )}
+        {showMeeting && (
+          <MeetingBindingModal
+            projectName={p.name}
+            meetingDomain={meetingDomain}
+            currentAgendaName={p.agendaId ? agendaResource.data?.name : undefined}
+            actions={actions}
+            onClose={() => setShowMeeting(false)}
+          />
+        )}
+      </>}
+    >
+      <div class="bw-summary">
+        <span class="bw-summary-label">Status</span>
+        <strong>{receivingSignal ? 'Inte startad – signal tas emot' : 'Inte startad'}</strong>
+      </div>
+
+      <div class="bw-actions">
+        <button class="btn btn-primary" type="button" onClick={playout.openPlayout}>
+          <Icon name="playlist_play" size={18} /> Spela ut kapitel
+        </button>
+        <button class="btn" type="button" onClick={() => setShowPlayerSettings(true)}>
+          <Icon name="settings" size={18} /> Spelarinställningar…
+        </button>
+      </div>
+
       <ul class="bw-status" aria-label="Status för förberedelser">
-        {preparationCard('Dagordning', p.agendaId ? linkedResourceLabel(agendaResource.data) : 'Ej kopplad', !!p.agendaId, actionMenu('Dagordning', [
-          { label: 'Koppla', onClick: () => { setOpenMenu(null); setOpenPicker('agenda') } },
+        {preparationCard('Dagordning', p.agendaId ? withCount(linkedResourceLabel(agendaResource.data), agendaResource.data?.items.length, 'punkt', 'punkter') : 'Ej kopplad', !!p.agendaId, actionMenu('Dagordning', [
+          { label: 'Koppla', onClick: () => { setOpenMenu(null); setOpenPicker('agenda'); playout.openPlayout() } },
           { label: 'Koppla till Meeting...', onClick: () => { setOpenMenu(null); setShowMeeting(true) } },
           { label: 'Använd ej', onClick: () => { void actions.setAgenda(null); markNotUsed('Dagordning') } },
         ]))}
-        {preparationCard('Namnlista', p.namelistId ? linkedResourceLabel(nameListResource.data) : 'Ej kopplad', !!p.namelistId, actionMenu('Namnlista', [
-          { label: 'Koppla', onClick: () => { setOpenMenu(null); setOpenPicker('namelist') } },
+        {preparationCard('Namnlista', p.namelistId ? withCount(linkedResourceLabel(nameListResource.data), nameListResource.data?.people.length, 'namn', 'namn') : 'Ej kopplad', !!p.namelistId, actionMenu('Namnlista', [
+          { label: 'Koppla', onClick: () => { setOpenMenu(null); setOpenPicker('namelist'); playout.openPlayout() } },
           { label: 'Använd ej', onClick: () => { actions.setNameList(null); markNotUsed('Namnlista') } },
         ]))}
         {preparationCard('Ingest', receivingSignal ? 'Signal OK' : hasIngest ? 'Ingen signal' : 'Inte skapad', hasIngest, <>
@@ -144,30 +203,19 @@ export function BeforeWorkspace({ project: p, actions, health, refresh, stopPoll
         ]), true)}
       </ul>
 
-      <PlayoutColumns project={p} actions={actions} openPicker={openPicker} onPickerClosed={() => setOpenPicker(null)} />
-
-      {confirmTeardown && (
-        <ConfirmModal
-          title="Riva ingest?"
-          confirmLabel="Riv ingest"
-          danger
-          onCancel={() => setConfirmTeardown(false)}
-          onConfirm={() => void teardownIngest()}
-        >
-          <p>Ingest-resursen tas bort. För att sända behöver du skapa en ny ingest och använda en ny stream key i enkodern.</p>
-        </ConfirmModal>
-      )}
-      {showMeeting && (
-        <MeetingBindingModal
-          projectName={p.name}
-          meetingDomain={meetingDomain}
-          currentAgendaName={p.agendaId ? agendaResource.data?.name : undefined}
-          actions={actions}
-          onClose={() => setShowMeeting(false)}
-        />
-      )}
-    </div>
+      <div class="bw-player-texts">
+        <span class="bw-summary-label">Tittarna ser nu</span>
+        <div class="bw-player-row">
+          {p.posterUrl ? <img class="bw-poster" src={p.posterUrl} alt="Spelarens bild" /> : <span class="bw-poster is-empty">Ingen bild</span>}
+          <p class="bw-before-text">{p.beforeText.trim() || 'Ingen text för Before.'}</p>
+        </div>
+      </div>
+    </OverviewShell>
   )
+}
+
+function withCount(label: string, count: number | undefined, one: string, many: string): string {
+  return count === undefined ? label : `${label} · ${count} ${count === 1 ? one : many}`
 }
 
 interface BwMenuItem {

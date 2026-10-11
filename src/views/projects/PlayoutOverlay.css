@@ -1,0 +1,62 @@
+/* UNG-268: utspelningsvyn ligger över hela projektet (under dialogerna, z-index 50). */
+
+.po {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 20px 16px;
+  background: var(--bg);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+.po-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.po-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.po-sub {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+.po-head .spacer {
+  flex: 1;
+}
+
+.po-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Listorna fyller vyn (som Live-vyns expanderade läge). */
+.po-body .pcols,
+.po-body .pcols-search + .pcols {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+}
+
+/* UNG-269: lägesknapparna i huvudet (Live) utan etikett, på en rad. */
+.po-head .pv-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+}

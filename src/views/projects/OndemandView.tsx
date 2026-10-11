@@ -24,7 +24,7 @@ import { trimDraftPayload } from './draftActions'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ProjectHeader } from './ProjectHeader'
-import { PlayerPreview } from './PlayerPreview'
+import { OverviewShell } from './OverviewShell'
 import { useModeChange } from './useModeChange'
 import { useLiveChannel } from './useLiveChannel'
 import './OndemandView.css'
@@ -72,6 +72,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   const [draftStatus, setDraftStatus] = useState<DraftStatus | null>(null)
   // UNG-252: ökar när något publicerats eller sparats, så att den inbäddade spelaren laddas om.
   const [previewVersion, setPreviewVersion] = useState(0)
+  // UNG-267: editorn ligger över vyn; spelaren stängs av så länge.
+  const [editorOpen, setEditorOpen] = useState(false)
   const [projectRecordings, setProjectRecordings] = useState<ProjectRecording[]>([])
   const [switchingRecording, setSwitchingRecording] = useState(false)
   const [showRecordingPicker, setShowRecordingPicker] = useState(false)
@@ -515,8 +517,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
           : ''
 
   return (
-    <div class="project-workspace doc">
-      <ProjectHeader
+    <OverviewShell
+      header={<ProjectHeader
         project={p}
         actions={actions}
         onBack={onBack}
@@ -527,16 +529,98 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
         streamKey={live.streamKey}
         showIngestInfo={showIngestInfo}
         onShowIngestInfoChange={setShowIngestInfo}
-      />
-      <div class="od">
-        {showTrim && !published && (
-          <ol class="od-steps" aria-label="Ordning">
-            <li class="is-current"><span>1</span> Redigera trim och kapitel</li>
-            <li><span>2</span> Publicera</li>
-          </ol>
+      />}
+      top={showTrim && !published && (
+        <ol class="od-steps" aria-label="Ordning">
+          <li class="is-current"><span>1</span> Redigera trim och kapitel</li>
+          <li><span>2</span> Publicera</li>
+        </ol>
+      )}
+      player={p.playerUrl && !awaitingApproval ? { url: p.playerUrl, published, version: previewVersion } : null}
+      workOpen={editorOpen}
+      overlays={<>
+        {dialog}
+        {confirmOndemand && (
+          <Modal title="Publicera ändringarna?" onClose={() => setConfirmOndemand(false)}>
+            <p>{published ? 'Kapitel och godkända undertexter släpps till tittarna.' : 'Sändningen sätts i Ondemand-läge när du publicerar.'}</p>
+            <div class="modal-actions">
+              <button class="btn" type="button" onClick={() => setConfirmOndemand(false)}>Avbryt</button>
+              <button class="btn btn-primary" type="button" onClick={() => void publishWithTrim()}>Publicera</button>
+            </div>
+          </Modal>
         )}
-        <div class="od-cols">
-          <section class="od-col od-overview" aria-label="Översikt">
+        {confirmDiscard && (
+          <Modal title="Förkasta ändringarna?" onClose={() => setConfirmDiscard(false)}>
+            <p>
+              Kapitel och undertexter går tillbaka till det som är publicerat. Det du ändrat sedan dess försvinner (undertexternas tidigare versioner
+              finns kvar i historiken).
+            </p>
+            <div class="modal-actions">
+              <button class="btn" type="button" onClick={() => setConfirmDiscard(false)}>Avbryt</button>
+              <button class="btn btn-danger" type="button" onClick={() => void discardChanges()}>Förkasta</button>
+            </div>
+          </Modal>
+        )}
+        {confirmUndoAll && (
+          <Modal title="Ångra allt?" onClose={() => setConfirmUndoAll(false)}>
+            <p>Alla ändringar i After återställs till läget när sändningen gick över till After. Originalinspelningen används igen.</p>
+            <div class="modal-actions">
+              <button class="btn" type="button" onClick={() => setConfirmUndoAll(false)}>Avbryt</button>
+              <button class="btn btn-danger" type="button" onClick={() => void undoAllAndClose()}>Ångra allt</button>
+            </div>
+          </Modal>
+        )}
+        {showRecordingPicker && (
+          <Modal title="Välj vilken sändning som ska användas" onClose={() => setShowRecordingPicker(false)}>
+            <ul class="od-recording-picker-list">
+              {projectRecordings.map((item) => (
+                <li key={item.id}>
+                  <label class="od-recording-picker-option">
+                    <input
+                      type="radio"
+                      name="recording-picker"
+                      checked={pendingRecordingId === item.id}
+                      onChange={() => setPendingRecordingId(item.id)}
+                    />
+                    <span>{formatDateTime(item.startedAt)} · {formatHms(item.durationSeconds)}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+            {(() => {
+              const selected = projectRecordings.find((item) => item.id === pendingRecordingId)
+              return selected && selected.durationSeconds < VERY_SHORT_RECORDING_SECONDS ? (
+                <p class="note warn">Den valda sändningen är väldigt kort ({formatHms(selected.durationSeconds)}) — kontrollera att det inte var ett test innan du byter.</p>
+              ) : null
+            })()}
+            <div class="modal-actions">
+              <button class="btn" type="button" onClick={() => setShowRecordingPicker(false)}>Avbryt</button>
+              <button class="btn btn-primary" type="button" disabled={!pendingRecordingId || switchingRecording} onClick={() => void confirmRecordingSwitch()}>
+                Byt sändning
+              </button>
+            </div>
+          </Modal>
+        )}
+        {publishing && <PublishProgressDialog steps={publishSteps} activeKey={publishStep} />}
+        {!publishing && publishOutcome?.kind === 'published' && (
+          <PublishOutcomeDialog
+            kind="published"
+            facts={{
+              wasPublished: publishOutcome.wasPublished,
+              visibility: p.visibility,
+              chapterCount,
+              captions: p.recording?.captions ? { label: p.recording.captions.label, cueCount: p.recording.captions.cueCount } : null,
+            } satisfies PublishedFacts}
+            playerUrl={p.playerUrl}
+            onOpenForViewers={() => void actions.setVisibility('open')}
+            onClose={() => setPublishOutcome(null)}
+          />
+        )}
+        {!publishing && publishOutcome?.kind === 'failed' && (
+          <PublishOutcomeDialog kind="failed" stepLabel={publishStepLabel(publishSteps, publishOutcome.step)} onClose={() => setPublishOutcome(null)} />
+        )}
+      </>}
+    >
             {(source || broadcastInProgress || recordingProcessing || awaitingApproval) && (
               <VideoStatusRow
                 recording={p.recording}
@@ -680,6 +764,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                     trimLock={p.publicMode === 'ondemand' && published ? { onUnpublish: () => selectMode('after') } : undefined}
                     // UNG-249: import och förankring i editorn.
                     chapterTools={{ uploadedRecording, agendaId: p.agendaId, importDefaultDate }}
+                    onOpenChange={setEditorOpen}
                   />
                 )}
                 {isAfter && (
@@ -730,96 +815,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                 onOpenVideoActions={(tab) => { setVideoDialogTab(tab); setShowVideoDialog(true) }}
               />
             )}
-          </section>
-
-          <section class="od-col od-preview-col" aria-label="Förhandsvisning">
-            {p.playerUrl && !awaitingApproval && (
-              <PlayerPreview url={p.playerUrl} published={published} version={previewVersion} />
-            )}
-          </section>
-        </div>
-      </div>
-      {dialog}
-      {confirmOndemand && (
-        <Modal title="Publicera ändringarna?" onClose={() => setConfirmOndemand(false)}>
-          <p>{published ? 'Kapitel och godkända undertexter släpps till tittarna.' : 'Sändningen sätts i Ondemand-läge när du publicerar.'}</p>
-          <div class="modal-actions">
-            <button class="btn" type="button" onClick={() => setConfirmOndemand(false)}>Avbryt</button>
-            <button class="btn btn-primary" type="button" onClick={() => void publishWithTrim()}>Publicera</button>
-          </div>
-        </Modal>
-      )}
-      {confirmDiscard && (
-        <Modal title="Förkasta ändringarna?" onClose={() => setConfirmDiscard(false)}>
-          <p>
-            Kapitel och undertexter går tillbaka till det som är publicerat. Det du ändrat sedan dess försvinner (undertexternas tidigare versioner
-            finns kvar i historiken).
-          </p>
-          <div class="modal-actions">
-            <button class="btn" type="button" onClick={() => setConfirmDiscard(false)}>Avbryt</button>
-            <button class="btn btn-danger" type="button" onClick={() => void discardChanges()}>Förkasta</button>
-          </div>
-        </Modal>
-      )}
-      {confirmUndoAll && (
-        <Modal title="Ångra allt?" onClose={() => setConfirmUndoAll(false)}>
-          <p>Alla ändringar i After återställs till läget när sändningen gick över till After. Originalinspelningen används igen.</p>
-          <div class="modal-actions">
-            <button class="btn" type="button" onClick={() => setConfirmUndoAll(false)}>Avbryt</button>
-            <button class="btn btn-danger" type="button" onClick={() => void undoAllAndClose()}>Ångra allt</button>
-          </div>
-        </Modal>
-      )}
-      {showRecordingPicker && (
-        <Modal title="Välj vilken sändning som ska användas" onClose={() => setShowRecordingPicker(false)}>
-          <ul class="od-recording-picker-list">
-            {projectRecordings.map((item) => (
-              <li key={item.id}>
-                <label class="od-recording-picker-option">
-                  <input
-                    type="radio"
-                    name="recording-picker"
-                    checked={pendingRecordingId === item.id}
-                    onChange={() => setPendingRecordingId(item.id)}
-                  />
-                  <span>{formatDateTime(item.startedAt)} · {formatHms(item.durationSeconds)}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-          {(() => {
-            const selected = projectRecordings.find((item) => item.id === pendingRecordingId)
-            return selected && selected.durationSeconds < VERY_SHORT_RECORDING_SECONDS ? (
-              <p class="note warn">Den valda sändningen är väldigt kort ({formatHms(selected.durationSeconds)}) — kontrollera att det inte var ett test innan du byter.</p>
-            ) : null
-          })()}
-          <div class="modal-actions">
-            <button class="btn" type="button" onClick={() => setShowRecordingPicker(false)}>Avbryt</button>
-            <button class="btn btn-primary" type="button" disabled={!pendingRecordingId || switchingRecording} onClick={() => void confirmRecordingSwitch()}>
-              Byt sändning
-            </button>
-          </div>
-        </Modal>
-      )}
-      {publishing && <PublishProgressDialog steps={publishSteps} activeKey={publishStep} />}
-      {!publishing && publishOutcome?.kind === 'published' && (
-        <PublishOutcomeDialog
-          kind="published"
-          facts={{
-            wasPublished: publishOutcome.wasPublished,
-            visibility: p.visibility,
-            chapterCount,
-            captions: p.recording?.captions ? { label: p.recording.captions.label, cueCount: p.recording.captions.cueCount } : null,
-          } satisfies PublishedFacts}
-          playerUrl={p.playerUrl}
-          onOpenForViewers={() => void actions.setVisibility('open')}
-          onClose={() => setPublishOutcome(null)}
-        />
-      )}
-      {!publishing && publishOutcome?.kind === 'failed' && (
-        <PublishOutcomeDialog kind="failed" stepLabel={publishStepLabel(publishSteps, publishOutcome.step)} onClose={() => setPublishOutcome(null)} />
-      )}
-    </div>
+    </OverviewShell>
   )
 }
 

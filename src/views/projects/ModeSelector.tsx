@@ -11,12 +11,12 @@ interface ModeSelectorProps {
   project: Project
   actions: ProjectActions
   onModeSelect?: (mode: Project['publicMode']) => void
-  /** Utan etikett "Läge" och utan raden "Byter till …" (UNG-179, det expanderade live-läget där höjden är dyr). */
+  /** Utan etikett "Läge" och utan raden "Byter till …" (UNG-179, utspelningsvyns huvud i Live där höjden är dyr). */
   compact?: boolean
 }
 
 // Lägesknapparna (Before, Live, After, Ondemand) med paus-knappen direkt till höger om Live (UNG-119). Delas av projektets huvud och
-// det expanderade live-läget: lägesbyte, bekräftelsedialoger och bytesspinnern fungerar likadant på båda ställena.
+// utspelningsvyn i Live: lägesbyte, bekräftelsedialoger och bytesspinnern fungerar likadant på båda ställena.
 export function ModeSelector({ project: p, actions, onModeSelect, compact = false }: ModeSelectorProps) {
   const { selectMode, dialog: modeDialog } = useModeChange(p, actions)
   // UNG-107: läget som håller på att bytas till visas som valt direkt, med en snurra, tills servern har svarat.

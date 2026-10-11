@@ -1,0 +1,48 @@
+/* UNG-267: gemensamt översiktsskal (översikt till vänster, spelaren till höger). */
+
+.ovs {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  gap: 16px;
+  padding: 16px 20px 24px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ovs-cols {
+  display: flex;
+  gap: 20px;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.ovs-col {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.ovs-overview {
+  flex: 0 1 420px;
+}
+
+.ovs-player {
+  flex: 1 1 0;
+}
+
+@media (max-width: 980px) {
+  .ovs-cols {
+    flex-direction: column;
+    align-self: stretch;
+  }
+
+  .ovs-col {
+    width: 100%;
+    flex: none;
+  }
+}

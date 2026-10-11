@@ -1,8 +1,63 @@
 .lw {
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px 20px 24px;
+  gap: 8px;
+}
+
+.lw .lw-now {
+  flex: none;
+  flex-wrap: nowrap;
+}
+
+.lw .pcols,
+.lw .pcols-search + .pcols {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+}
+
+/* UNG-269: översikten till vänster. */
+.lw-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lw-summary-label {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.lw-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lw-summary-sub {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.lw-elapsed {
+  font-family: var(--mono);
+}
+
+.lw-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ovs-overview .lw-now {
+  flex-direction: column;
+}
+
+.ovs-overview .lw-now-panel {
+  flex: none;
 }
 
 .lw-status-row {
@@ -204,48 +259,6 @@
   color: var(--ink-3);
 }
 
-/* Expanderat läge (UNG-129): arbetsytan täcker hela fönstret, så listorna får full höjd. Dialoger (z-index 50) ligger ovanför. */
-.lw-expand {
-  flex: none;
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  color: var(--ink-2);
-  cursor: pointer;
-}
-
-.lw-expand:hover {
-  background: var(--surface-2);
-}
-
-.lw.is-expanded {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  background: var(--bg);
-  padding: 12px 20px 16px;
-  gap: 12px;
-  overflow: hidden;
-}
-
-.lw.is-expanded .lw-now {
-  flex-wrap: nowrap;
-  flex: none;
-}
-
-.lw.is-expanded .pcols,
-.lw.is-expanded .pcols-search + .pcols {
-  flex: 1 1 0;
-  height: auto;
-  min-height: 0;
-}
-
 /* UNG-119: påminnelseruta medan en paus pågår. */
 .pause-reminder-note {
   margin: 0 0 10px;
@@ -253,41 +266,8 @@
   color: var(--ink-2);
 }
 
-/* UNG-179: smal header i det expanderade läget, lika hög som lägesknapparna (ramen runt dem är 44 px) med liten marginal. */
-.lw-bar .lw-expand {
-  align-self: center;
-  width: 44px;
-  height: 44px; /* lika hög som lägesknapparnas ram, så headern inte blir högre än den */
-}
-
-.lw-bar {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 44px;
-}
-
-.lw-bar .pv-field {
-  flex-direction: row;
-  align-items: center;
-  gap: 0;
-}
-
-.lw.is-expanded {
-  gap: 8px;
-}
-
 /* Utan tidsstämpel är rutan en rad kortare (tidsraden är 16 px + 4 px marginal). */
 .lw-now-panel.no-time {
   padding-top: 8px;
   padding-bottom: 8px;
-}
-
-/* UNG-179: expandera-knappen i projektets huvud (normalläget), längst till höger efter klockan. */
-.pv-row > .lw-expand {
-  align-self: center;
-  width: 34px;
-  height: 34px;
-  margin-left: 4px;
 }

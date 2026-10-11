@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../data'
 import { onSessionLost } from '../data/http/fetchJson'
 import type { CurrentUser } from '../data/types'
-import { parseEditorLink, parseProjectLink } from './projectLink'
+import { parseEditorLink, parsePlayoutLink, parseProjectLink } from './projectLink'
 import { routeHref, useCredentialToken, useRoute, useShareToken } from './router'
 import { Shell } from './Shell'
 import { CredentialLinkView } from './CredentialLinkView'
@@ -101,7 +101,8 @@ export function App() {
   // öppnas editorn av sig själv nästa gång projektet öppnas. Bara vid byte FRÅN projektet, så att länken hinner följas vid inloggning.
   const previousProjectId = useRef<string | null>(null)
   useEffect(() => {
-    const editorProjectId = parseEditorLink(window.location.hash)
+    // UNG-268: samma sak för utspelningsvyns adress.
+    const editorProjectId = parseEditorLink(window.location.hash) ?? parsePlayoutLink(window.location.hash)
     if (editorProjectId && previousProjectId.current === editorProjectId && activeProjectId !== editorProjectId) {
       window.history.replaceState(null, '', routeHref('projects'))
     }
@@ -138,6 +139,13 @@ export function App() {
       if (editorProjectId) {
         setActiveProjectId(editorProjectId)
         setProjectScreen('ondemand')
+        return
+      }
+      // UNG-268: utspelningsvyns adress ligger också kvar; vyn finns i livesändningsskärmen.
+      const playoutProjectId = parsePlayoutLink(window.location.hash)
+      if (playoutProjectId) {
+        setActiveProjectId(playoutProjectId)
+        setProjectScreen('livesandning')
         return
       }
       const link = parseProjectLink(window.location.hash)

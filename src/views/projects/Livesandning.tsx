@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { ForkResult, Project } from '../../data/types'
 import type { ProjectActions } from './actions'
 import { BeforeWorkspace } from './BeforeWorkspace'
 import { LiveWorkspace } from './LiveWorkspace'
 import { ProjectHeader } from './ProjectHeader'
+import { usePlayoutAddress } from './PlayoutOverlay'
 import { useLiveChannel } from './useLiveChannel'
 
 interface LivesandningProps {
@@ -16,20 +17,14 @@ interface LivesandningProps {
 }
 
 // Livesändning: gemensam header överst, innehållet beror på läget.
-// Before är förberedelser, Live är ren sändningskontroll.
+// Before är förberedelser, Live är sändningsöversikt; utspelningen sker i den överlagrade vyn i båda.
 export function Livesandning({ project: p, actions, meetingDomain, onBack, onForked }: LivesandningProps) {
   const live = useLiveChannel(p.channel?.id ?? null)
   // Delas mellan headerns "Ingest info"-knapp och BeforeWorkspaces
   // motsvarande menyval — en enda panel, oavsett vilken som öppnar den.
   const [showIngestInfo, setShowIngestInfo] = useState(false)
-  // UNG-129/179: det expanderade live-läget. Knappen för att expandera ligger i projektets huvud (till höger), stängkrysset i den
-  // expanderade headern; fokus följer med så tangentbordsanvändaren inte tappar knappen.
-  const [expanded, setExpanded] = useState(false)
-  const wasExpanded = useRef(false)
-  useEffect(() => {
-    if (wasExpanded.current && !expanded) document.getElementById('lw-expand-open')?.focus()
-    wasExpanded.current = expanded
-  }, [expanded])
+  // UNG-268/269: utspelningsvyn (överlagrad, egen adress) är densamma i Before och Live och står kvar öppen när läget byts mellan dem.
+  const playout = usePlayoutAddress(p.id)
 
   // Samma pollning som Playout: håller utspelningsläget i synk mellan operatörer.
   useEffect(() => {
@@ -50,34 +45,38 @@ export function Livesandning({ project: p, actions, meetingDomain, onBack, onFor
   // After/Ondemand hör till Ondemand-vyn; vyn byts av ProjectsView när läget ändrats.
   if (p.publicMode !== 'before' && p.publicMode !== 'live') return null
 
-  return (
-    <div class={`project-workspace doc${p.publicMode === 'before' ? ' before-project-workspace' : ''}`}>
-      <ProjectHeader
+  const header = (
+    <ProjectHeader
+      project={p}
+      actions={actions}
+      onBack={onBack}
+      onForked={onForked}
+      channel={live.channel}
+      health={live.health}
+      streamKey={live.streamKey}
+      showIngestInfo={showIngestInfo}
+      onShowIngestInfoChange={setShowIngestInfo}
+    />
+  )
+
+  // UNG-268: Before ligger i översiktsskalet, som After/Ondemand.
+  if (p.publicMode === 'before') {
+    return (
+      <BeforeWorkspace
+        header={header}
         project={p}
         actions={actions}
-        onBack={onBack}
-        onForked={onForked}
-        channel={live.channel}
         health={live.health}
-        streamKey={live.streamKey}
+        refresh={live.refresh}
+        stopPolling={live.stopPolling}
         showIngestInfo={showIngestInfo}
         onShowIngestInfoChange={setShowIngestInfo}
-        expand={p.publicMode === 'live' ? { expanded, onToggle: () => setExpanded((value) => !value) } : undefined}
+        meetingDomain={meetingDomain}
+        playout={playout}
       />
-      {p.publicMode === 'before' ? (
-        <BeforeWorkspace
-          project={p}
-          actions={actions}
-          health={live.health}
-          refresh={live.refresh}
-          stopPolling={live.stopPolling}
-          showIngestInfo={showIngestInfo}
-          onShowIngestInfoChange={setShowIngestInfo}
-          meetingDomain={meetingDomain}
-        />
-      ) : (
-        <LiveWorkspace project={p} actions={actions} channel={live.channel} health={live.health} streamKey={live.streamKey} expanded={expanded} onExpandedChange={setExpanded} />
-      )}
-    </div>
-  )
+    )
+  }
+
+  // UNG-269: Live ligger också i översiktsskalet.
+  return <LiveWorkspace header={header} project={p} actions={actions} channel={live.channel} health={live.health} playout={playout} />
 }

@@ -27,3 +27,15 @@ export function parseEditorLink(hash: string): string | null {
   const [, section, id, sub] = path.split('/')
   return section === 'projects' && id && sub === 'edit' ? decodeURIComponent(id) : null
 }
+
+// UNG-268: utspelningsvyn (dagordning och namnlista) har också en egen adress, #/projects/{id}/playout.
+export function playoutHref(projectId: string): string {
+  return `#/projects/${encodeURIComponent(projectId)}/playout`
+}
+
+/** Projektet vars utspelningsvy adressen pekar på, eller null. */
+export function parsePlayoutLink(hash: string): string | null {
+  const [path] = hash.replace(/^#/, '').split('?')
+  const [, section, id, sub] = path.split('/')
+  return section === 'projects' && id && sub === 'playout' ? decodeURIComponent(id) : null
+}

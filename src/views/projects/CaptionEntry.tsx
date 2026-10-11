@@ -23,11 +23,13 @@ interface CaptionEntryProps {
   chapterTools?: EditorChapterTools
   /** UNG-251: egen etikett på knappen (översikten säger "Redigera"); framsteget under generering visas ändå. */
   label?: string
+  /** UNG-267: editorn öppnades eller stängdes (översiktsskalet stänger av spelaren medan den är öppen). */
+  onOpenChange?: (open: boolean) => void
 }
 
 // UNG-165: knappen ovanför videofönstret som leder direkt till att skapa eller redigera undertexter. Etiketten följer serverns läge
 // (skapa, genererar n %, redigera). Knappen äger också studion (redigeraren med skapandet som overlay) och dess öppna/stängda läge.
-export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged, trim, trimLock, chapterTools, label }: CaptionEntryProps) {
+export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged, trim, trimLock, chapterTools, label, onOpenChange }: CaptionEntryProps) {
   const captions = useCaptionGeneration(projectId)
   // Öppnas direkt när man kommit hit via knappen i projektlistan, eller (UNG-250) när adressen är editorns (omladdning, delad länk).
   const [open, setOpen] = useState(() => consumeCaptionStudio(projectId) || parseEditorLink(window.location.hash) === projectId)
@@ -39,6 +41,10 @@ export function CaptionEntry({ projectId, projectName, videoDurationSeconds, pos
   openRef.current = open
 
   const atEditor = () => parseEditorLink(window.location.hash) === projectId
+
+  useEffect(() => {
+    onOpenChange?.(open)
+  }, [open])
 
   // Öppen editor har sin egen adress (en ny historikpost, så att bakåt stänger den).
   useEffect(() => {

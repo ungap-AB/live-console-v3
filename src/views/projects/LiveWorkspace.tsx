@@ -1,11 +1,15 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
+import type { ComponentChildren } from 'preact'
+import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Channel, ChannelHealth, Project, TimelineEvent } from '../../data/types'
 import { useIsRootAdmin } from '../../app/currentUserContext'
 import { useResource } from '../../app/useResource'
 import { formatHms, formatLocalTime } from '../../app/time'
 import type { ProjectActions } from './actions'
+import { OverviewShell } from './OverviewShell'
 import { PlayoutColumns } from './PlayoutColumns'
+import { PlayoutOverlay, type PlayoutAddress } from './PlayoutOverlay'
+import { useModeChange } from './useModeChange'
 import { usePlayoutTestbed } from './playoutTestbed'
 import { useNameList } from './useNameList'
 import { Icon } from '../../components/Icon'
@@ -18,18 +22,20 @@ import { MAX_PAUSE_TEXT_LENGTH, pauseDurationText } from './pauseLogic'
 import './LiveWorkspace.css'
 
 interface LiveWorkspaceProps {
+  /** Projektets rubrik (ProjectHeader), överst i översiktsskalet. */
+  header: ComponentChildren
   project: Project
   actions: ProjectActions
   channel: Channel | null
   health: ChannelHealth | null
-  streamKey: string | null
-  /** Expanderat läge (UNG-129) ägs av föräldern, så knappen kan ligga i projektets huvud i normalläget (UNG-179). */
-  expanded: boolean
-  onExpandedChange: (expanded: boolean) => void
+  /** Utspelningsvyns adress, delad med Before (se Livesandning). */
+  playout: PlayoutAddress
 }
 
-// Ren sändningskontroll för läget Live.
-export function LiveWorkspace({ project: p, actions, channel, health, expanded, onExpandedChange }: LiveWorkspaceProps) {
+// Läget Live. UNG-269: översikt till vänster (status, signal, tittare, det som är utspelat nu, Spela ut kapitel och Avsluta sändning),
+// spelaren till höger med samma länk som tittarna; utspelningen sker i den överlagrade arbetsvyn, som ersätter det expanderade läget
+// (UNG-129/179) och öppnas bara med knappen.
+export function LiveWorkspace({ header, project: p, actions, channel, health, playout }: LiveWorkspaceProps) {
   const testbed = usePlayoutTestbed(p, actions)
   // Testbädden är ett verktyg för oss (root admin), inte för operatörer.
   const isRootAdmin = useIsRootAdmin()
@@ -38,11 +44,11 @@ export function LiveWorkspace({ project: p, actions, channel, health, expanded, 
     [p.agendaId],
   )
   const nameListResource = useNameList(p)
+  const { selectMode, dialog: modeDialog } = useModeChange(p, actions)
   const phase = health?.livePhase
+  const encoderStatus = encoderStatusOf({ hasChannel: Boolean(channel), publicMode: p.publicMode, livePhase: health?.livePhase, healthState: health?.state })
+  const viewerCount = viewerCountOf(health)
 
-  // UNG-129: expanderat läge för skärmar med låg höjd. Samma komponenter och tillstånd, bara en klass på vyn som lägger
-  // den över hela fönstret, så ingenting monteras om och inget tillstånd (markering, scroll, redigering) tappas.
-  // Läget stängs bara med knappen: Esc hör till sökfältet och dialogerna (UNG-177).
   // UNG-119: medan en paus pågår ligger en spärrande, stängbar ruta över vyn som påminner om att avsluta pausen. Stängs den
   // kommer den inte tillbaka förrän nästa paus; en omladdning av sidan visar den igen.
   const pause = p.playout.currentPause ?? null
@@ -61,25 +67,6 @@ export function LiveWorkspace({ project: p, actions, channel, health, expanded, 
     // Texten sätts när pausen börjar (och byts av nästa paus), inte vid varje optimistisk byte av händelse-id.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [Boolean(pause)])
-
-  // Stängkrysset i headern (UNG-179) tar fokus när läget expanderas; när det stängs flyttar föräldern fokus tillbaka till knappen i huvudet.
-  const expandButtonRef = useRef<HTMLButtonElement | null>(null)
-  useEffect(() => {
-    if (expanded) expandButtonRef.current?.focus()
-  }, [expanded])
-  const expandButton = (
-    <button
-      class="lw-expand"
-      type="button"
-      ref={expandButtonRef}
-      aria-pressed={expanded}
-      aria-label={expanded ? 'Stäng expanderad vy' : 'Expandera'}
-      title={expanded ? 'Stäng expanderad vy' : 'Expandera listorna till hela fönstret'}
-      onClick={() => onExpandedChange(!expanded)}
-    >
-      <Icon name={expanded ? 'close' : 'open_in_full'} size={20} />
-    </button>
-  )
 
   const nowItem =
     p.playout.currentAgendaItem?.label ??
@@ -116,35 +103,130 @@ export function LiveWorkspace({ project: p, actions, channel, health, expanded, 
     },
   ]
 
+  // Signalavbrottet visas både i översikten och i utspelningsvyn, som täcker översikten.
+  const interrupt = phase === 'signalInterrupted' && (
+    <div class="lw-interrupt" role="alert">
+      <p>Signalavbrott — videosignalen har avbrutits medan spelaren är öppen.</p>
+      <button class="btn btn-sm" type="button" onClick={() => void actions.interruptionDecision('wait_for_reconnect')}>
+        Invänta återanslutning
+      </button>
+      <button class="btn btn-danger btn-sm" type="button" onClick={() => void actions.interruptionDecision('end')}>
+        Stäng player och avsluta
+      </button>
+    </div>
+  )
+
+  const nowPanels = (showTime: boolean) => (
+    <div class="lw-now">
+      {panels.map((panel) => (
+        <NowPanel
+          key={panel.key}
+          label={panel.label}
+          value={panel.value}
+          occurredAt={panel.occurredAt}
+          showTime={showTime}
+          clearLabel={panel.clearLabel}
+          onClear={panel.onClear}
+        />
+      ))}
+    </div>
+  )
+
+  const signalDetails = health?.state === 'live'
+    ? [health.resolution, health.framerate ? `${Math.round(health.framerate)} fps` : null, health.bitrateKbps ? `${Math.round(health.bitrateKbps)} kbit/s` : null].filter(Boolean).join(' · ')
+    : ''
+
   return (
-    <>
-    <div class={`lw${expanded ? ' is-expanded' : ''}`}>
-      {phase === 'signalInterrupted' && (
-        <div class="lw-interrupt" role="alert">
-          <p>Signalavbrott — videosignalen har avbrutits medan spelaren är öppen.</p>
-          <button class="btn btn-sm" type="button" onClick={() => void actions.interruptionDecision('wait_for_reconnect')}>
-            Invänta återanslutning
-          </button>
-          <button class="btn btn-danger btn-sm" type="button" onClick={() => void actions.interruptionDecision('end')}>
-            Stäng player och avsluta
-          </button>
-        </div>
-      )}
+    <OverviewShell
+      header={header}
+      player={p.playerUrl ? { url: p.playerUrl, published: true, version: 0 } : null}
+      workOpen={playout.open}
+      overlays={<>
+        {playout.open && (
+          <PlayoutOverlay
+            projectName={p.name}
+            onClose={playout.closePlayout}
+            // UNG-179: lägesknapparna (med paus), signalstatus, tittarantal och klockan, så att man kan byta läge och se signalen
+            // utan att stänga vyn.
+            bar={<>
+              <ModeSelector project={p} actions={actions} compact />
+              <EncoderStatusChip status={encoderStatus} />
+              {viewerCount !== null && <ViewersChip count={viewerCount} />}
+              <span class="pv-clock"><Clock /></span>
+            </>}
+          >
+            <div class="lw">
+              {interrupt}
+              {nowPanels(false)}
+              <PlayoutColumns project={p} actions={actions} live />
+            </div>
+          </PlayoutOverlay>
+        )}
+        {modeDialog}
+        {pause && !reminderDismissed && (
+          <Modal
+            title="Paus pågår"
+            subtitle={`Pausad sedan ${formatLocalTime(pause.occurredAt)} (${pauseDurationText(pause.occurredAt, now)}). Tittarna ser texten nedan över videon.`}
+            onClose={() => setReminderDismissed(true)}
+            footer={
+              <>
+                <button class="btn btn-sm" type="button" onClick={() => setReminderDismissed(true)}>Stäng</button>
+                <button class="btn btn-sm" type="button" disabled={pauseDraft.trim() === pause.label || pauseDraft.trim() === ''} onClick={() => actions.pause(pauseDraft)}>Uppdatera texten</button>
+                <button class="btn btn-sm btn-primary" type="button" onClick={() => actions.resume()}>Avsluta paus</button>
+              </>
+            }
+          >
+            <p class="pause-reminder-note">
+              Pausen avslutas också när du spelar ut en punkt eller ett namn. Stänger du den här rutan fortsätter pausen tills du avslutar den.
+            </p>
+            <textarea
+              class="pause-dialog-text"
+              rows={3}
+              maxLength={MAX_PAUSE_TEXT_LENGTH}
+              aria-label="Text som visas i spelaren"
+              value={pauseDraft}
+              onInput={(event) => setPauseDraft(event.currentTarget.value)}
+            />
+          </Modal>
+        )}
+      </>}
+    >
+      {interrupt}
 
-      {/* UNG-179: i det expanderade läget ligger lägesknapparna (med paus), signalstatus, tittarantal och klockan i en smal header, så att
-          man kan byta läge och se signalen utan att stänga läget. Ingen "Läge"-etikett, för att spara höjd. */}
-      {expanded && (
-        <div class="lw-bar">
-          <ModeSelector project={p} actions={actions} compact />
-          <span class="spacer" />
-          <EncoderStatusChip status={encoderStatusOf({ hasChannel: Boolean(channel), publicMode: p.publicMode, livePhase: health?.livePhase, healthState: health?.state })} />
-          {viewerCountOf(health) !== null && <ViewersChip count={viewerCountOf(health)!} />}
-          <span class="pv-clock"><Clock /></span>
-          {expandButton}
-        </div>
-      )}
+      <div class="lw-summary">
+        <span class="lw-summary-label">Status</span>
+        <strong>{pause ? 'Sänder – paus pågår' : 'Sänder'}</strong>
+        {health?.streamStartedAt && <span class="lw-summary-sub">Signal sedan {formatLocalTime(health.streamStartedAt)} · <Elapsed since={health.streamStartedAt} /></span>}
+      </div>
 
-      {isRootAdmin && !expanded && <section class="lw-testbed" aria-label="Testbädd">
+      <div class="lw-summary">
+        <span class="lw-summary-label">Signal</span>
+        <span class="lw-summary-row">
+          <EncoderStatusChip status={encoderStatus} />
+          {signalDetails && <span class="lw-summary-sub">{signalDetails}</span>}
+        </span>
+      </div>
+
+      <div class="lw-summary">
+        <span class="lw-summary-label">Tittare</span>
+        <strong>{viewerCount ?? '–'}</strong>
+      </div>
+
+      <div class="lw-actions">
+        <button class="btn btn-primary" type="button" onClick={playout.openPlayout}>
+          <Icon name="playlist_play" size={18} /> Spela ut kapitel
+        </button>
+        <button class="btn btn-danger" type="button" onClick={() => selectMode('after')}>
+          <Icon name="stop_circle" size={18} /> Avsluta sändning…
+        </button>
+      </div>
+
+      <div class="lw-summary">
+        <span class="lw-summary-label">Utspelat nu</span>
+        {nowPanels(true)}
+      </div>
+
+      {isRootAdmin && <section class="lw-testbed" aria-label="Testbädd">
         <div>
           <strong>Testbädd</strong>
           {testbed.state.running ? (
@@ -163,58 +245,25 @@ export function LiveWorkspace({ project: p, actions, channel, health, expanded, 
           <output>{formatHms(testbed.state.durationSeconds)}</output>
         )}
       </section>}
-
-      <div class="lw-now">
-        {panels.map((panel) => (
-          <NowPanel
-            key={panel.key}
-            label={panel.label}
-            value={panel.value}
-            occurredAt={panel.occurredAt}
-            showTime={!expanded}
-            clearLabel={panel.clearLabel}
-            onClear={panel.onClear}
-          />
-        ))}
-      </div>
-
-      <PlayoutColumns project={p} actions={actions} live />
-    </div>
-    {pause && !reminderDismissed && (
-      <Modal
-        title="Paus pågår"
-        subtitle={`Pausad sedan ${formatLocalTime(pause.occurredAt)} (${pauseDurationText(pause.occurredAt, now)}). Tittarna ser texten nedan över videon.`}
-        onClose={() => setReminderDismissed(true)}
-        footer={
-          <>
-            <button class="btn btn-sm" type="button" onClick={() => setReminderDismissed(true)}>Stäng</button>
-            <button class="btn btn-sm" type="button" disabled={pauseDraft.trim() === pause.label || pauseDraft.trim() === ''} onClick={() => actions.pause(pauseDraft)}>Uppdatera texten</button>
-            <button class="btn btn-sm btn-primary" type="button" onClick={() => actions.resume()}>Avsluta paus</button>
-          </>
-        }
-      >
-        <p class="pause-reminder-note">
-          Pausen avslutas också när du spelar ut en punkt eller ett namn. Stänger du den här rutan fortsätter pausen tills du avslutar den.
-        </p>
-        <textarea
-          class="pause-dialog-text"
-          rows={3}
-          maxLength={MAX_PAUSE_TEXT_LENGTH}
-          aria-label="Text som visas i spelaren"
-          value={pauseDraft}
-          onInput={(event) => setPauseDraft(event.currentTarget.value)}
-        />
-      </Modal>
-    )}
-    </>
+    </OverviewShell>
   )
+}
+
+// Sändningstiden, uppdaterad varje sekund.
+function Elapsed({ since }: { since: string }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+  return <span class="lw-elapsed">{formatHms(Math.max(0, Math.floor((now - Date.parse(since)) / 1000)))}</span>
 }
 
 interface NowPanelProps {
   label: string
   value: string | null
   occurredAt: string | null
-  /** Tidsstämpeln visas inte i det expanderade läget (UNG-179), för att spara höjd. */
+  /** Tidsstämpeln visas inte i utspelningsvyn (UNG-179), för att spara höjd. */
   showTime?: boolean
   clearLabel: string
   onClear: () => void

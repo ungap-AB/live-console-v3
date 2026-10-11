@@ -28,8 +28,6 @@ interface ProjectHeaderProps {
   streamKey?: string | null
   showIngestInfo: boolean
   onShowIngestInfoChange: (show: boolean) => void
-  /** Knappen som expanderar live-vyn (UNG-179), till höger i huvudet. Saknas utanför läget Live. */
-  expand?: { expanded: boolean; onToggle: () => void }
   /** UNG-198: anropas när ett projekt skapats ur det här. Saknas den visas inte knappen Skapa ondemand-projekt. */
   onForked?: (result: ForkResult) => void
 }
@@ -42,7 +40,7 @@ function displayUrl(url: string): string {
 // Gemensam för Livesändning och Ondemand. showIngestInfo ägs av föräldern så
 // att t.ex. BeforeWorkspaces "Visa ingest-info"-menyval kan slå på samma
 // panel som knappen här i headern, istället för att ha en egen kopia.
-export function ProjectHeader({ project: p, actions, onBack, onModeSelect, channel = null, health = null, streamKey = null, showIngestInfo, onShowIngestInfoChange, expand, onForked }: ProjectHeaderProps) {
+export function ProjectHeader({ project: p, actions, onBack, onModeSelect, channel = null, health = null, streamKey = null, showIngestInfo, onShowIngestInfoChange, onForked }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
   const [closingIngestInfo, setClosingIngestInfo] = useState(false)
@@ -269,19 +267,6 @@ export function ProjectHeader({ project: p, actions, onBack, onModeSelect, chann
         )}
         <span class="spacer" />
         <span class="pv-clock"><Clock /></span>
-        {expand && (
-          <button
-            id="lw-expand-open"
-            class="lw-expand"
-            type="button"
-            aria-pressed={expand.expanded}
-            aria-label="Expandera"
-            title="Expandera listorna till hela fönstret"
-            onClick={expand.onToggle}
-          >
-            <Icon name="open_in_full" size={20} />
-          </button>
-        )}
       </div>
 
       {(showIngestInfo || closingIngestInfo) && channel && (
