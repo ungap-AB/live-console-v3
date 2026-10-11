@@ -142,14 +142,14 @@
 
 .pscrub-rings {
   position: relative;
-  height: 44px;
+  height: 34px;
 }
 
 .pscrub-group {
   position: absolute;
   top: 2px;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   transform: translateX(-50%);
 }
 
@@ -157,8 +157,8 @@
   flex: none;
   box-sizing: border-box;
   aspect-ratio: 1 / 1;
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   display: inline-grid;
   place-items: center;

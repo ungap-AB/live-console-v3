@@ -143,10 +143,10 @@ export function TrimBar({
       </div>
       <div class="trimbar-plays" style={{ '--trimbar-start': along(start), '--trimbar-end': along(end) }}>
         <button class="trimbar-play trimbar-play-start" type="button" title="Spela från början av det som behålls" aria-label="Spela från början av det som behålls" disabled={disabled} onClick={onPlayFromStart}>
-          <Icon name="play_arrow" size={22} />
+          <Icon name="play_arrow" size={17} />
         </button>
         <button class="trimbar-play trimbar-play-end" type="button" title="Spela de sista sekunderna före slutet" aria-label="Spela de sista sekunderna före slutet" disabled={disabled} onClick={onPlayEnd}>
-          <Icon name="play_arrow" size={22} />
+          <Icon name="play_arrow" size={17} />
         </button>
       </div>
     </div>

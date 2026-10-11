@@ -2,7 +2,7 @@
 
 .trimbar {
   --trimbar-handle-inset: 4px;
-  --trimbar-play-size: 44px;
+  --trimbar-play-size: 33px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -10,7 +10,7 @@
 
 .trimbar-surface {
   position: relative;
-  height: 56px;
+  height: 42px;
   padding: 0 var(--trimbar-handle-inset);
   touch-action: none;
   cursor: ew-resize;

@@ -33,10 +33,8 @@ import {
   NEW_CHAPTER_PREFIX, addChapter as addChapterTo, changeCount as chapterChangeTotal, chapterKindText, chapterLayout, currentChapters,
   diffChapters, mergeRows, positionedChapters, removeChapter, renameChapter, setChapterTime, sortChapters, type EditorChapter,
 } from './chapterRows'
-import { cueIndexAt, timeAtRow, type GrabRole } from './captionWaveformLogic'
-import { approveBlockedReason, groupCorrections, type CorrectionGroup } from './autoCaptionsLogic'
-import { ownCorrections } from './captionCorrectionsLogic'
-import { CorrectionsPanel } from './CorrectionsPanel'
+import { timeAtRow, type GrabRole } from './captionWaveformLogic'
+import { approveBlockedReason } from './autoCaptionsLogic'
 import { showUnmute, unmuted } from './videoSoundLogic'
 import { WordImportDialog } from './WordImportDialog'
 import { ChapterImportDialog } from './ChapterImportDialog'
@@ -178,9 +176,8 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   const [viewportHeight, setViewportHeight] = useState(600)
   const [focusTick, setFocusTick] = useState(0)
   const [energy, setEnergy] = useState<CaptionEnergy | null>(null)
-  // Flik under videon: verktyg för vald replik, eller rättningar (UNG-166). Maskinella rättningar hämtas ur utkastets genereringsläge.
-  const [sideTab, setSideTab] = useState<'tools' | 'corrections'>(SHOW_TOOLS_TAB ? 'tools' : 'corrections')
-  const [machine, setMachine] = useState<CorrectionGroup[] | null>(null)
+  // Verktyg för vald replik under videon (dolda tillsvidare). Rättningslistan och hjälptexten är borttagna (UI-finslipning).
+  const sideTab: 'tools' | 'none' = SHOW_TOOLS_TAB ? 'tools' : 'none'
   // Utkastet som servern känner till (för att veta om det går att publicera), och publiceringens tillstånd (UNG-165: Publicera i huvudet).
   const [draftInfo, setDraftInfo] = useState<CaptionDraft | null>(null)
   const [confirmPublish, setConfirmPublish] = useState(false)
@@ -342,13 +339,12 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
     client.projects.getCaptionGeneration(projectId).then(
       (generation) => {
         if (cancelled) return
-        setMachine(groupCorrections(generation.draft?.corrections ?? []))
         setDraftInfo(generation.draft ?? null)
         setCanRegenerate(generation.canGenerate)
         setSpeakersAvailable(generation.speakersAvailable === true)
         setSpeakersReady(generation.speakers?.state === 'ready')
       },
-      () => { if (!cancelled) setMachine([]) },
+      () => {},
     )
     return () => { cancelled = true }
   }, [projectId])
@@ -383,11 +379,6 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
     setSaved((current) => derive(current))
   }, [timing])
 
-  // Orden som ändrats sedan det som lästes in, med radens index (UNG-166).
-  const ownList = useMemo(() => {
-    const indexById = new Map(cues.map((cue, index) => [cue.id, index]))
-    return ownCorrections(saved, cues).map((item) => ({ index: indexById.get(item.cueId) ?? 0, from: item.from, to: item.to }))
-  }, [saved, cues])
 
   // Det sparade jämförs i härledd form: annars ser varje replik ändrad ut (gul kant) så fort en enda redigering härlett om alla tider.
   const diff = useMemo(() => diffState(derive(saved), cues), [saved, cues, timing])
@@ -1249,7 +1240,6 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   async function refreshDraftInfo() {
     try {
       const generation = await client.projects.getCaptionGeneration(projectId)
-      setMachine(groupCorrections(generation.draft?.corrections ?? []))
       setDraftInfo(generation.draft ?? null)
       setCanRegenerate(generation.canGenerate)
     } catch {
@@ -2061,33 +2051,6 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
               </div>
             )}
 
-            {hasCaptions && (SHOW_TOOLS_TAB ? (
-              <div class="ce-tabs" role="tablist" aria-label="Under videon">
-                <button class={sideTab === 'tools' ? 'is-active' : ''} role="tab" type="button" aria-selected={sideTab === 'tools'} onClick={() => setSideTab('tools')}>Verktyg</button>
-                <button class={sideTab === 'corrections' ? 'is-active' : ''} role="tab" type="button" aria-selected={sideTab === 'corrections'} onClick={() => setSideTab('corrections')}>
-                  Rättningar{ownList.length > 0 ? ` (${ownList.length})` : ''}
-                </button>
-              </div>
-            ) : (
-              <h3 class="ce-side-title">Rättningar{ownList.length > 0 ? ` (${ownList.length})` : ''}</h3>
-            ))}
-
-            {hasCaptions && sideTab === 'corrections' && (
-              <CorrectionsPanel
-                machine={machine}
-                own={ownList}
-                onJumpToTime={(time) => {
-                  const index = cueIndexAt(cues, time)
-                  if (index >= 0) focusRow(index)
-                  seekTo(index >= 0 ? cues[index].start : time, false)
-                }}
-                onJumpToRow={(index) => {
-                  focusRow(index)
-                  seekTo(cues[index].start, false)
-                }}
-              />
-            )}
-
             {sideTab === 'tools' && selected && (
               <div class="ce-tools" aria-label="Vald replik">
                 <div class="ce-tools-title">Replik {selectedIndex + 1}: gräns vid {formatCueTime(selected.start)}</div>
@@ -2124,12 +2087,6 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
               </div>
             )}
 
-            {hasCaptions && (
-            <p class="ce-help">
-              Dra en gräns i vågformen så flödar texten över den. Ctrl/Cmd+Enter = dela vid markören, ny ruta efter (sist i texten) eller före (först) · Enter = nästa rad · Skift+Enter = ny rad · Esc = ångra raden · Tab / Skift+Tab = nästa / föregående rad ·
-              Backspace i början / Delete i slutet slår ihop med grannen. Klicka på en rads tid för att spela den.
-            </p>
-            )}
           </section>
 
           <section class="ce-list-wrap" aria-label="Repliker">

@@ -6,7 +6,7 @@ import './TrimPosition.css'
 /** Halva reglagets knapp (px): ringarna följer knappens mitt längs reglaget. */
 const THUMB_INSET = 8
 /** Ringarna hålls så här långt (px) från kanterna, så att båda ryms inom synlig yta. */
-const RING_GROUP_HALF = 46
+const RING_GROUP_HALF = 35
 
 interface PositionScrubberProps {
   position: number
