@@ -38,7 +38,7 @@ import { approveBlockedReason } from './autoCaptionsLogic'
 import { showUnmute, unmuted } from './videoSoundLogic'
 import { WordImportDialog } from './WordImportDialog'
 import { ChapterImportDialog } from './ChapterImportDialog'
-import { AnchorGuide, SyncStepper } from './ChapterSyncTools'
+import { AnchorGuide } from './ChapterSyncTools'
 import { exportFileName } from './chapterExport'
 import { saveFile } from './ExportImportDialog'
 import { Modal } from '../../components/Modal'
@@ -229,11 +229,6 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   const [chapterBusy, setChapterBusy] = useState(false)
   const [showChapterImport, setShowChapterImport] = useState(false)
   const [guide, setGuide] = useState<{ step: 1 | 2 | 3; anchorId: string | null } | null>(null)
-  // Synk-stegningen: kapitlet som står på tur, de som hoppats över och det som sattes senast (som i After-/Ondemand-vyn).
-  const [stepTargetId, setStepTargetId] = useState<string | null>(null)
-  const [skippedIds, setSkippedIds] = useState<string[]>([])
-  const [lastSteppedId, setLastSteppedId] = useState<string | null>(null)
-  const [orderWarning, setOrderWarning] = useState<string | null>(null)
   const [showChapters, setShowChapters] = useState(true)
   // UNG-231: filtret Undertexter. Med bara Kapitel på blir listan en kompakt översikt utan vågform, där talarna är grupperade under sin punkt
   // och hopfällda tills man öppnar punkten.
@@ -387,15 +382,10 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   // UNG-249: kapitel utan position (visas i ett eget block) och de som stegas fram med Synk (utan tid).
   const toolsEnabled = chapterState === 'ok' && !(master?.legacy ?? false)
   const unplacedChapters = serverChapters.filter((chapter) => chapter.synced === false || (chapter.timing !== undefined && chapter.timing !== 'positioned'))
-  const untimedChapters = serverChapters.filter((chapter) => chapter.timing === 'untimed')
   const syncState = serverChapters.find((chapter) => chapter.syncState)?.syncState
   const anchorCandidates = serverChapters.filter((chapter) => chapter.anchorable)
   const anchorToolsVisible = toolsEnabled && Boolean(chapterTools?.uploadedRecording) && anchorCandidates.length > 0
   const anchorChapter = guide?.anchorId ? serverChapters.find((chapter) => chapter.chapterId === guide.anchorId) : undefined
-  const stepperVisible = toolsEnabled && !guide && untimedChapters.length > 0
-  const stepTarget = serverChapters.find((chapter) => chapter.chapterId === stepTargetId && chapter.timing === 'untimed')
-    ?? untimedChapters.find((chapter) => !skippedIds.includes(chapter.chapterId))
-    ?? untimedChapters[0]
   const cuesDirty = diff.dirty
   // UNG-245: trimmen (ägs av omgivande vy) räknas också som osparad tills den sparats som utkast.
   const trimDirty = trimChanged(trim)
@@ -1127,48 +1117,9 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   // Hela sekunder: serverns Tid här/Synk (PATCH timeline-draft/chapters) tar emot heltal, som i After-/Ondemand-vyn.
   const chapterTime = () => Math.round(playhead())
 
-  // Tid här för ett kapitel utan tid (ett i taget, eller via Synk-stegningen).
+  // Tid här för ett kapitel utan tid.
   function placeChapter(chapterId: string) {
     return chapterOp(() => client.projects.updateDraftChapter(projectId, chapterId, { offsetSeconds: chapterTime() }, draftRevision.current), 'Tiden kunde inte sättas.')
-  }
-
-  function nextUntimedAfter(chapterId: string, skipped: string[]) {
-    const index = untimedChapters.findIndex((chapter) => chapter.chapterId === chapterId)
-    const rest = index >= 0 ? untimedChapters.slice(index + 1) : untimedChapters
-    return rest.find((chapter) => !skipped.includes(chapter.chapterId)) ?? null
-  }
-
-  async function stepHere() {
-    if (!stepTarget) return
-    const offset = chapterTime()
-    const previous = serverChapters.find((chapter) => chapter.chapterId === lastSteppedId)
-    // Ett kapitel som hamnar före det förra är oftast ett misstag: kräv ett klick till.
-    if (previous && previous.chapterId !== stepTarget.chapterId && offset < previous.offsetSeconds && orderWarning !== stepTarget.chapterId) {
-      setOrderWarning(stepTarget.chapterId)
-      return
-    }
-    setOrderWarning(null)
-    const target = stepTarget.chapterId
-    if (await placeChapter(target)) {
-      setLastSteppedId(target)
-      setStepTargetId(nextUntimedAfter(target, skippedIds)?.chapterId ?? null)
-    }
-  }
-
-  function skipStep() {
-    if (!stepTarget) return
-    const skipped = [...skippedIds, stepTarget.chapterId]
-    setSkippedIds(skipped)
-    setOrderWarning(null)
-    setStepTargetId(nextUntimedAfter(stepTarget.chapterId, skipped)?.chapterId ?? null)
-  }
-
-  function undoStep() {
-    const previous = serverChapters.find((chapter) => chapter.chapterId === lastSteppedId)
-    if (!previous) return
-    setOrderWarning(null)
-    setStepTargetId(previous.chapterId)
-    seekTo(previous.offsetSeconds, false)
   }
 
   // Förankring (uppladdad video): ett kapitel med klockslag placeras i videon och de övriga följer med.
@@ -1215,9 +1166,6 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   async function chaptersImported(result: ChapterImportResult) {
     setShowChapterImport(false)
     setGuide(null)
-    setSkippedIds([])
-    setLastSteppedId(null)
-    setStepTargetId(null)
     try {
       adoptChapters(await client.projects.chapters(projectId))
     } catch {
@@ -1718,39 +1666,15 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
           </div>
         </div>
         <div class="ce-actions">
-          {hasCaptions && (
-          <button
-            class="btn btn-sm"
-            type="button"
-            disabled={!master || readOnly || exporting}
-            title="Skriver ut undertexterna som ett manus i Word, att rätta och sedan läsa in här (görs av den sparade versionen)"
-            onClick={() => (master?.publishedStartSeconds !== undefined ? setExportChoice(true) : void exportWord('whole'))}
-          >
-            {exporting ? 'Skapar…' : 'Exportera till Word'}
-          </button>
-          )}
-          {hasCaptions && (
-          <button
-            class="btn btn-sm"
-            type="button"
-            disabled={!master || readOnly || saving || publishing || regenerating}
-            title="Läser in ett rättat manus (Word) och föreslår ändringarna i undertexterna"
-            onClick={() => setWordDialog({ baseChoice: false })}
-          >
-            Läs in från Word…
-          </button>
-          )}
-          {onRegenerated && (
+          {onRegenerated && !hasCaptions && (
             <button
               class="btn btn-sm"
               type="button"
               disabled={!master || readOnly || saving || publishing || regenerating || !canRegenerate}
-              title={hasCaptions
-                ? (canRegenerate ? 'Skapar nya undertexter från ljudet (efter bekräftelse)' : 'Undertexterna går inte att skapa på nytt just nu')
-                : (canRegenerate ? 'Skapar undertexter automatiskt från ljudet' : 'Undertexter går inte att skapa automatiskt för den här videon')}
+              title={canRegenerate ? 'Skapar undertexter automatiskt från ljudet' : 'Undertexter går inte att skapa automatiskt för den här videon'}
               onClick={() => setConfirmRegenerate(true)}
             >
-              {regenerating ? 'Startar…' : hasCaptions ? 'Skapa på nytt' : 'Skapa undertexter'}
+              {regenerating ? 'Startar…' : 'Skapa undertexter'}
             </button>
           )}
           <button class="btn btn-sm" type="button" disabled={!dirty || saving || publishing || readOnly} onClick={() => void save()}>
@@ -1937,7 +1861,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
               </div>
             )}
 
-            {toolsEnabled && (anchorToolsVisible || stepperVisible || unplacedChapters.length > 0) && (
+            {toolsEnabled && (anchorToolsVisible || unplacedChapters.length > 0) && (
               <div key="chapter-tools" class="ce-chaptertools" aria-label="Kapitelverktyg">
                 {anchorToolsVisible && !guide && (
                   <div class="od-sync-status">
@@ -1980,28 +1904,12 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                     onClose={() => setGuide(null)}
                   />
                 )}
-                {stepperVisible && stepTarget && (
-                  <SyncStepper
-                    target={stepTarget}
-                    remaining={untimedChapters.length}
-                    position={currentTime}
-                    playing={playing}
-                    busy={chapterBusy}
-                    canUndo={Boolean(lastSteppedId)}
-                    warning={orderWarning === stepTarget.chapterId}
-                    onSeekBy={(delta) => seekTo(playhead() + delta, false)}
-                    onTogglePlay={togglePlayback}
-                    onStep={() => void stepHere()}
-                    onSkip={skipStep}
-                    onUndo={undoStep}
-                  />
-                )}
                 {unplacedChapters.length > 0 && (
                   <div class="ce-unplaced" role="group" aria-label="Kapitel utan tid">
                     <h3 class="ce-side-title">Kapitel utan tid ({unplacedChapters.length})</h3>
                     <ul>
                       {unplacedChapters.map((chapter) => (
-                        <li key={chapter.chapterId} class={chapter.chapterId === stepTarget?.chapterId && stepperVisible ? 'is-target' : ''}>
+                        <li key={chapter.chapterId}>
                           <span class="ce-chapterbar-kind">{chapterKindText(chapter.kind)}</span>
                           <span class="ce-unplaced-label">{chapter.label}</span>
                           {chapter.timing === 'untimed' ? (
@@ -2152,6 +2060,26 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                 <OverflowMenu
                   label="Fler undertextåtgärder"
                   items={[
+                    ...(hasCaptions ? [
+                      {
+                        label: exporting ? 'Skapar Word-manus…' : 'Exportera till Word',
+                        disabled: !master || readOnly || exporting,
+                        title: 'Skriver ut undertexterna som ett manus i Word, att rätta och sedan läsa in här (görs av den sparade versionen)',
+                        onClick: () => (master?.publishedStartSeconds !== undefined ? setExportChoice(true) : void exportWord('whole')),
+                      },
+                      {
+                        label: 'Läs in från Word…',
+                        disabled: !master || readOnly || saving || publishing || regenerating,
+                        title: 'Läser in ett rättat manus (Word) och föreslår ändringarna i undertexterna',
+                        onClick: () => setWordDialog({ baseChoice: false }),
+                      },
+                    ] : []),
+                    ...(onRegenerated && hasCaptions ? [{
+                      label: regenerating ? 'Startar…' : 'Skapa på nytt…',
+                      disabled: !master || readOnly || saving || publishing || regenerating || !canRegenerate,
+                      title: canRegenerate ? 'Skapar nya undertexter från ljudet (efter bekräftelse)' : 'Undertexterna går inte att skapa på nytt just nu',
+                      onClick: () => setConfirmRegenerate(true),
+                    }] : []),
                     {
                       label: 'Läs in VTT-fil…',
                       disabled: !master || readOnly || saving || publishing || regenerating || captionsBusy,
