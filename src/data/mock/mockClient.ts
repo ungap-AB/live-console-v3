@@ -1194,6 +1194,28 @@ export const mockClient: Client = {
       p.onDemandLocked = false
       return delay(projectSnapshot(p))
     },
+    async createPreviewLink(id, input) {
+      findProject(id)
+      const token = `mock-${input.variant}-${input.mode ?? 'current'}`
+      return delay({ token, manifestUrl: `/api/v1/preview/${token}/manifest`, expiresAtUtc: new Date(Date.now() + 4 * 3600_000).toISOString() })
+    },
+    async getPreviewPlayout(id) {
+      findProject(id)
+      return delay({ ...(mockPreviewPlayouts.get(id) ?? { currentAgendaItemId: null, currentPersonId: null }) })
+    },
+    async previewCue(id, kind, refId) {
+      findProject(id)
+      const current = mockPreviewPlayouts.get(id) ?? { currentAgendaItemId: null, currentPersonId: null }
+      const next = kind === 'agendaItem'
+        ? { currentAgendaItemId: refId, currentPersonId: refId === null ? current.currentPersonId : null }
+        : { ...current, currentPersonId: refId }
+      mockPreviewPlayouts.set(id, next)
+      return delay({ ...next })
+    },
+    async resetPreviewPlayout(id) {
+      mockPreviewPlayouts.delete(id)
+      return delay(undefined)
+    },
     async cue(id, kind, refId, label) {
       const p = findProject(id)
       if (p.publication.state === 'published') throw new Error('Sändningen är publicerad. Utspelning är avstängd.')
@@ -1369,6 +1391,8 @@ export const mockClient: Client = {
     },
   },
 }
+
+const mockPreviewPlayouts = new Map<string, import('../types').PreviewPlayout>()
 
 function findProject(id: string): Project {
   const project = projects.find((p) => p.id === id)

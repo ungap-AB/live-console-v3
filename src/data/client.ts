@@ -259,6 +259,13 @@ export interface Client {
     restoreOriginal(id: string): Promise<Project>
     returnToLive(id: string): Promise<Project>
     cue(id: string, kind: CueKind, refId: string, label: string): Promise<TimelineEvent>
+    /** UNG-253: länk till förhandsvisningens manifest. variant published = det tittarna ser; mode visar ett annat läge än projektets. */
+    createPreviewLink(id: string, input: { variant: 'draft' | 'published'; mode?: PublicMode }): Promise<import('./types').PreviewLink>
+    /** UNG-255: testutspelningen i förhandsvisningen (Before). Rör inte projektet eller det tittarna ser. */
+    getPreviewPlayout(id: string): Promise<import('./types').PreviewPlayout>
+    /** Spelar ut (refId satt) eller rensar (refId null) en punkt eller namnskylt i förhandsvisningen. */
+    previewCue(id: string, kind: 'agendaItem' | 'person', refId: string | null): Promise<import('./types').PreviewPlayout>
+    resetPreviewPlayout(id: string): Promise<void>
     /** Rensar aktiv dagordningspunkt/namnskylt — loggas som en egen tidslinjehändelse, tar inte bort tidigare utspelningar. */
     clear(id: string, kind: CueKind): Promise<TimelineEvent>
     /** Startar en paus (UNG-119) med texten som visas över videon i spelaren, eller byter texten på en pågående paus. */

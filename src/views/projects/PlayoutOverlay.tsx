@@ -50,6 +50,9 @@ export function usePlayoutAddress(projectId: string) {
 export type PlayoutAddress = ReturnType<typeof usePlayoutAddress>
 
 interface PlayoutOverlayProps {
+  /** Rubriken (förval Utspelning); UNG-255 använder samma ram för Förhandsvisning. */
+  title?: string
+  label?: string
   projectName: string
   /** Till höger i vyns huvud, före Stäng (i Live: lägesknapparna med paus, signal, tittare och klocka). */
   bar?: ComponentChildren
@@ -59,11 +62,11 @@ interface PlayoutOverlayProps {
 
 // Utspelningen som arbetsvy över hela projektet. Stängs bara med Stäng (inte Esc), så att en tangenttryckning under sändning inte tar
 // bort listorna.
-export function PlayoutOverlay({ projectName, bar, onClose, children }: PlayoutOverlayProps) {
+export function PlayoutOverlay({ title = 'Utspelning', label = 'Utspelning av kapitel', projectName, bar, onClose, children }: PlayoutOverlayProps) {
   return (
-    <div class="po" role="region" aria-label="Utspelning av kapitel">
+    <div class="po" role="region" aria-label={label}>
       <header class="po-head">
-        <h2>Utspelning</h2>
+        <h2>{title}</h2>
         <span class="po-sub">{projectName}</span>
         <span class="spacer" />
         {bar}

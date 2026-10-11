@@ -748,3 +748,16 @@ export interface ChapterBatch {
   change?: { id: string; label?: string; offsetSeconds?: number }[]
   add?: { kind: CueKind; label: string; offsetSeconds: number }[]
 }
+
+// UNG-253/255: en signerad, kortlivad länk som spelaren läser förhandsvisningens manifest genom.
+export interface PreviewLink {
+  token: string
+  manifestUrl: string
+  expiresAtUtc: string
+}
+
+// UNG-255: testutspelningen i förhandsvisningen (Before). Syns bara i förhandsvisningen, aldrig för tittarna.
+export interface PreviewPlayout {
+  currentAgendaItemId: string | null
+  currentPersonId: string | null
+}

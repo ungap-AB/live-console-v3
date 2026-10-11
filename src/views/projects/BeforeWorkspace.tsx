@@ -14,6 +14,7 @@ import { PlayoutOverlay, type PlayoutAddress } from './PlayoutOverlay'
 import { consumeMeetingBindingRequest } from './meetingBindingRequest'
 import { linkedResourceLabel } from './preparationLabels'
 import { PlayoutColumns } from './PlayoutColumns'
+import { PreviewOverlay } from './PreviewOverlay'
 import { useModeChange } from './useModeChange'
 import { useNameList } from './useNameList'
 import './BeforeWorkspace.css'
@@ -48,6 +49,8 @@ export function BeforeWorkspace({ header, project: p, actions, health, refresh, 
   // UNG-189: öppnas direkt när man valt "Koppla till Meeting" i skapa-dialogen.
   const [showMeeting, setShowMeeting] = useState(() => consumeMeetingBindingRequest(p.id))
   const [showPlayerSettings, setShowPlayerSettings] = useState(false)
+  // UNG-255: förhandsvisningen med testutspelning, utan att gå live.
+  const [showPreview, setShowPreview] = useState(false)
   const { selectMode } = useModeChange(p, actions)
   // Spelaren laddas om när det tittarna ser i Before ändras (från dialogen här eller i rubriken).
   const [playerVersion, setPlayerVersion] = useState(0)
@@ -118,8 +121,9 @@ export function BeforeWorkspace({ header, project: p, actions, health, refresh, 
     <OverviewShell
       header={header}
       player={p.playerUrl ? { url: p.playerUrl, published: true, version: playerVersion } : null}
-      workOpen={playout.open}
+      workOpen={playout.open || showPreview}
       overlays={<>
+        {showPreview && <PreviewOverlay project={p} actions={actions} beforeBroadcast={true} onClose={() => setShowPreview(false)} />}
         {playout.open && (
           <PlayoutOverlay projectName={p.name} onClose={playout.closePlayout}>
             <PlayoutColumns project={p} actions={actions} openPicker={openPicker} onPickerClosed={() => setOpenPicker(null)} />
@@ -156,6 +160,9 @@ export function BeforeWorkspace({ header, project: p, actions, health, refresh, 
       <div class="bw-actions">
         <button class="btn btn-primary" type="button" onClick={playout.openPlayout}>
           <Icon name="playlist_play" size={18} /> Spela ut kapitel
+        </button>
+        <button class="btn" type="button" onClick={() => setShowPreview(true)}>
+          <Icon name="visibility" size={18} /> Förhandsvisa
         </button>
         <button class="btn" type="button" onClick={() => setShowPlayerSettings(true)}>
           <Icon name="settings" size={18} /> Spelarinställningar…

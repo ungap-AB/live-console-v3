@@ -1,0 +1,114 @@
+/* UNG-255: förhandsvisningen. Before: testutspelningen till vänster, spelaren till höger. Live: bara spelaren. */
+
+.pvo {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 20px;
+}
+
+.pvo.pvo-live {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.pvo-live .pvo-player {
+  width: min(100%, 1100px);
+}
+
+.pvo-test {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pvo-test .pcols {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+}
+
+.pvo-test-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pvo-hint {
+  flex: 1;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.pvo-player {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.pvo-frame {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+
+.pvo-frame iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border: 0;
+}
+
+.pvo-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.pvo-error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--danger);
+}
+
+.pvo-showas {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.pvo-showas button {
+  padding: 4px 10px;
+  border: 0;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pvo-showas button + button {
+  border-left: 1px solid var(--line);
+}
+
+.pvo-showas button:hover {
+  background: var(--btn-bg-hover);
+}
+
+.pvo-showas button.is-active {
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-weight: 600;
+}

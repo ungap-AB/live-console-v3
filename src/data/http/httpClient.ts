@@ -1037,6 +1037,18 @@ export const httpClient: Client = {
       const dto = await api<ServerProject>(`/projects/${id}/return-to-live`, { method: 'POST' })
       return toProjectFull(dto)
     },
+    async createPreviewLink(id, input) {
+      return api<import('../types').PreviewLink>(`/projects/${id}/preview-link`, { method: 'POST', body: input })
+    },
+    async getPreviewPlayout(id) {
+      return api<import('../types').PreviewPlayout>(`/projects/${id}/preview-playout`)
+    },
+    async previewCue(id, kind, refId) {
+      return api<import('../types').PreviewPlayout>(`/projects/${id}/preview-playout/cue`, { method: 'POST', body: { kind, refId } })
+    },
+    async resetPreviewPlayout(id) {
+      await api<void>(`/projects/${id}/preview-playout`, { method: 'DELETE' })
+    },
     async cue(id, kind, refId, label) {
       const dto = await api<ServerTimelineEvent>(`/projects/${id}/playout/cue`, { method: 'POST', body: { kind, refId, label } })
       return toTimelineEvent(dto)
