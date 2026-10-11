@@ -910,6 +910,9 @@ export const mockClient: Client = {
     async getCaptionMaster() {
       throw new Error('Undertextredigeraren finns inte i mock-läget')
     },
+    async getEditorSource() {
+      throw new Error('Redigeraren finns inte i mock-läget')
+    },
     async saveCaptionMaster() {
       throw new Error('Undertextredigeraren finns inte i mock-läget')
     },

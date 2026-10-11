@@ -7,7 +7,7 @@ import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { client } from '../../data'
 import { ApiError } from '../../data/http/fetchJson'
-import type { CaptionDraft, CaptionEnergy, CaptionGeneration, CaptionMaster, CueKind, DraftStatus, WordImportResult } from '../../data/types'
+import type { CaptionDraft, CaptionEnergy, CaptionGeneration, CaptionMaster, CueKind, DraftStatus, EditorSource, WordImportResult } from '../../data/types'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import { formatHms } from '../../app/time'
@@ -70,6 +70,8 @@ interface CaptionEditorProps {
   trim?: EditorTrim
   /** UNG-247: projektet är publicerat: trimningen visas låst, med en väg till Avpublicera (redigeraren stängs först). */
   trimLock?: { onUnpublish: () => void }
+  /** UNG-248: förra försöket att skapa undertexter misslyckades (felet), när projektet ännu saknar undertexter. */
+  createFailed?: string
 }
 
 /**
@@ -85,6 +87,24 @@ export interface EditorTrim {
   onSaved?: () => void
   /** UNG-246: Ladda om efter en konflikt: omgivande vy hämtar om projektet så att trimningen blir den sparade. */
   onReload?: () => void
+}
+
+// UNG-248: ett projekt utan undertexter öppnas med en tom master ur redigerarens källa (video, längd och trim), så att resten av redigeraren
+// (kapitel, trim, Spara och Publicera) fungerar som vanligt. Versionen används aldrig: utan repliker finns inget att spara.
+function emptyMaster(source: EditorSource): CaptionMaster {
+  return {
+    recordingId: '',
+    language: 'sv',
+    version: 0,
+    updatedAtUtc: '',
+    cues: [],
+    originalHlsUrl: source.originalHlsUrl,
+    originalDurationSeconds: source.originalDurationSeconds,
+    publishedStartSeconds: source.publishedStartSeconds,
+    publishedEndSeconds: source.publishedEndSeconds,
+    legacy: false,
+    draftRevision: source.draftRevision,
+  }
 }
 
 /** Allt som går att ångra: replikerna och kapitlen i ett steg (UNG-229). */
@@ -104,8 +124,10 @@ function blurAfterMouse(event: MouseEvent) {
 // UNG-140/143: redigerare för undertexterna (mastern, original-tidslinje). Video med aktuell replik över bilden och en virtualiserad
 // radlista där texten rättas på plats. Rutor kan slås ihop (exakt tid), delas, orden kan flyttas mellan grannar, tider justeras,
 // rader läggs till och tas bort, och allt går att ångra tills man sparar. Sparas som en version (versionskontroll mot servern).
-export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRegenerated, onChaptersSaved, trim, trimLock }: CaptionEditorProps) {
+export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRegenerated, onChaptersSaved, trim, trimLock, createFailed }: CaptionEditorProps) {
   const [master, setMaster] = useState<CaptionMaster | null>(null)
+  // UNG-248: projektet har undertexter. Utan dem är redigeraren bara-kapitel-läget, med video och trimbalk, och Skapa undertexter i huvudet.
+  const [hasCaptions, setHasCaptions] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [cues, setCues] = useState<EditCue[]>([])
   const [saved, setSaved] = useState<EditCue[]>([])
@@ -230,10 +252,23 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     focusBase.current = null
   }
 
+  // Mastern, eller en tom master när projektet saknar undertexter (UNG-248).
+  async function fetchMaster(): Promise<CaptionMaster> {
+    try {
+      const next = await client.projects.getCaptionMaster(projectId)
+      setHasCaptions(true)
+      return next
+    } catch (err) {
+      if (!(err instanceof ApiError && err.code === 'captions_not_found')) throw err
+      setHasCaptions(false)
+      return emptyMaster(await client.projects.getEditorSource(projectId))
+    }
+  }
+
   async function load() {
     setLoadError('')
     try {
-      adopt(await client.projects.getCaptionMaster(projectId))
+      adopt(await fetchMaster())
       setConflict(null)
       setSaveError('')
       setNotice('')
@@ -410,9 +445,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
 
   // UNG-228: kapitlen visas som egna rader bland replikerna.
   // Ordgranskningsläget (Word) har låsta rader och egen navigering: där visas inga kapitel.
-  const chaptersAvailable = chapterState === 'ok' && chapterList.length > 0 && review === null
-  const chaptersVisible = showChapters && chaptersAvailable
-  const chaptersOnly = chaptersVisible && !showCues
+  // UNG-248: utan undertexter är listan alltid bara kapitel (även tom, så att det första kapitlet går att lägga till).
+  const chaptersAvailable = chapterState === 'ok' && (chapterList.length > 0 || !hasCaptions) && review === null
+  const chaptersVisible = (showChapters || !hasCaptions) && chaptersAvailable
+  const chaptersOnly = chaptersVisible && !(showCues && hasCaptions)
   const listRows = useMemo(() => (chaptersVisible && !chaptersOnly ? mergeRows(cues, chapterList) : null), [chaptersVisible, chaptersOnly, cues, chapterList])
 
   // UNG-231: bara kapitel. Talarna hör till punkten före dem (lös gruppering ur tidsordningen) och är hopfällda tills punkten öppnas.
@@ -1038,6 +1074,11 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   // och publiceras inte förrän det godkänns. Redigeraren stängs, och omgivande vy visar framsteget.
   async function regenerate() {
     setConfirmRegenerate(false)
+    // UNG-248: utan undertexter (Skapa undertexter) sparas kapitel och trim först, eftersom redigeraren stängs medan undertexterna skapas.
+    if (!hasCaptions && dirty) {
+      actionRef.current = 'save'
+      if (!(await saveAll())) return
+    }
     setRegenerating(true)
     setSaveError('')
     try {
@@ -1135,7 +1176,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     let captionsChanged = false
     let captionsChangedBy: string | undefined
     try {
-      const fresh = await client.projects.getCaptionMaster(projectId)
+      const fresh = await fetchMaster()
       captionsChanged = captionVersion.current !== undefined && fresh.version !== captionVersion.current
       captionsChangedBy = fresh.updatedByName
     } catch {
@@ -1169,7 +1210,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     setConflict(null)
     setSaveError('')
     try {
-      const [status, fresh] = await Promise.all([client.projects.draftStatus(projectId), client.projects.getCaptionMaster(projectId)])
+      const [status, fresh] = await Promise.all([client.projects.draftStatus(projectId), fetchMaster()])
       draftRevision.current = status.draftRevision
       captionVersion.current = fresh.version
       setDraftStatus(status)
@@ -1427,10 +1468,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     <div class="ce-scrim" role="dialog" aria-modal="true" aria-label="Redigera undertexter">
       <header class="ce-head">
         <div class="ce-title">
-          <h2>Redigera undertexter</h2>
+          <h2>{hasCaptions ? 'Redigera undertexter' : 'Redigera'}</h2>
           <div class="ce-sub">
             {projectName}
-            {master && <> · version {master.version}{master.updatedByName ? ` (${master.updatedByName})` : ''}</>}
+            {master && hasCaptions && <> · version {master.version}{master.updatedByName ? ` (${master.updatedByName})` : ''}</>}
             {publishedStart !== undefined && publishedEnd !== undefined && (
               <> · publiceras: {formatHms(publishedStart)}–{formatHms(publishedEnd)}</>
             )}
@@ -1450,6 +1491,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
             {dirty ? `${changeCount} osparade ändringar` : master ? 'Sparat' : ''}
             {actions.unpublishedBadge && <span class="ce-unpublished"> · Opublicerade ändringar</span>}
           </span>
+          {hasCaptions && (
           <button
             class="btn btn-sm"
             type="button"
@@ -1459,6 +1501,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
           >
             {exporting ? 'Skapar…' : 'Exportera till Word'}
           </button>
+          )}
+          {hasCaptions && (
           <button
             class="btn btn-sm"
             type="button"
@@ -1468,15 +1512,18 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
           >
             Läs in från Word…
           </button>
+          )}
           {onRegenerated && (
             <button
               class="btn btn-sm"
               type="button"
               disabled={!master || readOnly || saving || publishing || regenerating || !canRegenerate}
-              title={canRegenerate ? 'Skapar nya undertexter från ljudet (efter bekräftelse)' : 'Undertexterna går inte att skapa på nytt just nu'}
+              title={hasCaptions
+                ? (canRegenerate ? 'Skapar nya undertexter från ljudet (efter bekräftelse)' : 'Undertexterna går inte att skapa på nytt just nu')
+                : (canRegenerate ? 'Skapar undertexter automatiskt från ljudet' : 'Undertexter går inte att skapa automatiskt för den här videon')}
               onClick={() => setConfirmRegenerate(true)}
             >
-              {regenerating ? 'Startar…' : 'Skapa på nytt'}
+              {regenerating ? 'Startar…' : hasCaptions ? 'Skapa på nytt' : 'Skapa undertexter'}
             </button>
           )}
           <button class="btn btn-sm" type="button" disabled={!dirty || saving || publishing || readOnly} onClick={() => void save()}>
@@ -1533,6 +1580,9 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
         </div>
       )}
       {saveError && <div key="save-error" class="ce-banner ce-error" role="alert">{saveError}</div>}
+      {createFailed && !hasCaptions && (
+        <div key="create-failed" class="ce-banner ce-error" role="alert">Undertexterna kunde inte skapas: {createFailed} Försök igen med Skapa undertexter.</div>
+      )}
       {notice && (
         <div key="notice" class="ce-banner ce-warn ce-notice" role="status">
           {notice}
@@ -1540,7 +1590,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
         </div>
       )}
 
-      {!master && !loadError && <div key="loading" class="ce-loading">Hämtar undertexter…</div>}
+      {!master && !loadError && <div key="loading" class="ce-loading">Hämtar…</div>}
 
       {review && (
         <WordReviewBar
@@ -1660,7 +1710,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
               </div>
             )}
 
-            {SHOW_TOOLS_TAB ? (
+            {hasCaptions && (SHOW_TOOLS_TAB ? (
               <div class="ce-tabs" role="tablist" aria-label="Under videon">
                 <button class={sideTab === 'tools' ? 'is-active' : ''} role="tab" type="button" aria-selected={sideTab === 'tools'} onClick={() => setSideTab('tools')}>Verktyg</button>
                 <button class={sideTab === 'corrections' ? 'is-active' : ''} role="tab" type="button" aria-selected={sideTab === 'corrections'} onClick={() => setSideTab('corrections')}>
@@ -1669,9 +1719,9 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
               </div>
             ) : (
               <h3 class="ce-side-title">Rättningar{ownList.length > 0 ? ` (${ownList.length})` : ''}</h3>
-            )}
+            ))}
 
-            {sideTab === 'corrections' && (
+            {hasCaptions && sideTab === 'corrections' && (
               <CorrectionsPanel
                 machine={machine}
                 own={ownList}
@@ -1723,22 +1773,26 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
               </div>
             )}
 
+            {hasCaptions && (
             <p class="ce-help">
               Dra en gräns i vågformen så flödar texten över den. Ctrl/Cmd+Enter = dela vid markören, ny ruta efter (sist i texten) eller före (först) · Enter = nästa rad · Skift+Enter = ny rad · Esc = ångra raden · Tab / Skift+Tab = nästa / föregående rad ·
               Backspace i början / Delete i slutet slår ihop med grannen. Klicka på en rads tid för att spela den.
             </p>
+            )}
           </section>
 
           <section class="ce-list-wrap" aria-label="Repliker">
             {chapterState === 'ok' && review === null && (
               <div class="ce-chapterbar">
-                {chapterList.length > 0 && (
+                {(chapterList.length > 0 || !hasCaptions) && (
                   <>
                     {/* Minst ett av filtren är alltid på: släcks det ena när det andra redan är släckt händer ingenting. */}
                     <button
-                      class={`ce-chip${showCues ? ' is-on' : ''}`}
+                      class={`ce-chip${showCues && hasCaptions ? ' is-on' : ''}`}
                       type="button"
-                      aria-pressed={showCues}
+                      aria-pressed={showCues && hasCaptions}
+                      disabled={!hasCaptions}
+                      title={hasCaptions ? undefined : 'Projektet har inga undertexter än'}
                       onClick={(event) => {
                         blurAfterMouse(event)
                         if (!showCues || showChapters) changeFilter({ cues: !showCues, chapters: true })
@@ -1747,9 +1801,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                       Undertexter · {cues.length}
                     </button>
                     <button
-                      class={`ce-chip${showChapters ? ' is-on' : ''}`}
+                      class={`ce-chip${showChapters || !hasCaptions ? ' is-on' : ''}`}
                       type="button"
-                      aria-pressed={showChapters}
+                      aria-pressed={showChapters || !hasCaptions}
+                      disabled={!hasCaptions}
                       onClick={(event) => {
                         blurAfterMouse(event)
                         if (!showChapters || showCues) changeFilter({ cues: true, chapters: !showChapters })
@@ -1821,6 +1876,9 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
               <div class="ce-list-head" aria-hidden="true" style={energy ? { marginLeft: `${WAVEFORM_WIDTH}px` } : undefined}>
                 <span /><span>Text</span><span>#</span><span>Start</span><span />
               </div>
+            )}
+            {chaptersOnly && chapterList.length === 0 && (
+              <p key="no-chapters" class="ce-empty">Inga kapitel än. Spela fram videon och lägg till med + Kapitel här.</p>
             )}
             <div class="ce-list-main">
             {energy && !chaptersOnly && (
@@ -2030,17 +2088,25 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
 
       {confirmRegenerate && (
         <ConfirmModal
-          title="Skapa undertexterna på nytt?"
-          confirmLabel="Skapa på nytt"
-          danger
+          title={hasCaptions ? 'Skapa undertexterna på nytt?' : 'Skapa undertexter automatiskt?'}
+          confirmLabel={hasCaptions ? 'Skapa på nytt' : 'Skapa undertexter'}
+          danger={hasCaptions}
           onCancel={() => setConfirmRegenerate(false)}
           onConfirm={() => void regenerate()}
         >
+          {hasCaptions ? (
           <p>
             Ett nytt utkast skapas från ljudet och ersätter den här arbetsversionen. Nuvarande version finns kvar i versionshistoriken, och
             nuvarande publicerade undertexter ligger kvar för tittarna tills du godkänner det nya utkastet.
             {dirty ? ` Dina ${changeCount} osparade ändringar går förlorade.` : ''}
           </p>
+          ) : (
+          <p>
+            Ljudet skrivs ut och delas upp i repliker. Du följer framsteget här och får sedan ett utkast att redigera, med vågform och en ruta
+            för varje replik. Utkastet syns inte för tittarna förrän du godkänner det.
+            {dirty ? ' Dina osparade ändringar i kapitel och trim sparas först.' : ''}
+          </p>
+          )}
           <label class="ce-regen-option">
             <input type="checkbox" checked={regenNotify} onChange={(event) => setRegenNotify(event.currentTarget.checked)} />
             Mejla mig när det är klart

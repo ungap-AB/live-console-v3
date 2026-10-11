@@ -62,24 +62,21 @@ export function captionStateView(state: CaptionState, progress?: number | null):
 export function captionEntry(generation: CaptionGeneration | null): CaptionEntry | null {
   if (!generation) return null
   const phase = autoCaptionsPhase(generation)
-  const unavailable = generation.canGenerate ? undefined : 'Undertexter går inte att skapa automatiskt för den här videon.'
   if (phase === 'running') return { kind: 'progress', label: captionStateView('generating', generation.job?.progress).entryLabel }
   if (phase === 'draft') {
     // Publicerade bara om den senast sparade versionen är den publicerade; allt annat (även ändringar efter en publicering) är ett utkast.
     const published = generation.draft?.unpublishedChanges === false
     return { kind: 'edit', label: captionStateView(published ? 'published' : 'draft').entryLabel }
   }
-  if (phase === 'failed') return { kind: 'create', label: captionStateView('failed').entryLabel, disabledReason: unavailable }
-  return { kind: 'create', label: captionStateView('none').entryLabel, disabledReason: unavailable }
+  // UNG-248: utan undertexter öppnar knappen redigeraren (trim och kapitel); undertexter skapas därifrån.
+  return { kind: 'create', label: 'Redigera' }
 }
 
-export type StudioView = 'start' | 'progress' | 'editor'
+export type StudioView = 'progress' | 'editor'
 
-/** Vad som visas när knappen öppnats: start (skapa), framsteg (overlay över redigeraren) eller själva redigeraren. */
+/** Vad som visas när knappen öppnats: framsteg (overlay över redigeraren) eller själva redigeraren (UNG-248: även utan undertexter). */
 export function studioView(phase: AutoCaptionsPhase): StudioView {
-  if (phase === 'running') return 'progress'
-  if (phase === 'draft') return 'editor'
-  return 'start'
+  return phase === 'running' ? 'progress' : 'editor'
 }
 
 /** Undertextläget per projekt ur projektlistan (servern räknar ut det för hela listan med få frågor, UNG-167). */

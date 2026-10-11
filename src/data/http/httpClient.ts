@@ -20,6 +20,7 @@ import type {
   ProjectRecording,
   CaptionGeneration,
   CaptionMaster,
+  EditorSource,
   WordImportResult,
   ForkWindow,
   CaptionVersionInfo,
@@ -879,6 +880,9 @@ export const httpClient: Client = {
     },
     getCaptionMaster(id) {
       return api<CaptionMaster>(`/projects/${id}/captions/master`)
+    },
+    getEditorSource(id) {
+      return api<EditorSource>(`/projects/${id}/editor/source`)
     },
     saveCaptionMaster(id, input, ifDraftRevision) {
       return api<CaptionMaster>(`/projects/${id}/captions/master`, { method: 'PUT', body: input, ifDraftRevision })

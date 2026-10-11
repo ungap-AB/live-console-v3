@@ -5,7 +5,7 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import { JobProgress } from '../../components/JobProgress'
 import type { AutoCaptionsPhase } from './autoCaptionsLogic'
-import { estimatedWaitText, jobEstimateText } from './autoCaptionsLogic'
+import { jobEstimateText } from './autoCaptionsLogic'
 import { studioView } from './captionEntryLogic'
 import { CaptionEditor, type EditorTrim } from './CaptionEditor'
 import './CaptionStudio.css'
@@ -29,14 +29,12 @@ interface CaptionStudioProps {
   onClose: () => void
 }
 
-// UNG-165: undertextstudion. Finns ett utkast öppnas redigeraren. Annars är skapandet en overlay över en dummy av redigeraren, så att man
-// anar nästa steg: overlayen finns kvar så länge bearbetningen pågår och spärrar åtkomsten, och byts mot redigeraren när utkastet är klart.
+// UNG-165: undertextstudion. Medan undertexterna skapas visas framsteget som en overlay över en dummy av redigeraren, så att man anar nästa
+// steg; annars öppnas redigeraren. UNG-248: även utan undertexter (trim och kapitel), och undertexter skapas därifrån.
 export function CaptionStudio({ projectId, projectName, videoDurationSeconds, posterUrl, generation, phase, setGeneration, refresh, onChanged, onChaptersChanged, trim, trimLock, onClose }: CaptionStudioProps) {
   const view = studioView(phase)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [notify, setNotify] = useState(false)
-  const [includeSpeakers, setIncludeSpeakers] = useState(false)
   const [confirmCancel, setConfirmCancel] = useState(false)
   // UNG-213: klockan som den återstående tiden räknas mot, tickar medan jobbet går.
   const [now, setNow] = useState(() => Date.now())
@@ -46,21 +44,10 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, po
     return () => window.clearInterval(timer)
   }, [view])
 
-  if (view === 'editor') {
-    return <CaptionEditor projectId={projectId} projectName={projectName} onClose={onClose} onSaved={() => { onChanged(); void refresh() }} onRegenerated={setGeneration} onChaptersSaved={onChaptersChanged} trim={trim} trimLock={trimLock} />
-  }
-
-  async function start() {
-    setBusy(true)
-    setError('')
-    try {
-      // UNG-205: talarbyten följer med genereringen bara när servern har dem påslagna.
-      setGeneration(await client.projects.generateCaptions(projectId, notify, includeSpeakers && generation?.speakersAvailable === true))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Det gick inte att starta undertextningen.')
-    } finally {
-      setBusy(false)
-    }
+  const job = generation?.job
+  if (view === 'editor' || !job) {
+    const createFailed = phase === 'failed' ? (job?.errorMessage ?? 'okänt fel.') : undefined
+    return <CaptionEditor projectId={projectId} projectName={projectName} onClose={onClose} onSaved={() => { onChanged(); void refresh() }} onRegenerated={setGeneration} onChaptersSaved={onChaptersChanged} trim={trim} trimLock={trimLock} createFailed={createFailed} />
   }
 
   async function cancel() {
@@ -77,12 +64,8 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, po
     }
   }
 
-  const job = generation?.job
-  const failed = phase === 'failed' && job
-  const canGenerate = generation?.canGenerate ?? false
-
   return (
-    <div class="cs-scrim" role="dialog" aria-modal="true" aria-label="Skapa undertexter">
+    <div class="cs-scrim" role="dialog" aria-modal="true" aria-label="Undertexterna skapas">
       <header class="cs-head">
         <div class="cs-title">
           <h2>Undertexter</h2>
@@ -95,46 +78,16 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, po
 
       <div class="cs-overlay">
         <div class="cs-card">
-          {view === 'progress' && job ? (
-            <>
-              <h3>Undertexterna skapas</h3>
-              <JobProgress progress={job.progress} phase={job.phase} />
-              <p class="cs-text cs-estimate" aria-live="polite">
-                {jobEstimateText({ videoDurationSeconds, includeSpeakers: job.includeSpeakers === true, startedAtUtc: job.createdAtUtc, progress: job.progress, nowMs: now })}
-              </p>
-              <p class="cs-text">Ljudet tas fram, skrivs ut och delas upp i repliker. Sedan kan du redigera dem här. Du kan stänga fönstret: jobbet fortsätter, och du följer det på knappen ovanför videon.</p>
-              <div class="cs-actions">
-                <button class="btn btn-sm" type="button" disabled={busy} onClick={() => setConfirmCancel(true)}>Avbryt</button>
-                <button class="btn btn-sm" type="button" onClick={onClose}>Stäng, fortsätt i bakgrunden</button>
-              </div>
-            </>
-          ) : (
-            <>
-              <h3>Skapa undertexter automatiskt</h3>
-              {failed && <p class="cs-error" role="alert">Undertexterna kunde inte skapas: {job?.errorMessage ?? 'okänt fel.'}</p>}
-              <p class="cs-text">
-                Tar {estimatedWaitText(videoDurationSeconds)}. Du får ett utkast att redigera, med video, vågform och en ruta för varje replik.
-                Utkastet syns inte för tittarna förrän du godkänner det.
-              </p>
-              <label class="cs-notify">
-                <input type="checkbox" checked={notify} onChange={(event) => setNotify(event.currentTarget.checked)} />
-                Mejla mig när det är klart
-              </label>
-              {generation?.speakersAvailable && (
-                <label class="cs-notify">
-                  <input type="checkbox" checked={includeSpeakers} onChange={(event) => setIncludeSpeakers(event.currentTarget.checked)} />
-                  Analysera också talarbyten (för manus i Word)
-                </label>
-              )}
-              {!canGenerate && <p class="cs-error">Undertexter går inte att skapa automatiskt för den här videon.</p>}
-              <div class="cs-actions">
-                <button class="btn btn-sm btn-primary" type="button" disabled={busy || !canGenerate} onClick={() => void start()}>
-                  {busy ? 'Startar…' : failed ? 'Försök igen' : 'Skapa undertexter'}
-                </button>
-                <button class="btn btn-sm" type="button" onClick={onClose}>Stäng</button>
-              </div>
-            </>
-          )}
+          <h3>Undertexterna skapas</h3>
+          <JobProgress progress={job.progress} phase={job.phase} />
+          <p class="cs-text cs-estimate" aria-live="polite">
+            {jobEstimateText({ videoDurationSeconds, includeSpeakers: job.includeSpeakers === true, startedAtUtc: job.createdAtUtc, progress: job.progress, nowMs: now })}
+          </p>
+          <p class="cs-text">Ljudet tas fram, skrivs ut och delas upp i repliker. Sedan kan du redigera dem här. Du kan stänga fönstret: jobbet fortsätter, och du följer det på knappen ovanför videon.</p>
+          <div class="cs-actions">
+            <button class="btn btn-sm" type="button" disabled={busy} onClick={() => setConfirmCancel(true)}>Avbryt</button>
+            <button class="btn btn-sm" type="button" onClick={onClose}>Stäng, fortsätt i bakgrunden</button>
+          </div>
           {error && <p class="cs-error" role="alert">{error}</p>}
         </div>
       </div>

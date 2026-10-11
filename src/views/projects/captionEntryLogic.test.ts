@@ -10,11 +10,9 @@ test('knappen: laddar tills serverns läge är hämtat', () => {
   assert.equal(captionEntry(null), null)
 })
 
-test('knappen: skapa när inget finns, med förklaring om det inte går', () => {
-  assert.deepEqual(captionEntry({ canGenerate: true }), { kind: 'create', label: 'Skapa undertexter', disabledReason: undefined })
-  const blocked = captionEntry({ canGenerate: false })
-  assert.equal(blocked?.kind, 'create')
-  assert.match(blocked?.disabledReason ?? '', /inte/)
+test('knappen: Redigera när inga undertexter finns, även när de inte går att skapa (UNG-248)', () => {
+  assert.deepEqual(captionEntry({ canGenerate: true }), { kind: 'create', label: 'Redigera' })
+  assert.deepEqual(captionEntry({ canGenerate: false }), { kind: 'create', label: 'Redigera' })
 })
 
 test('knappen: framsteg i procent medan jobbet pågår, och redigera när ett utkast finns', () => {
@@ -30,8 +28,8 @@ test('knappen: utkast och publicerade benämns olika, och ändringar efter en pu
   assert.equal(captionEntry({ canGenerate: true, draft: changed })?.label, 'Redigera utkast')
 })
 
-test('ett misslyckat försök heter Försök igen, i listan och ovanför videon', () => {
-  assert.equal(captionEntry({ canGenerate: true, job: job('error') })?.label, 'Försök igen')
+test('ett misslyckat försök heter Försök igen, i listan; ovanför videon öppnar knappen redigeraren (UNG-248)', () => {
+  assert.equal(captionEntry({ canGenerate: true, job: job('error') })?.label, 'Redigera')
   assert.equal(listCaptionButton({ state: 'failed' }).label, 'Försök igen')
 })
 
@@ -53,8 +51,8 @@ test('knappen: ett misslyckat jobb som är nyare än utkastet ger skapa igen, et
 })
 
 test('vyn: start, framsteg eller redigerare efter läget', () => {
-  assert.equal(studioView('idle'), 'start')
-  assert.equal(studioView('failed'), 'start')
+  assert.equal(studioView('idle'), 'editor')
+  assert.equal(studioView('failed'), 'editor')
   assert.equal(studioView('running'), 'progress')
   assert.equal(studioView('draft'), 'editor')
 })

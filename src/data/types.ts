@@ -452,6 +452,15 @@ export interface CaptionMaster {
   draftRevision?: number
 }
 
+/** UNG-248: det redigeraren behöver även utan undertexter (originalets video och längd, trimmen, utkastets version). */
+export interface EditorSource {
+  originalHlsUrl?: string
+  originalDurationSeconds: number
+  publishedStartSeconds?: number
+  publishedEndSeconds?: number
+  draftRevision: number
+}
+
 /** UNG-147: en replik i förslaget från ett rättat Word-manus. Id = replikens id i mastern (för nya rutor: den de delats ur). */
 export interface WordImportCue {
   id: number

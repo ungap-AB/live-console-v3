@@ -106,6 +106,13 @@
   color: var(--ink-3);
 }
 
+/* UNG-248: bara-kapitel-läget utan kapitel (projekt utan undertexter). */
+.ce-empty {
+  margin: 0;
+  padding: 16px 12px;
+  color: var(--ink-3);
+}
+
 .ce-body {
   flex: 1;
   min-height: 0;
