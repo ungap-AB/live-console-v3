@@ -960,3 +960,9 @@ button.ce-time:hover {
   gap: 8px;
   margin-top: 10px;
 }
+
+/* ---- UNG-245 ---- */
+.ce-unpublished {
+  color: var(--warn);
+  font-weight: 600;
+}

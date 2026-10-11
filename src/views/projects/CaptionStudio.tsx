@@ -7,8 +7,7 @@ import { JobProgress } from '../../components/JobProgress'
 import type { AutoCaptionsPhase } from './autoCaptionsLogic'
 import { estimatedWaitText, jobEstimateText } from './autoCaptionsLogic'
 import { studioView } from './captionEntryLogic'
-import { CaptionEditor } from './CaptionEditor'
-import type { TrimRange } from '../../components/trimBarLogic'
+import { CaptionEditor, type EditorTrim } from './CaptionEditor'
 import './CaptionStudio.css'
 
 interface CaptionStudioProps {
@@ -24,7 +23,7 @@ interface CaptionStudioProps {
   /** Kapitel sparades i redigeraren (utkastet ändrat). */
   onChaptersChanged?: () => void
   /** Trimningen (originalets tid) och hur den ändras. Saknas den visas inga trimkontroller i redigeraren. */
-  trim?: { start: number; end: number; onChange: (range: TrimRange) => void }
+  trim?: EditorTrim
   onClose: () => void
 }
 

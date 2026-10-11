@@ -220,7 +220,7 @@ export interface Client {
     /** UNG-138: mastern som radlista. Spara med den version du utgick från (409 om någon annan hunnit före). */
     getCaptionMaster(id: string): Promise<import('./types').CaptionMaster>
     /** reason: 'word' när rättningar lästs in från Word (UNG-147), annars en vanlig redigering. */
-    saveCaptionMaster(id: string, input: { ifVersion: number; cues: { start: number; end: number; text: string }[]; reason?: 'word' }): Promise<import('./types').CaptionMaster>
+    saveCaptionMaster(id: string, input: { ifVersion: number; cues: { start: number; end: number; text: string }[]; reason?: 'word' }, ifDraftRevision?: number): Promise<import('./types').CaptionMaster>
     /** UNG-147: läser ett rättat manus (.docx) och föreslår ändringar i undertexterna. Sparar inget. baseVersion = annan bas än den dokumentet pekar ut. */
     importWordCorrections(id: string, file: File, baseVersion?: number): Promise<import('./types').WordImportResult>
     /** UNG-149: ljudets energikurva för vågformsbandet, eller null om den saknas (äldre utkast). */
@@ -280,7 +280,15 @@ export interface Client {
     updatePublishedChapter(id: string, chapterId: string, input: { offsetSeconds?: number; label?: string }): Promise<void>
     deleteChapter(id: string, index: number): Promise<void>
     deletePublishedChapter(id: string, chapterId: string): Promise<void>
-    saveTrimDraft(id: string, draft: import('./types').TrimDraft): Promise<Project>
+    saveTrimDraft(id: string, draft: import('./types').TrimDraft, ifDraftRevision?: number): Promise<Project>
+    /** UNG-241: utkastets läge (version, publicerat, opublicerade ändringar). */
+    draftStatus(id: string): Promise<import('./types').DraftStatus>
+    /** UNG-242: släpper kapitel och godkända undertexter i ett publicerat projekt (ingen ny trimmad kopia). */
+    publishChanges(id: string, ifDraftRevision?: number): Promise<import('./types').PublishChangesResult>
+    /** UNG-243: ger upp opublicerade ändringar (kapitel och undertexter tillbaka till det publicerade). */
+    discardChanges(id: string, ifDraftRevision?: number): Promise<import('./types').DraftStatus>
+    /** UNG-241: flera kapiteländringar i en transaktion. Ger utkastets nya versionsnummer. */
+    batchChapters(id: string, input: import('./types').ChapterBatch, ifDraftRevision?: number): Promise<{ draftRevision: number }>
     /** Mockup-bara: återställer sändningssimuleringen till ett obörjat läge. */
     resetSimulation(id: string): Promise<Project>
   }

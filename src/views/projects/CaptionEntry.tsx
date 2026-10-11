@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
 import { captionEntry, consumeCaptionStudio } from './captionEntryLogic'
 import { CaptionStudio } from './CaptionStudio'
-import type { TrimRange } from '../../components/trimBarLogic'
+import type { EditorTrim } from './CaptionEditor'
 import { useCaptionGeneration } from './useCaptionGeneration'
 
 interface CaptionEntryProps {
@@ -14,7 +14,7 @@ interface CaptionEntryProps {
   /** Kapitel sparades i redigeraren. */
   onChaptersChanged?: () => void
   /** Trimningen som redigeraren visar och ändrar (ägs av ondemand-vyn). */
-  trim?: { start: number; end: number; onChange: (range: TrimRange) => void }
+  trim?: EditorTrim
 }
 
 // UNG-165: knappen ovanför videofönstret som leder direkt till att skapa eller redigera undertexter. Etiketten följer serverns läge

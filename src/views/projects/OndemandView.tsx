@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Chapter, ChapterImportResult, CueKind, ForkResult, Project, ProjectRecording, Recording } from '../../data/types'
+import type { Chapter, ChapterImportResult, CueKind, DraftStatus, ForkResult, Project, ProjectRecording, Recording } from '../../data/types'
 import { formatBytes, formatDateTime, formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
@@ -95,6 +95,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   const [chaptersRefreshing, setChaptersRefreshing] = useState(false)
   const chaptersProjectRef = useRef<string | null>(null)
   const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false)
+  // UNG-245: servern avgör om utkastet skiljer sig från det publicerade (överlever omladdning, och gäller ändringar gjorda i editorn).
+  const [draftStatus, setDraftStatus] = useState<DraftStatus | null>(null)
   // UNG-252: ökar när något publicerats eller sparats, så att den inbäddade spelaren laddas om.
   const [previewVersion, setPreviewVersion] = useState(0)
   const [projectRecordings, setProjectRecordings] = useState<ProjectRecording[]>([])
@@ -252,6 +254,18 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
       cancelled = true
     }
   }, [p.id, p.publicMode, p.recording?.id, p.recording?.state])
+
+  // UNG-245: utkastets läge från servern. Hämtas vid byte av projekt/publiceringsläge och efter varje publicering eller spar.
+  const draftStatusKey = `${p.id}|${p.publication.state}|${p.publicMode}|${previewVersion}|${p.draftRevision ?? ''}`
+  useEffect(() => {
+    if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return
+    let cancelled = false
+    client.projects.draftStatus(p.id).then(
+      (status) => { if (!cancelled) setDraftStatus(status) },
+      () => { if (!cancelled) setDraftStatus(null) },
+    )
+    return () => { cancelled = true }
+  }, [draftStatusKey])
 
   if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return null
 
@@ -745,6 +759,9 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   }
   const defaultTrimStart = recording?.trimRange?.startOffsetSeconds ?? 0
   const defaultTrimEnd = recording?.trimRange?.endOffsetSeconds ?? mockTrimDuration
+  // UNG-245: det som är sparat som trimutkast (annars den trimning som gäller); skillnaden mot den pågående är osparad i redigeraren.
+  const savedTrimStart = p.trimDraft?.startOffsetSeconds ?? defaultTrimStart
+  const savedTrimEnd = p.trimDraft?.endOffsetSeconds ?? defaultTrimEnd
   const startChanged = mockTrimStart !== defaultTrimStart
   const endChanged = mockTrimEnd !== defaultTrimEnd
   const trimDirty = isAfter && (startChanged || endChanged)
@@ -754,7 +771,10 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   // Ondemand utan publicering = uppladdad video som väntar på granskning (Before → Ondemand).
   const stagedUpload = p.publicMode === 'ondemand' && p.publication.state !== 'published'
     && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed')
-  const canPublishOndemand = !chaptersReadOnly && !broadcastInProgress && !uploadPending && syncState !== 'pending' && (isAfter || hasUnpublishedChanges || trimDirty || stagedUpload)
+  // UNG-245: servern säger om det finns ändringar sedan publiceringen (även sådana som gjorts i editorn eller före en omladdning).
+  const serverChanges = Boolean(draftStatus?.published && draftStatus.hasUnpublishedChanges)
+  const anyUnpublished = hasUnpublishedChanges || serverChanges
+  const canPublishOndemand = !chaptersReadOnly && !broadcastInProgress && !uploadPending && syncState !== 'pending' && (isAfter || anyUnpublished || trimDirty || stagedUpload)
   const videoDuration = previewVideoRef.current?.duration || mockTrimDuration
   const trimDuration = mockTrimDuration > 0 ? mockTrimDuration : Number.isFinite(videoDuration) ? videoDuration : 0
   // Kapitel med position i videon: markeringar i trimbalken.
@@ -778,7 +798,44 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     }
   }
 
+  // UNG-242/245: i ett redan publicerat projekt släpper Publicera ändringar kapitel och godkända undertexter (ingen ny trimmad kopia).
+  async function publishChangesOnly() {
+    setConfirmOndemand(false)
+    setPublishSteps([
+      { key: 'publish', label: 'Publicerar ändringarna och uppdaterar spelaren' },
+      { key: 'chapters', label: 'Hämtar kapitlen' },
+    ])
+    setPublishStep('publish')
+    setPublishOutcome(null)
+    setPublishing(true)
+    let failed = false
+    let succeeded = false
+    try {
+      const result = await client.projects.publishChanges(p.id)
+      await actions.refreshProject()
+      setHasUnpublishedChanges(false)
+      setPublishStep('chapters')
+      await reloadChaptersNow()
+      succeeded = true
+      setSyncNote(result.captionsPendingApproval ? 'Ändringarna är publicerade. Undertexterna väntar på godkännande och följde inte med.' : '')
+    } catch (error) {
+      failed = true
+      setSyncNote(error instanceof Error ? error.message : 'Ändringarna kunde inte publiceras.')
+    } finally {
+      setPublishing(false)
+      if (failed) setPublishOutcome({ kind: 'failed', step: 'publish' })
+      else if (succeeded) {
+        setPublishOutcome({ kind: 'published', wasPublished: true })
+        setPreviewVersion((version) => version + 1)
+      }
+    }
+  }
+
   async function publishWithTrim() {
+    if (p.publication.state === 'published' && p.publicMode === 'ondemand') {
+      await publishChangesOnly()
+      return
+    }
     setConfirmOndemand(false)
     const willTrim = trimDirty && !!p.recording
     const wasPublished = p.publication.state === 'published'
@@ -972,7 +1029,9 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                         void reloadChaptersNow()
                       }}
                       // Trimningen följer med in i redigeraren (samma tillstånd som trimvyn; tillämpas vid Publicera ondemand).
-                      trim={showTrimControls && !externalVideo ? { start: mockTrimStart, end: mockTrimEnd, onChange: changeTrim } : undefined}
+                      trim={showTrimControls && !externalVideo
+                        ? { start: mockTrimStart, end: mockTrimEnd, savedStart: savedTrimStart, savedEnd: savedTrimEnd, onChange: changeTrim, onSaved: () => void actions.refreshProject() }
+                        : undefined}
                     />
                   ) : undefined}
                 />
@@ -1312,7 +1371,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
               </div>
             )}
             <footer class="od-chapters-footer">
-              {(hasUnpublishedChanges || trimDirty) && !chaptersReadOnly && <span class="od-unpublished">Opublicerade ändringar</span>}
+              {(anyUnpublished || trimDirty) && !chaptersReadOnly && <span class="od-unpublished">Opublicerade ändringar</span>}
               {(isAfter || p.publicMode === 'ondemand') && (
                 <>
                   {isAfter && <button class="btn btn-sm" type="button" disabled={chaptersReadOnly || uploadPending} onClick={() => setConfirmUndoAll(true)}>

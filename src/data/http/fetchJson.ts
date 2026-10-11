@@ -59,6 +59,8 @@ interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
   query?: Record<string, string | number | undefined>
+  /** UNG-241: villkorar skrivningen på utkastets versionsnummer (headern If-Draft-Revision). Konflikt ger 409 draft_conflict. */
+  ifDraftRevision?: number
 }
 
 function buildUrl(path: string, query?: RequestOptions['query']): string {
@@ -76,6 +78,7 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   if (options.body !== undefined && !(options.body instanceof FormData)) headers['Content-Type'] = 'application/json'
   const sentToken = authToken !== null
   if (authToken) headers['Authorization'] = `Bearer ${authToken}`
+  if (options.ifDraftRevision !== undefined) headers['If-Draft-Revision'] = String(options.ifDraftRevision)
 
   const response = await fetch(buildUrl(path, options.query), {
     method: options.method ?? 'GET',

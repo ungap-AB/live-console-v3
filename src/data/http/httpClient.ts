@@ -356,6 +356,7 @@ function toProjectLite(dto: ServerProject): Project {
     exclamationsAsSpeakers: dto.exclamationsAsSpeakers ?? false,
     liveOnly: dto.liveOnly ?? false,
     forkedFrom: dto.forkedFromProjectId ? { projectId: dto.forkedFromProjectId, name: dto.forkedFromName ?? undefined, atUtc: dto.forkedAtUtc ?? undefined } : undefined,
+    draftRevision: dto.draftRevision,
     captionStatus: toCaptionStatus(dto.captionStatus),
     visibility: dto.visibility as Visibility,
     publicMode: dto.publicMode as PublicMode,
@@ -879,8 +880,8 @@ export const httpClient: Client = {
     getCaptionMaster(id) {
       return api<CaptionMaster>(`/projects/${id}/captions/master`)
     },
-    saveCaptionMaster(id, input) {
-      return api<CaptionMaster>(`/projects/${id}/captions/master`, { method: 'PUT', body: input })
+    saveCaptionMaster(id, input, ifDraftRevision) {
+      return api<CaptionMaster>(`/projects/${id}/captions/master`, { method: 'PUT', body: input, ifDraftRevision })
     },
     importWordCorrections(id, file, baseVersion) {
       const body = new FormData()
@@ -1092,9 +1093,26 @@ export const httpClient: Client = {
     async deletePublishedChapter(id, chapterId) {
       await api<void>(`/projects/${id}/published-timeline/chapters/${chapterId}`, { method: 'DELETE' })
     },
-    async saveTrimDraft(id, draft) {
-      const dto = await api<ServerProject>(`/projects/${id}/trim-draft`, { method: 'PUT', body: draft })
+    async saveTrimDraft(id, draft, ifDraftRevision) {
+      const dto = await api<ServerProject>(`/projects/${id}/trim-draft`, { method: 'PUT', body: draft, ifDraftRevision })
       return toProjectFull(dto)
+    },
+    draftStatus(id) {
+      return api<import('../types').DraftStatus>(`/projects/${id}/draft-status`)
+    },
+    async publishChanges(id, ifDraftRevision) {
+      const result = await api<{ project: ServerProject; captionsPendingApproval: boolean; captionsPublished: boolean }>(`/projects/${id}/publish-changes`, {
+        method: 'POST',
+        ifDraftRevision,
+      })
+      return { project: await toProjectFull(result.project), captionsPendingApproval: result.captionsPendingApproval, captionsPublished: result.captionsPublished }
+    },
+    discardChanges(id, ifDraftRevision) {
+      return api<import('../types').DraftStatus>(`/projects/${id}/discard-changes`, { method: 'POST', ifDraftRevision })
+    },
+    async batchChapters(id, input, ifDraftRevision) {
+      const result = await api<{ draftRevision?: number }>(`/projects/${id}/timeline-draft/chapters/batch`, { method: 'POST', body: input, ifDraftRevision })
+      return { draftRevision: result.draftRevision ?? 0 }
     },
     async resetSimulation(id) {
       await api<void>(`/debug/projects/${id}/reset`, { method: 'POST' })

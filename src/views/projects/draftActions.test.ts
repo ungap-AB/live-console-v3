@@ -1,0 +1,61 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { headerActions, publishChangesNotice, trimChanged, trimDraftPayload } from './draftActions.ts'
+
+test('trimmen räknas som ändrad först när något skiljer sig från det sparade', () => {
+  assert.equal(trimChanged(undefined), false)
+  assert.equal(trimChanged({ start: 10, end: 100, savedStart: 10, savedEnd: 100 }), false)
+  assert.equal(trimChanged({ start: 11, end: 100, savedStart: 10, savedEnd: 100 }), true)
+  assert.equal(trimChanged({ start: 10, end: 99, savedStart: 10, savedEnd: 100 }), true)
+})
+
+test('trimutkastet bär intervallet och kapitellistan i serverns ordning', () => {
+  const payload = trimDraftPayload(12.4, 99.6, [
+    { label: '§ 1', offsetSeconds: 20 },
+    { label: 'Anna', offsetSeconds: 55 },
+  ])
+  assert.deepEqual(payload, {
+    startOffsetSeconds: 12,
+    endOffsetSeconds: 100,
+    chapters: [{ index: 0, label: '§ 1', offsetSeconds: 20 }, { index: 1, label: 'Anna', offsetSeconds: 55 }],
+  })
+})
+
+const base = { published: false, serverChanges: false, localDirty: false, needsApproval: false, busy: false, readOnly: false }
+
+test('före publicering: bara godkännande (när det behövs), inga publicerings- eller förkastaknappar', () => {
+  const a = headerActions({ ...base, needsApproval: true })
+  assert.deepEqual(
+    [a.showApprove, a.showPublishChanges, a.showDiscard, a.unpublishedBadge],
+    [true, false, false, false],
+  )
+  assert.equal(headerActions({ ...base, localDirty: true }).unpublishedBadge, true)
+})
+
+test('publicerat projekt utan ändringar: Publicera ändringar finns men är avstängd, och inget att förkasta', () => {
+  const a = headerActions({ ...base, published: true })
+  assert.deepEqual([a.showPublishChanges, a.publishChangesEnabled, a.showDiscard, a.unpublishedBadge], [true, false, false, false])
+})
+
+test('publicerat projekt med ändringar på servern: publicera och förkasta går att trycka', () => {
+  const a = headerActions({ ...base, published: true, serverChanges: true })
+  assert.deepEqual([a.publishChangesEnabled, a.showDiscard, a.discardEnabled, a.unpublishedBadge], [true, true, true, true])
+})
+
+test('osparade ändringar går att publicera (de sparas först) men förkastas inte på servern', () => {
+  const a = headerActions({ ...base, published: true, localDirty: true })
+  assert.deepEqual([a.publishChangesEnabled, a.showDiscard, a.unpublishedBadge], [true, false, true])
+})
+
+test('knapparna är avstängda medan något pågår och i skrivskyddat läge', () => {
+  const busy = headerActions({ ...base, published: true, serverChanges: true, busy: true })
+  assert.deepEqual([busy.publishChangesEnabled, busy.discardEnabled], [false, false])
+  const readOnly = headerActions({ ...base, published: true, serverChanges: true, readOnly: true })
+  assert.deepEqual([readOnly.publishChangesEnabled, readOnly.discardEnabled], [false, false])
+})
+
+test('meddelandet efter Publicera ändringar säger om undertexterna väntar', () => {
+  assert.match(publishChangesNotice({ captionsPendingApproval: true, captionsPublished: false }), /väntar på godkännande/)
+  assert.match(publishChangesNotice({ captionsPendingApproval: false, captionsPublished: true }), /Kapitel och undertexter/)
+  assert.equal(publishChangesNotice({ captionsPendingApproval: false, captionsPublished: false }), 'Ändringarna är publicerade.')
+})

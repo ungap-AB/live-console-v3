@@ -140,6 +140,7 @@ export interface ServerProject {
   forkedFromProjectId?: string | null
   forkedFromName?: string | null
   forkedAtUtc?: string | null
+  draftRevision?: number
   visibility: string
   publicMode: string
   afterReason: string | null

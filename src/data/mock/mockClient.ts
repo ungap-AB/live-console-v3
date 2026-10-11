@@ -1338,6 +1338,21 @@ export const mockClient: Client = {
       project.trimDraft = clone(draft)
       return delay(projectSnapshot(project))
     },
+    async draftStatus(id) {
+      const project = findProject(id)
+      return delay({ draftRevision: 0, published: project.publication.state === 'published', hasUnpublishedChanges: false })
+    },
+    async publishChanges(id) {
+      const project = findProject(id)
+      return delay({ project: projectSnapshot(project), captionsPendingApproval: false, captionsPublished: false })
+    },
+    async discardChanges(id) {
+      const project = findProject(id)
+      return delay({ draftRevision: 0, published: project.publication.state === 'published', hasUnpublishedChanges: false })
+    },
+    async batchChapters(_id, _input) {
+      return delay({ draftRevision: 0 })
+    },
     async resetSimulation(id) {
       const p = findProject(id)
       p.visibility = 'closed'

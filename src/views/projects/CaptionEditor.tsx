@@ -7,7 +7,7 @@ import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { client } from '../../data'
 import { ApiError } from '../../data/http/fetchJson'
-import type { CaptionDraft, CaptionEnergy, CaptionGeneration, CaptionMaster, CueKind, WordImportResult } from '../../data/types'
+import type { CaptionDraft, CaptionEnergy, CaptionGeneration, CaptionMaster, CueKind, DraftStatus, WordImportResult } from '../../data/types'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import { formatHms } from '../../app/time'
@@ -28,6 +28,7 @@ import { TrimBar } from '../../components/TrimBar'
 import { PositionScrubber } from '../../components/PositionScrubber'
 import { VideoPositionControls } from '../../components/VideoPositionControls'
 import { playEndFrom, type TrimRange } from '../../components/trimBarLogic'
+import { headerActions, publishChangesNotice, trimChanged, trimDraftPayload } from './draftActions'
 import {
   NEW_CHAPTER_PREFIX, addChapter as addChapterTo, changeCount as chapterChangeTotal, chapterKindText, chapterLayout, currentChapters,
   diffChapters, mergeRows, positionedChapters, removeChapter, renameChapter, setChapterTime, sortChapters, type EditorChapter,
@@ -66,7 +67,20 @@ interface CaptionEditorProps {
    * Trimningen (UNG-236/ondemand): den del av originalet som publiceras, i originalets tid. Ägs av omgivande vy, som tillämpar den vid
    * Publicera ondemand. Saknas den visas inga trimkontroller i redigeraren.
    */
-  trim?: { start: number; end: number; onChange: (range: TrimRange) => void }
+  trim?: EditorTrim
+}
+
+/**
+ * Trimningen som redigeraren visar och ändrar. start/end är den pågående trimningen; savedStart/savedEnd det som är sparat som utkast
+ * (skillnaden är osparat). onSaved anropas när trimningen sparats, så att omgivande vy kan hämta om projektet.
+ */
+export interface EditorTrim {
+  start: number
+  end: number
+  savedStart: number
+  savedEnd: number
+  onChange: (range: TrimRange) => void
+  onSaved?: () => void
 }
 
 /** Allt som går att ångra: replikerna och kapitlen i ett steg (UNG-229). */
@@ -117,6 +131,12 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   const [draftInfo, setDraftInfo] = useState<CaptionDraft | null>(null)
   const [confirmPublish, setConfirmPublish] = useState(false)
   const [publishing, setPublishing] = useState(false)
+  // UNG-245: en publicering för undertexter och kapitel (Publicera ändringar), godkännande av maskinutkast, och förkasta.
+  const [confirmApprove, setConfirmApprove] = useState(false)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const [draftStatus, setDraftStatus] = useState<DraftStatus | null>(null)
+  // Utkastets versionsnummer som nästa skrivning villkoras på (UNG-241). Uppdateras av varje svar som bär det.
+  const draftRevision = useRef<number | undefined>(undefined)
   // "Skapa på nytt" i huvudet: nytt jobb från ljudet, efter bekräftelse.
   const [canRegenerate, setCanRegenerate] = useState(false)
   const [confirmRegenerate, setConfirmRegenerate] = useState(false)
@@ -189,6 +209,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   const derive = (list: EditCue[]) => deriveTimes(list, timingRef.current.runs, timingRef.current.total)
 
   function adopt(next: CaptionMaster) {
+    if (next.draftRevision !== undefined) draftRevision.current = next.draftRevision
     const list = derive(next.cues.map(({ id, start, end, text }) => ({ id, start, end, text })))
     setMaster(next)
     setCues(list)
@@ -213,6 +234,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
 
   useEffect(() => {
     void load()
+    void refreshStatus()
   }, [projectId])
 
   useEffect(() => {
@@ -274,15 +296,23 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   const chapterChanges = useMemo(() => diffChapters(savedChapters, chapterList), [savedChapters, chapterList])
   const chaptersDirty = chapterChangeTotal(chapterChanges) > 0
   const cuesDirty = diff.dirty
-  // Undertexter och kapitel är ett enda "osparat": en Spara, en Ångra (UNG-229).
-  const dirty = cuesDirty || chaptersDirty
-  const changeCount = diff.changedIds.size + diff.removed + (diff.reordered && diff.changedIds.size + diff.removed === 0 ? 1 : 0) + chapterChangeTotal(chapterChanges)
+  // UNG-245: trimmen (ägs av omgivande vy) räknas också som osparad tills den sparats som utkast.
+  const trimDirty = trimChanged(trim)
+  // Undertexter, kapitel och trim är ett enda "osparat": en Spara (UNG-229, UNG-245).
+  const dirty = cuesDirty || chaptersDirty || trimDirty
+  const changeCount = diff.changedIds.size + diff.removed + (diff.reordered && diff.changedIds.size + diff.removed === 0 ? 1 : 0) + chapterChangeTotal(chapterChanges) + (trimDirty ? 1 : 0)
   const readOnly = master?.legacy ?? false
   // Publicera i huvudet: publicerad = den sparade versionen är den godkända och inget är ändrat sedan dess.
-  const hasPublished = master?.publishedVersion !== undefined && master?.publishedVersion !== null
-  const upToDate = Boolean(master) && hasPublished && master?.publishedVersion === master?.version && !cuesDirty
-  const publishLabel = upToDate ? 'Publicerad' : hasPublished ? 'Publicera ändringar' : 'Godkänn och publicera'
   const publishBlocked = draftInfo ? approveBlockedReason(draftInfo) : null
+  const needsApproval = Boolean(draftInfo?.needsApproval) && !readOnly
+  const actions = headerActions({
+    published: draftStatus?.published ?? false,
+    serverChanges: draftStatus?.hasUnpublishedChanges ?? false,
+    localDirty: dirty,
+    needsApproval,
+    busy: saving || publishing || regenerating,
+    readOnly,
+  })
   const issues = useMemo(() => validateCues(cues), [cues])
   const issueByIndex = useMemo(() => {
     const map = new Map<number, (typeof issues)[number]>()
@@ -882,12 +912,16 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     setSaveError('')
     try {
       // Tomma repliker (t.ex. en ny ruta som lämnats tom) tas bort tyst.
-      const next = await client.projects.saveCaptionMaster(projectId, { ifVersion: master.version, cues: savePayload(sortedForSave(withoutEmpty(cues))), ...(fromWord ? { reason: 'word' as const } : {}) })
+      const next = await client.projects.saveCaptionMaster(
+        projectId,
+        { ifVersion: master.version, cues: savePayload(sortedForSave(withoutEmpty(cues))), ...(fromWord ? { reason: 'word' as const } : {}) },
+        draftRevision.current,
+      )
       adopt(next)
       onSaved?.()
       return next
     } catch (err) {
-      if (err instanceof ApiError && err.code === 'version_conflict') setConflict(true)
+      if (err instanceof ApiError && (err.code === 'version_conflict' || err.code === 'draft_conflict')) setConflict(true)
       else setSaveError(err instanceof Error ? err.message : 'Undertexterna kunde inte sparas.')
       return null
     } finally {
@@ -895,29 +929,35 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     }
   }
 
-  // UNG-229: kapitlen sparas som utkast (ett anrop per ändring). Misslyckas något läses det servern har om, så att det som återstår går att spara igen.
+  // Vilka versionskonflikter som betyder att någon annan har sparat sedan redigeraren öppnades (UNG-241).
+  const isConflict = (err: unknown) => err instanceof ApiError && (err.code === 'draft_conflict' || err.code === 'version_conflict')
+
+  // UNG-245: kapitlen sparas som utkast i ett anrop (en transaktion), villkorat på utkastets version. Misslyckas det läses det servern har om,
+  // så att det som återstår går att spara igen.
   async function saveChapters(): Promise<boolean> {
     if (chapterChangeTotal(chapterChanges) === 0) return true
     setSaving(true)
     setSaveError('')
     try {
-      for (const id of chapterChanges.removed) await client.projects.deleteDraftChapter(projectId, id)
-      for (const item of chapterChanges.changed) {
-        await client.projects.updateDraftChapter(projectId, item.id, {
-          ...(item.label !== undefined ? { label: item.label } : {}),
-          ...(item.time !== undefined ? { offsetSeconds: item.time } : {}),
-        })
-      }
-      for (const item of chapterChanges.added) await client.projects.addChapter(projectId, { kind: item.kind as CueKind, label: item.label, offsetSeconds: item.time })
+      const result = await client.projects.batchChapters(
+        projectId,
+        {
+          remove: chapterChanges.removed,
+          change: chapterChanges.changed.map((item) => ({ id: item.id, label: item.label, offsetSeconds: item.time })),
+          add: chapterChanges.added.map((item) => ({ kind: item.kind as CueKind, label: item.label, offsetSeconds: item.time })),
+        },
+        draftRevision.current,
+      )
+      draftRevision.current = result.draftRevision
       const fresh = positionedChapters(await client.projects.chapters(projectId))
       setChapterList(fresh)
       setSavedChapters(fresh)
       setHistory(emptyHistory())
-      setNotice('Kapitlen är sparade som utkast och går live först när du publicerar ondemand.')
       onChaptersSaved?.()
       return true
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Kapitlen kunde inte sparas.')
+      if (isConflict(err)) setConflict(true)
+      else setSaveError(err instanceof Error ? err.message : 'Kapitlen kunde inte sparas.')
       try {
         setSavedChapters(positionedChapters(await client.projects.chapters(projectId)))
       } catch {
@@ -929,9 +969,58 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     }
   }
 
+  // UNG-245: trimningen sparas som utkast (den tillämpas vid Publicera ondemand, och är låst efter publicering).
+  async function saveTrim(): Promise<boolean> {
+    if (!trim || !trimChanged(trim)) return true
+    setSaving(true)
+    setSaveError('')
+    try {
+      const allChapters = await client.projects.chapters(projectId)
+      const project = await client.projects.saveTrimDraft(projectId, trimDraftPayload(trim.start, trim.end, allChapters), draftRevision.current)
+      if (project.draftRevision !== undefined) draftRevision.current = project.draftRevision
+      trim.onSaved?.()
+      return true
+    } catch (err) {
+      if (isConflict(err)) setConflict(true)
+      else setSaveError(err instanceof Error ? err.message : 'Trimningen kunde inte sparas.')
+      return false
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function refreshStatus() {
+    try {
+      setDraftStatus(await client.projects.draftStatus(projectId))
+    } catch {
+      setDraftStatus(null)
+    }
+  }
+
+  async function refreshDraftInfo() {
+    try {
+      const generation = await client.projects.getCaptionGeneration(projectId)
+      setMachine(groupCorrections(generation.draft?.corrections ?? []))
+      setDraftInfo(generation.draft ?? null)
+      setCanRegenerate(generation.canGenerate)
+    } catch {
+      // Statusen uppdateras vid nästa läsning.
+    }
+  }
+
+  // Sparar allt som är osparat: undertexter (kan avvisas av versionskontrollen eller valideringen), sedan kapitel och trim.
+  async function saveAll(): Promise<boolean> {
+    if (cuesDirty && !(await saveMaster())) return false
+    if (chaptersDirty && !(await saveChapters())) return false
+    if (trimDirty && !(await saveTrim())) return false
+    return true
+  }
+
   async function save() {
-    if (cuesDirty && !(await saveMaster())) return
-    if (chaptersDirty) await saveChapters()
+    if (await saveAll()) {
+      void refreshStatus()
+      if (chaptersDirty || trimDirty) setNotice('Sparat som utkast. Det syns för tittarna först när du publicerar.')
+    }
   }
 
   // Skapa på nytt: startar ett nytt jobb från ljudet. Det nya utkastet ersätter arbetsversionen (den gamla finns kvar som tidigare version)
@@ -951,26 +1040,75 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     }
   }
 
-  // Publicera från redigeringens huvud: osparade ändringar sparas först, sedan godkänns den versionen och blir synlig för tittarna.
-  async function publish() {
+  // Godkänn undertexterna (UNG-244): ett maskinellt utkast måste godkännas en gång. Osparade ändringar sparas först; därefter följer
+  // varje redigering med när man publicerar.
+  async function approve() {
+    if (!master) return
+    setConfirmApprove(false)
+    setPublishing(true)
+    setSaveError('')
+    try {
+      if (!(await saveAll())) return
+      const version = (await client.projects.getCaptionMaster(projectId)).version
+      await client.projects.approveCaptionDraft(projectId, version)
+      await load()
+      await refreshDraftInfo()
+      await refreshStatus()
+      onSaved?.()
+      setNotice('Undertexterna är godkända.')
+    } catch (err) {
+      if (isConflict(err)) setConflict(true)
+      else setSaveError(err instanceof Error ? err.message : 'Undertexterna kunde inte godkännas.')
+    } finally {
+      setPublishing(false)
+    }
+  }
+
+  // Publicera ändringar (UNG-242): sparar det osparade och släpper kapitel och godkända undertexter i ett publicerat projekt.
+  async function publishChanges() {
     if (!master) return
     setConfirmPublish(false)
     setPublishing(true)
     setSaveError('')
     try {
-      let version = master.version
-      if (cuesDirty) {
-        const saved = await saveMaster()
-        if (!saved) return
-        version = saved.version
-      }
-      if (chaptersDirty && !(await saveChapters())) return
-      await client.projects.approveCaptionDraft(projectId, version)
+      if (!(await saveAll())) return
+      const result = await client.projects.publishChanges(projectId, draftRevision.current)
+      if (result.project.draftRevision !== undefined) draftRevision.current = result.project.draftRevision
       await load()
+      await refreshDraftInfo()
+      await refreshStatus()
       onSaved?.()
-      setNotice('Undertexterna är publicerade och syns för tittarna.')
+      onChaptersSaved?.()
+      setNotice(publishChangesNotice(result))
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Undertexterna kunde inte publiceras.')
+      if (isConflict(err)) setConflict(true)
+      else setSaveError(err instanceof Error ? err.message : 'Ändringarna kunde inte publiceras.')
+    } finally {
+      setPublishing(false)
+    }
+  }
+
+  // Förkasta ändringar (UNG-243): kapitel och undertexter tillbaka till det publicerade. Trimmen är låst och rörs inte.
+  async function discardChanges() {
+    setConfirmDiscard(false)
+    setPublishing(true)
+    setSaveError('')
+    try {
+      const status = await client.projects.discardChanges(projectId, draftRevision.current)
+      draftRevision.current = status.draftRevision
+      setDraftStatus(status)
+      await load()
+      const fresh = positionedChapters(await client.projects.chapters(projectId))
+      setChapterList(fresh)
+      setSavedChapters(fresh)
+      setHistory(emptyHistory())
+      await refreshDraftInfo()
+      onSaved?.()
+      onChaptersSaved?.()
+      setNotice('Ändringarna är förkastade. Undertexter och kapitel är som de publicerade.')
+    } catch (err) {
+      if (isConflict(err)) setConflict(true)
+      else setSaveError(err instanceof Error ? err.message : 'Ändringarna kunde inte förkastas.')
     } finally {
       setPublishing(false)
     }
@@ -1218,7 +1356,10 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
             <input type="checkbox" checked={follow} onChange={(event) => setFollow(event.currentTarget.checked)} />
             Följ med
           </label>
-          <span class="ce-dirty" aria-live="polite">{dirty ? `${changeCount} osparade ändringar` : master ? 'Sparat' : ''}</span>
+          <span class="ce-dirty" aria-live="polite">
+            {dirty ? `${changeCount} osparade ändringar` : master ? 'Sparat' : ''}
+            {actions.unpublishedBadge && <span class="ce-unpublished"> · Opublicerade ändringar</span>}
+          </span>
           <button
             class="btn btn-sm"
             type="button"
@@ -1251,15 +1392,39 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
           <button class="btn btn-sm" type="button" disabled={!dirty || saving || publishing || readOnly} onClick={() => void save()}>
             {saving ? 'Sparar…' : 'Spara'}
           </button>
-          <button
-            class="btn btn-sm btn-primary"
-            type="button"
-            disabled={!master || readOnly || saving || publishing || upToDate || Boolean(publishBlocked)}
-            title={publishBlocked ?? (upToDate ? `Version ${master?.version} är publicerad` : dirty ? 'Sparar ändringarna och publicerar dem för tittarna' : 'Publicerar undertexterna för tittarna')}
-            onClick={() => setConfirmPublish(true)}
-          >
-            {publishing ? 'Publicerar…' : publishLabel}
-          </button>
+          {actions.showApprove && (
+            <button
+              class="btn btn-sm"
+              type="button"
+              disabled={!master || readOnly || saving || publishing || Boolean(publishBlocked)}
+              title={publishBlocked ?? 'Godkänner undertexterna. Därefter följer varje redigering med när du publicerar.'}
+              onClick={() => setConfirmApprove(true)}
+            >
+              Godkänn undertexter
+            </button>
+          )}
+          {actions.showDiscard && (
+            <button
+              class="btn btn-sm"
+              type="button"
+              disabled={!actions.discardEnabled}
+              title="Går tillbaka till det som är publicerat (undertexter och kapitel)"
+              onClick={() => setConfirmDiscard(true)}
+            >
+              Förkasta ändringar
+            </button>
+          )}
+          {actions.showPublishChanges && (
+            <button
+              class="btn btn-sm btn-primary"
+              type="button"
+              disabled={!actions.publishChangesEnabled}
+              title={actions.publishChangesEnabled ? 'Sparar och släpper ändringarna i kapitel och undertexter för tittarna' : 'Inga opublicerade ändringar'}
+              onClick={() => setConfirmPublish(true)}
+            >
+              {publishing ? 'Publicerar…' : 'Publicera ändringar'}
+            </button>
+          )}
           <button class="btn btn-sm" type="button" title="Stäng redigeraren (Esc)" onClick={requestClose}>Stäng</button>
         </div>
       </header>
@@ -1777,14 +1942,43 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
 
       {confirmPublish && (
         <ConfirmModal
-          title="Publicera undertexterna?"
+          title="Publicera ändringarna?"
           confirmLabel={dirty ? 'Spara och publicera' : 'Publicera'}
           onCancel={() => setConfirmPublish(false)}
-          onConfirm={() => void publish()}
+          onConfirm={() => void publishChanges()}
         >
           <p>
-            Undertexterna blir synliga för tittarna direkt{hasPublished ? ' och ersätter de nuvarande' : ''}.
-            {dirty ? ' Dina osparade ändringar sparas först.' : ''} De är gjorda av AI och kan innehålla fel, så granska dem först.
+            Ändringarna i kapitel och undertexter blir synliga för tittarna direkt och ersätter de nuvarande.
+            {dirty ? ' Dina osparade ändringar sparas först.' : ''}
+            {needsApproval ? ' Undertexterna väntar på godkännande och följer inte med förrän du har godkänt dem.' : ''}
+          </p>
+        </ConfirmModal>
+      )}
+
+      {confirmApprove && (
+        <ConfirmModal
+          title="Godkänn undertexterna?"
+          confirmLabel={dirty ? 'Spara och godkänn' : 'Godkänn'}
+          onCancel={() => setConfirmApprove(false)}
+          onConfirm={() => void approve()}
+        >
+          <p>
+            Undertexterna är gjorda av AI och kan innehålla fel, så granska dem först. När du har godkänt dem följer varje redigering med
+            när du publicerar.{dirty ? ' Dina osparade ändringar sparas först.' : ''}
+          </p>
+        </ConfirmModal>
+      )}
+
+      {confirmDiscard && (
+        <ConfirmModal
+          title="Förkasta ändringarna?"
+          confirmLabel="Förkasta"
+          onCancel={() => setConfirmDiscard(false)}
+          onConfirm={() => void discardChanges()}
+        >
+          <p>
+            Kapitel och undertexter går tillbaka till det som är publicerat. Det du ändrat sedan dess försvinner (undertexternas tidigare versioner
+            finns kvar i historiken). Osparade ändringar i redigeraren förloras också.
           </p>
         </ConfirmModal>
       )}

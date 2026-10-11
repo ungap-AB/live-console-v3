@@ -192,6 +192,8 @@ export interface Project {
   liveOnly: boolean
   /** UNG-198: projektet är forkat ur ett annat projekts sändning eller inspelning. */
   forkedFrom?: { projectId: string; name?: string; atUtc?: string }
+  /** UNG-241: utkastets versionsnummer. Skickas som villkor vid skrivningar, så att två redigerare inte skriver över varandra tyst. */
+  draftRevision?: number
   visibility: Visibility
   publicMode: PublicMode
   afterReason: AfterReason | null
@@ -417,6 +419,8 @@ export interface CaptionDraft {
   unpublishedChanges?: boolean
   updatedAtUtc?: string
   updatedByName?: string
+  /** UNG-244: ett maskinellt utkast som inte godkänts går aldrig live. Efter ett godkännande följer varje redigering med. */
+  needsApproval?: boolean
 }
 
 /** UNG-138: en replik i undertextmastern. Tider i sekunder på ORIGINALinspelningens tidslinje. */
@@ -444,6 +448,8 @@ export interface CaptionMaster {
   publishedEndSeconds?: number
   /** Äldre utkast på trimmad tidslinje: kan inte redigeras, skapa nya undertexter. */
   legacy: boolean
+  /** UNG-245: utkastets versionsnummer efter den här läsningen/sparningen. */
+  draftRevision?: number
 }
 
 /** UNG-147: en replik i förslaget från ett rättat Word-manus. Id = replikens id i mastern (för nya rutor: den de delats ur). */
@@ -711,4 +717,25 @@ export interface UserAccount {
   createdAt: string
   lastLoginAt: string | null
   activity: UserActivityEntry[]
+}
+
+/** UNG-241: utkastets läge. published = projektet har publicerats; hasUnpublishedChanges är bara meningsfullt då. */
+export interface DraftStatus {
+  draftRevision: number
+  published: boolean
+  hasUnpublishedChanges: boolean
+}
+
+/** UNG-242: resultatet av Publicera ändringar. captionsPendingApproval = undertexterna väntar på godkännande och följde inte med. */
+export interface PublishChangesResult {
+  project: Project
+  captionsPendingApproval: boolean
+  captionsPublished: boolean
+}
+
+/** UNG-241: flera kapiteländringar i ett anrop (en transaktion). */
+export interface ChapterBatch {
+  remove?: string[]
+  change?: { id: string; label?: string; offsetSeconds?: number }[]
+  add?: { kind: CueKind; label: string; offsetSeconds: number }[]
 }
