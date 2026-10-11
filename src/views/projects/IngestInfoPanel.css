@@ -1,0 +1,24 @@
+/* Ingest-uppgifterna i vänsterspalten: fälten under varandra, knapparna sist. */
+
+.iip {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.iip .ingest-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.iip .field {
+  min-width: 0;
+}
+
+.iip-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

@@ -53,7 +53,10 @@ export function captionDraftAvailability(project: CaptionFacts): Availability {
 
 export interface ImportHandlers {
   onImportChapters?: () => void
-  onOpenVideoActions?: (tab: 'captions' | 'upload') => void
+  /** Öppnar undertexterna (egen VTT-fil eller automatiska). */
+  onOpenCaptions?: () => void
+  /** Uppladdning av video direkt i dialogen (inne i projektet). blockedReason: varför det inte går just nu. */
+  upload?: { blockedReason: string | null; replacing: boolean; onUploaded: () => void }
 }
 
 /** Import görs inne i projektet (kapitel, undertexter, video); från projektlistan visas en väg dit i stället. */
@@ -61,8 +64,8 @@ export function importAvailability(handlers: ImportHandlers): { chapters: Availa
   const inProject = (has: boolean): Availability => (has ? OK : { enabled: false, reason: 'Görs inne i projektet.' })
   return {
     chapters: inProject(Boolean(handlers.onImportChapters)),
-    captions: inProject(Boolean(handlers.onOpenVideoActions)),
-    upload: inProject(Boolean(handlers.onOpenVideoActions)),
+    captions: inProject(Boolean(handlers.onOpenCaptions)),
+    upload: !handlers.upload ? inProject(false) : handlers.upload.blockedReason ? { enabled: false, reason: handlers.upload.blockedReason } : OK,
   }
 }
 

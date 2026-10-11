@@ -6,6 +6,7 @@ import { BeforeWorkspace } from './BeforeWorkspace'
 import { LiveWorkspace } from './LiveWorkspace'
 import { ProjectHeader } from './ProjectHeader'
 import { usePlayoutAddress } from './PlayoutOverlay'
+import { PlayoutWorkOverlay } from './PlayoutWorkOverlay'
 import { useLiveChannel } from './useLiveChannel'
 
 interface LivesandningProps {
@@ -20,8 +21,8 @@ interface LivesandningProps {
 // Before är förberedelser, Live är sändningsöversikt; utspelningen sker i den överlagrade vyn i båda.
 export function Livesandning({ project: p, actions, meetingDomain, onBack, onForked }: LivesandningProps) {
   const live = useLiveChannel(p.channel?.id ?? null)
-  // Delas mellan headerns "Ingest info"-knapp och BeforeWorkspaces
-  // motsvarande menyval — en enda panel, oavsett vilken som öppnar den.
+  // Delas mellan headerns "Ingest info"-knapp och BeforeWorkspaces motsvarande menyval — en enda panel i vänsterspalten, oavsett vilken
+  // som öppnar den.
   const [showIngestInfo, setShowIngestInfo] = useState(false)
   // UNG-268/269: utspelningsvyn (överlagrad, egen adress) är densamma i Before och Live och står kvar öppen när läget byts mellan dem.
   const playout = usePlayoutAddress(p.id)
@@ -50,33 +51,47 @@ export function Livesandning({ project: p, actions, meetingDomain, onBack, onFor
       project={p}
       actions={actions}
       onBack={onBack}
-      onForked={onForked}
       channel={live.channel}
       health={live.health}
-      streamKey={live.streamKey}
       showIngestInfo={showIngestInfo}
       onShowIngestInfoChange={setShowIngestInfo}
     />
   )
 
-  // UNG-268: Before ligger i översiktsskalet, som After/Ondemand.
-  if (p.publicMode === 'before') {
-    return (
-      <BeforeWorkspace
-        header={header}
-        project={p}
-        actions={actions}
-        health={live.health}
-        refresh={live.refresh}
-        stopPolling={live.stopPolling}
-        showIngestInfo={showIngestInfo}
-        onShowIngestInfoChange={setShowIngestInfo}
-        meetingDomain={meetingDomain}
-        playout={playout}
-      />
-    )
-  }
+  // UNG-268/269: Before och Live ligger i översiktsskalet; utspelningsvyn är densamma i båda och ligger över vyn.
+  const view = p.publicMode === 'before' ? (
+    <BeforeWorkspace
+      header={header}
+      project={p}
+      actions={actions}
+      channel={live.channel}
+      health={live.health}
+      streamKey={live.streamKey}
+      refresh={live.refresh}
+      stopPolling={live.stopPolling}
+      showIngestInfo={showIngestInfo}
+      onShowIngestInfoChange={setShowIngestInfo}
+      meetingDomain={meetingDomain}
+      playout={playout}
+      onForked={onForked}
+    />
+  ) : (
+    <LiveWorkspace
+      header={header}
+      project={p}
+      actions={actions}
+      channel={live.channel}
+      health={live.health}
+      playout={playout}
+      streamKey={live.streamKey}
+      onForked={onForked}
+    />
+  )
 
-  // UNG-269: Live ligger också i översiktsskalet.
-  return <LiveWorkspace header={header} project={p} actions={actions} channel={live.channel} health={live.health} playout={playout} />
+  return (
+    <>
+      {view}
+      {playout.open && <PlayoutWorkOverlay project={p} actions={actions} channel={live.channel} health={live.health} onClose={playout.closePlayout} />}
+    </>
+  )
 }

@@ -16,8 +16,8 @@ interface OverviewShellProps {
   projectId: string
   /** Rubriken överst (ProjectHeader). */
   header: ComponentChildren
-  /** Det som står över spalterna (t.ex. ordningsstegen). */
-  top?: ComponentChildren
+  /** Lägesknapparna (ModeSelector), överst i vänsterspalten. */
+  modes?: ComponentChildren
   /** Vänsterspalten: lägets översikt och knappar. */
   children: ComponentChildren
   /** Spelaren i högerspalten; utelämnad = tom spalt. */
@@ -31,14 +31,14 @@ interface OverviewShellProps {
 // UNG-267: samma ram i Before, Live, After och Ondemand: rubrik, översikt till vänster och den riktiga spelaren till höger.
 // Arbetsvyerna läggs över hela vyn (position: fixed) och döljer spelaren; medan de är öppna är spelaren urladdad och den laddas om när
 // de stängs.
-export function OverviewShell({ projectId, header, top, children, player, workOpen = false, overlays }: OverviewShellProps) {
+export function OverviewShell({ projectId, header, modes, children, player, workOpen = false, overlays }: OverviewShellProps) {
   return (
     <div class="project-workspace doc">
       {header}
       <div class="ovs">
-        {top}
         <div class="ovs-cols">
           <section class="ovs-col ovs-overview" aria-label="Översikt">
+            {modes}
             {children}
           </section>
           <section class="ovs-col ovs-player" aria-label="Spelaren">

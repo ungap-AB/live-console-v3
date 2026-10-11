@@ -1,20 +1,22 @@
 import type { ComponentChildren } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { ChannelHealth, Project } from '../../data/types'
+import type { Channel, ChannelHealth, ForkResult, Project } from '../../data/types'
 import { useDismiss } from '../../app/useDismiss'
 import { useResource } from '../../app/useResource'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
+import { PickerModal } from '../../components/PickerModal'
 import type { ProjectActions } from './actions'
 import { MeetingBindingModal } from './MeetingBindingModal'
 import { OverviewShell } from './OverviewShell'
-import { PlayerSettingsDialog } from './PlayerSettingsDialog'
-import { PlayoutOverlay, type PlayoutAddress } from './PlayoutOverlay'
+import { PlayerSettingsDialog, type PlayerSettingsCategory } from './PlayerSettingsDialog'
+import { type PlayoutAddress } from './PlayoutOverlay'
 import { consumeMeetingBindingRequest } from './meetingBindingRequest'
 import { linkedResourceLabel } from './preparationLabels'
-import { PlayoutColumns } from './PlayoutColumns'
-import { useModeChange } from './useModeChange'
+import { ForkButton } from './ForkButton'
+import { IngestInfoPanel } from './IngestInfoPanel'
+import { ModeSelector } from './ModeSelector'
 import { useNameList } from './useNameList'
 import './BeforeWorkspace.css'
 
@@ -23,7 +25,9 @@ interface BeforeWorkspaceProps {
   header: ComponentChildren
   project: Project
   actions: ProjectActions
+  channel: Channel | null
   health: ChannelHealth | null
+  streamKey: string | null
   refresh: () => Promise<void>
   stopPolling: () => void
   showIngestInfo: boolean
@@ -31,11 +35,14 @@ interface BeforeWorkspaceProps {
   meetingDomain: string
   /** Utspelningsvyns adress ägs av Livesandning, så att vyn står kvar öppen när läget går från Before till Live. */
   playout: PlayoutAddress
+  /** UNG-198: anropas när ett projekt skapats ur det här. Saknas den visas inte knappen Fork. */
+  onForked?: (result: ForkResult) => void
 }
 
-// Läget Before. UNG-268: översikt till vänster (status, förberedelser, spelarens bild och text), spelaren till höger; utspelningen av
-// dagordning och namnlista ligger i en överlagrad arbetsvy som döljer spelaren.
-export function BeforeWorkspace({ header, project: p, actions, health, refresh, stopPolling, showIngestInfo, onShowIngestInfoChange, meetingDomain, playout }: BeforeWorkspaceProps) {
+// Läget Before. UNG-268: översikt till vänster (lägesknapparna, förberedelserna, Spela ut kapitel under dem och Spelarinställningar längst ner), spelaren till
+// höger; utspelningen av dagordning och namnlista ligger i den överlagrade arbetsvyn (Livesandning), som döljer spelaren. Koppla i
+// korten väljer listan direkt, utan att öppna arbetsvyn.
+export function BeforeWorkspace({ header, project: p, actions, channel, health, streamKey, refresh, stopPolling, showIngestInfo, onShowIngestInfoChange, meetingDomain, playout, onForked }: BeforeWorkspaceProps) {
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
     [p.agendaId],
@@ -43,14 +50,13 @@ export function BeforeWorkspace({ header, project: p, actions, health, refresh, 
   const nameListResource = useNameList(p)
   const [confirmTeardown, setConfirmTeardown] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
-  const [openPicker, setOpenPicker] = useState<'agenda' | 'namelist' | null>(null)
+  const [picking, setPicking] = useState<'agenda' | 'namelist' | null>(null)
   const [notUsed, setNotUsed] = useState<string[]>([])
   // UNG-189: öppnas direkt när man valt "Koppla till Meeting" i skapa-dialogen.
   const [showMeeting, setShowMeeting] = useState(() => consumeMeetingBindingRequest(p.id))
-  const [showPlayerSettings, setShowPlayerSettings] = useState(false)
-  // UNG-255: förhandsvisningen med testutspelning, utan att gå live.
-  const { selectMode } = useModeChange(p, actions)
-  // Spelaren laddas om när det tittarna ser i Before ändras (från dialogen här eller i rubriken).
+  // Spelarinställningarna och fliken de öppnas på (i-ikonen och Visa ingest-info öppnar fliken Ingest).
+  const [playerSettings, setPlayerSettings] = useState<PlayerSettingsCategory | null>(null)
+  // Spelaren laddas om när det tittarna ser i Before ändras (från spelarinställningarna).
   const [playerVersion, setPlayerVersion] = useState(0)
   useEffect(() => setPlayerVersion((v) => v + 1), [p.beforeText, p.posterUrl, p.textPlacement])
 
@@ -98,11 +104,10 @@ export function BeforeWorkspace({ header, project: p, actions, health, refresh, 
     )
   }
 
-  // optional: ett alternativ, inte ett obligatoriskt steg — neutral ikon i stället för kryssruta.
-  function preparationCard(label: string, value: string, ready: boolean, menu: preact.ComponentChildren, optional = false) {
+  function preparationCard(label: string, value: string, ready: boolean, menu: preact.ComponentChildren) {
     return (
-      <li key={label} class={optional ? 'is-optional' : ready ? 'is-ready' : 'is-pending'}>
-        <Icon name={optional ? 'upload_file' : ready ? 'check_circle' : 'radio_button_unchecked'} size={20} />
+      <li key={label} class={ready ? 'is-ready' : 'is-pending'}>
+        <Icon name={ready ? 'check_circle' : 'radio_button_unchecked'} size={20} />
         <span class="bw-status-text">
           <span class="bw-status-label">{label}</span>
           <span class="bw-status-value">
@@ -119,15 +124,21 @@ export function BeforeWorkspace({ header, project: p, actions, health, refresh, 
     <OverviewShell
       projectId={p.id}
       header={header}
+      modes={<ModeSelector project={p} actions={actions} />}
       player={p.playerUrl ? { url: p.playerUrl, version: playerVersion, preview: { label: 'Live (förhandsvisning)', variant: 'published', mode: 'live' } } : null}
       workOpen={playout.open}
       overlays={<>
-        {playout.open && (
-          <PlayoutOverlay projectName={p.name} onClose={playout.closePlayout}>
-            <PlayoutColumns project={p} actions={actions} openPicker={openPicker} onPickerClosed={() => setOpenPicker(null)} />
-          </PlayoutOverlay>
+        {picking && <ListPicker kind={picking} project={p} actions={actions} onClose={() => setPicking(null)} />}
+        {playerSettings && (
+          <PlayerSettingsDialog
+            project={p}
+            actions={actions}
+            liveHlsUrl={channel?.playbackUrl ?? null}
+            ingest={channel ? { channel, streamKey, onTeardown: teardownIngest } : null}
+            initialCategory={playerSettings}
+            onClose={() => setPlayerSettings(null)}
+          />
         )}
-        {showPlayerSettings && <PlayerSettingsDialog project={p} actions={actions} onClose={() => setShowPlayerSettings(false)} />}
         {confirmTeardown && (
           <ConfirmModal
             title="Riva ingest?"
@@ -150,28 +161,14 @@ export function BeforeWorkspace({ header, project: p, actions, health, refresh, 
         )}
       </>}
     >
-      <div class="bw-summary">
-        <span class="bw-summary-label">Status</span>
-        <strong>{receivingSignal ? 'Inte startad – signal tas emot' : 'Inte startad'}</strong>
-      </div>
-
-      <div class="bw-actions">
-        <button class="btn btn-primary" type="button" onClick={playout.openPlayout}>
-          <Icon name="playlist_play" size={18} /> Spela ut kapitel
-        </button>
-        <button class="btn" type="button" onClick={() => setShowPlayerSettings(true)}>
-          <Icon name="settings" size={18} /> Spelarinställningar…
-        </button>
-      </div>
-
       <ul class="bw-status" aria-label="Status för förberedelser">
         {preparationCard('Dagordning', p.agendaId ? withCount(linkedResourceLabel(agendaResource.data), agendaResource.data?.items.length, 'punkt', 'punkter') : 'Ej kopplad', !!p.agendaId, actionMenu('Dagordning', [
-          { label: 'Koppla', onClick: () => { setOpenMenu(null); setOpenPicker('agenda'); playout.openPlayout() } },
+          { label: 'Koppla…', onClick: () => { setOpenMenu(null); setPicking('agenda') } },
           { label: 'Koppla till Meeting...', onClick: () => { setOpenMenu(null); setShowMeeting(true) } },
           { label: 'Använd ej', onClick: () => { void actions.setAgenda(null); markNotUsed('Dagordning') } },
         ]))}
         {preparationCard('Namnlista', p.namelistId ? withCount(linkedResourceLabel(nameListResource.data), nameListResource.data?.people.length, 'namn', 'namn') : 'Ej kopplad', !!p.namelistId, actionMenu('Namnlista', [
-          { label: 'Koppla', onClick: () => { setOpenMenu(null); setOpenPicker('namelist'); playout.openPlayout() } },
+          { label: 'Koppla…', onClick: () => { setOpenMenu(null); setPicking('namelist') } },
           { label: 'Använd ej', onClick: () => { actions.setNameList(null); markNotUsed('Namnlista') } },
         ]))}
         {preparationCard('Ingest', receivingSignal ? 'Signal OK' : hasIngest ? 'Ingen signal' : 'Inte skapad', hasIngest, <>
@@ -181,8 +178,7 @@ export function BeforeWorkspace({ header, project: p, actions, health, refresh, 
               type="button"
               aria-label="Visa ingest-info"
               title="Visa ingest-info"
-              aria-expanded={showIngestInfo}
-              onClick={() => onShowIngestInfoChange(!showIngestInfo)}
+              onClick={() => setPlayerSettings('ingest')}
             >
               <Icon name="info" size={18} />
             </button>
@@ -190,29 +186,75 @@ export function BeforeWorkspace({ header, project: p, actions, health, refresh, 
           {actionMenu('Ingest', [
           ...(!hasIngest ? [{ label: 'Skapa', onClick: () => void createIngest() }] : []),
           ...(hasIngest ? [
-            { label: showIngestInfo ? 'Dölj ingest-info' : 'Visa ingest-info', onClick: () => { onShowIngestInfoChange(!showIngestInfo); setOpenMenu(null) } },
+            { label: 'Visa ingest-info…', onClick: () => { setOpenMenu(null); setPlayerSettings('ingest') } },
             { label: 'Riv', onClick: () => { setOpenMenu(null); setConfirmTeardown(true) }, danger: true },
           ] : []),
           ])}
         </>)}
-        {preparationCard('Ladda upp video', 'Valfritt – i stället för livesändning', false, actionMenu('Ladda upp video', [
-          {
-            label: 'Ladda upp...',
-            onClick: () => { setOpenMenu(null); selectMode('ondemand') },
-            disabled: receivingSignal,
-            title: receivingSignal ? 'Enkodern sänder just nu.' : undefined,
-          },
-        ]), true)}
+        {showIngestInfo && channel && (
+          <li class="bw-ingest-panel">
+            <IngestInfoPanel channel={channel} streamKey={streamKey} onClose={() => onShowIngestInfoChange(false)} onTeardown={teardownIngest} />
+          </li>
+        )}
       </ul>
 
-      <div class="bw-player-texts">
-        <span class="bw-summary-label">Tittarna ser nu</span>
-        <div class="bw-player-row">
-          {p.posterUrl ? <img class="bw-poster" src={p.posterUrl} alt="Spelarens bild" /> : <span class="bw-poster is-empty">Ingen bild</span>}
-          <p class="bw-before-text">{p.beforeText.trim() || 'Ingen text för Before.'}</p>
-        </div>
+      <button class="btn btn-primary ovs-wide" type="button" onClick={playout.openPlayout}>
+        <Icon name="playlist_play" size={18} /> Spela ut kapitel
+      </button>
+
+
+      <div class="bw-actions ovs-bottom">
+        <button class="btn" type="button" onClick={() => setPlayerSettings('link')}>
+          <Icon name="settings" size={18} /> Spelarinställningar…
+        </button>
+        {onForked && <ForkButton project={p} livePhase={health?.livePhase} onForked={onForked} />}
       </div>
     </OverviewShell>
+  )
+}
+
+interface ListPickerProps {
+  kind: 'agenda' | 'namelist'
+  project: Project
+  actions: ProjectActions
+  onClose: () => void
+}
+
+// Koppla dagordning eller namnlista direkt från förberedelsekortet (samma val som i utspelningsvyn, med Ny … som skapar och kopplar).
+function ListPicker({ kind, project: p, actions, onClose }: ListPickerProps) {
+  const lists = useResource(
+    () => (kind === 'agenda' ? client.agendas.list() : client.namelists.list()).then((items) => items.map((item) => ({ id: item.id, name: item.name }))),
+    [kind],
+  )
+  const currentId = kind === 'agenda' ? p.agendaId : p.namelistId
+
+  async function createNew() {
+    if (kind === 'agenda') {
+      const created = await client.agendas.create({ name: p.name, description: 'Utkast' })
+      await actions.setAgenda(created.id)
+    } else {
+      const created = await client.namelists.create({ name: p.name, description: 'Utkast' })
+      actions.setNameList(created.id)
+    }
+  }
+
+  return (
+    <PickerModal
+      title={kind === 'agenda' ? (currentId ? 'Byt dagordning' : 'Koppla dagordning') : (currentId ? 'Byt namnlista' : 'Koppla namnlista')}
+      items={lists.data ?? []}
+      selectedId={currentId}
+      onPick={(id) => {
+        if (kind === 'agenda') void actions.setAgenda(id)
+        else actions.setNameList(id)
+        onClose()
+      }}
+      onCancel={onClose}
+      createNewLabel={kind === 'agenda' ? 'Ny dagordning' : 'Ny namnlista'}
+      onCreateNew={() => {
+        void createNew()
+        onClose()
+      }}
+    />
   )
 }
 

@@ -1,10 +1,11 @@
+import type { ComponentChildren } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
 import { editorHref, parseEditorLink } from '../../app/projectLink'
 import { routeHref } from '../../app/router'
-import { captionEntry, consumeCaptionStudio } from './captionEntryLogic'
+import { captionEntry, consumeCaptionStudio, type CaptionEntry as CaptionEntryState } from './captionEntryLogic'
 import { CaptionStudio } from './CaptionStudio'
-import type { EditorChapterTools, EditorTrim } from './CaptionEditor'
+import type { EditorChapterTools, EditorFocus, EditorTrim } from './CaptionEditor'
 import { useCaptionGeneration } from './useCaptionGeneration'
 
 interface CaptionEntryProps {
@@ -25,16 +26,23 @@ interface CaptionEntryProps {
   label?: string
   /** UNG-267: editorn öppnades eller stängdes (översiktsskalet stänger av spelaren medan den är öppen). */
   onOpenChange?: (open: boolean) => void
+  /**
+   * Egna knappar i stället för den enda (After: de guidade stegen Trimma video, Redigera kapitel, Skapa undertexter). open öppnar
+   * redigeraren, med det moment som ska stå i fokus.
+   */
+  renderTrigger?: (open: (focus?: EditorFocus) => void, entry: CaptionEntryState) => ComponentChildren
 }
 
 // UNG-165: knappen ovanför videofönstret som leder direkt till att skapa eller redigera undertexter. Etiketten följer serverns läge
 // (skapa, genererar n %, redigera). Knappen äger också studion (redigeraren med skapandet som overlay) och dess öppna/stängda läge.
-export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged, trim, trimLock, chapterTools, label, onOpenChange }: CaptionEntryProps) {
+export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged, trim, trimLock, chapterTools, label, onOpenChange, renderTrigger }: CaptionEntryProps) {
   const captions = useCaptionGeneration(projectId)
   // Öppnas direkt när man kommit hit via knappen i projektlistan, eller (UNG-250) när adressen är editorns (omladdning, delad länk).
   const [open, setOpen] = useState(() => consumeCaptionStudio(projectId) || parseEditorLink(window.location.hash) === projectId)
   // UNG-250: ökas när bakåtknappen ska stänga editorn; editorn frågar då om osparade ändringar precis som Stäng.
   const [closeSignal, setCloseSignal] = useState(0)
+  // Momentet som redigeraren öppnas med (från de guidade stegen); nollställs när den stängs.
+  const [focus, setFocus] = useState<EditorFocus | undefined>(undefined)
   // Sant när det ligger en post utan editorn bakom editorns adress i historiken, så att stängning kan gå bakåt dit.
   const pushed = useRef(false)
   const openRef = useRef(open)
@@ -81,6 +89,7 @@ export function CaptionEntry({ projectId, projectName, videoDurationSeconds, pos
   function close() {
     openRef.current = false
     setOpen(false)
+    setFocus(undefined)
     void captions.refresh()
     if (!atEditor()) return
     if (pushed.current) window.history.back()
@@ -88,12 +97,18 @@ export function CaptionEntry({ projectId, projectName, videoDurationSeconds, pos
     pushed.current = false
   }
 
-  const entry = captionEntry(captions.generation)
+  // Med egna knappar visas de (spärrade) även innan läget hämtats, så att stegen inte hoppar fram.
+  const entry = captionEntry(captions.generation) ?? (renderTrigger ? { kind: 'create' as const, label: 'Redigera', disabledReason: 'Hämtar…' } : null)
   if (!entry) return null
+
+  function openWith(nextFocus?: EditorFocus) {
+    setFocus(nextFocus)
+    setOpen(true)
+  }
 
   return (
     <>
-      <button
+      {renderTrigger ? renderTrigger(openWith, entry) : <button
         class={`btn btn-sm caption-entry${entry.kind === 'edit' ? ' btn-primary' : ''}`}
         type="button"
         disabled={Boolean(entry.disabledReason)}
@@ -103,7 +118,7 @@ export function CaptionEntry({ projectId, projectName, videoDurationSeconds, pos
         onClick={() => setOpen(true)}
       >
         <Icon name={label || entry.kind === 'create' ? 'edit' : 'closed_caption'} size={18} /> {label && entry.kind !== 'progress' ? label : entry.label}
-      </button>
+      </button>}
       {open && (
         <CaptionStudio
           projectId={projectId}
@@ -120,6 +135,7 @@ export function CaptionEntry({ projectId, projectName, videoDurationSeconds, pos
           trimLock={trimLock}
           chapterTools={chapterTools}
           closeSignal={closeSignal}
+          focus={focus}
           onClose={close}
         />
       )}

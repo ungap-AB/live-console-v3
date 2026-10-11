@@ -12,21 +12,41 @@ import {
   validatePosterFile,
 } from './playerSettings'
 import type { PlayerTextKey } from './playerSettings'
-import type { TextPlacement } from '../../data/types'
+import type { Channel, TextPlacement } from '../../data/types'
+import { IngestInfoPanel } from './IngestInfoPanel'
 import { InheritLayoutDialog } from './InheritLayoutDialog'
+import { LiveHlsField } from './LiveHlsField'
+import { PlayerLinkField } from './PlayerLinkField'
 import './PlayerSettingsDialog.css'
+
+// Dialogen är indelad i flikar efter kategori; alla flikar sparas tillsammans med Spara.
+const CATEGORIES = [
+  { key: 'link', label: 'Länk' },
+  { key: 'ingest', label: 'Ingest' },
+  { key: 'look', label: 'Texter och poster' },
+  { key: 'playback', label: 'Uppspelning' },
+  { key: 'stats', label: 'Mätning' },
+] as const
+export type PlayerSettingsCategory = (typeof CATEGORIES)[number]['key']
 
 interface PlayerSettingsDialogProps {
   project: Project
   actions: ProjectActions
+  /** Kanalens live-HLS-adress, när projektet har en ingest. */
+  liveHlsUrl?: string | null
+  /** Ingesten (fliken Ingest): kanalen, stream key och rivningen. Saknas den säger fliken att ingen ingest finns. */
+  ingest?: { channel: Channel; streamKey: string | null; onTeardown: () => Promise<void> | void } | null
+  /** Fliken som dialogen öppnas på (knappen Ingest info öppnar Ingest). */
+  initialCategory?: PlayerSettingsCategory
   onClose: () => void
 }
 
 // Texter och poster sparas tillsammans med en gemensam "Spara" — ingenting skrivs förrän
 // operatören bekräftar, och en vald bild förhandsvisas lokalt tills dess.
-export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettingsDialogProps) {
+export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, ingest = null, initialCategory = 'link', onClose }: PlayerSettingsDialogProps) {
   const [texts, setTexts] = useState(() => textsOf(project))
   const [placement, setPlacement] = useState<TextPlacement>(project.textPlacement)
+  const [category, setCategory] = useState<PlayerSettingsCategory>(initialCategory)
   const [activeTextField, setActiveTextField] = useState<PlayerTextKey>(PLAYER_TEXT_FIELDS[0].key)
   const [muxEnabled, setMuxEnabled] = useState(project.muxEnabled)
   const [muxRespectDnt, setMuxRespectDnt] = useState(project.muxRespectDoNotTrack)
@@ -103,6 +123,51 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
         </>
       }
     >
+      <div class="ps-cats" role="tablist" aria-label="Kategori">
+        {CATEGORIES.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            role="tab"
+            id={`ps-cat-tab-${item.key}`}
+            aria-selected={category === item.key}
+            aria-controls={`ps-cat-${item.key}`}
+            class={`ps-cat-tab${category === item.key ? ' active' : ''}`}
+            onClick={() => setCategory(item.key)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Panelerna ligger i samma rutnätscell, så dialogen har den högsta panelens storlek oavsett flik. */}
+      <div class="ps-cat-stack">
+      <div class="ps-cat" role="tabpanel" id="ps-cat-link" aria-labelledby="ps-cat-tab-link" hidden={category !== 'link'}>
+      <section class="ps-section">
+        <h3>Länk och adresser</h3>
+        <p class="ps-help">Öppna eller stäng spelaren för publik (gäller direkt), kopiera länken eller inbäddningskoden.</p>
+        <div class="ps-links">
+          <PlayerLinkField project={project} actions={actions} />
+          {liveHlsUrl && <LiveHlsField url={liveHlsUrl} />}
+          {project.publicMode === 'ondemand' && project.recording?.hlsUrl && project.recording.state !== 'awaitingApproval' && (
+            <LiveHlsField url={project.recording.hlsUrl} label="Ondemand-HLS (publicerad video)" warning={null} copyLabel="Kopiera ondemand-HLS-adressen" />
+          )}
+        </div>
+      </section>
+
+      </div>
+
+      <div class="ps-cat" role="tabpanel" id="ps-cat-ingest" aria-labelledby="ps-cat-tab-ingest" hidden={category !== 'ingest'}>
+      <section class="ps-section">
+        <h3>Ingest</h3>
+        <p class="ps-help">Uppgifterna som enkodern sänder till. Live-HLS-adressen finns under fliken Länk.</p>
+        {ingest
+          ? <IngestInfoPanel channel={ingest.channel} streamKey={ingest.streamKey} onTeardown={ingest.onTeardown} />
+          : <p class="ps-help">Ingen ingest skapad. Den skapas i Before, under förberedelsen Ingest.</p>}
+      </section>
+      </div>
+
+      <div class="ps-cat" role="tabpanel" id="ps-cat-look" aria-labelledby="ps-cat-tab-look" hidden={category !== 'look'}>
       <section class="ps-section">
         <h3>Layout från ett annat projekt</h3>
         <p class="ps-help">Hämta texter, textplacering, Mux-inställning och posterbild från ett annat projekt. De ersätter dessa inställningar, efter bekräftelse.</p>
@@ -209,6 +274,9 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
         <p class="ps-help">JPG, PNG eller WebP, högst 5 MB. Rekommenderat format 16:9, t.ex. 1920×1080.</p>
       </section>
 
+      </div>
+
+      <div class="ps-cat" role="tabpanel" id="ps-cat-playback" aria-labelledby="ps-cat-tab-playback" hidden={category !== 'playback'}>
       <section class="ps-section">
         <h3>Talare i dagordningen</h3>
         <p class="ps-help">
@@ -256,6 +324,9 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
         <span class="ps-help">Av som standard. Börjar gälla för tittare som laddar om spelaren.</span>
       </section>
 
+      </div>
+
+      <div class="ps-cat" role="tabpanel" id="ps-cat-stats" aria-labelledby="ps-cat-tab-stats" hidden={category !== 'stats'}>
       <section class="ps-section">
         <h3>Uppspelningsmätning</h3>
         <p class="ps-help">
@@ -286,6 +357,9 @@ export function PlayerSettingsDialog({ project, actions, onClose }: PlayerSettin
         </label>
         <span class="ps-help">Nyckeln ställs in per domän av en administratör. Utan egen nyckel används ungaps standardnyckel.</span>
       </section>
+      </div>
+
+      </div>
     </Modal>
     {inheriting && (
       <InheritLayoutDialog project={project} actions={actions} onCancel={() => setInheriting(false)} onDone={() => { setInheriting(false); onClose() }} />

@@ -63,6 +63,8 @@ export function App() {
 
   function login(user: CurrentUser) {
     setSessionNotice('')
+    // Ingen markering i listan efter inloggning: det senast öppnade gällde förra inloggningen (överlever annars en utloggning).
+    setLastOpenedProjectId(null)
     setActiveProjectId(readStoredSelection('project', user.domain.id))
     setProjectScreen(parseProjectScreen(readStoredSelection('project-screen', user.domain.id)))
     setAuth({ status: 'authed', user })

@@ -28,7 +28,7 @@
 }
 
 .ovs-overview {
-  flex: 0 1 420px;
+  flex: 0 0 380px;
 }
 
 .ovs-player {
@@ -45,4 +45,16 @@
     width: 100%;
     flex: none;
   }
+}
+
+/* Knapparna längst ner i vänsterspalten (Before och Live). */
+.ovs-overview > .ovs-bottom {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+/* Huvudknappen (Spela ut kapitel) över hela spaltens bredd. */
+.ovs-overview > .ovs-wide {
+  width: 100%;
+  justify-content: center;
 }

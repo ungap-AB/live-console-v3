@@ -166,7 +166,8 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  flex: 1 1 300px;
+  flex: 1 1 0;
+  min-width: 0;
   flex-wrap: wrap;
 }
 
@@ -270,4 +271,11 @@
 .lw-now-panel.no-time {
   padding-top: 8px;
   padding-bottom: 8px;
+}
+
+/* Ingest-info och knapparna längst ner i vänsterspalten. */
+.lw-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }

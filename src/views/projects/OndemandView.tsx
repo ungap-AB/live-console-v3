@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Chapter, DraftStatus, ForkResult, Project, ProjectRecording, Recording } from '../../data/types'
@@ -7,10 +8,13 @@ import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { VideoStatusRow } from './VideoStatusRow'
 import { CaptionEntry } from './CaptionEntry'
+import type { EditorFocus } from './CaptionEditor'
+import type { CaptionEntry as CaptionEntryState } from './captionEntryLogic'
+import { Icon } from '../../components/Icon'
+import { ModeSelector } from './ModeSelector'
+import { PlayerSettingsDialog, type PlayerSettingsCategory } from './PlayerSettingsDialog'
 import { VideoActionsDialog } from './VideoActionsDialog'
 import { ExportImportDialog } from './ExportImportDialog'
-import type { VideoTab } from './videoDialogLogic'
-import { videoActionsAvailable } from './videoDialogLogic'
 import { PublishProgressDialog } from './PublishProgressDialog'
 import { PublishOutcomeDialog } from './PublishOutcomeDialog'
 import { stepLabel as publishStepLabel } from './publishOutcome'
@@ -24,6 +28,7 @@ import { trimDraftPayload } from './draftActions'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ProjectHeader } from './ProjectHeader'
+import { ForkButton } from './ForkButton'
 import { OverviewShell } from './OverviewShell'
 import { useModeChange } from './useModeChange'
 import { useLiveChannel } from './useLiveChannel'
@@ -49,6 +54,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   const { selectMode, dialog } = useModeChange(p, actions)
   const live = useLiveChannel(p.channel?.id ?? null)
   const [showIngestInfo, setShowIngestInfo] = useState(false)
+  // Spelarinställningarna och fliken de öppnas på (Ingest info öppnar fliken Ingest).
+  const [playerSettings, setPlayerSettings] = useState<PlayerSettingsCategory | null>(null)
   const [recording, setRecording] = useState<Recording | null>(null)
   const [original, setOriginal] = useState<Recording | null>(null)
   const [projectChapters, setProjectChapters] = useState<Chapter[]>([])
@@ -59,8 +66,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   // Videon i vyn finns bara för att granska en uppladdad fil innan den godkänns.
   const approvalVideoRef = useRef<HTMLVideoElement>(null)
   const [confirmOndemand, setConfirmOndemand] = useState(false)
-  const [confirmUndoAll, setConfirmUndoAll] = useState(false)
-  const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [publishSteps, setPublishSteps] = useState<PublishStep[]>([])
   const [publishStep, setPublishStep] = useState<PublishStepKey>('publish')
@@ -84,7 +89,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   const [uploadFailed, setUploadFailed] = useState(false)
   const [showVideoDialog, setShowVideoDialog] = useState(false)
   // Flik som "Video och undertexter" öppnas på när den öppnas från Exportera och importera.
-  const [videoDialogTab, setVideoDialogTab] = useState<VideoTab | undefined>(undefined)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [uploadNote, setUploadNote] = useState('')
   const [actionNote, setActionNote] = useState('')
@@ -317,18 +321,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     if (isAfter && (range.start !== defaultTrimStart || range.end !== defaultTrimEnd)) setHasUnpublishedChanges(true)
   }
 
-  async function resetVideoToOriginal(): Promise<boolean> {
-    if (isAfter && !(await actions.restoreOriginal())) return false
-    setTrimStart(0)
-    setTrimEnd(sourceDuration)
-    setProjectChaptersLoaded(false)
-    void client.projects.chapters(p.id).then((nextChapters) => {
-      setProjectChapters(nextChapters)
-      setProjectChaptersLoaded(true)
-    }).catch(() => setProjectChaptersLoaded(true))
-    return true
-  }
-
   const defaultTrimStart = recording?.trimRange?.startOffsetSeconds ?? 0
   const defaultTrimEnd = recording?.trimRange?.endOffsetSeconds ?? sourceDuration
   // UNG-245: det som är sparat som trimutkast (annars den trimning som gäller); skillnaden mot den pågående är osparad i editorn.
@@ -346,7 +338,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   // Backend spärrar redan publish medan enkodern sänder (channel_live) — spärra knappen här också.
   const publishBlocked = chaptersReadOnly || broadcastInProgress || uploadPending || syncState === 'pending'
   const canPublish = !publishBlocked && (isAfter || trimDirty || stagedUpload)
-  const canPublishChanges = !publishBlocked && published && anyUnpublished
   const showTrim = isAfter && !awaitingApproval && !chaptersReadOnly && !broadcastInProgress && !recordingProcessing && sourceDuration > 0
 
   // Sammanfattningen.
@@ -475,34 +466,12 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   }
 
   // UNG-243: Förkasta ändringar: kapitel och undertexter tillbaka till det publicerade. Trimmen är låst och rörs inte.
-  async function discardChanges() {
-    setConfirmDiscard(false)
-    setActionNote('')
-    try {
-      const status = await client.projects.discardChanges(p.id, draftStatus?.draftRevision)
-      setDraftStatus(status)
-      setHasUnpublishedChanges(false)
-      await actions.refreshProject()
-      await reloadChaptersNow()
-      setActionNote('Ändringarna är förkastade. Undertexter och kapitel är som de publicerade.')
-    } catch (error) {
-      setActionNote(error instanceof Error ? error.message : 'Ändringarna kunde inte förkastas.')
-    } finally {
-      setPreviewVersion((version) => version + 1)
-    }
-  }
-
   function handleModeSelect(mode: Project['publicMode']) {
     if (mode === 'ondemand' && isAfter) {
       setConfirmOndemand(true)
       return
     }
     selectMode(mode)
-  }
-
-  async function undoAllAndClose() {
-    setConfirmUndoAll(false)
-    if (await resetVideoToOriginal()) setHasUnpublishedChanges(true)
   }
 
   // Varför publicering inte går just nu (visas vid knapparna).
@@ -516,6 +485,74 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
           ? 'Kapitlens förankring mot videon är inte bekräftad. Bekräfta den i redigeraren.'
           : ''
 
+  // Redigeraren (CaptionEntry äger den och dess adress). I After visas den som de guidade stegen, annars som knappen Redigera.
+  const editorEntry = (renderTrigger?: (open: (focus?: EditorFocus) => void, entry: CaptionEntryState) => ComponentChildren) => (
+            <CaptionEntry
+              projectId={p.id}
+              projectName={p.name}
+              label="Redigera"
+            renderTrigger={renderTrigger}
+              videoDurationSeconds={recording?.durationSeconds}
+              posterUrl={p.posterUrl}
+              onChanged={() => {
+                setPreviewVersion((version) => version + 1)
+                void actions.refreshProject()
+              }}
+              onChaptersChanged={() => {
+                // UNG-229: kapitel ändrade i editorn: hämta om dem och markera ändringen som opublicerad.
+                setHasUnpublishedChanges(true)
+                void reloadChaptersNow()
+              }}
+              // Trimningen följer med in i editorn (tillämpas vid Publicera).
+              trim={showTrim && !externalVideo
+                ? { start: trimStart, end: trimEnd, savedStart: savedTrimStart, savedEnd: savedTrimEnd, onChange: changeTrim, onSaved: () => void actions.refreshProject(), onReload: () => void actions.refreshProject() }
+                : undefined}
+              // UNG-247: publicerat: trimningen visas låst i editorn, med Avpublicera (samma bekräftelse som lägesväljaren).
+              trimLock={p.publicMode === 'ondemand' && published ? { onUnpublish: () => selectMode('after') } : undefined}
+              // UNG-249: import och förankring i editorn.
+              chapterTools={{ uploadedRecording, agendaId: p.agendaId, importDefaultDate }}
+              onOpenChange={setEditorOpen}
+            />
+  )
+
+  // UI-finslipning omgång 1: i After (opublicerat) leder stegen till respektive moment i stället för en Redigera-knapp.
+  const guided = isAfter && !published
+  const guideSteps = (open: ((focus?: EditorFocus) => void) | null, entry: CaptionEntryState | null) => (
+    <div class="od-flow">
+      <ol class="od-flow-steps" aria-label="Gör klart för ondemand">
+        <GuideStep
+          n={1}
+          label="Trimma video"
+          status={externalVideo ? 'Extern video' : isTrimmed ? `Trimmad · ${formatHms(trimEnd - trimStart)}` : 'Hela inspelningen'}
+          done={isTrimmed}
+          disabled={!open || !showTrim || externalVideo}
+          title={externalVideo ? 'En extern video kan inte trimmas.' : undefined}
+          onClick={() => open?.('trim')}
+        />
+        <GuideStep
+          n={2}
+          label="Redigera kapitel"
+          status={chapterCount === 0 ? 'Inga kapitel' : `${chapterCount} kapitel`}
+          done={chapterCount > 0}
+          disabled={!open}
+          onClick={() => open?.('chapters')}
+        />
+        <GuideStep
+          n={3}
+          label={entry?.kind === 'edit' ? 'Redigera undertexter' : 'Skapa undertexter'}
+          status={!entry ? '' : entry.kind === 'progress' ? entry.label : entry.kind === 'edit' ? (p.recording?.captions?.label ?? 'Finns') : 'Inga'}
+          done={entry?.kind === 'edit'}
+          disabled={!open || Boolean(entry?.disabledReason)}
+          title={entry?.disabledReason}
+          onClick={() => open?.('captions')}
+        />
+      </ol>
+      <button class="btn btn-primary od-flow-publish" type="button" disabled={!canPublish} onClick={() => setConfirmOndemand(true)}>
+        <Icon name="publish" size={18} /> Publicera
+      </button>
+    </div>
+  )
+
   return (
     <OverviewShell
       projectId={p.id}
@@ -523,20 +560,12 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
         project={p}
         actions={actions}
         onBack={onBack}
-        onForked={onForked}
-        onModeSelect={handleModeSelect}
         channel={live.channel}
         health={live.health}
-        streamKey={live.streamKey}
         showIngestInfo={showIngestInfo}
         onShowIngestInfoChange={setShowIngestInfo}
       />}
-      top={showTrim && !published && (
-        <ol class="od-steps" aria-label="Ordning">
-          <li class="is-current"><span>1</span> Redigera trim och kapitel</li>
-          <li><span>2</span> Publicera</li>
-        </ol>
-      )}
+      modes={<ModeSelector project={p} actions={actions} onModeSelect={handleModeSelect} />}
       player={p.playerUrl && !awaitingApproval
         ? { url: p.playerUrl, version: previewVersion, preview: isAfter && recording ? { label: 'Ondemand (förhandsvisning)', variant: 'draft', mode: 'ondemand' } : undefined }
         : null}
@@ -549,27 +578,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
             <div class="modal-actions">
               <button class="btn" type="button" onClick={() => setConfirmOndemand(false)}>Avbryt</button>
               <button class="btn btn-primary" type="button" onClick={() => void publishWithTrim()}>Publicera</button>
-            </div>
-          </Modal>
-        )}
-        {confirmDiscard && (
-          <Modal title="Förkasta ändringarna?" onClose={() => setConfirmDiscard(false)}>
-            <p>
-              Kapitel och undertexter går tillbaka till det som är publicerat. Det du ändrat sedan dess försvinner (undertexternas tidigare versioner
-              finns kvar i historiken).
-            </p>
-            <div class="modal-actions">
-              <button class="btn" type="button" onClick={() => setConfirmDiscard(false)}>Avbryt</button>
-              <button class="btn btn-danger" type="button" onClick={() => void discardChanges()}>Förkasta</button>
-            </div>
-          </Modal>
-        )}
-        {confirmUndoAll && (
-          <Modal title="Ångra allt?" onClose={() => setConfirmUndoAll(false)}>
-            <p>Alla ändringar i After återställs till läget när sändningen gick över till After. Originalinspelningen används igen.</p>
-            <div class="modal-actions">
-              <button class="btn" type="button" onClick={() => setConfirmUndoAll(false)}>Avbryt</button>
-              <button class="btn btn-danger" type="button" onClick={() => void undoAllAndClose()}>Ångra allt</button>
             </div>
           </Modal>
         )}
@@ -624,14 +632,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
         )}
       </>}
     >
-            {(source || broadcastInProgress || recordingProcessing || awaitingApproval) && (
-              <VideoStatusRow
-                recording={p.recording}
-                actionsAvailable={videoActionsAvailable({ captionsEnabled: editorAvailable, uploadEnabled: canUpload })}
-                onOpenActions={() => { setVideoDialogTab(undefined); setShowVideoDialog(true) }}
-                onOpenExport={() => setShowExportDialog(true)}
-              />
-            )}
+            {/* Bearbetning och väntande godkännande; undertexternas läge står i sammanfattningen och åtgärderna är knappar under den. */}
+            {uploadPending && <VideoStatusRow recording={p.recording} />}
             {broadcastInProgress ? (
               <div class="od-broadcast-warning" role="status">
                 <strong>{isAfter ? 'Sändningen avslutad' : 'Sändning pågår'}</strong>
@@ -680,6 +682,13 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                 failed={uploadFailed}
                 onUploaded={() => void actions.refreshProject()}
               />
+            )}
+
+            {source && !awaitingApproval && guided && (
+              <>
+                {editorAvailable ? editorEntry(guideSteps) : guideSteps(null, null)}
+                {publishHint && <p class="od-summary-sub od-publish-hint">{publishHint}</p>}
+              </>
             )}
 
             {(source || published) && !awaitingApproval && (
@@ -740,53 +749,28 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
               </dl>
             )}
 
-            {actionNote && <p class="od-download-error">{actionNote}</p>}
             {(source || published) && !awaitingApproval && (
-              <footer class="od-chapters-footer od-overview-actions">
-                {editorAvailable && (
-                  <CaptionEntry
-                    projectId={p.id}
-                    projectName={p.name}
-                    label="Redigera"
-                    videoDurationSeconds={recording?.durationSeconds}
-                    posterUrl={p.posterUrl}
-                    onChanged={() => {
-                      setPreviewVersion((version) => version + 1)
-                      void actions.refreshProject()
-                    }}
-                    onChaptersChanged={() => {
-                      // UNG-229: kapitel ändrade i editorn: hämta om dem och markera ändringen som opublicerad.
-                      setHasUnpublishedChanges(true)
-                      void reloadChaptersNow()
-                    }}
-                    // Trimningen följer med in i editorn (tillämpas vid Publicera).
-                    trim={showTrim && !externalVideo
-                      ? { start: trimStart, end: trimEnd, savedStart: savedTrimStart, savedEnd: savedTrimEnd, onChange: changeTrim, onSaved: () => void actions.refreshProject(), onReload: () => void actions.refreshProject() }
-                      : undefined}
-                    // UNG-247: publicerat: trimningen visas låst i editorn, med Avpublicera (samma bekräftelse som lägesväljaren).
-                    trimLock={p.publicMode === 'ondemand' && published ? { onUnpublish: () => selectMode('after') } : undefined}
-                    // UNG-249: import och förankring i editorn.
-                    chapterTools={{ uploadedRecording, agendaId: p.agendaId, importDefaultDate }}
-                    onOpenChange={setEditorOpen}
-                  />
-                )}
-                {isAfter && (
-                  <button class="btn btn-sm" type="button" disabled={chaptersReadOnly || uploadPending} onClick={() => setConfirmUndoAll(true)}>
-                    Ångra allt
+              <div class="od-secondary-actions">
+                <>
+                  <button class="btn btn-sm" type="button" onClick={() => setShowExportDialog(true)}>
+                    <Icon name="ios_share" size={18} /> Exportera & importera…
                   </button>
-                )}
+                  <button class="btn btn-sm" type="button" disabled={!editorAvailable} onClick={() => setShowVideoDialog(true)}>
+                    <Icon name="closed_caption" size={18} /> Undertexter…
+                  </button>
+                </>
+              </div>
+            )}
+
+            {actionNote && <p class="od-download-error">{actionNote}</p>}
+            {(source || published) && !awaitingApproval && !guided && (
+              <footer class="od-chapters-footer od-overview-actions">
+                {editorAvailable && editorEntry()}
+                {/* Publicera ändringar och Förkasta ändringar görs i redigeraren. */}
                 {published ? (
-                  <>
-                    <button class="btn btn-sm" type="button" disabled={!serverChanges} onClick={() => setConfirmDiscard(true)}>
-                      Förkasta ändringar
-                    </button>
-                    <button class="btn btn-sm" type="button" onClick={() => selectMode('after')}>
-                      Avpublicera
-                    </button>
-                    <button class="btn btn-sm btn-primary od-publish-button" type="button" disabled={!canPublishChanges} onClick={() => setConfirmOndemand(true)}>
-                      Publicera ändringar
-                    </button>
-                  </>
+                  <button class="btn btn-sm" type="button" onClick={() => selectMode('after')}>
+                    Avpublicera
+                  </button>
                 ) : (
                   <button class="btn btn-sm btn-primary od-publish-button" type="button" disabled={!canPublish} onClick={() => setConfirmOndemand(true)}>
                     Publicera
@@ -796,6 +780,17 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
               </footer>
             )}
 
+            {playerSettings && (
+              <PlayerSettingsDialog
+                project={p}
+                actions={actions}
+                liveHlsUrl={live.channel?.playbackUrl ?? null}
+                ingest={live.channel ? { channel: live.channel, streamKey: live.streamKey, onTeardown: () => actions.teardownChannel() } : null}
+                initialCategory={playerSettings}
+                onClose={() => setPlayerSettings(null)}
+              />
+            )}
+
             {showVideoDialog && (
               <VideoActionsDialog
                 projectId={p.id}
@@ -803,10 +798,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                 captionsEnabled={editorAvailable}
                 captions={p.recording?.captions ?? null}
                 videoDurationSeconds={recording?.durationSeconds}
-                uploadEnabled={canUpload}
-                uploadBlockedReason={uploadBlockedReason}
-                replacing={!!source}
-                initialTab={videoDialogTab}
                 onChanged={() => void actions.refreshProject()}
                 onClose={() => setShowVideoDialog(false)}
               />
@@ -815,10 +806,52 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
               <ExportImportDialog
                 project={p}
                 onClose={() => setShowExportDialog(false)}
-                onOpenVideoActions={(tab) => { setVideoDialogTab(tab); setShowVideoDialog(true) }}
+                onOpenCaptions={() => setShowVideoDialog(true)}
+                // Uppladdning av video (fil eller HLS-adress) görs här; en ny video ersätter den gamla först när den godkänts.
+                upload={{ blockedReason: canUpload ? null : uploadBlockedReason, replacing: !!source, onUploaded: () => void actions.refreshProject() }}
               />
             )}
+
+            {/* Längst ner, som i Before och Live. */}
+            <div class="ovs-bottom od-bottom">
+              <div class="od-secondary-actions">
+                <button class="btn" type="button" onClick={() => setPlayerSettings('link')}>
+                  <Icon name="settings" size={18} /> Spelarinställningar…
+                </button>
+                {live.channel && (
+                  <button class="btn" type="button" onClick={() => setPlayerSettings('ingest')}>
+                    <Icon name="info" size={18} /> Ingest info
+                  </button>
+                )}
+                {onForked && <ForkButton project={p} livePhase={live.health?.livePhase} onForked={onForked} />}
+              </div>
+            </div>
     </OverviewShell>
+  )
+}
+
+interface GuideStepProps {
+  n: number
+  label: string
+  /** Kort läge till höger (t.ex. "3 kapitel"). */
+  status: string
+  done?: boolean
+  disabled?: boolean
+  title?: string
+  onClick: () => void
+}
+
+// Ett av de guidade stegen i After: en rad med nummer (bock när något är gjort), stegets namn, läget och en pil till momentet.
+function GuideStep({ n, label, status, done = false, disabled = false, title, onClick }: GuideStepProps) {
+  return (
+    <li class={done ? 'is-done' : undefined}>
+      <button class="od-flow-step" type="button" disabled={disabled} title={title} onClick={onClick}>
+        <span class="od-flow-num" aria-hidden="true">{done ? <Icon name="check" size={16} /> : n}</span>
+        <span class="od-flow-label">{label}</span>
+        <span class="od-flow-status">{status}</span>
+        <Icon name="chevron_right" size={18} />
+      </button>
+    </li>
   )
 }
 

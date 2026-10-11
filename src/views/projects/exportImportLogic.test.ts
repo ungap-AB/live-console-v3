@@ -26,8 +26,11 @@ test('import görs inne i projektet: från listan är raderna inaktiva med en f�
   const fromList = importAvailability({})
   assert.equal(fromList.chapters.enabled, false)
   assert.equal(fromList.chapters.reason, 'Görs inne i projektet.')
-  const inProject = importAvailability({ onImportChapters: () => {}, onOpenVideoActions: () => {} })
+  const upload = { blockedReason: null, replacing: false, onUploaded: () => {} }
+  const inProject = importAvailability({ onImportChapters: () => {}, onOpenCaptions: () => {}, upload })
   assert.deepEqual([inProject.chapters.enabled, inProject.captions.enabled, inProject.upload.enabled], [true, true, true])
+  const blocked = importAvailability({ upload: { ...upload, blockedReason: 'Projektet är publicerat.' } })
+  assert.deepEqual(blocked.upload, { enabled: false, reason: 'Projektet är publicerat.' })
 })
 
 test('meddelandena nämner vad som hände', () => {

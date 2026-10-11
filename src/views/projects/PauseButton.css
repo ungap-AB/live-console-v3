@@ -94,3 +94,13 @@
   font-size: 15px;
   color: var(--ink);
 }
+
+/* Utanför Live syns knappen men går inte att använda. */
+.pv-pause-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pv-pause-btn:disabled:hover {
+  background: none;
+}

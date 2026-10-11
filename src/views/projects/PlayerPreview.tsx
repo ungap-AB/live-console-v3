@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'preact/hooks'
+import type { ComponentChildren } from 'preact'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { PreviewLink, PublicMode } from '../../data/types'
 import { errorMessage } from '../../app/optimistic'
@@ -8,6 +9,9 @@ import './PlayerPreview.css'
 const RENEW_LINK_MS = 3 * 60 * 60 * 1000
 // Förhandsvisningen pollas tätt, så att ändringar syns inom ett par sekunder (bara operatören tittar).
 const PREVIEW_POLL_MS = 2000
+// Spelaren visar kapitlen bredvid videon först från 860 px (live-player-v3 app.css). I en smalare ram ritas spelaren i den här bredden
+// och skalas ner, så att operatören ser samma layout som tittarna på en vanlig skärm.
+const MIN_PLAYER_WIDTH = 900
 
 /** Spelarens adress för en förhandsvisningslänk: samma spelare som tittarna får, men med ?preview i stället för ?p. */
 export function previewPlayerUrl(playerUrl: string, token: string): string {
@@ -74,15 +78,37 @@ export function PlayerPreview({ projectId, url, version, preview }: PlayerPrevie
       {active ? (
         error ? <p class="pp-note" role="alert">{error}</p>
         : link ? (
-          <div class="pp-frame">
+          <ScaledFrame>
             <iframe key={`${link.token}|${version}`} src={previewPlayerUrl(url, link.token)} title="Förhandsvisning av spelaren" allow="autoplay; fullscreen" allowFullScreen />
-          </div>
+          </ScaledFrame>
         ) : <p class="pp-note">Förhandsvisningen laddas…</p>
       ) : (
-        <div class="pp-frame">
+        <ScaledFrame>
           <iframe key={version} src={url} title="Spelaren som tittarna ser den" allow="autoplay; fullscreen" allowFullScreen />
-        </div>
+        </ScaledFrame>
       )}
     </section>
+  )
+}
+
+// Ramen kring iframen (16:9). Är den smalare än MIN_PLAYER_WIDTH får iframen den bredden och skalas ner till ramen.
+function ScaledFrame({ children }: { children: ComponentChildren }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(0)
+  useEffect(() => {
+    const element = ref.current
+    if (!element) return
+    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+  const scale = width > 0 && width < MIN_PLAYER_WIDTH ? width / MIN_PLAYER_WIDTH : 1
+  const style = scale < 1
+    ? { height: `${((MIN_PLAYER_WIDTH * 9) / 16) * scale}px`, '--pp-scale': String(scale), '--pp-width': `${MIN_PLAYER_WIDTH}px` }
+    : undefined
+  return (
+    <div ref={ref} class={`pp-frame${scale < 1 ? ' is-scaled' : ''}`} style={style}>
+      {children}
+    </div>
   )
 }

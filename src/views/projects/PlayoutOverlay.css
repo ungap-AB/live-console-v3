@@ -15,9 +15,24 @@
 
 .po-head {
   flex: none;
+  /* Tre delar: rubriken till vänster, lägesknapparna och signalen centrerade, tittare, klocka och Stäng till höger. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.po-head-start,
+.po-head-center,
+.po-head-end {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
+}
+
+.po-head-end {
+  justify-content: flex-end;
 }
 
 .po-head h2 {
@@ -33,10 +48,6 @@
   white-space: nowrap;
   color: var(--ink-3);
   font-size: 13px;
-}
-
-.po-head .spacer {
-  flex: 1;
 }
 
 .po-body {

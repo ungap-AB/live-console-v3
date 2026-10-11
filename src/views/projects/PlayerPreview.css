@@ -23,6 +23,12 @@
   border: 0;
 }
 
+.pp-frame.is-scaled iframe {
+  width: var(--pp-width);
+  transform: scale(var(--pp-scale));
+  transform-origin: top left;
+}
+
 .pp-note {
   margin: 0;
   font-size: 13px;
@@ -54,8 +60,14 @@
   background: var(--btn-bg-hover);
 }
 
+.pp-showas button {
+  color: var(--ink-3);
+}
+
+/* Valt läge: samma markering som lägesknapparna (ljusare yta och understrykning). */
 .pp-showas button.is-active {
-  background: var(--accent-soft);
+  background: var(--surface-3);
   color: var(--ink);
   font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--focus);
 }

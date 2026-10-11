@@ -78,7 +78,15 @@ interface CaptionEditorProps {
   createFailed?: string
   /** UNG-249: det kapitelverktygen (import och förankring) behöver veta om projektet. Saknas det finns bara Tid här och Synk. */
   chapterTools?: EditorChapterTools
+  /** Momentet som redigeraren öppnas med (After: de guidade stegen). Saknas det öppnas den som vanligt. */
+  focus?: EditorFocus
 }
+
+/**
+ * Momentet i fokus när redigeraren öppnas: trim (som vanligt), kapitel (listan visar bara kapitel) eller undertexter (utan undertexter
+ * frågar den direkt om att skapa dem).
+ */
+export type EditorFocus = 'trim' | 'chapters' | 'captions'
 
 /** UNG-249: projektets uppgifter för kapitelverktygen. */
 export interface EditorChapterTools {
@@ -139,7 +147,7 @@ function blurAfterMouse(event: MouseEvent) {
 // UNG-140/143: redigerare för undertexterna (mastern, original-tidslinje). Video med aktuell replik över bilden och en virtualiserad
 // radlista där texten rättas på plats. Rutor kan slås ihop (exakt tid), delas, orden kan flyttas mellan grannar, tider justeras,
 // rader läggs till och tas bort, och allt går att ångra tills man sparar. Sparas som en version (versionskontroll mot servern).
-export function CaptionEditor({ projectId, projectName, onClose, closeSignal, onSaved, onRegenerated, onChaptersSaved, trim, trimLock, createFailed, chapterTools }: CaptionEditorProps) {
+export function CaptionEditor({ projectId, projectName, onClose, closeSignal, onSaved, onRegenerated, onChaptersSaved, trim, trimLock, createFailed, chapterTools, focus }: CaptionEditorProps) {
   const [master, setMaster] = useState<CaptionMaster | null>(null)
   // UNG-248: projektet har undertexter. Utan dem är redigeraren bara-kapitel-läget, med video och trimbalk, och Skapa undertexter i huvudet.
   const [hasCaptions, setHasCaptions] = useState(true)
@@ -186,6 +194,13 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   // "Skapa på nytt" i huvudet: nytt jobb från ljudet, efter bekräftelse.
   const [canRegenerate, setCanRegenerate] = useState(false)
   const [confirmRegenerate, setConfirmRegenerate] = useState(false)
+  // Öppnad med Skapa undertexter (After) i ett projekt utan undertexter: frågan om att skapa dem visas direkt, en gång.
+  const askedToCreate = useRef(false)
+  useEffect(() => {
+    if (focus !== 'captions' || hasCaptions || !master || !canRegenerate || askedToCreate.current) return
+    askedToCreate.current = true
+    setConfirmRegenerate(true)
+  }, [focus, hasCaptions, master, canRegenerate])
   // Valen vid "Skapa på nytt" är samma som när undertexterna skapas första gången (mejla, och talarbyten när servern har dem påslagna, UNG-205).
   const [regenNotify, setRegenNotify] = useState(false)
   const [regenSpeakers, setRegenSpeakers] = useState(false)
@@ -218,7 +233,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   const [showChapters, setShowChapters] = useState(true)
   // UNG-231: filtret Undertexter. Med bara Kapitel på blir listan en kompakt översikt utan vågform, där talarna är grupperade under sin punkt
   // och hopfällda tills man öppnar punkten.
-  const [showCues, setShowCues] = useState(true)
+  const [showCues, setShowCues] = useState(focus !== 'chapters')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set())
   // Tiden vid listans övre kant när läget byts, så att listan hamnar på samma ställe i det nya läget.
   const modeScrollTime = useRef<number | null>(null)
@@ -1659,11 +1674,6 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
           </div>
         </div>
         <div class="ce-actions">
-          {publishedStart !== undefined && (
-            <button class="btn btn-sm" type="button" onClick={() => seekTo(publishedStart, false)}>
-              Hoppa till publicerad del
-            </button>
-          )}
           <label class="ce-follow">
             <input type="checkbox" checked={follow} onChange={(event) => setFollow(event.currentTarget.checked)} />
             Följ med

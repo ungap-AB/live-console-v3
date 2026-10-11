@@ -54,7 +54,9 @@ interface PlayoutOverlayProps {
   title?: string
   label?: string
   projectName: string
-  /** Till höger i vyns huvud, före Stäng (i Live: lägesknapparna med paus, signal, tittare och klocka). */
+  /** Mitt i vyns huvud (lägesknapparna med paus och signalen). */
+  center?: ComponentChildren
+  /** Till höger i vyns huvud, före Stäng (tittare och klocka). */
   bar?: ComponentChildren
   onClose: () => void
   children: ComponentChildren
@@ -62,17 +64,21 @@ interface PlayoutOverlayProps {
 
 // Utspelningen som arbetsvy över hela projektet. Stängs bara med Stäng (inte Esc), så att en tangenttryckning under sändning inte tar
 // bort listorna.
-export function PlayoutOverlay({ title = 'Utspelning', label = 'Utspelning av kapitel', projectName, bar, onClose, children }: PlayoutOverlayProps) {
+export function PlayoutOverlay({ title = 'Utspelning', label = 'Utspelning av kapitel', projectName, center, bar, onClose, children }: PlayoutOverlayProps) {
   return (
     <div class="po" role="region" aria-label={label}>
       <header class="po-head">
-        <h2>{title}</h2>
-        <span class="po-sub">{projectName}</span>
-        <span class="spacer" />
-        {bar}
-        <button class="btn btn-sm" type="button" onClick={onClose}>
-          <Icon name="close" size={18} /> Stäng
-        </button>
+        <div class="po-head-start">
+          <h2>{title}</h2>
+          <span class="po-sub">{projectName}</span>
+        </div>
+        <div class="po-head-center">{center}</div>
+        <div class="po-head-end">
+          {bar}
+          <button class="btn btn-sm" type="button" onClick={onClose}>
+            <Icon name="close" size={18} /> Stäng
+          </button>
+        </div>
       </header>
       <div class="po-body">{children}</div>
     </div>

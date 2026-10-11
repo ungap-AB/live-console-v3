@@ -11,6 +11,7 @@ import {
   captionDraftAvailability, chaptersExportAvailability, copiedMessage, importAvailability, publishedCaptionsAvailability, savedMessage, videoDownloadAvailability, type Availability, type ImportHandlers,
 } from './exportImportLogic'
 import { DownloadButton } from './RecordingDownload'
+import { UploadPanel } from './UploadPanel'
 import { useRecordingDownloads } from './useRecordingDownloads'
 import './ExportImportDialog.css'
 
@@ -78,7 +79,7 @@ function Row({ title, description, availability, status, children, fallbackActio
 
 // UNG-193/194: allt som går ut ur (och in i) ett projekt på ett ställe, med återkoppling på raden där man gjorde något. Raderna beskrivs av
 // rena funktioner (exportImportLogic.ts); här ritas de. Öppnas från ...-menyn på projektraden och från projektet självt.
-export function ExportImportDialog({ project, onClose, onOpenProject, onImportChapters, onOpenVideoActions }: ExportImportDialogProps) {
+export function ExportImportDialog({ project, onClose, onOpenProject, onImportChapters, onOpenCaptions, upload }: ExportImportDialogProps) {
   const [mode, setMode] = useState<Mode>('export')
   const [exportTab, setExportTab] = useState<ExportTab>('chapters')
   const [includeSpeakers, setIncludeSpeakers] = useState(false)
@@ -94,7 +95,9 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
   const videoAvailability = videoDownloadAvailability(project)
   const publishedCaptions = publishedCaptionsAvailability(project)
   const draftCaptions = captionDraftAvailability(project)
-  const imports = importAvailability({ onImportChapters, onOpenVideoActions })
+  const imports = importAvailability({ onImportChapters, onOpenCaptions, upload })
+  // En fil som överförs från webbläsaren: dialogen står kvar tills överföringen är klar.
+  const [uploadBusy, setUploadBusy] = useState(false)
   const recordingId = project.recording?.id
 
   const [chapterData, setChapterData] = useState<ChapterExportData | null>(null)
@@ -234,8 +237,9 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
       subtitle={project.name}
       wide
       className="ei-dialog"
+      closeDisabled={uploadBusy}
       onClose={onClose}
-      footer={<button class="btn" type="button" onClick={onClose}>Stäng</button>}
+      footer={<button class="btn" type="button" disabled={uploadBusy} title={uploadBusy ? 'Vänta tills överföringen är klar' : undefined} onClick={onClose}>Stäng</button>}
     >
       <Tabs tabs={MODES} active={mode} onChange={(id) => setMode(id as Mode)} label="Exportera och importera" idPrefix="eid" />
 
@@ -343,10 +347,24 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
                 <button class="btn btn-sm" type="button" onClick={leave(() => onImportChapters?.())}>Importera kapitel…</button>
               </Row>
               <Row title="Undertexter" description="Läs in en egen VTT-fil eller skapa undertexter automatiskt." availability={imports.captions} fallbackAction={openProject}>
-                <button class="btn btn-sm" type="button" onClick={leave(() => onOpenVideoActions?.('captions'))}>Undertexter…</button>
+                <button class="btn btn-sm" type="button" onClick={leave(() => onOpenCaptions?.())}>Undertexter…</button>
               </Row>
-              <Row title="Video" description="Ladda upp en fil eller ange en HLS-adress." availability={imports.upload} fallbackAction={openProject}>
-                <button class="btn btn-sm" type="button" onClick={leave(() => onOpenVideoActions?.('upload'))}>Ladda upp video…</button>
+              <Row title="Video" description="Ladda upp en fil eller ange en HLS-adress." availability={imports.upload} fallbackAction={upload ? undefined : openProject}>
+                {upload && (
+                  <div class="ei-upload">
+                    <UploadPanel
+                      projectId={project.id}
+                      projectName={project.name}
+                      replacing={upload.replacing}
+                      failed={false}
+                      onBusyChange={setUploadBusy}
+                      onUploaded={() => {
+                        upload.onUploaded()
+                        onClose()
+                      }}
+                    />
+                  </div>
+                )}
               </Row>
             </ul>
           </section>

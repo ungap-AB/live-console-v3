@@ -8,7 +8,7 @@ interface IngestInfoProps {
   trailingAction?: ComponentChildren
 }
 
-// Ingest-uppgifter för enkodern. Delas av Before- och Live-arbetsytan.
+// Ingest-uppgifter för enkodern. Live-HLS-adressen ligger i spelarinställningarna (UI-finslipning omgång 1).
 export function IngestInfo({ channel, streamKey, trailingAction }: IngestInfoProps) {
   return (
     <div class="ingest-info">
@@ -19,10 +19,6 @@ export function IngestInfo({ channel, streamKey, trailingAction }: IngestInfoPro
       <div class="field">
         <label>Stream key</label>
         <CopyField value={streamKey} mask monospace />
-      </div>
-      <div class="field">
-        <label>Live-HLS-adress (för TV och andra uppspelare)</label>
-        <CopyField value={channel?.playbackUrl ?? null} placeholder="Hämtar…" monospace />
       </div>
       {trailingAction}
     </div>

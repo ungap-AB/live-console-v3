@@ -6,9 +6,9 @@ import './VideoActionsDialog.css'
 
 interface VideoStatusRowProps {
   recording: Project['recording']
-  /** Åtgärderna (undertexter, ladda upp video) finns bara när något av dem går att göra. */
-  actionsAvailable: boolean
-  onOpenActions: () => void
+  /** Åtgärderna (undertexter, ladda upp video) finns bara när något av dem går att göra. Utan onOpenActions visas ingen "…"-knapp. */
+  actionsAvailable?: boolean
+  onOpenActions?: () => void
   /** Öppnar dialogen Exportera och importera. */
   onOpenExport?: () => void
   /** Knappen för att skapa/redigera undertexter (UNG-165), före "…"-knappen. */
@@ -17,7 +17,7 @@ interface VideoStatusRowProps {
 
 // UNG-101: en rad ovanför videofönstret med det som pågår kring videon (bearbetning) och vilken undertext som hör till
 // den, med "…" till höger som öppnar dialogen där åtgärderna görs.
-export function VideoStatusRow({ recording, actionsAvailable, onOpenActions, onOpenExport, captionAction }: VideoStatusRowProps) {
+export function VideoStatusRow({ recording, actionsAvailable = false, onOpenActions, onOpenExport, captionAction }: VideoStatusRowProps) {
   const ready = recording?.state === 'recorded' || recording?.state === 'trimmed' || recording?.state === 'published'
   const processing = recording?.state === 'processing' && (recording.source === 'upload')
   const awaiting = recording?.state === 'awaitingApproval'
@@ -46,16 +46,18 @@ export function VideoStatusRow({ recording, actionsAvailable, onOpenActions, onO
           <Icon name="ios_share" size={20} />
         </button>
       )}
-      <button
-        class="ib video-status-more"
-        type="button"
-        aria-label="Åtgärder för videon"
-        title="Undertexter och ladda upp video"
-        disabled={!actionsAvailable}
-        onClick={onOpenActions}
-      >
-        <Icon name="more_horiz" size={20} />
-      </button>
+      {onOpenActions && (
+        <button
+          class="ib video-status-more"
+          type="button"
+          aria-label="Åtgärder för videon"
+          title="Undertexter och ladda upp video"
+          disabled={!actionsAvailable}
+          onClick={onOpenActions}
+        >
+          <Icon name="more_horiz" size={20} />
+        </button>
+      )}
     </div>
   )
 }

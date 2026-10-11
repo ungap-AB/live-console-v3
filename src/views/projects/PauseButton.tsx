@@ -11,6 +11,8 @@ interface PauseButtonProps {
   timeline: readonly TimelineEvent[]
   onStart: (text: string) => void
   onResume: () => void
+  /** Utanför Live: knappen syns (samma lägesrad i alla lägen) men går inte att använda. */
+  disabled?: boolean
 }
 
 function PauseGlyph({ filled }: { filled: boolean }) {
@@ -25,7 +27,7 @@ function PauseGlyph({ filled }: { filled: boolean }) {
 // UNG-119: paus-knappen i lägesväljaren, precis till höger om Live. Vilande: neutral. Aktiv paus: fylld, varningsfärg och en
 // svag, långsam pulsering (3 s per varv; med reducerad rörelse i stället en synlig text). Att starta kräver bekräftelse i en dialog
 // med texten som visas över videon, att avsluta är ett klick.
-export function PauseButton({ pause, timeline, onStart, onResume }: PauseButtonProps) {
+export function PauseButton({ pause, timeline, onStart, onResume, disabled = false }: PauseButtonProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [text, setText] = useState('')
   const [now, setNow] = useState(() => Date.now())
@@ -48,7 +50,9 @@ export function PauseButton({ pause, timeline, onStart, onResume }: PauseButtonP
     setDialogOpen(false)
   }
 
-  const label = pause ? `Avsluta paus (pausad sedan ${formatLocalTime(pause.occurredAt)}, ${pauseDurationText(pause.occurredAt, now)})` : 'Pausa sändningen'
+  const label = pause
+    ? `Avsluta paus (pausad sedan ${formatLocalTime(pause.occurredAt)}, ${pauseDurationText(pause.occurredAt, now)})`
+    : disabled ? 'Paus går bara i läget Live' : 'Pausa sändningen'
 
   return (
     <>
@@ -58,6 +62,7 @@ export function PauseButton({ pause, timeline, onStart, onResume }: PauseButtonP
         aria-pressed={Boolean(pause)}
         aria-label={label}
         title={label}
+        disabled={disabled && !pause}
         onClick={() => (pause ? onResume() : open())}
       >
         <PauseGlyph filled={Boolean(pause)} />

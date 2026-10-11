@@ -198,3 +198,60 @@
   background: var(--surface-2);
   color: var(--ink-2);
 }
+
+/* Spelarlänken och HLS-adresserna (flyttade hit från projektets huvud). */
+.ps-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Fälten får inte växa på höjden i kolumnen (pv-link-field har flex-basis för rubrikens rad). */
+.ps-links .pv-field {
+  flex: none;
+}
+
+/* Kategoriflikarna överst i dialogen. */
+.ps-cats {
+  display: flex;
+  gap: 4px;
+  margin: -4px 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ps-cat-tab {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  padding: 8px 12px;
+  color: var(--ink-3);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ps-cat-tab:hover {
+  color: var(--ink);
+}
+
+.ps-cat-tab.active {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--focus);
+}
+
+.ps-cat-stack {
+  display: grid;
+}
+
+.ps-cat {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+/* Dolda flikar tar fortfarande plats (osynliga och inte nåbara), så att dialogen inte byter storlek. */
+.ps-cat[hidden] {
+  display: block;
+  visibility: hidden;
+}
