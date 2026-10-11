@@ -25,6 +25,7 @@ import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ProjectHeader } from './ProjectHeader'
 import { OverviewShell } from './OverviewShell'
+import { PreviewOverlay } from './PreviewOverlay'
 import { useModeChange } from './useModeChange'
 import { useLiveChannel } from './useLiveChannel'
 import './OndemandView.css'
@@ -74,6 +75,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   const [previewVersion, setPreviewVersion] = useState(0)
   // UNG-267: editorn ligger över vyn; spelaren stängs av så länge.
   const [editorOpen, setEditorOpen] = useState(false)
+  // UNG-270: förhandsvisning av det sparade utkastet i den riktiga spelaren.
+  const [showPreview, setShowPreview] = useState(false)
   const [projectRecordings, setProjectRecordings] = useState<ProjectRecording[]>([])
   const [switchingRecording, setSwitchingRecording] = useState(false)
   const [showRecordingPicker, setShowRecordingPicker] = useState(false)
@@ -537,8 +540,9 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
         </ol>
       )}
       player={p.playerUrl && !awaitingApproval ? { url: p.playerUrl, published, version: previewVersion } : null}
-      workOpen={editorOpen}
+      workOpen={editorOpen || showPreview}
       overlays={<>
+        {showPreview && <PreviewOverlay project={p} actions={actions} kind="draft" onClose={() => setShowPreview(false)} />}
         {dialog}
         {confirmOndemand && (
           <Modal title="Publicera ändringarna?" onClose={() => setConfirmOndemand(false)}>
@@ -766,6 +770,11 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                     chapterTools={{ uploadedRecording, agendaId: p.agendaId, importDefaultDate }}
                     onOpenChange={setEditorOpen}
                   />
+                )}
+                {editorAvailable && p.playerUrl && (
+                  <button class="btn btn-sm" type="button" onClick={() => setShowPreview(true)}>
+                    Förhandsvisa
+                  </button>
                 )}
                 {isAfter && (
                   <button class="btn btn-sm" type="button" disabled={chaptersReadOnly || uploadPending} onClick={() => setConfirmUndoAll(true)}>

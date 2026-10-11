@@ -8,6 +8,8 @@ import { PlayoutOverlay } from './PlayoutOverlay'
 import './PreviewOverlay.css'
 
 type ShowAs = 'before' | 'live'
+/** Before: testutspelning och visa som Före/Under. Live: det tittarna ser nu. Draft (After/Ondemand): det sparade utkastet. */
+export type PreviewKind = 'before' | 'live' | 'draft'
 
 const EMPTY_PLAYOUT: PreviewPlayout = { currentAgendaItemId: null, currentPersonId: null }
 // Länken gäller i 4 timmar (UNG-253); förnyas i god tid så att en vy som står öppen länge inte tappar spelaren.
@@ -27,15 +29,16 @@ export function previewPlayerUrl(playerUrl: string, token: string): string {
 interface PreviewOverlayProps {
   project: Project
   actions: ProjectActions
-  /** Before: förhandsvisningen har egen testutspelning och kan visas som Live. I Live visas det tittarna ser nu. */
-  beforeBroadcast: boolean
+  kind: PreviewKind
   onClose: () => void
 }
 
 // UNG-255: Förhandsvisa i Before och Live. Den riktiga spelaren i förhandsvisningsläge (märkt, inte publik) med dagordning, namnlista
 // och spelarinställningar. I Before kan operatören visa den som Live och spela ut punkter och namn som bara syns här (testutspelning i
 // servern, inte i projektets tidslinje eller det tittarna ser), ändra inställningar och se resultatet utan att gå live.
-export function PreviewOverlay({ project: p, actions, beforeBroadcast, onClose }: PreviewOverlayProps) {
+// UNG-270: i After/Ondemand visas utkastet (sparad trim, kapitel och undertexter) före publicering.
+export function PreviewOverlay({ project: p, actions, kind, onClose }: PreviewOverlayProps) {
+  const beforeBroadcast = kind === 'before'
   const [showAs, setShowAs] = useState<ShowAs>('live')
   const [link, setLink] = useState<PreviewLink | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -47,12 +50,12 @@ export function PreviewOverlay({ project: p, actions, beforeBroadcast, onClose }
     let cancelled = false
     setLink(null)
     setError(null)
-    client.projects.createPreviewLink(p.id, { variant: 'published', mode }).then(
+    client.projects.createPreviewLink(p.id, { variant: kind === 'draft' ? 'draft' : 'published', mode }).then(
       (next) => { if (!cancelled) setLink(next) },
       (reason) => { if (!cancelled) setError(errorMessage(reason)) },
     )
     return () => { cancelled = true }
-  }, [p.id, mode, renewal])
+  }, [p.id, kind, mode, renewal])
 
   useEffect(() => {
     const id = window.setInterval(() => setRenewal((value) => value + 1), RENEW_LINK_MS)
@@ -128,7 +131,11 @@ export function PreviewOverlay({ project: p, actions, beforeBroadcast, onClose }
       ) : (
         <div class="pvo pvo-live">
           {player}
-          <p class="pvo-hint">Förhandsvisningen visar det tittarna ser nu. Testutspelning finns bara före sändningen.</p>
+          <p class="pvo-hint">
+            {kind === 'draft'
+              ? 'Förhandsvisningen visar det sparade utkastet: trim, kapitel och undertexter som de blir när du publicerar. Ändringar som inte är sparade syns inte.'
+              : 'Förhandsvisningen visar det tittarna ser nu. Testutspelning finns bara före sändningen.'}
+          </p>
         </div>
       )}
     </PlayoutOverlay>

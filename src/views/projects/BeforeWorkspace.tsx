@@ -123,7 +123,7 @@ export function BeforeWorkspace({ header, project: p, actions, health, refresh, 
       player={p.playerUrl ? { url: p.playerUrl, published: true, version: playerVersion } : null}
       workOpen={playout.open || showPreview}
       overlays={<>
-        {showPreview && <PreviewOverlay project={p} actions={actions} beforeBroadcast={true} onClose={() => setShowPreview(false)} />}
+        {showPreview && <PreviewOverlay project={p} actions={actions} kind="before" onClose={() => setShowPreview(false)} />}
         {playout.open && (
           <PlayoutOverlay projectName={p.name} onClose={playout.closePlayout}>
             <PlayoutColumns project={p} actions={actions} openPicker={openPicker} onPickerClosed={() => setOpenPicker(null)} />

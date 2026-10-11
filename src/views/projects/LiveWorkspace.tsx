@@ -145,7 +145,7 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
       player={p.playerUrl ? { url: p.playerUrl, published: true, version: 0 } : null}
       workOpen={playout.open || showPreview}
       overlays={<>
-        {showPreview && <PreviewOverlay project={p} actions={actions} beforeBroadcast={false} onClose={() => setShowPreview(false)} />}
+        {showPreview && <PreviewOverlay project={p} actions={actions} kind="live" onClose={() => setShowPreview(false)} />}
         {playout.open && (
           <PlayoutOverlay
             projectName={p.name}
