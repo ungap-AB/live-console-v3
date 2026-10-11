@@ -136,6 +136,49 @@
   flex: none;
 }
 
+.ce-video > .ce-chaptertools {
+  /* UNG-249: kapitelverktygen under videon rullar för sig när de blir långa, så att videon ligger kvar. */
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 45%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ce-unplaced ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ce-unplaced li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.ce-unplaced li.is-target .ce-unplaced-label {
+  font-weight: 600;
+}
+
+.ce-unplaced-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ce-unplaced-note {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
 .ce-video > .ce-corr {
   flex: 1 1 0;
   min-height: 0;

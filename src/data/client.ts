@@ -267,16 +267,16 @@ export interface Client {
     resume(id: string): Promise<TimelineEvent>
     updateTimelineEvent(id: string, eventId: string, input: { label?: string; offsetSeconds?: number }): Promise<TimelineEvent>
     deleteTimelineEvent(id: string, eventId: string): Promise<void>
-    updateDraftChapter(id: string, chapterId: string, input: { label?: string; offsetSeconds?: number }): Promise<void>
+    updateDraftChapter(id: string, chapterId: string, input: { label?: string; offsetSeconds?: number }, ifDraftRevision?: number): Promise<void>
     /** Uppladdad video: förankrar kapitellistan — ankarkapitlet ligger vid anchorOffsetSeconds; redan förankrade kapitel flyttas lika mycket, övriga räknas efter sin tidsskillnad mot det. */
-    syncChapters(id: string, anchorChapterId: string, anchorOffsetSeconds: number): Promise<{ synced: number; outsideVideo: number }>
+    syncChapters(id: string, anchorChapterId: string, anchorOffsetSeconds: number, ifDraftRevision?: number): Promise<{ synced: number; outsideVideo: number }>
     /** Lägger till ett eget kapitel på en videoposition (uppladdad video). */
     addChapter(id: string, input: { kind: CueKind; label: string; offsetSeconds: number }): Promise<void>
     /** Ersätter hela kapitellistan med en importerad lista (en källa åt gången). Tiden i varje rad avgör läget. */
     /** mode "add" lägger till i det som finns (bara inspelade sändningar, UNG-169); standard ersätter listan. */
-    importChapters(id: string, items: import('./types').ChapterImportItem[], mode?: 'replace' | 'add'): Promise<import('./types').ChapterImportResult>
+    importChapters(id: string, items: import('./types').ChapterImportItem[], mode?: 'replace' | 'add', ifDraftRevision?: number): Promise<import('./types').ChapterImportResult>
     /** Operatören litar på förankringen — hävs publiceringsspärren. */
-    confirmChapterSync(id: string): Promise<void>
+    confirmChapterSync(id: string, ifDraftRevision?: number): Promise<void>
     deleteDraftChapter(id: string, chapterId: string): Promise<void>
     updateChapterOffset(id: string, index: number, input: { offsetSeconds?: number; label?: string }): Promise<void>
     updatePublishedChapter(id: string, chapterId: string, input: { offsetSeconds?: number; label?: string }): Promise<void>

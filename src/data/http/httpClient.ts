@@ -1060,24 +1060,26 @@ export const httpClient: Client = {
     async deleteTimelineEvent(id, eventId) {
       await api<void>(`/projects/${id}/timeline/${eventId}`, { method: 'DELETE' })
     },
-    async updateDraftChapter(id, chapterId, input) {
-      await api<void>(`/projects/${id}/timeline-draft/chapters/${chapterId}`, { method: 'PATCH', body: input })
+    async updateDraftChapter(id, chapterId, input, ifDraftRevision) {
+      await api<void>(`/projects/${id}/timeline-draft/chapters/${chapterId}`, { method: 'PATCH', body: input, ifDraftRevision })
     },
-    async syncChapters(id, anchorChapterId, anchorOffsetSeconds) {
+    async syncChapters(id, anchorChapterId, anchorOffsetSeconds, ifDraftRevision) {
       const result = await api<{ synced: number; outsideVideo: number }>(`/projects/${id}/timeline-draft/sync`, {
         method: 'POST',
         body: { anchorChapterId, anchorOffsetSeconds },
+        ifDraftRevision,
       })
       return { synced: result.synced, outsideVideo: result.outsideVideo }
     },
-    async importChapters(id, items, mode) {
+    async importChapters(id, items, mode, ifDraftRevision) {
       return api<{ positioned: number; clock: number; untimed: number; outsideVideo: number }>(`/projects/${id}/timeline-draft/import`, {
         method: 'POST',
         body: { items, mode },
+        ifDraftRevision,
       })
     },
-    async confirmChapterSync(id) {
-      await api<void>(`/projects/${id}/timeline-draft/confirm-sync`, { method: 'POST' })
+    async confirmChapterSync(id, ifDraftRevision) {
+      await api<void>(`/projects/${id}/timeline-draft/confirm-sync`, { method: 'POST', ifDraftRevision })
     },
     async addChapter(id, input) {
       await api<unknown>(`/projects/${id}/timeline-draft/chapters`, { method: 'POST', body: input })

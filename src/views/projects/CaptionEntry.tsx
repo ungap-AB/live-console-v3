@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
 import { captionEntry, consumeCaptionStudio } from './captionEntryLogic'
 import { CaptionStudio } from './CaptionStudio'
-import type { EditorTrim } from './CaptionEditor'
+import type { EditorChapterTools, EditorTrim } from './CaptionEditor'
 import { useCaptionGeneration } from './useCaptionGeneration'
 
 interface CaptionEntryProps {
@@ -17,11 +17,13 @@ interface CaptionEntryProps {
   trim?: EditorTrim
   /** UNG-247: trimningen är låst (publicerat), med en väg till Avpublicera. */
   trimLock?: { onUnpublish: () => void }
+  /** UNG-249: projektets uppgifter för kapitelverktygen i redigeraren. */
+  chapterTools?: EditorChapterTools
 }
 
 // UNG-165: knappen ovanför videofönstret som leder direkt till att skapa eller redigera undertexter. Etiketten följer serverns läge
 // (skapa, genererar n %, redigera). Knappen äger också studion (redigeraren med skapandet som overlay) och dess öppna/stängda läge.
-export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged, trim, trimLock }: CaptionEntryProps) {
+export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged, trim, trimLock, chapterTools }: CaptionEntryProps) {
   const captions = useCaptionGeneration(projectId)
   // Öppnas direkt när man kommit hit via knappen i projektlistan.
   const [open, setOpen] = useState(() => consumeCaptionStudio(projectId))
@@ -55,6 +57,7 @@ export function CaptionEntry({ projectId, projectName, videoDurationSeconds, pos
           onChaptersChanged={onChaptersChanged}
           trim={trim}
           trimLock={trimLock}
+          chapterTools={chapterTools}
           onClose={() => {
             setOpen(false)
             void captions.refresh()

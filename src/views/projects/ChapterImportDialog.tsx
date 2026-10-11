@@ -14,6 +14,8 @@ interface ChapterImportDialogProps {
   directClock?: boolean
   /** Datum (ÅÅÅÅ-MM-DD) som klockslag utan datum tolkas mot, t.ex. sändningens datum. */
   defaultDate?: string
+  /** UNG-249: utkastets version som importen villkoras på (editorn). Saknas den är importen villkorslös. */
+  ifDraftRevision?: number
   onClose: () => void
   onImported: (result: ChapterImportResult) => void
 }
@@ -27,7 +29,7 @@ function todayIso(): string {
 }
 
 // UNG-65/UNG-64: en källa åt gången — importen ersätter hela kapitellistan.
-export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, directClock = false, defaultDate, onClose, onImported }: ChapterImportDialogProps) {
+export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, directClock = false, defaultDate, ifDraftRevision, onClose, onImported }: ChapterImportDialogProps) {
   const [source, setSource] = useState<Source>('paste')
   const [text, setText] = useState('')
   const [mode, setMode] = useState<TimeMode | null>(null)
@@ -64,7 +66,7 @@ export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, 
     setBusy(true)
     setError('')
     try {
-      onImported(await client.projects.importChapters(projectId, items, directClock ? importMode : undefined))
+      onImported(await client.projects.importChapters(projectId, items, directClock ? importMode : undefined, ifDraftRevision))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Importen misslyckades.')
       setBusy(false)

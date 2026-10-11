@@ -7,7 +7,7 @@ import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
 import { client } from '../../data'
 import { ApiError } from '../../data/http/fetchJson'
-import type { CaptionDraft, CaptionEnergy, CaptionGeneration, CaptionMaster, CueKind, DraftStatus, EditorSource, WordImportResult } from '../../data/types'
+import type { CaptionDraft, CaptionEnergy, CaptionGeneration, CaptionMaster, Chapter, ChapterImportResult, CueKind, DraftStatus, EditorSource, WordImportResult } from '../../data/types'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import { formatHms } from '../../app/time'
@@ -39,6 +39,8 @@ import { ownCorrections } from './captionCorrectionsLogic'
 import { CorrectionsPanel } from './CorrectionsPanel'
 import { showUnmute, unmuted } from './videoSoundLogic'
 import { WordImportDialog } from './WordImportDialog'
+import { ChapterImportDialog } from './ChapterImportDialog'
+import { AnchorGuide, SyncStepper } from './ChapterSyncTools'
 import { exportFileName } from './chapterExport'
 import { saveFile } from './ExportImportDialog'
 import { Modal } from '../../components/Modal'
@@ -72,6 +74,17 @@ interface CaptionEditorProps {
   trimLock?: { onUnpublish: () => void }
   /** UNG-248: förra försöket att skapa undertexter misslyckades (felet), när projektet ännu saknar undertexter. */
   createFailed?: string
+  /** UNG-249: det kapitelverktygen (import och förankring) behöver veta om projektet. Saknas det finns bara Tid här och Synk. */
+  chapterTools?: EditorChapterTools
+}
+
+/** UNG-249: projektets uppgifter för kapitelverktygen. */
+export interface EditorChapterTools {
+  /** Videon är uppladdad (eller extern): kapitel med klockslag förankras med guiden. */
+  uploadedRecording: boolean
+  agendaId: string | null
+  /** Datum (ÅÅÅÅ-MM-DD) som klockslag utan datum tolkas mot vid import. */
+  importDefaultDate?: string
 }
 
 /**
@@ -124,7 +137,7 @@ function blurAfterMouse(event: MouseEvent) {
 // UNG-140/143: redigerare för undertexterna (mastern, original-tidslinje). Video med aktuell replik över bilden och en virtualiserad
 // radlista där texten rättas på plats. Rutor kan slås ihop (exakt tid), delas, orden kan flyttas mellan grannar, tider justeras,
 // rader läggs till och tas bort, och allt går att ångra tills man sparar. Sparas som en version (versionskontroll mot servern).
-export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRegenerated, onChaptersSaved, trim, trimLock, createFailed }: CaptionEditorProps) {
+export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRegenerated, onChaptersSaved, trim, trimLock, createFailed, chapterTools }: CaptionEditorProps) {
   const [master, setMaster] = useState<CaptionMaster | null>(null)
   // UNG-248: projektet har undertexter. Utan dem är redigeraren bara-kapitel-läget, med video och trimbalk, och Skapa undertexter i huvudet.
   const [hasCaptions, setHasCaptions] = useState(true)
@@ -190,6 +203,16 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   const [chapterState, setChapterState] = useState<'loading' | 'ok' | 'none'>('loading')
   const [chapterList, setChapterList] = useState<EditorChapter[]>([])
   const [savedChapters, setSavedChapters] = useState<EditorChapter[]>([])
+  // UNG-249: alla kapitel som servern har, även de utan position (utan tid, klockslag som inte förankrats), för kapitelverktygen.
+  const [serverChapters, setServerChapters] = useState<Chapter[]>([])
+  const [chapterBusy, setChapterBusy] = useState(false)
+  const [showChapterImport, setShowChapterImport] = useState(false)
+  const [guide, setGuide] = useState<{ step: 1 | 2 | 3; anchorId: string | null } | null>(null)
+  // Synk-stegningen: kapitlet som står på tur, de som hoppats över och det som sattes senast (som i After-/Ondemand-vyn).
+  const [stepTargetId, setStepTargetId] = useState<string | null>(null)
+  const [skippedIds, setSkippedIds] = useState<string[]>([])
+  const [lastSteppedId, setLastSteppedId] = useState<string | null>(null)
+  const [orderWarning, setOrderWarning] = useState<string | null>(null)
   const [showChapters, setShowChapters] = useState(true)
   // UNG-231: filtret Undertexter. Med bara Kapitel på blir listan en kompakt översikt utan vågform, där talarna är grupperade under sin punkt
   // och hopfällda tills man öppnar punkten.
@@ -252,6 +275,14 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     focusBase.current = null
   }
 
+  // Kapitlen från servern: alla till verktygen, och de med position som arbetskopia och sparat.
+  function adoptChapters(list: Chapter[]) {
+    const positioned = positionedChapters(list)
+    setServerChapters(list)
+    setChapterList(positioned)
+    setSavedChapters(positioned)
+  }
+
   // Mastern, eller en tom master när projektet saknar undertexter (UNG-248).
   async function fetchMaster(): Promise<CaptionMaster> {
     try {
@@ -303,9 +334,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     client.projects.chapters(projectId).then(
       (list) => {
         if (cancelled) return
-        const positioned = positionedChapters(list)
-        setChapterList(positioned)
-        setSavedChapters(positioned)
+        adoptChapters(list)
         setChapterState(list.some((chapter) => chapter.readOnly) ? 'none' : 'ok')
       },
       () => { if (!cancelled) setChapterState('none') },
@@ -340,6 +369,18 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   const diff = useMemo(() => diffState(derive(saved), cues), [saved, cues, timing])
   const chapterChanges = useMemo(() => diffChapters(savedChapters, chapterList), [savedChapters, chapterList])
   const chaptersDirty = chapterChangeTotal(chapterChanges) > 0
+  // UNG-249: kapitel utan position (visas i ett eget block) och de som stegas fram med Synk (utan tid).
+  const toolsEnabled = chapterState === 'ok' && !(master?.legacy ?? false)
+  const unplacedChapters = serverChapters.filter((chapter) => chapter.synced === false || (chapter.timing !== undefined && chapter.timing !== 'positioned'))
+  const untimedChapters = serverChapters.filter((chapter) => chapter.timing === 'untimed')
+  const syncState = serverChapters.find((chapter) => chapter.syncState)?.syncState
+  const anchorCandidates = serverChapters.filter((chapter) => chapter.anchorable)
+  const anchorToolsVisible = toolsEnabled && Boolean(chapterTools?.uploadedRecording) && anchorCandidates.length > 0
+  const anchorChapter = guide?.anchorId ? serverChapters.find((chapter) => chapter.chapterId === guide.anchorId) : undefined
+  const stepperVisible = toolsEnabled && !guide && untimedChapters.length > 0
+  const stepTarget = serverChapters.find((chapter) => chapter.chapterId === stepTargetId && chapter.timing === 'untimed')
+    ?? untimedChapters.find((chapter) => !skippedIds.includes(chapter.chapterId))
+    ?? untimedChapters[0]
   const cuesDirty = diff.dirty
   // UNG-245: trimmen (ägs av omgivande vy) räknas också som osparad tills den sparats som utkast.
   const trimDirty = trimChanged(trim)
@@ -995,9 +1036,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
         draftRevision.current,
       )
       draftRevision.current = result.draftRevision
-      const fresh = positionedChapters(await client.projects.chapters(projectId))
-      setChapterList(fresh)
-      setSavedChapters(fresh)
+      adoptChapters(await client.projects.chapters(projectId))
       setHistory(emptyHistory())
       onChaptersSaved?.()
       return true
@@ -1033,6 +1072,144 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     } finally {
       setSaving(false)
     }
+  }
+
+  // ---- UNG-249: kapitelverktygen ----
+  // Tid här, Synk, förankring och import skriver direkt till servern. Osparade kapitel sparas först; efteråt läses kapitlen och utkastets
+  // version om. Ångra-historiken töms, eftersom den inte kan gå tillbaka förbi en ändring som redan ligger på servern.
+  async function chapterOp(run: () => Promise<void>, failText: string): Promise<boolean> {
+    actionRef.current = 'save'
+    if (chaptersDirty && !(await saveChapters())) return false
+    setChapterBusy(true)
+    setSaveError('')
+    try {
+      await run()
+      adoptChapters(await client.projects.chapters(projectId))
+      setHistory(emptyHistory())
+      await refreshRevision()
+      onChaptersSaved?.()
+      return true
+    } catch (err) {
+      if (isConflict(err)) void markConflict()
+      else setSaveError(err instanceof Error ? err.message : failText)
+      return false
+    } finally {
+      setChapterBusy(false)
+    }
+  }
+
+  // Utkastets version efter en skrivning vars svar inte bär den.
+  async function refreshRevision() {
+    try {
+      const status = await client.projects.draftStatus(projectId)
+      draftRevision.current = status.draftRevision
+      setDraftStatus(status)
+    } catch {
+      // Nästa skrivning får då en konflikt, som går att ladda om från.
+    }
+  }
+
+  const chapterTime = () => Math.round(playhead() * 10) / 10
+
+  // Tid här för ett kapitel utan tid (ett i taget, eller via Synk-stegningen).
+  function placeChapter(chapterId: string) {
+    return chapterOp(() => client.projects.updateDraftChapter(projectId, chapterId, { offsetSeconds: chapterTime() }, draftRevision.current), 'Tiden kunde inte sättas.')
+  }
+
+  function nextUntimedAfter(chapterId: string, skipped: string[]) {
+    const index = untimedChapters.findIndex((chapter) => chapter.chapterId === chapterId)
+    const rest = index >= 0 ? untimedChapters.slice(index + 1) : untimedChapters
+    return rest.find((chapter) => !skipped.includes(chapter.chapterId)) ?? null
+  }
+
+  async function stepHere() {
+    if (!stepTarget) return
+    const offset = chapterTime()
+    const previous = serverChapters.find((chapter) => chapter.chapterId === lastSteppedId)
+    // Ett kapitel som hamnar före det förra är oftast ett misstag: kräv ett klick till.
+    if (previous && previous.chapterId !== stepTarget.chapterId && offset < previous.offsetSeconds && orderWarning !== stepTarget.chapterId) {
+      setOrderWarning(stepTarget.chapterId)
+      return
+    }
+    setOrderWarning(null)
+    const target = stepTarget.chapterId
+    if (await placeChapter(target)) {
+      setLastSteppedId(target)
+      setStepTargetId(nextUntimedAfter(target, skippedIds)?.chapterId ?? null)
+    }
+  }
+
+  function skipStep() {
+    if (!stepTarget) return
+    const skipped = [...skippedIds, stepTarget.chapterId]
+    setSkippedIds(skipped)
+    setOrderWarning(null)
+    setStepTargetId(nextUntimedAfter(stepTarget.chapterId, skipped)?.chapterId ?? null)
+  }
+
+  function undoStep() {
+    const previous = serverChapters.find((chapter) => chapter.chapterId === lastSteppedId)
+    if (!previous) return
+    setOrderWarning(null)
+    setStepTargetId(previous.chapterId)
+    seekTo(previous.offsetSeconds, false)
+  }
+
+  // Förankring (uppladdad video): ett kapitel med klockslag placeras i videon och de övriga följer med.
+  function pickAnchor(chapterId: string) {
+    setGuide({ step: 2, anchorId: chapterId })
+    const chapter = serverChapters.find((item) => item.chapterId === chapterId)
+    if (chapter && chapter.synced !== false && chapter.timing === 'positioned') seekTo(chapter.offsetSeconds, false)
+    else videoRef.current?.pause()
+  }
+
+  async function applyAnchor(offsetSeconds: number) {
+    const anchorId = guide?.anchorId
+    if (!anchorId) return false
+    let outside = 0
+    const ok = await chapterOp(async () => {
+      outside = (await client.projects.syncChapters(projectId, anchorId, offsetSeconds, draftRevision.current)).outsideVideo
+    }, 'Förankringen misslyckades.')
+    if (ok && outside > 0) setNotice(`${outside} kapitel hamnade utanför videon och är dolda tills de ryms. Justera ankaret eller ta bort dem.`)
+    return ok
+  }
+
+  async function anchorHere() {
+    if (await applyAnchor(Math.round(playhead()))) setGuide((current) => (current ? { ...current, step: 3 } : current))
+  }
+
+  async function nudgeAnchor(deltaSeconds: number) {
+    const anchor = serverChapters.find((chapter) => chapter.chapterId === guide?.anchorId)
+    if (!anchor) return
+    const next = Math.max(0, anchor.offsetSeconds + deltaSeconds)
+    if (await applyAnchor(next)) seekTo(next, false)
+  }
+
+  async function confirmAnchor() {
+    if (await chapterOp(() => client.projects.confirmChapterSync(projectId, draftRevision.current), 'Bekräftelsen misslyckades.')) setGuide(null)
+  }
+
+  async function openChapterImport() {
+    actionRef.current = 'save'
+    if (chaptersDirty && !(await saveChapters())) return
+    setShowChapterImport(true)
+  }
+
+  async function chaptersImported(result: ChapterImportResult) {
+    setShowChapterImport(false)
+    setGuide(null)
+    setSkippedIds([])
+    setLastSteppedId(null)
+    setStepTargetId(null)
+    try {
+      adoptChapters(await client.projects.chapters(projectId))
+    } catch {
+      // Kapitlen läses om vid nästa öppning.
+    }
+    setHistory(emptyHistory())
+    await refreshRevision()
+    onChaptersSaved?.()
+    setNotice(result.outsideVideo > 0 ? `${result.outsideVideo} kapitel låg efter videons slut och har ingen tid än.` : 'Kapitlen är importerade.')
   }
 
   async function refreshStatus() {
@@ -1153,9 +1330,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
       draftRevision.current = status.draftRevision
       setDraftStatus(status)
       await load()
-      const fresh = positionedChapters(await client.projects.chapters(projectId))
-      setChapterList(fresh)
-      setSavedChapters(fresh)
+      adoptChapters(await client.projects.chapters(projectId))
       setHistory(emptyHistory())
       await refreshDraftInfo()
       onSaved?.()
@@ -1190,9 +1365,7 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     setConflict(null)
     await load()
     try {
-      const fresh = positionedChapters(await client.projects.chapters(projectId))
-      setChapterList(fresh)
-      setSavedChapters(fresh)
+      adoptChapters(await client.projects.chapters(projectId))
     } catch {
       // Kapitlen läses om vid nästa öppning.
     }
@@ -1710,6 +1883,94 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
               </div>
             )}
 
+            {toolsEnabled && (anchorToolsVisible || stepperVisible || unplacedChapters.length > 0) && (
+              <div key="chapter-tools" class="ce-chaptertools" aria-label="Kapitelverktyg">
+                {anchorToolsVisible && !guide && (
+                  <div class="od-sync-status">
+                    <span>
+                      {syncState === 'pending'
+                        ? 'Förankringen är inte bekräftad. Publicering är spärrad.'
+                        : syncState === 'confirmed'
+                          ? 'Kapitlen är förankrade mot videon.'
+                          : 'Kapitlen från sändningen är inte förankrade mot videon.'}
+                    </span>
+                    <button
+                      class="btn btn-sm"
+                      type="button"
+                      disabled={chapterBusy}
+                      onClick={() => setGuide(syncState === 'pending'
+                        ? { step: 3, anchorId: serverChapters.find((chapter) => chapter.anchor)?.chapterId ?? null }
+                        : { step: 1, anchorId: null })}
+                    >
+                      {syncState === 'pending' ? 'Fortsätt' : 'Förankra kapitel'}
+                    </button>
+                  </div>
+                )}
+                {guide && (
+                  <AnchorGuide
+                    step={guide.step}
+                    anchorLabel={anchorChapter?.label ?? null}
+                    anchorOffset={anchorChapter && anchorChapter.timing === 'positioned' && anchorChapter.synced !== false ? anchorChapter.offsetSeconds : null}
+                    position={currentTime}
+                    playing={playing}
+                    busy={chapterBusy}
+                    candidates={anchorCandidates.map((chapter) => ({ id: chapter.chapterId, label: chapter.label }))}
+                    onPick={pickAnchor}
+                    onSeekBy={(delta) => seekTo(playhead() + delta, false)}
+                    onTogglePlay={togglePlayback}
+                    onChooseAgain={() => setGuide({ step: 1, anchorId: null })}
+                    onAnchor={() => void anchorHere()}
+                    onGoToAnchor={() => { if (anchorChapter) seekTo(anchorChapter.offsetSeconds, true) }}
+                    onNudge={(delta) => void nudgeAnchor(delta)}
+                    onConfirm={() => void confirmAnchor()}
+                    onClose={() => setGuide(null)}
+                  />
+                )}
+                {stepperVisible && stepTarget && (
+                  <SyncStepper
+                    target={stepTarget}
+                    remaining={untimedChapters.length}
+                    position={currentTime}
+                    playing={playing}
+                    busy={chapterBusy}
+                    canUndo={Boolean(lastSteppedId)}
+                    warning={orderWarning === stepTarget.chapterId}
+                    onSeekBy={(delta) => seekTo(playhead() + delta, false)}
+                    onTogglePlay={togglePlayback}
+                    onStep={() => void stepHere()}
+                    onSkip={skipStep}
+                    onUndo={undoStep}
+                  />
+                )}
+                {unplacedChapters.length > 0 && (
+                  <div class="ce-unplaced" role="group" aria-label="Kapitel utan tid">
+                    <h3 class="ce-side-title">Kapitel utan tid ({unplacedChapters.length})</h3>
+                    <ul>
+                      {unplacedChapters.map((chapter) => (
+                        <li key={chapter.chapterId} class={chapter.chapterId === stepTarget?.chapterId && stepperVisible ? 'is-target' : ''}>
+                          <span class="ce-chapterbar-kind">{chapterKindText(chapter.kind)}</span>
+                          <span class="ce-unplaced-label">{chapter.label}</span>
+                          {chapter.timing === 'untimed' ? (
+                            <button
+                              class="btn btn-sm"
+                              type="button"
+                              disabled={chapterBusy}
+                              title="Sätter kapitlets tid till videons position"
+                              onClick={() => void placeChapter(chapter.chapterId)}
+                            >
+                              Tid här · {formatHms(Math.round(currentTime))}
+                            </button>
+                          ) : (
+                            <span class="ce-unplaced-note">Ej förankrad</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
             {hasCaptions && (SHOW_TOOLS_TAB ? (
               <div class="ce-tabs" role="tablist" aria-label="Under videon">
                 <button class={sideTab === 'tools' ? 'is-active' : ''} role="tab" type="button" aria-selected={sideTab === 'tools'} onClick={() => setSideTab('tools')}>Verktyg</button>
@@ -1825,6 +2086,20 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
                     }}
                   >
                     + Kapitel här
+                  </button>
+                )}
+                {!readOnly && chapterTools && (
+                  <button
+                    class="ce-chip"
+                    type="button"
+                    disabled={saving || chapterBusy}
+                    title="Importerar kapitel från en lista eller dagordningen (ersätter eller lägger till)"
+                    onClick={(event) => {
+                      blurAfterMouse(event)
+                      void openChapterImport()
+                    }}
+                  >
+                    Importera…
                   </button>
                 )}
                 {topChapters && (
@@ -2083,6 +2358,19 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
           startWithBaseChoice={wordDialog.baseChoice}
           onClose={() => setWordDialog(null)}
           onResult={startWordReview}
+        />
+      )}
+
+      {showChapterImport && chapterTools && (
+        <ChapterImportDialog
+          projectId={projectId}
+          agendaId={chapterTools.agendaId}
+          currentChapterCount={serverChapters.length}
+          directClock={!chapterTools.uploadedRecording}
+          defaultDate={chapterTools.importDefaultDate}
+          ifDraftRevision={draftRevision.current}
+          onClose={() => setShowChapterImport(false)}
+          onImported={(result) => void chaptersImported(result)}
         />
       )}
 
