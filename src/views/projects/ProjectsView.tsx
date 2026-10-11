@@ -127,9 +127,11 @@ export function ProjectsView({
     (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
   )
 
-  // Ett borttaget/okänt sparat val ska landa på listan, inte på en tom vy.
+  // Ett borttaget/okänt sparat val ska landa på listan, inte på en tom vy. Jämförs även mot den hämtade listan: när den kommer är
+  // `projects` ännu tom i samma omgång (den fylls av effekten ovan), och då nollställdes valet efter omladdning (UNG-250).
   useEffect(() => {
-    if (selectedId && resource.data && !projects.some((project) => project.id === selectedId)) onSelectedIdChange(null)
+    const known = (list: Project[]) => list.some((project) => project.id === selectedId)
+    if (selectedId && resource.data && !known(projects) && !known(resource.data)) onSelectedIdChange(null)
   }, [projects, selectedId, resource.data])
 
   useEffect(() => {

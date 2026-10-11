@@ -97,6 +97,17 @@ export function App() {
     if (auth.status === 'authed') storeSelection('project', activeProjectId, auth.user.domain.id)
   }, [activeProjectId, auth])
 
+  // UNG-250: editorns adress gäller bara sitt projekt. Lämnar man det projektet (till listan eller ett annat) tas den bort, annars
+  // öppnas editorn av sig själv nästa gång projektet öppnas. Bara vid byte FRÅN projektet, så att länken hinner följas vid inloggning.
+  const previousProjectId = useRef<string | null>(null)
+  useEffect(() => {
+    const editorProjectId = parseEditorLink(window.location.hash)
+    if (editorProjectId && previousProjectId.current === editorProjectId && activeProjectId !== editorProjectId) {
+      window.history.replaceState(null, '', routeHref('projects'))
+    }
+    previousProjectId.current = activeProjectId
+  }, [activeProjectId])
+
   useEffect(() => {
     if (auth.status === 'authed') storeSelection('project-screen', projectScreen, auth.user.domain.id)
   }, [projectScreen, auth])
