@@ -8,7 +8,6 @@ import { formatHms, formatLocalTime } from '../../app/time'
 import type { ProjectActions } from './actions'
 import { OverviewShell } from './OverviewShell'
 import { PlayoutColumns } from './PlayoutColumns'
-import { PreviewOverlay } from './PreviewOverlay'
 import { PlayoutOverlay, type PlayoutAddress } from './PlayoutOverlay'
 import { useModeChange } from './useModeChange'
 import { usePlayoutTestbed } from './playoutTestbed'
@@ -55,7 +54,6 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
   const pause = p.playout.currentPause ?? null
   const [reminderDismissed, setReminderDismissed] = useState(false)
   // UNG-255: förhandsvisningen av det tittarna ser nu.
-  const [showPreview, setShowPreview] = useState(false)
   const [pauseDraft, setPauseDraft] = useState('')
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -141,11 +139,11 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
 
   return (
     <OverviewShell
+      projectId={p.id}
       header={header}
-      player={p.playerUrl ? { url: p.playerUrl, published: true, version: 0 } : null}
-      workOpen={playout.open || showPreview}
+      player={p.playerUrl ? { url: p.playerUrl, version: 0 } : null}
+      workOpen={playout.open}
       overlays={<>
-        {showPreview && <PreviewOverlay project={p} actions={actions} kind="live" onClose={() => setShowPreview(false)} />}
         {playout.open && (
           <PlayoutOverlay
             projectName={p.name}
@@ -219,9 +217,6 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
       <div class="lw-actions">
         <button class="btn btn-primary" type="button" onClick={playout.openPlayout}>
           <Icon name="playlist_play" size={18} /> Spela ut kapitel
-        </button>
-        <button class="btn" type="button" onClick={() => setShowPreview(true)}>
-          <Icon name="visibility" size={18} /> Förhandsvisa
         </button>
         <button class="btn btn-danger" type="button" onClick={() => selectMode('after')}>
           <Icon name="stop_circle" size={18} /> Avsluta sändning…

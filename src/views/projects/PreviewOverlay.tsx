@@ -5,6 +5,7 @@ import { errorMessage } from '../../app/optimistic'
 import type { ProjectActions } from './actions'
 import { PlayoutColumns } from './PlayoutColumns'
 import { PlayoutOverlay } from './PlayoutOverlay'
+import { previewPlayerUrl } from './PlayerPreview'
 import './PreviewOverlay.css'
 
 type ShowAs = 'before' | 'live'
@@ -14,17 +15,6 @@ export type PreviewKind = 'before' | 'live' | 'draft'
 const EMPTY_PLAYOUT: PreviewPlayout = { currentAgendaItemId: null, currentPersonId: null }
 // Länken gäller i 4 timmar (UNG-253); förnyas i god tid så att en vy som står öppen länge inte tappar spelaren.
 const RENEW_LINK_MS = 3 * 60 * 60 * 1000
-// Förhandsvisningen pollas tätt, så att testutspelning och ändrade inställningar syns inom ett par sekunder (bara operatören tittar).
-const PREVIEW_POLL_MS = 2000
-
-/** Spelarens adress för en förhandsvisningslänk: samma spelare som tittarna får, men med ?preview i stället för ?p. */
-export function previewPlayerUrl(playerUrl: string, token: string): string {
-  const url = new URL(playerUrl, window.location.href)
-  url.searchParams.delete('p')
-  url.searchParams.set('preview', token)
-  url.searchParams.set('pollMs', String(PREVIEW_POLL_MS))
-  return url.toString()
-}
 
 interface PreviewOverlayProps {
   project: Project
@@ -37,6 +27,7 @@ interface PreviewOverlayProps {
 // och spelarinställningar. I Before kan operatören visa den som Live och spela ut punkter och namn som bara syns här (testutspelning i
 // servern, inte i projektets tidslinje eller det tittarna ser), ändra inställningar och se resultatet utan att gå live.
 // UNG-270: i After/Ondemand visas utkastet (sparad trim, kapitel och undertexter) före publicering.
+// Dold sedan UNG-270 (ersatt av växlingen på översiktens spelare); ligger kvar för att kunna plockas fram om behovet uppstår.
 export function PreviewOverlay({ project: p, actions, kind, onClose }: PreviewOverlayProps) {
   const beforeBroadcast = kind === 'before'
   const [showAs, setShowAs] = useState<ShowAs>('live')

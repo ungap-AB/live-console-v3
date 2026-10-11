@@ -1,4 +1,4 @@
-/* UNG-252: den inbäddade spelaren som förhandsvisning. */
+/* UNG-252: den inbäddade spelaren. UNG-270: växling till förhandsvisning i ett annat läge. */
 
 .pp {
   display: flex;
@@ -27,4 +27,35 @@
   margin: 0;
   font-size: 13px;
   color: var(--ink-3);
+}
+
+.pp-showas {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.pp-showas button {
+  padding: 4px 10px;
+  border: 0;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pp-showas button + button {
+  border-left: 1px solid var(--line);
+}
+
+.pp-showas button:hover {
+  background: var(--btn-bg-hover);
+}
+
+.pp-showas button.is-active {
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-weight: 600;
 }
