@@ -427,7 +427,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   async function nudgeAnchor(deltaSeconds: number) {
     const anchor = chapters.find((chapter) => chapter.chapterId === guide?.anchorId)
     if (!anchor) return
-    const next = Math.max(0, anchor.offsetSeconds + deltaSeconds)
+    // Hela sekunder (serverns förankring tar heltal); tiden kan ha decimaler om kapitlet sparats från editorn.
+    const next = Math.max(0, Math.round(anchor.offsetSeconds + deltaSeconds))
     if (await applyAnchor(next)) seekVideo(next)
   }
 

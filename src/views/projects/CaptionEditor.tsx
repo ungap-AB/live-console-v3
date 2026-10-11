@@ -1109,7 +1109,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
     }
   }
 
-  const chapterTime = () => Math.round(playhead() * 10) / 10
+  // Hela sekunder: serverns Tid här/Synk (PATCH timeline-draft/chapters) tar emot heltal, som i After-/Ondemand-vyn.
+  const chapterTime = () => Math.round(playhead())
 
   // Tid här för ett kapitel utan tid (ett i taget, eller via Synk-stegningen).
   function placeChapter(chapterId: string) {
@@ -1181,7 +1182,8 @@ export function CaptionEditor({ projectId, projectName, onClose, onSaved, onRege
   async function nudgeAnchor(deltaSeconds: number) {
     const anchor = serverChapters.find((chapter) => chapter.chapterId === guide?.anchorId)
     if (!anchor) return
-    const next = Math.max(0, anchor.offsetSeconds + deltaSeconds)
+    // Hela sekunder (serverns förankring tar heltal); ankarets tid kan ha decimaler om kapitlet sparats från editorn.
+    const next = Math.max(0, Math.round(anchor.offsetSeconds + deltaSeconds))
     if (await applyAnchor(next)) seekTo(next, false)
   }
 
