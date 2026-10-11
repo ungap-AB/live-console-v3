@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { headerActions, publishChangesNotice, trimChanged, trimDraftPayload } from './draftActions.ts'
+import { conflictDescription, headerActions, isConflictCode, overwriteLabel, publishChangesNotice, trimChanged, trimDraftPayload } from './draftActions.ts'
 
 test('trimmen räknas som ändrad först när något skiljer sig från det sparade', () => {
   assert.equal(trimChanged(undefined), false)
@@ -58,4 +58,24 @@ test('meddelandet efter Publicera ändringar säger om undertexterna väntar', (
   assert.match(publishChangesNotice({ captionsPendingApproval: true, captionsPublished: false }), /väntar på godkännande/)
   assert.match(publishChangesNotice({ captionsPendingApproval: false, captionsPublished: true }), /Kapitel och undertexter/)
   assert.equal(publishChangesNotice({ captionsPendingApproval: false, captionsPublished: false }), 'Ändringarna är publicerade.')
+})
+
+test('konfliktkoderna är utkastets och undertexternas', () => {
+  assert.equal(isConflictCode('draft_conflict'), true)
+  assert.equal(isConflictCode('version_conflict'), true)
+  assert.equal(isConflictCode('validation_failed'), false)
+  assert.equal(isConflictCode(undefined), false)
+})
+
+test('konfliktdialogen säger vad som ändrats och vem som sparade undertexterna', () => {
+  assert.equal(conflictDescription({ action: 'save', captionsChanged: true, captionsChangedBy: 'Eva' }), 'Eva har sparat undertexterna sedan du öppnade redigeraren.')
+  assert.equal(conflictDescription({ action: 'save', captionsChanged: true, captionsChangedBy: ' ' }), 'Någon annan har sparat undertexterna sedan du öppnade redigeraren.')
+  assert.equal(conflictDescription({ action: 'publish', captionsChanged: false }), 'Någon annan har ändrat kapitel eller trimning sedan du öppnade redigeraren.')
+})
+
+test('Skriv över gör om det som stoppades', () => {
+  assert.equal(overwriteLabel('save'), 'Skriv över')
+  assert.equal(overwriteLabel('publish'), 'Skriv över och publicera')
+  assert.equal(overwriteLabel('approve'), 'Skriv över och godkänn')
+  assert.equal(overwriteLabel('discard'), 'Förkasta ändå')
 })

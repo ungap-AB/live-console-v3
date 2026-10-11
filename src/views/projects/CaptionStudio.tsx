@@ -24,12 +24,14 @@ interface CaptionStudioProps {
   onChaptersChanged?: () => void
   /** Trimningen (originalets tid) och hur den ändras. Saknas den visas inga trimkontroller i redigeraren. */
   trim?: EditorTrim
+  /** UNG-247: trimningen är låst (publicerat), med en väg till Avpublicera. */
+  trimLock?: { onUnpublish: () => void }
   onClose: () => void
 }
 
 // UNG-165: undertextstudion. Finns ett utkast öppnas redigeraren. Annars är skapandet en overlay över en dummy av redigeraren, så att man
 // anar nästa steg: overlayen finns kvar så länge bearbetningen pågår och spärrar åtkomsten, och byts mot redigeraren när utkastet är klart.
-export function CaptionStudio({ projectId, projectName, videoDurationSeconds, posterUrl, generation, phase, setGeneration, refresh, onChanged, onChaptersChanged, trim, onClose }: CaptionStudioProps) {
+export function CaptionStudio({ projectId, projectName, videoDurationSeconds, posterUrl, generation, phase, setGeneration, refresh, onChanged, onChaptersChanged, trim, trimLock, onClose }: CaptionStudioProps) {
   const view = studioView(phase)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -45,7 +47,7 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, po
   }, [view])
 
   if (view === 'editor') {
-    return <CaptionEditor projectId={projectId} projectName={projectName} onClose={onClose} onSaved={() => { onChanged(); void refresh() }} onRegenerated={setGeneration} onChaptersSaved={onChaptersChanged} trim={trim} />
+    return <CaptionEditor projectId={projectId} projectName={projectName} onClose={onClose} onSaved={() => { onChanged(); void refresh() }} onRegenerated={setGeneration} onChaptersSaved={onChaptersChanged} trim={trim} trimLock={trimLock} />
   }
 
   async function start() {

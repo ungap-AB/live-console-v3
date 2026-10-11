@@ -15,11 +15,13 @@ interface CaptionEntryProps {
   onChaptersChanged?: () => void
   /** Trimningen som redigeraren visar och ändrar (ägs av ondemand-vyn). */
   trim?: EditorTrim
+  /** UNG-247: trimningen är låst (publicerat), med en väg till Avpublicera. */
+  trimLock?: { onUnpublish: () => void }
 }
 
 // UNG-165: knappen ovanför videofönstret som leder direkt till att skapa eller redigera undertexter. Etiketten följer serverns läge
 // (skapa, genererar n %, redigera). Knappen äger också studion (redigeraren med skapandet som overlay) och dess öppna/stängda läge.
-export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged, trim }: CaptionEntryProps) {
+export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged, trim, trimLock }: CaptionEntryProps) {
   const captions = useCaptionGeneration(projectId)
   // Öppnas direkt när man kommit hit via knappen i projektlistan.
   const [open, setOpen] = useState(() => consumeCaptionStudio(projectId))
@@ -50,6 +52,7 @@ export function CaptionEntry({ projectId, projectName, videoDurationSeconds, pos
           onChanged={onChanged}
           onChaptersChanged={onChaptersChanged}
           trim={trim}
+          trimLock={trimLock}
           onClose={() => {
             setOpen(false)
             void captions.refresh()

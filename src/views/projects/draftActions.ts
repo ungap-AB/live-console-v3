@@ -74,3 +74,40 @@ export function publishChangesNotice(result: { captionsPendingApproval: boolean;
   }
   return result.captionsPublished ? 'Kapitel och undertexter är publicerade.' : 'Ändringarna är publicerade.'
 }
+
+// ---- UNG-246: konflikt i utkastet ----
+
+/** Det som gick att göra i redigeraren och som kan stoppas av en konflikt (och göras om efter "Skriv över"). */
+export type DraftAction = 'save' | 'approve' | 'publish' | 'discard'
+
+/** Felkoder som betyder att någon annan har sparat sedan redigeraren öppnades: utkastet (draft_conflict) eller undertexterna (version_conflict). */
+export function isConflictCode(code: string | undefined): boolean {
+  return code === 'draft_conflict' || code === 'version_conflict'
+}
+
+export interface ConflictInfo {
+  action: DraftAction
+  /** Undertexterna har en nyare version på servern än den redigeraren utgick från. */
+  captionsChanged: boolean
+  /** Vem som sparade undertexterna senast, om servern vet det. */
+  captionsChangedBy?: string | null
+}
+
+/** Vad som har ändrats av den andre, så långt servern kan säga det. */
+export function conflictDescription(info: ConflictInfo): string {
+  if (info.captionsChanged) {
+    const who = info.captionsChangedBy?.trim()
+    return `${who || 'Någon annan'} har sparat undertexterna sedan du öppnade redigeraren.`
+  }
+  return 'Någon annan har ändrat kapitel eller trimning sedan du öppnade redigeraren.'
+}
+
+/** Knappen som gör om det som stoppades, med dina ändringar ovanpå det som nu finns på servern. */
+export function overwriteLabel(action: DraftAction): string {
+  switch (action) {
+    case 'publish': return 'Skriv över och publicera'
+    case 'approve': return 'Skriv över och godkänn'
+    case 'discard': return 'Förkasta ändå'
+    default: return 'Skriv över'
+  }
+}

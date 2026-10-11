@@ -1030,8 +1030,10 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                       }}
                       // Trimningen följer med in i redigeraren (samma tillstånd som trimvyn; tillämpas vid Publicera ondemand).
                       trim={showTrimControls && !externalVideo
-                        ? { start: mockTrimStart, end: mockTrimEnd, savedStart: savedTrimStart, savedEnd: savedTrimEnd, onChange: changeTrim, onSaved: () => void actions.refreshProject() }
+                        ? { start: mockTrimStart, end: mockTrimEnd, savedStart: savedTrimStart, savedEnd: savedTrimEnd, onChange: changeTrim, onSaved: () => void actions.refreshProject(), onReload: () => void actions.refreshProject() }
                         : undefined}
+                      // UNG-247: publicerat: trimningen visas låst i redigeraren, med Avpublicera (samma bekräftelse som lägesväljaren).
+                      trimLock={p.publicMode === 'ondemand' && p.publication.state === 'published' ? { onUnpublish: () => selectMode('after') } : undefined}
                     />
                   ) : undefined}
                 />

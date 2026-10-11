@@ -961,6 +961,16 @@ button.ce-time:hover {
   margin-top: 10px;
 }
 
+/* UNG-247: förklaringen under den låsta trimningen. */
+.ce-trim-locked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted, #5b6672);
+}
+
 /* ---- UNG-245 ---- */
 .ce-unpublished {
   color: var(--warn);

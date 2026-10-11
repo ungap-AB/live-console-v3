@@ -25,6 +25,8 @@ interface TrimBarProps {
   /** Minsta längd som får bli kvar (sekunder). */
   minKeep?: number
   disabled?: boolean
+  /** UNG-247: trimningen är låst (publicerad). Balkarna står still; spelknapparna fungerar och ett tryck på spåret söker i videon. */
+  locked?: boolean
   /** Nytt intervall efter att en balk dragits eller flyttats med tangentbordet. */
   onChange: (range: TrimRange) => void
   /** Videons position ska följa balken (anropas under dragning och vid tangentflytt). Föräldern sätter positionen och pausar. */
@@ -38,7 +40,7 @@ interface TrimBarProps {
 // kapitelmarkeringar (de utanför tonas ned) och spelhuvudet. Ett tryck på spåret tar tag i närmaste balk. Balkarna går att flytta med
 // tangentbordet (pil 1 s, Skift+pil 10 s). Videon följer balken. Komponenten har ingen egen serverlogik: den får värden och anropar callbacks.
 export function TrimBar({
-  duration, start, end, position, chapters = [], minKeep = DEFAULT_MIN_KEEP_SECONDS, disabled = false,
+  duration, start, end, position, chapters = [], minKeep = DEFAULT_MIN_KEEP_SECONDS, disabled = false, locked = false,
   onChange, onSeek, onPlayFromStart, onPlayEnd,
 }: TrimBarProps) {
   const surfaceRef = useRef<HTMLDivElement>(null)
@@ -65,6 +67,10 @@ export function TrimBar({
 
   function onPointerDown(event: PointerEvent) {
     if (disabled || event.button !== 0) return
+    if (locked) {
+      onSeek(timeAt(event))
+      return
+    }
     const time = timeAt(event)
     const handle = nearestHandle(time, start, end)
     dragging.current = handle
@@ -87,7 +93,7 @@ export function TrimBar({
   }
 
   function onKeyDown(handle: Handle, event: KeyboardEvent) {
-    if (disabled) return
+    if (disabled || locked) return
     const delta = keyDelta(event.key, event.shiftKey)
     if (delta === null) return
     event.preventDefault()
@@ -100,7 +106,7 @@ export function TrimBar({
   ]
 
   return (
-    <div class={`trimbar${disabled ? ' is-disabled' : ''}`}>
+    <div class={`trimbar${disabled ? ' is-disabled' : ''}${locked ? ' is-locked' : ''}`}>
       <div class="trimbar-surface" ref={surfaceRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd}>
         <div class="trimbar-track">
           <div class="trimbar-cut" style={{ left: '0', width: percent(start) }} />
@@ -123,14 +129,14 @@ export function TrimBar({
             class="trimbar-handle"
             style={{ left: percent(time) }}
             role="slider"
-            tabIndex={disabled ? -1 : 0}
+            tabIndex={disabled || locked ? -1 : 0}
             aria-label={handleLabel(handle)}
             aria-orientation="horizontal"
             aria-valuemin={0}
             aria-valuemax={duration}
             aria-valuenow={time}
             aria-valuetext={handleValueText(handle, time)}
-            aria-disabled={disabled}
+            aria-disabled={disabled || locked}
             onKeyDown={(event) => onKeyDown(handle, event)}
           />
         ))}

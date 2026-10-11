@@ -21,6 +21,16 @@
   cursor: default;
 }
 
+/* UNG-247: låst trimning: ett tryck söker i videon, balkarna går inte att flytta. */
+.trimbar.is-locked .trimbar-surface {
+  cursor: pointer;
+}
+
+.trimbar.is-locked .trimbar-handle {
+  cursor: default;
+  opacity: 0.55;
+}
+
 .trimbar-track {
   position: absolute;
   top: 8px;
