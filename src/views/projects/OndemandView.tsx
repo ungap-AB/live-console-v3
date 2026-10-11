@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Chapter, ChapterImportResult, CueKind, DraftStatus, ForkResult, Project, ProjectRecording, Recording } from '../../data/types'
+import type { Chapter, DraftStatus, ForkResult, Project, ProjectRecording, Recording } from '../../data/types'
 import { formatBytes, formatDateTime, formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
-import { Icon } from '../../components/Icon'
 import { VideoStatusRow } from './VideoStatusRow'
 import { CaptionEntry } from './CaptionEntry'
 import { VideoActionsDialog } from './VideoActionsDialog'
@@ -20,17 +19,10 @@ import { buildPublishSteps } from './publishProgress'
 import type { PublishStep, PublishStepKey } from './publishProgress'
 import { UploadPanel } from './UploadPanel'
 import { isExternalSource, isOperatorSupplied } from './recordingSource'
-import { chapterGroupInfo, collapsibleGroupIds, visibleChapters } from './chapterGroups'
-import { TrimBar } from '../../components/TrimBar'
-import { VideoPositionControls } from '../../components/VideoPositionControls'
-import { PositionScrubber } from '../../components/PositionScrubber'
-import { playEndFrom, type TrimRange } from '../../components/trimBarLogic'
-import { canMoveHere, chapterNote, chapterNoteText, moveMessage, type ChapterMove } from './trimSummaryLogic'
-import './TrimChapters.css'
+import type { TrimRange } from '../../components/trimBarLogic'
+import { trimDraftPayload } from './draftActions'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
-import { ChapterImportDialog } from './ChapterImportDialog'
-import { AnchorGuide, SyncStepper } from './ChapterSyncTools'
 import { ProjectHeader } from './ProjectHeader'
 import { PlayerPreview } from './PlayerPreview'
 import { useModeChange } from './useModeChange'
@@ -44,21 +36,15 @@ interface OndemandViewProps {
   onForked?: (result: ForkResult) => void
 }
 
-// Så länge ett klick på en kapitelrad väntar på att bli ett dubbelklick (redigera texten) innan raden väljs.
-const CHAPTER_CLICK_DELAY_MS = 220
-
-const CHAPTER_KIND: Record<CueKind, string> = {
-  agendaItem: 'Ärende',
-  person: 'Talare',
-  exclamation: 'Utrop',
-  pauseIn: 'Paus',
-  pauseOut: 'Paus slut',
-}
-
 // Under denna längd flaggas en sändning som misstänkt kort (t.ex. ett test)
 // i "Byt sändning"-dialogen, så operatören inte råkar välja fel av misstag.
 const VERY_SHORT_RECORDING_SECONDS = 60
 
+// Publiceringshistorikens åtgärder som säger när innehållet senast publicerades.
+const PUBLISH_ACTIONS = new Set(['publish', 'publish-changes'])
+
+// UNG-251: After- och Ondemand-vyn är översikt och publicering. All redigering (trim, kapitel, undertexter) sker i editorn,
+// som öppnas med Redigera; vyn visar läget, en sammanfattning, förhandsvisningen och publiceringsknapparna.
 export function OndemandView({ project: p, actions, onBack, onForked }: OndemandViewProps) {
   const { selectMode, dialog } = useModeChange(p, actions)
   const live = useLiveChannel(p.channel?.id ?? null)
@@ -67,33 +53,19 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   const [original, setOriginal] = useState<Recording | null>(null)
   const [projectChapters, setProjectChapters] = useState<Chapter[]>([])
   const [projectChaptersLoaded, setProjectChaptersLoaded] = useState(false)
-  const [mockTrimStart, setMockTrimStart] = useState(0)
-  const [mockTrimEnd, setMockTrimEnd] = useState(0)
-  const previewVideoRef = useRef<HTMLVideoElement>(null)
-  const chapterInputRef = useRef<HTMLInputElement>(null)
-  const [previewSeekSeconds, setPreviewSeekSeconds] = useState<number | null>(null)
-  const [previewPlayRequest, setPreviewPlayRequest] = useState(0)
-  const [previewPosition, setPreviewPosition] = useState(0)
-  const [draftOffsets, setDraftOffsets] = useState<Record<number, number>>({})
-  const [savedOffsets, setSavedOffsets] = useState<Record<number, number>>({})
-  // UNG-235: senaste kapitelflytten (Flytta hit), som kan ångras.
-  const [lastMove, setLastMove] = useState<ChapterMove | null>(null)
-  const [selectedChapter, setSelectedChapter] = useState<number | null>(null)
-  const [previewPlaying, setPreviewPlaying] = useState(false)
-  const [chapterLabels, setChapterLabels] = useState<Record<number, string>>({})
-  const [editingChapter, setEditingChapter] = useState<number | null>(null)
-  const [chapterDraft, setChapterDraft] = useState('')
-  const [deletingChapter, setDeletingChapter] = useState<number | null>(null)
-  const deleteConfirmationTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Trimningen som editorn visar och ändrar. Ägs här, eftersom Publicera i After trimmar med den.
+  const [trimStart, setTrimStart] = useState(0)
+  const [trimEnd, setTrimEnd] = useState(0)
+  // Videon i vyn finns bara för att granska en uppladdad fil innan den godkänns.
+  const approvalVideoRef = useRef<HTMLVideoElement>(null)
   const [confirmOndemand, setConfirmOndemand] = useState(false)
   const [confirmUndoAll, setConfirmUndoAll] = useState(false)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [publishSteps, setPublishSteps] = useState<PublishStep[]>([])
   const [publishStep, setPublishStep] = useState<PublishStepKey>('publish')
   // UNG-181: kvittot efter publiceringen. Står kvar tills det stängs.
   const [publishOutcome, setPublishOutcome] = useState<{ kind: 'published'; wasPublished: boolean } | { kind: 'failed'; step: PublishStepKey } | null>(null)
-  // Kapitel som hämtas om (efter publicering) medan den förra listan fortfarande visas.
-  const [chaptersRefreshing, setChaptersRefreshing] = useState(false)
   const chaptersProjectRef = useRef<string | null>(null)
   const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false)
   // UNG-245: servern avgör om utkastet skiljer sig från det publicerade (överlever omladdning, och gäller ändringar gjorda i editorn).
@@ -104,47 +76,20 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   const [switchingRecording, setSwitchingRecording] = useState(false)
   const [showRecordingPicker, setShowRecordingPicker] = useState(false)
   const [pendingRecordingId, setPendingRecordingId] = useState<string | null>(null)
-  // UNG-58: nedladdning av original- och/eller trimmad inspelning — vanlig
-  // operatör har ingen tillgång till Videoarkivet där samma funktion redan
-  // finns, så den behövs här också. Nyckel = recording-id (original ELLER
-  // trim har olika id:n). Servern kör jobbet; framsteget visas i jobbfältet (UNG-80).
 
   // Misslyckad transkodning: servern tar bort inspelningsraden, så projektet går
   // från "bearbetas" (upload) till ingen inspelning alls — berätta varför.
   const [uploadFailed, setUploadFailed] = useState(false)
-  const [syncing, setSyncing] = useState(false)
-  const [guide, setGuide] = useState<{ step: 1 | 2 | 3; anchorId: string | null } | null>(null)
-  const [guideDismissed, setGuideDismissed] = useState(false)
-  const [showImport, setShowImport] = useState(false)
-  // Synk-knappen: vilket kapitel som står på tur, vilka som hoppats över och vilket som sattes senast.
-  const [stepTargetId, setStepTargetId] = useState<string | null>(null)
-  const [skippedIds, setSkippedIds] = useState<string[]>([])
-  const [lastSteppedId, setLastSteppedId] = useState<string | null>(null)
-  const [orderWarning, setOrderWarning] = useState<string | null>(null)
   const [showVideoDialog, setShowVideoDialog] = useState(false)
   // Flik som "Video och undertexter" öppnas på när den öppnas från Exportera och importera.
   const [videoDialogTab, setVideoDialogTab] = useState<VideoTab | undefined>(undefined)
   const [showExportDialog, setShowExportDialog] = useState(false)
-  // UNG-103: punkter vars talare är hopfällda (chapterId för punkten).
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set())
   const [uploadNote, setUploadNote] = useState('')
-  const [syncNote, setSyncNote] = useState('')
+  const [actionNote, setActionNote] = useState('')
   const wasUploadProcessing = useRef(false)
 
   const recordingId = p.recording?.id
   const recordingState = p.recording?.state
-
-  // Guiden för att förankra kapitellistan mot en uppladdad video startar själv när
-  // kapitel väntar på förankring, och återupptas i steg 3 om förankringen inte bekräftats.
-  useEffect(() => {
-    if (!projectChaptersLoaded || !isOperatorSupplied(p.recording?.source)) return
-    const state = projectChapters.find((chapter) => chapter.syncState)?.syncState
-    if (state === 'pending') {
-      setGuide((current) => current ?? { step: 3, anchorId: projectChapters.find((chapter) => chapter.anchor)?.chapterId ?? null })
-    } else if (state === 'none' && !guideDismissed && projectChapters.some((chapter) => chapter.timing === 'clock')) {
-      setGuide((current) => current ?? { step: 1, anchorId: null })
-    }
-  }, [projectChaptersLoaded, projectChapters, p.recording?.source, guideDismissed])
 
   useEffect(() => {
     const processing = p.recording?.state === 'processing' && p.recording.source === 'upload'
@@ -156,15 +101,14 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   useEffect(() => {
     const active = recording
     if (!active) return
-    setMockTrimStart(active.trimRange?.startOffsetSeconds ?? 0)
-    setMockTrimEnd(active.trimRange?.endOffsetSeconds ?? active.durationSeconds)
+    setTrimStart(active.trimRange?.startOffsetSeconds ?? 0)
+    setTrimEnd(active.trimRange?.endOffsetSeconds ?? active.durationSeconds)
   }, [recording?.id, recording?.durationSeconds, recording?.trimRange?.startOffsetSeconds, recording?.trimRange?.endOffsetSeconds, p.publicMode, recordingId])
 
   useEffect(() => {
     if (!p.trimDraft) return
-    setMockTrimStart(p.trimDraft.startOffsetSeconds)
-    setMockTrimEnd(p.trimDraft.endOffsetSeconds)
-    setSavedOffsets(Object.fromEntries(p.trimDraft.chapters.map((chapter) => [chapter.index, chapter.offsetSeconds])))
+    setTrimStart(p.trimDraft.startOffsetSeconds)
+    setTrimEnd(p.trimDraft.endOffsetSeconds)
   }, [p.trimDraft])
 
   useEffect(() => {
@@ -195,27 +139,21 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
       setProjectChaptersLoaded(false)
       return
     }
-    // UNG-106: byter vi projekt töms listan; annars (nytt läge eller ny inspelning) ligger den förra kvar tills den nya är hämtad,
-    // så att kapitelområdet inte blir tomt och ser ut som ett fel.
+    // UNG-106: byter vi projekt töms listan; annars ligger den förra kvar tills den nya är hämtad.
     if (chaptersProjectRef.current !== p.id) {
       chaptersProjectRef.current = p.id
       setProjectChapters([])
       setProjectChaptersLoaded(false)
-    } else {
-      setChaptersRefreshing(true)
     }
     client.projects.chapters(p.id).then((nextChapters) => {
       if (!cancelled) {
         setProjectChapters(nextChapters)
-        setChapterLabels({})
         setProjectChaptersLoaded(true)
-        setChaptersRefreshing(false)
       }
     }).catch(() => {
       if (!cancelled) {
         setProjectChapters([])
         setProjectChaptersLoaded(true)
-        setChaptersRefreshing(false)
       }
     })
     return () => {
@@ -232,7 +170,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
       void actions.refreshProject().catch(() => undefined)
       void client.projects.chapters(p.id).then((nextChapters) => {
         setProjectChapters(nextChapters)
-        setChapterLabels({})
         setProjectChaptersLoaded(true)
       }).catch(() => undefined)
     }
@@ -271,6 +208,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return null
 
   const isAfter = p.publicMode === 'after'
+  const published = p.publication.state === 'published'
   const livePhase = live.health?.livePhase?.toLowerCase()
   const broadcastInProgress = live.health?.state?.toLowerCase() === 'live' || livePhase === 'live'
   const recordingProcessing = !broadcastInProgress && (p.recording?.state === 'recording' || p.recording?.state === 'processing')
@@ -283,76 +221,38 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     const timer = window.setTimeout(() => setProcessingStuck(true), 90_000)
     return () => window.clearTimeout(timer)
   }, [recordingProcessing, p.recording?.id])
-  const chapters = !projectChaptersLoaded
-    ? []
-    : projectChapters
+  const chapters = projectChaptersLoaded ? projectChapters : []
   const chaptersReadOnly = chapters.some((chapter) => chapter.readOnly)
   const syncState = chapters.find((chapter) => chapter.syncState)?.syncState
-  const hasImportedChapters = chapters.some((chapter) => chapter.anchorable)
-  const untimedChapters = chapters.filter((chapter) => chapter.timing === 'untimed')
-  const anchorChapter = guide?.anchorId ? chapters.find((chapter) => chapter.chapterId === guide.anchorId) : undefined
   const source = original ?? (recording?.kind === 'original' ? recording : null)
-  const mockTrimDuration = source?.durationSeconds ?? 0
+  const sourceDuration = source?.durationSeconds ?? 0
   const previewUrl = source?.hlsUrl ?? ''
-  // Uppladdning är bara aktuell innan något är publicerat — i Ondemand-läge utan
-  // publicering ("Ladda upp video" från Before) eller medan ingenting finns.
   const awaitingApproval = p.recording?.state === 'awaitingApproval'
   // En uppladdning som väntar på bearbetning eller godkännande spärrar allt annat.
   const uploadPending = awaitingApproval || (recordingProcessing && isOperatorSupplied(p.recording?.source))
-  const canUpload = p.publication.state !== 'published' && !broadcastInProgress && !recordingProcessing && !awaitingApproval
-  // Finns ingen inspelning är panelen öppen från början; annars bakom en knapp så att
-  // det vanliga flödet (trimma, publicera) inte störs.
+  const canUpload = !published && !broadcastInProgress && !recordingProcessing && !awaitingApproval
+  // Finns ingen inspelning är uppladdningspanelen öppen från början; annars nås den via "…".
   const showUploadCard = canUpload && !source
   const uploadedRecording = isOperatorSupplied(p.recording?.source)
   // UNG-102: en extern HLS-adress kopieras inte — den kan inte trimmas och inte laddas ned som MP4.
   const externalVideo = isExternalSource(p.recording?.source)
   const recordingReady = p.recording?.state === 'recorded' || p.recording?.state === 'trimmed' || p.recording?.state === 'published'
-  const captionsEnabled = recordingReady && !awaitingApproval && !uploadPending
-  const uploadBlockedReason = p.publication.state === 'published'
+  const editorAvailable = recordingReady && !uploadPending
+  const uploadBlockedReason = published
     ? 'Projektet är publicerat. Ta tillbaka publiceringen om du vill byta video.'
     : broadcastInProgress
       ? 'En sändning pågår. Vänta tills den är avslutad.'
       : 'En video bearbetas eller väntar på ditt godkännande. Slutför det först.'
-  // UNG-169: kapitel utan tid kan stegas fram för alla färdiga inspelningar, inte bara uppladdade (importerade listor utan tid).
-  const stepperVisible = !awaitingApproval && !chaptersReadOnly && !guide && untimedChapters.length > 0
-  const stepTarget = chapters.find((chapter) => chapter.chapterId === stepTargetId)
-    ?? untimedChapters.find((chapter) => !skippedIds.includes(chapter.chapterId))
-    ?? untimedChapters[0]
 
-  // UNG-103: talarna kan fällas ihop under sin punkt. Ett kapitel som redigeras hålls alltid synligt.
-  const groupInfo = chapterGroupInfo(chapters)
-  const collapsibleIds = collapsibleGroupIds(chapters)
-  const editedChapterId = editingChapter !== null ? chapters[editingChapter]?.chapterId : null
-  const visibleFlags = visibleChapters(chapters, collapsedGroups, [editedChapterId])
-  const allCollapsed = collapsibleIds.length > 0 && collapsibleIds.every((id) => collapsedGroups.has(id))
-  const noneCollapsed = collapsibleIds.every((id) => !collapsedGroups.has(id))
-  const revealIds = [chapters[selectedChapter ?? -1]?.chapterId, guide?.anchorId, stepperVisible ? stepTarget?.chapterId : null]
-
-  // UNG-103: väljs eller förankras ett kapitel i en hopfälld punkt fälls punkten ut så kapitlet syns.
-  const revealKey = revealIds.join('|')
-  useEffect(() => {
-    const groups = new Set<string>()
-    for (const id of revealIds) {
-      const index = id ? chapters.findIndex((chapter) => chapter.chapterId === id) : -1
-      const groupId = index >= 0 ? groupInfo[index].groupId : null
-      if (groupId) groups.add(groupId)
-    }
-    if (![...groups].some((groupId) => collapsedGroups.has(groupId))) return
-    setCollapsedGroups((prev) => {
-      const next = new Set(prev)
-      groups.forEach((groupId) => next.delete(groupId))
-      return next
-    })
-  }, [revealKey])
-
-  function toggleGroup(groupId: string) {
-    setCollapsedGroups((prev) => {
-      const next = new Set(prev)
-      if (next.has(groupId)) next.delete(groupId)
-      else next.add(groupId)
-      return next
-    })
-  }
+  // Sändningens datum (lokalt), som klockslag utan datum tolkas mot vid import till en inspelad sändning.
+  const activeStartedAt = projectRecordings.find((item) => item.isActive)?.startedAt
+  const importDefaultDate = activeStartedAt
+    ? (() => {
+        const date = new Date(activeStartedAt)
+        const pad = (value: number) => String(value).padStart(2, '0')
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+      })()
+    : undefined
 
   async function cancelPendingUpload() {
     if (!p.recording) return
@@ -365,167 +265,10 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     }
   }
 
-  async function reloadChapters() {
-    const next = await client.projects.chapters(p.id)
-    setProjectChapters(next)
-    setChapterLabels({})
-    setProjectChaptersLoaded(true)
-  }
-
-  function startGuide() {
-    setGuideDismissed(false)
-    setSyncNote('')
-    setGuide({ step: 1, anchorId: null })
-  }
-
-  function closeGuide() {
-    setGuideDismissed(true)
-    setGuide(null)
-  }
-
-  function chooseAnchor(index: number) {
-    const chapter = chapters[index]
-    if (!chapter?.anchorable) return
-    setSyncNote('')
-    setGuide({ step: 2, anchorId: chapter.chapterId })
-    // Ett redan förankrat kapitel har en tid att utgå från — hoppa dit.
-    if (chapter.synced !== false) selectChapter(index)
-    else pausePreview()
-  }
-
-  function seekVideo(seconds: number) {
-    const video = previewVideoRef.current
-    if (!video) return
-    video.currentTime = seconds
-    setPreviewPosition(seconds)
-  }
-
-  async function applyAnchor(offsetSeconds: number) {
-    if (!guide?.anchorId) return false
-    setSyncing(true)
-    setSyncNote('')
-    try {
-      const result = await client.projects.syncChapters(p.id, guide.anchorId, offsetSeconds)
-      await reloadChapters()
-      setHasUnpublishedChanges(true)
-      if (result.outsideVideo > 0) {
-        setSyncNote(`${result.outsideVideo} kapitel hamnade utanför videon och är dolda tills de ryms — justera ankaret eller ta bort dem.`)
-      }
-      return true
-    } catch (error) {
-      setSyncNote(error instanceof Error ? error.message : 'Förankringen misslyckades.')
-      return false
-    } finally {
-      setSyncing(false)
-    }
-  }
-
-  async function anchorHere() {
-    if (await applyAnchor(Math.round(previewPosition))) setGuide((current) => (current ? { ...current, step: 3 } : current))
-  }
-
-  async function nudgeAnchor(deltaSeconds: number) {
-    const anchor = chapters.find((chapter) => chapter.chapterId === guide?.anchorId)
-    if (!anchor) return
-    // Hela sekunder (serverns förankring tar heltal); tiden kan ha decimaler om kapitlet sparats från editorn.
-    const next = Math.max(0, Math.round(anchor.offsetSeconds + deltaSeconds))
-    if (await applyAnchor(next)) seekVideo(next)
-  }
-
-  async function confirmAnchor() {
-    setSyncing(true)
-    try {
-      await client.projects.confirmChapterSync(p.id)
-      await reloadChapters()
-      setGuide(null)
-    } catch (error) {
-      setSyncNote(error instanceof Error ? error.message : 'Bekräftelsen misslyckades.')
-    } finally {
-      setSyncing(false)
-    }
-  }
-
-  // Nästa kapitel utan tid efter det angivna, i listans ordning (utan de överhoppade).
-  function nextUntimedAfter(chapterId: string, skipped: string[]) {
-    const index = untimedChapters.findIndex((chapter) => chapter.chapterId === chapterId)
-    const rest = index >= 0 ? untimedChapters.slice(index + 1) : untimedChapters
-    return rest.find((chapter) => !skipped.includes(chapter.chapterId)) ?? null
-  }
-
-  async function stepHere() {
-    if (!stepTarget) return
-    const offset = Math.round(previewPosition)
-    const previous = chapters.find((chapter) => chapter.chapterId === lastSteppedId)
-    // Ett kapitel som hamnar före det förra är oftast ett misstag — kräv ett klick till.
-    if (previous && previous.chapterId !== stepTarget.chapterId && offset < previous.offsetSeconds && orderWarning !== stepTarget.chapterId) {
-      setOrderWarning(stepTarget.chapterId)
-      return
-    }
-    setSyncing(true)
-    setSyncNote('')
-    setOrderWarning(null)
-    try {
-      await client.projects.updateDraftChapter(p.id, stepTarget.chapterId, { offsetSeconds: offset })
-      const next = nextUntimedAfter(stepTarget.chapterId, skippedIds)
-      setLastSteppedId(stepTarget.chapterId)
-      setStepTargetId(next?.chapterId ?? null)
-      await reloadChapters()
-      setHasUnpublishedChanges(true)
-    } catch (error) {
-      setSyncNote(error instanceof Error ? error.message : 'Tiden kunde inte sättas.')
-    } finally {
-      setSyncing(false)
-    }
-  }
-
-  function skipStep() {
-    if (!stepTarget) return
-    const skipped = [...skippedIds, stepTarget.chapterId]
-    setSkippedIds(skipped)
-    setOrderWarning(null)
-    setStepTargetId(nextUntimedAfter(stepTarget.chapterId, skipped)?.chapterId ?? null)
-  }
-
-  function undoStep() {
-    const previous = chapters.find((chapter) => chapter.chapterId === lastSteppedId)
-    if (!previous) return
-    setOrderWarning(null)
-    setStepTargetId(previous.chapterId)
-    seekVideo(previous.offsetSeconds)
-  }
-
-  // Sändningens datum (lokalt), som klockslag utan datum tolkas mot vid import till en inspelad sändning.
-  const activeStartedAt = projectRecordings.find((item) => item.isActive)?.startedAt
-  const importDefaultDate = activeStartedAt
-    ? (() => {
-        const date = new Date(activeStartedAt)
-        const pad = (value: number) => String(value).padStart(2, '0')
-        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-      })()
-    : undefined
-
-  async function onChaptersImported(result: ChapterImportResult) {
-    setShowImport(false)
-    setGuide(null)
-    setGuideDismissed(false)
-    setSkippedIds([])
-    setLastSteppedId(null)
-    setStepTargetId(null)
-    await reloadChapters()
-    setHasUnpublishedChanges(true)
-    setSyncNote(result.outsideVideo > 0 ? `${result.outsideVideo} kapitel låg efter videons slut och har ingen tid än.` : '')
-  }
-
-  async function addChapterHere(kind: CueKind, label: string) {
-    await client.projects.addChapter(p.id, { kind, label, offsetSeconds: Math.round(previewPosition) })
-    await reloadChapters()
-    setHasUnpublishedChanges(true)
-  }
-
-  async function switchActiveRecording(recordingId: string) {
+  async function switchActiveRecording(nextRecordingId: string) {
     setSwitchingRecording(true)
     try {
-      await client.projects.setActiveRecording(p.id, recordingId)
+      await client.projects.setActiveRecording(p.id, nextRecordingId)
       await actions.refreshProject()
       const [nextRecordings, nextChapters] = await Promise.all([
         client.projects.recordings(p.id),
@@ -533,11 +276,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
       ])
       setProjectRecordings(nextRecordings)
       setProjectChapters(nextChapters)
-      setChapterLabels({})
       setProjectChaptersLoaded(true)
-      setSelectedChapter(null)
-      setDraftOffsets({})
-      setSavedOffsets({})
     } catch {
       // Lämna nuvarande val; operatören kan försöka igen.
     } finally {
@@ -556,9 +295,10 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     await switchActiveRecording(pendingRecordingId)
   }
 
+  // Videon som granskas innan en uppladdad fil godkänns.
   useEffect(() => {
-    const video = previewVideoRef.current
-    if (!video || !previewUrl || !isPlayerSupported) return
+    const video = approvalVideoRef.current
+    if (!video || !previewUrl || !awaitingApproval || !isPlayerSupported) return
     const player = create({ wasmWorker, wasmBinary })
     player.attachHTMLVideoElement(video)
     player.load(previewUrl)
@@ -566,93 +306,19 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
       player.pause()
       player.delete()
     }
-  }, [previewUrl])
+  }, [previewUrl, awaitingApproval])
 
-  useEffect(() => {
-    const video = previewVideoRef.current
-    if (!video || previewSeekSeconds === null) return
-    const seek = () => {
-      video.currentTime = previewSeekSeconds
-      setPreviewSeekSeconds(null)
-    }
-    if (video.readyState >= 1) seek()
-    else {
-      video.addEventListener('loadedmetadata', seek, { once: true })
-      return () => video.removeEventListener('loadedmetadata', seek)
-    }
-  }, [previewPlayRequest, previewSeekSeconds])
-
-  useEffect(() => {
-    const video = previewVideoRef.current
-    if (!video) return
-    const updatePosition = () => {
-      setPreviewPosition(video.currentTime)
-    }
-    const updatePlayback = () => setPreviewPlaying(!video.paused && !video.ended)
-    video.addEventListener('timeupdate', updatePosition)
-    video.addEventListener('loadedmetadata', updatePosition)
-    video.addEventListener('play', updatePlayback)
-    video.addEventListener('pause', updatePlayback)
-    video.addEventListener('ended', updatePlayback)
-    return () => {
-      video.removeEventListener('timeupdate', updatePosition)
-      video.removeEventListener('loadedmetadata', updatePosition)
-      video.removeEventListener('play', updatePlayback)
-      video.removeEventListener('pause', updatePlayback)
-      video.removeEventListener('ended', updatePlayback)
-    }
-  }, [previewUrl, selectedChapter])
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null
-      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable) return
-      // UNG-236: trimbalkens balkar och reglaget sköter sina egna piltangenter.
-      if (event.defaultPrevented || target?.closest('[role="slider"]')) return
-      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
-      event.preventDefault()
-      seekBy(event.key === 'ArrowLeft' ? (event.shiftKey ? -1 : -5) : (event.shiftKey ? 1 : 5))
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [previewPosition])
-
-  useEffect(() => {
-    if (editingChapter !== null) chapterInputRef.current?.focus()
-  }, [editingChapter])
-
-  function seekBy(seconds: number) {
-    const video = previewVideoRef.current
-    if (!video) return
-    video.currentTime = Math.max(0, Math.min(video.duration || Number.MAX_SAFE_INTEGER, video.currentTime + seconds))
-    setPreviewPosition(video.currentTime)
-  }
-
-  // UNG-233/234: balkarna och ringarna ger ett nytt intervall. Ändrat mot den sparade trimningen räknas som en opublicerad ändring.
+  // UNG-233/234: editorn ger ett nytt intervall. Ändrat mot den gällande trimningen räknas som en opublicerad ändring.
   function changeTrim(range: TrimRange) {
-    setMockTrimStart(range.start)
-    setMockTrimEnd(range.end)
+    setTrimStart(range.start)
+    setTrimEnd(range.end)
     if (isAfter && (range.start !== defaultTrimStart || range.end !== defaultTrimEnd)) setHasUnpublishedChanges(true)
-  }
-
-  function playFrom(seconds: number) {
-    const video = previewVideoRef.current
-    if (!video) return
-    video.currentTime = seconds
-    setPreviewPosition(seconds)
-    void video.play().then(() => setPreviewPlaying(true)).catch(() => undefined)
   }
 
   async function resetVideoToOriginal(): Promise<boolean> {
     if (isAfter && !(await actions.restoreOriginal())) return false
-    setMockTrimStart(0)
-    setMockTrimEnd(source?.durationSeconds ?? mockTrimDuration)
-    setDraftOffsets({})
-    setSavedOffsets({})
-    setLastMove(null)
-    setChapterLabels({})
-    setSelectedChapter(null)
-    setPreviewSeekSeconds(null)
+    setTrimStart(0)
+    setTrimEnd(sourceDuration)
     setProjectChaptersLoaded(false)
     void client.projects.chapters(p.id).then((nextChapters) => {
       setProjectChapters(nextChapters)
@@ -661,148 +327,55 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     return true
   }
 
-  function pausePreview() {
-    previewVideoRef.current?.pause()
-    setPreviewPlaying(false)
-  }
-
-  // Ett klick på en rad väljer den (UNG-176). Valet väntar en kort stund så att ett dubbelklick för att redigera texten inte först
-  // hoppar och spelar i förhandsvisningen; dubbelklicket avbryter det väntande valet.
-  const pendingSelectRef = useRef<number | null>(null)
-  function cancelPendingSelect() {
-    if (pendingSelectRef.current !== null) window.clearTimeout(pendingSelectRef.current)
-    pendingSelectRef.current = null
-  }
-  function selectChapterSoon(index: number) {
-    cancelPendingSelect()
-    pendingSelectRef.current = window.setTimeout(() => {
-      pendingSelectRef.current = null
-      selectChapter(index)
-    }, CHAPTER_CLICK_DELAY_MS)
-  }
-
-  function selectChapter(index: number) {
-    const chapter = chapters[index]
-    if (!chapter) return
-    pausePreview()
-    setSelectedChapter(index)
-    // UNG-119: ett tryck på en pausrad hoppar till där pausen avslutas (nästa pauseOut), som i spelaren.
-    const target = chapter.kind === 'pauseIn' ? chapters.findIndex((candidate, at) => at > index && candidate.kind === 'pauseOut') : -1
-    const seekIndex = target >= 0 ? target : index
-    setPreviewSeekSeconds(draftOffsets[seekIndex] ?? savedOffsets[seekIndex] ?? chapters[seekIndex].offsetSeconds)
-    setPreviewPlayRequest((request) => request + 1)
-  }
-
-  function togglePreviewPlayback() {
-    const video = previewVideoRef.current
-    if (!video) return
-    if (video.paused) {
-      void video.play().then(() => setPreviewPlaying(true)).catch(() => undefined)
-    } else {
-      video.pause()
-      setPreviewPlaying(false)
-    }
-  }
-
-  // UNG-235: Flytta hit sätter kapitlets tid till videons position och sparar den i utkastet direkt. Senaste flytten kan ångras.
-  async function moveChapterHere(index: number) {
-    const chapter = chapters[index]
-    if (!chapter || chaptersReadOnly) return
-    const from = savedOffsets[index] ?? chapter.offsetSeconds
-    const to = Math.round(previewPosition)
-    if (to === from) return
-    setSyncNote('')
-    try {
-      await client.projects.updateDraftChapter(p.id, chapter.chapterId, { offsetSeconds: to })
-      setSavedOffsets((current) => ({ ...current, [index]: to }))
-      setSelectedChapter(index)
-      setHasUnpublishedChanges(true)
-      setLastMove({ chapterId: chapter.chapterId, label: chapterLabels[index] ?? chapter.label, from, to })
-    } catch (error) {
-      setSyncNote(error instanceof Error ? error.message : 'Kapitlets tid kunde inte sättas.')
-    }
-  }
-
-  async function undoMove() {
-    const move = lastMove
-    if (!move) return
-    const index = chapters.findIndex((chapter) => chapter.chapterId === move.chapterId)
-    if (index < 0) {
-      setLastMove(null)
-      return
-    }
-    setSyncNote('')
-    try {
-      await client.projects.updateDraftChapter(p.id, move.chapterId, { offsetSeconds: move.from })
-      setSavedOffsets((current) => ({ ...current, [index]: move.from }))
-      setLastMove(null)
-      seekVideo(move.from)
-    } catch (error) {
-      setSyncNote(error instanceof Error ? error.message : 'Flytten kunde inte ångras.')
-    }
-  }
-
-  async function saveTrimDraft() {
-    const nextDraft = {
-      startOffsetSeconds: mockTrimStart,
-      endOffsetSeconds: mockTrimEnd,
-      chapters: chapters.map((chapter, index) => ({
-        index,
-        label: chapterLabels[index] ?? chapter.label,
-        offsetSeconds: savedOffsets[index] ?? draftOffsets[index] ?? chapter.offsetSeconds,
-      })),
-    }
-    try {
-      await client.projects.saveTrimDraft(p.id, nextDraft)
-      await actions.refreshProject()
-    } catch {
-      // Behåll draften lokalt så operatören kan försöka spara igen.
-    }
-  }
   const defaultTrimStart = recording?.trimRange?.startOffsetSeconds ?? 0
-  const defaultTrimEnd = recording?.trimRange?.endOffsetSeconds ?? mockTrimDuration
-  // UNG-245: det som är sparat som trimutkast (annars den trimning som gäller); skillnaden mot den pågående är osparad i redigeraren.
+  const defaultTrimEnd = recording?.trimRange?.endOffsetSeconds ?? sourceDuration
+  // UNG-245: det som är sparat som trimutkast (annars den trimning som gäller); skillnaden mot den pågående är osparad i editorn.
   const savedTrimStart = p.trimDraft?.startOffsetSeconds ?? defaultTrimStart
   const savedTrimEnd = p.trimDraft?.endOffsetSeconds ?? defaultTrimEnd
-  const startChanged = mockTrimStart !== defaultTrimStart
-  const endChanged = mockTrimEnd !== defaultTrimEnd
-  const trimDirty = isAfter && (startChanged || endChanged)
-  const draftDirty = trimDirty || Object.entries(chapterLabels).some(([index, label]) => label !== chapters[Number(index)]?.label)
-  // Backend spärrar redan publish medan enkodern sänder (channel_live) — spärra
-  // knappen här också så det inte ser ut som ett fungerande val.
+  const trimDirty = isAfter && (trimStart !== defaultTrimStart || trimEnd !== defaultTrimEnd)
+  // Trimningen som publiceras skiljer sig från den sparade (ändrad i editorn men inte sparad): sparas först vid Publicera.
+  const draftDirty = isAfter && (trimStart !== savedTrimStart || trimEnd !== savedTrimEnd)
   // Ondemand utan publicering = uppladdad video som väntar på granskning (Before → Ondemand).
-  const stagedUpload = p.publicMode === 'ondemand' && p.publication.state !== 'published'
+  const stagedUpload = p.publicMode === 'ondemand' && !published
     && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed')
   // UNG-245: servern säger om det finns ändringar sedan publiceringen (även sådana som gjorts i editorn eller före en omladdning).
   const serverChanges = Boolean(draftStatus?.published && draftStatus.hasUnpublishedChanges)
   const anyUnpublished = hasUnpublishedChanges || serverChanges
-  const canPublishOndemand = !chaptersReadOnly && !broadcastInProgress && !uploadPending && syncState !== 'pending' && (isAfter || anyUnpublished || trimDirty || stagedUpload)
-  const videoDuration = previewVideoRef.current?.duration || mockTrimDuration
-  const trimDuration = mockTrimDuration > 0 ? mockTrimDuration : Number.isFinite(videoDuration) ? videoDuration : 0
-  // Kapitel med position i videon: markeringar i trimbalken.
-  const trimBarChapters = chapters
-    .map((chapter, index) => ({ time: chapter.synced === false ? null : savedOffsets[index] ?? draftOffsets[index] ?? chapter.offsetSeconds, label: chapterLabels[index] ?? chapter.label }))
-    .filter((item): item is { time: number; label: string } => item.time !== null)
-  const showTrimControls = isAfter && !awaitingApproval && !chaptersReadOnly && !broadcastInProgress && !recordingProcessing && trimDuration > 0
+  // Backend spärrar redan publish medan enkodern sänder (channel_live) — spärra knappen här också.
+  const publishBlocked = chaptersReadOnly || broadcastInProgress || uploadPending || syncState === 'pending'
+  const canPublish = !publishBlocked && (isAfter || trimDirty || stagedUpload)
+  const canPublishChanges = !publishBlocked && published && anyUnpublished
+  const showTrim = isAfter && !awaitingApproval && !chaptersReadOnly && !broadcastInProgress && !recordingProcessing && sourceDuration > 0
 
-  // Hämtar kapitlen direkt (och väntar in dem) så att publiceringsdialogen kan stå kvar tills listan är på plats.
+  // Sammanfattningen.
+  const chapterCount = chapters.filter((chapter) => chapter.kind !== 'pauseIn' && chapter.kind !== 'pauseOut').length
+  const pauseCount = chapters.filter((chapter) => chapter.kind === 'pauseIn').length
+  const unplacedCount = chapters.filter((chapter) => chapter.synced === false).length
+  const isTrimmed = sourceDuration > 0 && (trimStart > 0 || trimEnd < sourceDuration)
+  const lastPublish = [...p.publicationHistory]
+    .filter((entry) => PUBLISH_ACTIONS.has(entry.action))
+    .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0]
+
+  // Hämtar kapitlen direkt (och väntar in dem) så att publiceringsdialogen kan stå kvar tills sammanfattningen är rätt.
   async function reloadChaptersNow() {
-    setChaptersRefreshing(true)
     try {
       const next = await client.projects.chapters(p.id)
       setProjectChapters(next)
-      setChapterLabels({})
       setProjectChaptersLoaded(true)
     } catch {
       // Den vanliga hämtningen (och pollningen) tar över.
-    } finally {
-      setChaptersRefreshing(false)
     }
+  }
+
+  async function saveTrimDraft() {
+    await client.projects.saveTrimDraft(p.id, trimDraftPayload(trimStart, trimEnd, chapters))
+    await actions.refreshProject()
   }
 
   // UNG-242/245: i ett redan publicerat projekt släpper Publicera ändringar kapitel och godkända undertexter (ingen ny trimmad kopia).
   async function publishChangesOnly() {
     setConfirmOndemand(false)
+    setActionNote('')
     setPublishSteps([
       { key: 'publish', label: 'Publicerar ändringarna och uppdaterar spelaren' },
       { key: 'chapters', label: 'Hämtar kapitlen' },
@@ -813,20 +386,23 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     let failed = false
     let succeeded = false
     try {
-      const result = await client.projects.publishChanges(p.id)
+      // Villkorat på utkastets version: har någon annan ändrat sedan läget hämtades publiceras inget.
+      const result = await client.projects.publishChanges(p.id, draftStatus?.draftRevision)
       await actions.refreshProject()
       setHasUnpublishedChanges(false)
       setPublishStep('chapters')
       await reloadChaptersNow()
       succeeded = true
-      setSyncNote(result.captionsPendingApproval ? 'Ändringarna är publicerade. Undertexterna väntar på godkännande och följde inte med.' : '')
+      setActionNote(result.captionsPendingApproval ? 'Ändringarna är publicerade. Undertexterna väntar på godkännande och följde inte med.' : '')
     } catch (error) {
       failed = true
-      setSyncNote(error instanceof Error ? error.message : 'Ändringarna kunde inte publiceras.')
+      setActionNote(error instanceof Error ? error.message : 'Ändringarna kunde inte publiceras.')
     } finally {
       setPublishing(false)
-      if (failed) setPublishOutcome({ kind: 'failed', step: 'publish' })
-      else if (succeeded) {
+      if (failed) {
+        setPublishOutcome({ kind: 'failed', step: 'publish' })
+        setPreviewVersion((version) => version + 1)
+      } else if (succeeded) {
         setPublishOutcome({ kind: 'published', wasPublished: true })
         setPreviewVersion((version) => version + 1)
       }
@@ -834,13 +410,14 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   }
 
   async function publishWithTrim() {
-    if (p.publication.state === 'published' && p.publicMode === 'ondemand') {
+    if (published && p.publicMode === 'ondemand') {
       await publishChangesOnly()
       return
     }
     setConfirmOndemand(false)
+    setActionNote('')
     const willTrim = trimDirty && !!p.recording
-    const wasPublished = p.publication.state === 'published'
+    const wasPublished = published
     const steps = buildPublishSteps({ saveDraft: draftDirty, trim: willTrim })
     setPublishSteps(steps)
     setPublishStep(draftDirty ? 'save' : willTrim ? 'trim' : 'publish')
@@ -858,28 +435,28 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
           return
         }
       }
-      let published = false
+      let didPublish = false
       if (willTrim) {
         setPublishStep('trim')
-        if (!(await actions.trim({ startOffsetSeconds: mockTrimStart, endOffsetSeconds: mockTrimEnd }))) {
+        if (!(await actions.trim({ startOffsetSeconds: trimStart, endOffsetSeconds: trimEnd }))) {
           failedStep = 'trim'
           return
         }
         await actions.refreshProject()
         setPublishStep('publish')
-        published = await actions.publish()
-        if (!published) failedStep = 'publish'
+        didPublish = await actions.publish()
+        if (!didPublish) failedStep = 'publish'
       } else if (p.recording) {
         setPublishStep('publish')
-        published = await actions.publish()
-        if (!published) failedStep = 'publish'
+        didPublish = await actions.publish()
+        if (!didPublish) failedStep = 'publish'
       } else if (await actions.setPublicMode('ondemand')) {
         actions.setVisibility('open')
         succeeded = true
       } else {
         failedStep = 'publish'
       }
-      if (published) {
+      if (didPublish) {
         setHasUnpublishedChanges(false)
         setPublishStep('chapters')
         await reloadChaptersNow()
@@ -892,6 +469,24 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
         setPublishOutcome({ kind: 'published', wasPublished })
         setPreviewVersion((version) => version + 1)
       }
+    }
+  }
+
+  // UNG-243: Förkasta ändringar: kapitel och undertexter tillbaka till det publicerade. Trimmen är låst och rörs inte.
+  async function discardChanges() {
+    setConfirmDiscard(false)
+    setActionNote('')
+    try {
+      const status = await client.projects.discardChanges(p.id, draftStatus?.draftRevision)
+      setDraftStatus(status)
+      setHasUnpublishedChanges(false)
+      await actions.refreshProject()
+      await reloadChaptersNow()
+      setActionNote('Ändringarna är förkastade. Undertexter och kapitel är som de publicerade.')
+    } catch (error) {
+      setActionNote(error instanceof Error ? error.message : 'Ändringarna kunde inte förkastas.')
+    } finally {
+      setPreviewVersion((version) => version + 1)
     }
   }
 
@@ -908,81 +503,16 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     if (await resetVideoToOriginal()) setHasUnpublishedChanges(true)
   }
 
-  function startChapterEdit(index: number, label: string) {
-    setEditingChapter(index)
-    setChapterDraft(label)
-  }
-
-  async function finishChapterEdit() {
-    if (editingChapter !== null && chapterDraft.trim()) {
-      setChapterLabels((current) => ({ ...current, [editingChapter]: chapterDraft.trim() }))
-      if (p.publicMode === 'ondemand') {
-        const chapter = chapters[editingChapter]
-        await client.projects.updateDraftChapter(p.id, chapter.chapterId, { label: chapterDraft.trim() })
-        const nextChapters = await client.projects.chapters(p.id)
-        setProjectChapters(nextChapters)
-        setChapterLabels({})
-        setHasUnpublishedChanges(true)
-      } else if (p.publicMode === 'after') {
-        const chapter = chapters[editingChapter]
-        if (chapter) {
-          await client.projects.updateDraftChapter(p.id, chapter.chapterId, { label: chapterDraft.trim() })
-          const nextChapters = await client.projects.chapters(p.id)
-          setProjectChapters(nextChapters)
-          setChapterLabels({})
-          setHasUnpublishedChanges(true)
-        }
-      }
-    }
-    setEditingChapter(null)
-    setChapterDraft('')
-  }
-
-  async function deleteChapter(index: number) {
-    if (deleteConfirmationTimer.current) clearTimeout(deleteConfirmationTimer.current)
-    setDeletingChapter(null)
-    if (p.publicMode === 'ondemand') {
-      const chapter = chapters[index]
-      if (!chapter) return
-      await client.projects.deleteDraftChapter(p.id, chapter.chapterId)
-      setProjectChapters((current) => current.filter((_, chapterIndex) => chapterIndex !== index))
-      setHasUnpublishedChanges(true)
-      setChapterLabels((current) => Object.fromEntries(
-        Object.entries(current)
-          .filter(([chapterIndex]) => Number(chapterIndex) !== index)
-          .map(([chapterIndex, label]) => [Number(chapterIndex) > index ? Number(chapterIndex) - 1 : Number(chapterIndex), label]),
-      ))
-      setDraftOffsets((current) => Object.fromEntries(
-        Object.entries(current)
-          .filter(([chapterIndex]) => Number(chapterIndex) !== index)
-          .map(([chapterIndex, offset]) => [Number(chapterIndex) > index ? Number(chapterIndex) - 1 : Number(chapterIndex), offset]),
-      ))
-      setSavedOffsets((current) => Object.fromEntries(
-        Object.entries(current)
-          .filter(([chapterIndex]) => Number(chapterIndex) !== index)
-          .map(([chapterIndex, offset]) => [Number(chapterIndex) > index ? Number(chapterIndex) - 1 : Number(chapterIndex), offset]),
-      ))
-    } else if (p.publicMode === 'after') {
-      const chapter = chapters[index]
-      if (chapter) await client.projects.deleteDraftChapter(p.id, chapter.chapterId)
-      const nextChapters = await client.projects.chapters(p.id)
-      setProjectChapters(nextChapters)
-      setChapterLabels({})
-      await actions.refreshPlayout()
-      setHasUnpublishedChanges(true)
-    } else return
-    setSelectedChapter(null)
-    setEditingChapter(null)
-  }
-
-  function requestChapterDelete(index: number) {
-    if (deleteConfirmationTimer.current) clearTimeout(deleteConfirmationTimer.current)
-    setDeletingChapter(index)
-    deleteConfirmationTimer.current = setTimeout(() => {
-      setDeletingChapter(null)
-      deleteConfirmationTimer.current = null
-    }, 3000)
-  }
+  // Varför publicering inte går just nu (visas vid knapparna).
+  const publishHint = chaptersReadOnly
+    ? 'Inspelningen bearbetas. Publicering går när den är klar.'
+    : broadcastInProgress
+      ? 'Stoppa enkodern för att publicera ondemand.'
+      : uploadPending
+        ? 'Godkänn eller ignorera den uppladdade filen först.'
+        : syncState === 'pending'
+          ? 'Kapitlens förankring mot videon är inte bekräftad. Bekräfta den i redigeraren.'
+          : ''
 
   return (
     <div class="project-workspace doc">
@@ -999,163 +529,61 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
         onShowIngestInfoChange={setShowIngestInfo}
       />
       <div class="od">
-        {showTrimControls && (
+        {showTrim && !published && (
           <ol class="od-steps" aria-label="Ordning">
-            <li class="is-current"><span>1</span> Klipp början och slutet</li>
-            <li><span>2</span> Kapitel (vid behov)</li>
-            <li><span>3</span> Publicera</li>
+            <li class="is-current"><span>1</span> Redigera trim och kapitel</li>
+            <li><span>2</span> Publicera</li>
           </ol>
         )}
         <div class="od-cols">
-          <section class="od-col" aria-label="Trimning">
-            {(source || previewUrl || broadcastInProgress || recordingProcessing) && (
-              <div class="od-mock-trim" aria-label={isAfter ? 'Trimning' : 'Trim-förhandsvisning'}>
-                <VideoStatusRow
-                  recording={p.recording}
-                  actionsAvailable={videoActionsAvailable({ captionsEnabled, uploadEnabled: canUpload })}
-                  onOpenActions={() => { setVideoDialogTab(undefined); setShowVideoDialog(true) }}
-                  onOpenExport={() => setShowExportDialog(true)}
-                  captionAction={captionsEnabled ? (
-                    <CaptionEntry
-                      projectId={p.id}
-                      projectName={p.name}
-                      videoDurationSeconds={recording?.durationSeconds}
-                      posterUrl={p.posterUrl}
-                      onChanged={() => {
-                        setPreviewVersion((version) => version + 1)
-                        void actions.refreshProject()
-                      }}
-                      onChaptersChanged={() => {
-                        // UNG-229: kapitel ändrade i undertextredigeraren: hämta om listan och markera ändringen som opublicerad.
-                        setHasUnpublishedChanges(true)
-                        void reloadChaptersNow()
-                      }}
-                      // Trimningen följer med in i redigeraren (samma tillstånd som trimvyn; tillämpas vid Publicera ondemand).
-                      trim={showTrimControls && !externalVideo
-                        ? { start: mockTrimStart, end: mockTrimEnd, savedStart: savedTrimStart, savedEnd: savedTrimEnd, onChange: changeTrim, onSaved: () => void actions.refreshProject(), onReload: () => void actions.refreshProject() }
-                        : undefined}
-                      // UNG-247: publicerat: trimningen visas låst i redigeraren, med Avpublicera (samma bekräftelse som lägesväljaren).
-                      trimLock={p.publicMode === 'ondemand' && p.publication.state === 'published' ? { onUnpublish: () => selectMode('after') } : undefined}
-                      // UNG-249: import och förankring i redigeraren.
-                      chapterTools={{ uploadedRecording, agendaId: p.agendaId, importDefaultDate }}
-                    />
-                  ) : undefined}
-                />
-                <div class="od-trim-preview">
-                  {broadcastInProgress ? (
-                    <div class="od-broadcast-warning" role="status">
-                      <strong>{isAfter ? 'Sändningen avslutad' : 'Sändning pågår'}</strong>
-                      <span>Stoppa enkodern för att trimma och publicera ondemand. Eller gå tillbaka till Before om detta bara var en test.</span>
-                    </div>
-                  ) : recordingProcessing ? (
-                    <div class="od-broadcast-warning" role="status">
-                      <strong>{p.recording?.source === 'upload' ? 'Videon bearbetas' : 'Inspelningen bearbetas'}</strong>
-                      {p.recording?.source === 'upload' ? (
-                        <>
-                          <span>Videon konverteras för uppspelning, vilket kan ta några minuter beroende på längd. Du kan lämna sidan — bearbetningen fortsätter.</span>
-                        </>
-                      ) : (
-                        <span>Vänta tills inspelningen är klar innan du trimmar och publicerar ondemand.</span>
-                      )}
-                      {p.recording?.source === 'upload' && (
-                        <>
-                          <span>Övriga val är spärrade tills videon är klar eller uppladdningen avbryts.</span>
-                          <button class="btn btn-sm" type="button" onClick={() => void cancelPendingUpload()}>Avbryt uppladdningen</button>
-                          {uploadNote && <span class="od-download-error">{uploadNote}</span>}
-                        </>
-                      )}
-                      {processingStuck && p.recording?.source !== 'upload' && (
-                        <>
-                          <span>Det här tar ovanligt lång tid — sändningen kan ha varit för kort för att AWS skulle spara en inspelning.</span>
-                          {isAfter && projectRecordings.length > 1 && (
-                            <button class="btn btn-sm" type="button" onClick={openRecordingPicker}>Byt sändning…</button>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  ) : (
-                    <>
-                      <video ref={previewVideoRef} controls playsInline preload="metadata" aria-label="Förhandsvisning" />
-                      {showTrimControls && (
-                        <VideoPositionControls
-                          overlay
-                          position={previewPosition}
-                          duration={trimDuration}
-                          playing={previewPlaying}
-                          onSeek={seekVideo}
-                          onTogglePlay={togglePreviewPlayback}
-                        />
-                      )}
-                    </>
-                  )}
-                </div>
-                {isAfter && projectRecordings.length > 1 && !uploadPending && (
-                  <div class="od-recording-select">
-                    <label>Sändning</label>
-                    <span class="od-recording-current">
-                      {formatDateTime(projectRecordings.find((item) => item.isActive)?.startedAt ?? '')} ·{' '}
-                      {formatHms(projectRecordings.find((item) => item.isActive)?.durationSeconds ?? 0)}
-                    </span>
-                    <button class="btn btn-sm" type="button" disabled={switchingRecording} onClick={openRecordingPicker}>
-                      Byt sändning…
-                    </button>
-                  </div>
+          <section class="od-col od-overview" aria-label="Översikt">
+            {(source || broadcastInProgress || recordingProcessing || awaitingApproval) && (
+              <VideoStatusRow
+                recording={p.recording}
+                actionsAvailable={videoActionsAvailable({ captionsEnabled: editorAvailable, uploadEnabled: canUpload })}
+                onOpenActions={() => { setVideoDialogTab(undefined); setShowVideoDialog(true) }}
+                onOpenExport={() => setShowExportDialog(true)}
+              />
+            )}
+            {broadcastInProgress ? (
+              <div class="od-broadcast-warning" role="status">
+                <strong>{isAfter ? 'Sändningen avslutad' : 'Sändning pågår'}</strong>
+                <span>Stoppa enkodern för att trimma och publicera ondemand. Eller gå tillbaka till Before om detta bara var en test.</span>
+              </div>
+            ) : recordingProcessing && (
+              <div class="od-broadcast-warning" role="status">
+                <strong>{p.recording?.source === 'upload' ? 'Videon bearbetas' : 'Inspelningen bearbetas'}</strong>
+                {p.recording?.source === 'upload' ? (
+                  <>
+                    <span>Videon konverteras för uppspelning, vilket kan ta några minuter beroende på längd. Du kan lämna sidan — bearbetningen fortsätter.</span>
+                    <span>Övriga val är spärrade tills videon är klar eller uppladdningen avbryts.</span>
+                    <button class="btn btn-sm" type="button" onClick={() => void cancelPendingUpload()}>Avbryt uppladdningen</button>
+                    {uploadNote && <span class="od-download-error">{uploadNote}</span>}
+                  </>
+                ) : (
+                  <span>Vänta tills inspelningen är klar innan du trimmar och publicerar ondemand.</span>
                 )}
-                {showTrimControls && (
-                  <div class="od-trim-controls">
-                    <PositionScrubber
-                      position={previewPosition}
-                      duration={trimDuration}
-                      start={mockTrimStart}
-                      end={mockTrimEnd}
-                      disabled={externalVideo}
-                      onSeek={seekVideo}
-                      onChange={changeTrim}
-                    />
-                    <TrimBar
-                      duration={trimDuration}
-                      start={mockTrimStart}
-                      end={mockTrimEnd}
-                      position={previewPosition}
-                      chapters={trimBarChapters}
-                      disabled={externalVideo}
-                      onChange={changeTrim}
-                      onSeek={(seconds) => {
-                        pausePreview()
-                        seekVideo(seconds)
-                      }}
-                      onPlayFromStart={() => playFrom(mockTrimStart)}
-                      onPlayEnd={() => playFrom(playEndFrom(mockTrimStart, mockTrimEnd))}
-                    />
-                  </div>
-                )}
-                {stepperVisible && stepTarget && (
-                  <SyncStepper
-                    target={stepTarget}
-                    remaining={untimedChapters.length}
-                    position={previewPosition}
-                    playing={previewPlaying}
-                    busy={syncing}
-                    canUndo={!!lastSteppedId}
-                    warning={orderWarning === stepTarget.chapterId}
-                    onSeekBy={seekBy}
-                    onTogglePlay={togglePreviewPlayback}
-                    onStep={() => void stepHere()}
-                    onSkip={skipStep}
-                    onUndo={undoStep}
-                  />
-                )}
-                {externalVideo && !awaitingApproval && !chaptersReadOnly && (
-                  <p class="od-empty">Videon ligger på en extern adress och kan inte trimmas. Kapitlen tidsätts som för en uppladdad video, med guiden.</p>
+                {processingStuck && p.recording?.source !== 'upload' && (
+                  <>
+                    <span>Det här tar ovanligt lång tid — sändningen kan ha varit för kort för att AWS skulle spara en inspelning.</span>
+                    {isAfter && projectRecordings.length > 1 && (
+                      <button class="btn btn-sm" type="button" onClick={openRecordingPicker}>Byt sändning…</button>
+                    )}
+                  </>
                 )}
               </div>
             )}
             {awaitingApproval && (
-              <UploadApproval
-                recording={recording}
-                previous={projectRecordings}
-                onDone={() => void actions.refreshProject()}
-              />
+              <>
+                <div class="od-trim-preview">
+                  <video ref={approvalVideoRef} controls playsInline preload="metadata" aria-label="Uppladdad video" />
+                </div>
+                <UploadApproval
+                  recording={recording}
+                  previous={projectRecordings}
+                  onDone={() => void actions.refreshProject()}
+                />
+              </>
             )}
             {showUploadCard && (
               <UploadPanel
@@ -1166,11 +594,125 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                 onUploaded={() => void actions.refreshProject()}
               />
             )}
+
+            {(source || published) && !awaitingApproval && (
+              <dl class="od-summary" aria-label="Sammanfattning">
+                <dt>Status</dt>
+                <dd>
+                  {published ? <strong class="od-state is-published">Publicerat</strong> : <strong class="od-state">Inte publicerat</strong>}
+                  {published && lastPublish && (
+                    <span class="od-summary-sub">Senast {formatDateTime(lastPublish.occurredAt)} av {lastPublish.actorName}</span>
+                  )}
+                  {published && anyUnpublished && <span class="od-unpublished">Opublicerade ändringar</span>}
+                </dd>
+                {source && (
+                  <>
+                    <dt>Video</dt>
+                    <dd>
+                      {externalVideo
+                        ? <>Extern adress · kan inte trimmas</>
+                        : isTrimmed
+                          ? <>Trimmad {formatHms(trimStart)}–{formatHms(trimEnd)} · {formatHms(trimEnd - trimStart)} av {formatHms(sourceDuration)}</>
+                          : <>Hela inspelningen · {formatHms(sourceDuration)}</>}
+                      {trimDirty && <span class="od-summary-sub">Trimningen tillämpas när du publicerar.</span>}
+                    </dd>
+                  </>
+                )}
+                {isAfter && projectRecordings.length > 1 && !uploadPending && (
+                  <>
+                    <dt>Sändning</dt>
+                    <dd class="od-recording-select">
+                      <span class="od-recording-current">
+                        {formatDateTime(projectRecordings.find((item) => item.isActive)?.startedAt ?? '')} ·{' '}
+                        {formatHms(projectRecordings.find((item) => item.isActive)?.durationSeconds ?? 0)}
+                      </span>
+                      <button class="btn btn-sm" type="button" disabled={switchingRecording} onClick={openRecordingPicker}>
+                        Byt sändning…
+                      </button>
+                    </dd>
+                  </>
+                )}
+                <dt>Kapitel</dt>
+                <dd>
+                  {!projectChaptersLoaded
+                    ? 'Hämtar…'
+                    : chaptersReadOnly
+                      ? 'Kan redigeras när inspelningen är klar'
+                      : chapterCount === 0
+                        ? 'Inga kapitel'
+                        : `${chapterCount} kapitel${pauseCount > 0 ? ` · ${pauseCount} ${pauseCount === 1 ? 'paus' : 'pauser'}` : ''}`}
+                  {unplacedCount > 0 && <span class="od-summary-sub">{unplacedCount} utan tid i videon (syns inte för tittarna)</span>}
+                  {syncState === 'pending' && <span class="od-summary-sub is-warn">Förankringen mot videon är inte bekräftad.</span>}
+                </dd>
+                <dt>Undertexter</dt>
+                <dd>
+                  {p.recording?.captions
+                    ? <>{p.recording.captions.label} · {p.recording.captions.cueCount.toLocaleString('sv-SE')} repliker</>
+                    : 'Inga'}
+                </dd>
+              </dl>
+            )}
+
+            {actionNote && <p class="od-download-error">{actionNote}</p>}
+            {(source || published) && !awaitingApproval && (
+              <footer class="od-chapters-footer od-overview-actions">
+                {editorAvailable && (
+                  <CaptionEntry
+                    projectId={p.id}
+                    projectName={p.name}
+                    label="Redigera"
+                    videoDurationSeconds={recording?.durationSeconds}
+                    posterUrl={p.posterUrl}
+                    onChanged={() => {
+                      setPreviewVersion((version) => version + 1)
+                      void actions.refreshProject()
+                    }}
+                    onChaptersChanged={() => {
+                      // UNG-229: kapitel ändrade i editorn: hämta om dem och markera ändringen som opublicerad.
+                      setHasUnpublishedChanges(true)
+                      void reloadChaptersNow()
+                    }}
+                    // Trimningen följer med in i editorn (tillämpas vid Publicera).
+                    trim={showTrim && !externalVideo
+                      ? { start: trimStart, end: trimEnd, savedStart: savedTrimStart, savedEnd: savedTrimEnd, onChange: changeTrim, onSaved: () => void actions.refreshProject(), onReload: () => void actions.refreshProject() }
+                      : undefined}
+                    // UNG-247: publicerat: trimningen visas låst i editorn, med Avpublicera (samma bekräftelse som lägesväljaren).
+                    trimLock={p.publicMode === 'ondemand' && published ? { onUnpublish: () => selectMode('after') } : undefined}
+                    // UNG-249: import och förankring i editorn.
+                    chapterTools={{ uploadedRecording, agendaId: p.agendaId, importDefaultDate }}
+                  />
+                )}
+                {isAfter && (
+                  <button class="btn btn-sm" type="button" disabled={chaptersReadOnly || uploadPending} onClick={() => setConfirmUndoAll(true)}>
+                    Ångra allt
+                  </button>
+                )}
+                {published ? (
+                  <>
+                    <button class="btn btn-sm" type="button" disabled={!serverChanges} onClick={() => setConfirmDiscard(true)}>
+                      Förkasta ändringar
+                    </button>
+                    <button class="btn btn-sm" type="button" onClick={() => selectMode('after')}>
+                      Avpublicera
+                    </button>
+                    <button class="btn btn-sm btn-primary od-publish-button" type="button" disabled={!canPublishChanges} onClick={() => setConfirmOndemand(true)}>
+                      Publicera ändringar
+                    </button>
+                  </>
+                ) : (
+                  <button class="btn btn-sm btn-primary od-publish-button" type="button" disabled={!canPublish} onClick={() => setConfirmOndemand(true)}>
+                    Publicera
+                  </button>
+                )}
+                {publishHint && <span class="od-summary-sub od-publish-hint">{publishHint}</span>}
+              </footer>
+            )}
+
             {showVideoDialog && (
               <VideoActionsDialog
                 projectId={p.id}
                 projectName={p.name}
-                captionsEnabled={captionsEnabled}
+                captionsEnabled={editorAvailable}
                 captions={p.recording?.captions ?? null}
                 videoDurationSeconds={recording?.durationSeconds}
                 uploadEnabled={canUpload}
@@ -1185,220 +727,37 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
               <ExportImportDialog
                 project={p}
                 onClose={() => setShowExportDialog(false)}
-                onImportChapters={chaptersReadOnly || awaitingApproval ? undefined : () => setShowImport(true)}
                 onOpenVideoActions={(tab) => { setVideoDialogTab(tab); setShowVideoDialog(true) }}
               />
             )}
-            {p.playerUrl && !awaitingApproval && (
-              <PlayerPreview url={p.playerUrl} published={p.publication.state === 'published'} version={previewVersion} />
-            )}
-            <footer class="od-trim-footer">
-            </footer>
           </section>
 
-          <section class={`od-col od-chapters-col${chaptersReadOnly ? ' is-readonly' : ''}`} aria-labelledby="od-chapters-title">
-            {awaitingApproval ? (
-              <p class="od-empty">Godkänn eller ignorera den uppladdade filen innan du arbetar med kapitlen.</p>
-            ) : chaptersReadOnly && p.recording && <p class="od-empty">Kapitel går att redigera först när inspelningen är klar</p>}
-            {guide && !awaitingApproval && !chaptersReadOnly && (
-              <AnchorGuide
-                step={guide.step}
-                anchorLabel={anchorChapter ? (chapterLabels[chapters.indexOf(anchorChapter)] ?? anchorChapter.label) : null}
-                anchorOffset={anchorChapter && anchorChapter.timing !== 'positioned' ? null : anchorChapter?.offsetSeconds ?? null}
-                position={previewPosition}
-                playing={previewPlaying}
-                busy={syncing}
-                onSeekBy={seekBy}
-                onTogglePlay={togglePreviewPlayback}
-                onChooseAgain={() => setGuide({ step: 1, anchorId: null })}
-                onAnchor={() => void anchorHere()}
-                onGoToAnchor={() => { if (anchorChapter) { seekVideo(anchorChapter.offsetSeconds); void previewVideoRef.current?.play().catch(() => undefined) } }}
-                onNudge={(delta) => void nudgeAnchor(delta)}
-                onConfirm={() => void confirmAnchor()}
-                onClose={closeGuide}
-              />
+          <section class="od-col od-preview-col" aria-label="Förhandsvisning">
+            {p.playerUrl && !awaitingApproval && (
+              <PlayerPreview url={p.playerUrl} published={published} version={previewVersion} />
             )}
-            {!guide && !awaitingApproval && !chaptersReadOnly && uploadedRecording && hasImportedChapters && !uploadPending && (
-              <div class="od-sync-status">
-                <span>
-                  {syncState === 'pending'
-                    ? 'Förankringen är inte bekräftad — publicering är spärrad.'
-                    : syncState === 'confirmed'
-                      ? 'Kapitlen är förankrade mot videon.'
-                      : 'Kapitlen från sändningen är inte förankrade mot videon.'}
-                </span>
-                <button
-                  class="btn btn-sm"
-                  type="button"
-                  onClick={() => (syncState === 'pending'
-                    ? setGuide({ step: 3, anchorId: chapters.find((chapter) => chapter.anchor)?.chapterId ?? null })
-                    : startGuide())}
-                >
-                  {syncState === 'pending' ? 'Fortsätt' : 'Förankra kapitel'}
-                </button>
-              </div>
-            )}
-            {syncNote && <p class="od-download-error">{syncNote}</p>}
-            {!awaitingApproval && collapsibleIds.length > 0 && (
-              <div class="od-chapters-toolbar">
-                <button class="btn btn-sm" type="button" disabled={allCollapsed} onClick={() => setCollapsedGroups(new Set(collapsibleIds))}>
-                  Dölj alla talare
-                </button>
-                <button class="btn btn-sm" type="button" disabled={noneCollapsed} onClick={() => setCollapsedGroups(new Set())}>
-                  Visa alla talare
-                </button>
-              </div>
-            )}
-            {awaitingApproval ? null : !projectChaptersLoaded ? (
-              <p class="od-empty od-chapters-loading" role="status">
-                <progress aria-hidden="true" /> Hämtar kapitel…
-              </p>
-            ) : chapters.length === 0 ? (
-              <p class="od-empty">
-                {uploadedRecording
-                  ? 'En uppladdad video har inga kapitel — de skapas från det som spelas ut under en livesändning.'
-                  : !p.recording
-                    ? 'Kapitel skapas från det som spelas ut under en livesändning.'
-                    : !chaptersReadOnly && (p.recording.state === 'recorded' || p.recording.state === 'trimmed')
-                      ? 'Inga kapitel än. Inget spelades ut under sändningen. Importera en dagordning eller en lista, eller lägg till kapitel vid en position i videon, nedan.'
-                      : 'Inga kapitel än. De skapas från det som spelades ut under sändningen.'}
-              </p>
-            ) : (
-              <>
-              {chaptersRefreshing && (
-                <p class="od-empty od-chapters-loading" role="status">
-                  <progress aria-hidden="true" /> Uppdaterar kapitel…
-                </p>
-              )}
-              <ul class="od-chapters">
-                {chapters.map((chapter, index) => visibleFlags[index] ? (
-                  <li
-                    key={chapter.chapterId}
-                    class={`od-chapter-row kind-${chapter.kind}${!chaptersReadOnly && chapter.synced !== false ? ' is-selectable' : ''}${groupInfo[index].isHeader ? ' is-group-header' : ''}${selectedChapter === index ? ' is-selected' : ''}${chapter.synced === false ? ' is-unsynced' : ''}${(guide?.step === 1 && chapter.anchorable) || stepperVisible ? ' is-pickable' : ''}${stepperVisible && stepTarget?.chapterId === chapter.chapterId ? ' is-step-target' : ''}${guide?.anchorId === chapter.chapterId ? ' is-anchor' : ''}${isAfter && chapter.synced !== false && chapterNote(savedOffsets[index] ?? draftOffsets[index] ?? chapter.offsetSeconds, undefined, mockTrimStart, mockTrimEnd) === 'removed' ? ' is-outside' : ''}`}
-                    tabIndex={!chaptersReadOnly && chapter.synced !== false ? 0 : undefined}
-                    aria-current={selectedChapter === index ? 'true' : undefined}
-                    onClick={(event) => {
-                      if ((event.target as HTMLElement).closest('button, input')) return
-                      if (guide?.step === 1) chooseAnchor(index)
-                      else if (stepperVisible) { setOrderWarning(null); setStepTargetId(chapter.chapterId) }
-                      else if (!chaptersReadOnly && chapter.synced !== false) selectChapterSoon(index)
-                    }}
-                    onKeyDown={(event) => {
-                      // Enter på själva raden (inte på en knapp eller ett fält i den) väljer den, som ett klick.
-                      if (event.key !== 'Enter' || event.target !== event.currentTarget) return
-                      if (!guide && !stepperVisible && !chaptersReadOnly && chapter.synced !== false) selectChapter(index)
-                    }}
-                  >
-                      {groupInfo[index].isHeader && groupInfo[index].childCount > 0 && (
-                        <button
-                          class="od-chapter-toggle"
-                          type="button"
-                          aria-expanded={!collapsedGroups.has(chapter.chapterId)}
-                          aria-label={`${collapsedGroups.has(chapter.chapterId) ? 'Visa' : 'Dölj'} talare under ${chapterLabels[index] ?? chapter.label}`}
-                          title={collapsedGroups.has(chapter.chapterId) ? 'Visa talare' : 'Dölj talare'}
-                          onClick={() => toggleGroup(chapter.chapterId)}
-                        >
-                          <Icon name={collapsedGroups.has(chapter.chapterId) ? 'chevron_right' : 'expand_more'} size={18} />
-                        </button>
-                      )}
-                      {!chaptersReadOnly && guide?.anchorId === chapter.chapterId && <Icon name="anchor" size={16} />}
-                      {!chaptersReadOnly && chapter.synced === false && <span class="od-chapter-unsynced">{chapter.timing === 'untimed' ? 'Ingen tid' : 'Ej förankrad'}</span>}
-                    {!chaptersReadOnly && chapter.synced !== false && <span class={`od-time${draftOffsets[index] !== undefined ? ' is-draft' : ''}`}>
-                      {formatHms(draftOffsets[index] ?? savedOffsets[index] ?? chapter.offsetSeconds)}
-                    </span>}
-                    {!chaptersReadOnly && editingChapter === index ? (
-                      <span class="od-chapter-edit">
-                        <input
-                          ref={chapterInputRef}
-                          aria-label="Kapiteltext"
-                          value={chapterDraft}
-                          autoFocus
-                          onInput={(event) => setChapterDraft(event.currentTarget.value)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') void finishChapterEdit()
-                            if (event.key === 'Escape') void finishChapterEdit()
-                          }}
-                        />
-                        <button class="btn btn-sm" type="button" onClick={() => void finishChapterEdit()}>Klar</button>
-                      </span>
-                    ) : (
-                      <span class="od-chapter-label" onDblClick={chaptersReadOnly ? undefined : () => { cancelPendingSelect(); startChapterEdit(index, chapterLabels[index] ?? chapter.label) }} title={chaptersReadOnly ? undefined : 'Dubbelklicka för att redigera'}>
-                        {chapterLabels[index] ?? chapter.label}
-                      </span>
-                    )}
-                    <span class="od-chapter-kind">{CHAPTER_KIND[chapter.kind]}</span>
-                    {groupInfo[index].isHeader && groupInfo[index].childCount > 0 && collapsedGroups.has(chapter.chapterId) && (
-                      <span class="od-chapter-count">{groupInfo[index].childCount} talare</span>
-                    )}
-                    {isAfter && !chaptersReadOnly && chapter.synced !== false && (() => {
-                      const shownTime = savedOffsets[index] ?? draftOffsets[index] ?? chapter.offsetSeconds
-                      const note = chapterNote(shownTime, chapter.offsetSeconds, mockTrimStart, mockTrimEnd)
-                      return note ? <span class={`od-chapter-note is-${note}`}>{chapterNoteText(note)}</span> : null
-                    })()}
-                    {isAfter && !chaptersReadOnly && chapter.synced !== false && !guide && !stepperVisible && (
-                      <button
-                        class="btn btn-sm od-chapter-move"
-                        type="button"
-                        disabled={!canMoveHere(savedOffsets[index] ?? draftOffsets[index] ?? chapter.offsetSeconds, previewPosition)}
-                        title={canMoveHere(savedOffsets[index] ?? draftOffsets[index] ?? chapter.offsetSeconds, previewPosition) ? 'Sätt kapitlets tid till videons position' : 'Kapitlet ligger redan här'}
-                        onClick={() => void moveChapterHere(index)}
-                      >
-                        Flytta hit
-                      </button>
-                    )}
-                    {!chaptersReadOnly && (p.publicMode === 'ondemand' || p.publicMode === 'after') && (
-                      deletingChapter === index ? (
-                        <button class="od-chapter-delete is-confirm" type="button" aria-label={`Bekräfta radering av ${chapter.label}`} title="Bekräfta radering" onClick={() => void deleteChapter(index)}>
-                          <Icon name="check" size={16} />
-                        </button>
-                      ) : (
-                        <button class="od-chapter-delete" type="button" aria-label={`Radera ${chapter.label}`} title="Radera kapitel" onClick={() => requestChapterDelete(index)}>
-                          <Icon name="delete" size={16} />
-                        </button>
-                      )
-                    )}
-                  </li>
-                ) : null)}
-              </ul>
-              </>
-            )}
-            {!awaitingApproval && !chaptersReadOnly && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed') && (
-              <AddChapterForm position={previewPosition} onAdd={addChapterHere} />
-            )}
-            {!awaitingApproval && !chaptersReadOnly && p.publication.state !== 'published' && (p.recording?.state === 'recorded' || p.recording?.state === 'trimmed') && (
-              <div class="od-add-chapter">
-                <button class="btn btn-sm" type="button" onClick={() => setShowImport(true)}>Importera kapitel…</button>
-              </div>
-            )}
-            {lastMove && !chaptersReadOnly && (
-              <div class="tcl-toast" role="status">
-                <span>{moveMessage(lastMove)}</span>
-                <button class="btn btn-sm" type="button" onClick={() => void undoMove()}>Ångra</button>
-              </div>
-            )}
-            <footer class="od-chapters-footer">
-              {(anyUnpublished || trimDirty) && !chaptersReadOnly && <span class="od-unpublished">Opublicerade ändringar</span>}
-              {(isAfter || p.publicMode === 'ondemand') && (
-                <>
-                  {isAfter && <button class="btn btn-sm" type="button" disabled={chaptersReadOnly || uploadPending} onClick={() => setConfirmUndoAll(true)}>
-                    Ångra allt
-                  </button>}
-                  <button class="btn btn-sm btn-primary od-publish-button" type="button" disabled={!canPublishOndemand} onClick={() => setConfirmOndemand(true)}>
-                    Publicera ondemand
-                  </button>
-                </>
-              )}
-            </footer>
           </section>
         </div>
       </div>
       {dialog}
       {confirmOndemand && (
         <Modal title="Publicera ändringarna?" onClose={() => setConfirmOndemand(false)}>
-          <p>Sändningen sätts i Ondemand-läge när du publicerar.</p>
+          <p>{published ? 'Kapitel och godkända undertexter släpps till tittarna.' : 'Sändningen sätts i Ondemand-läge när du publicerar.'}</p>
           <div class="modal-actions">
             <button class="btn" type="button" onClick={() => setConfirmOndemand(false)}>Avbryt</button>
             <button class="btn btn-primary" type="button" onClick={() => void publishWithTrim()}>Publicera</button>
+          </div>
+        </Modal>
+      )}
+      {confirmDiscard && (
+        <Modal title="Förkasta ändringarna?" onClose={() => setConfirmDiscard(false)}>
+          <p>
+            Kapitel och undertexter går tillbaka till det som är publicerat. Det du ändrat sedan dess försvinner (undertexternas tidigare versioner
+            finns kvar i historiken).
+          </p>
+          <div class="modal-actions">
+            <button class="btn" type="button" onClick={() => setConfirmDiscard(false)}>Avbryt</button>
+            <button class="btn btn-danger" type="button" onClick={() => void discardChanges()}>Förkasta</button>
           </div>
         </Modal>
       )}
@@ -1442,17 +801,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
           </div>
         </Modal>
       )}
-      {showImport && (
-        <ChapterImportDialog
-          projectId={p.id}
-          agendaId={p.agendaId}
-          currentChapterCount={chapters.length}
-          directClock={!uploadedRecording}
-          defaultDate={importDefaultDate}
-          onClose={() => setShowImport(false)}
-          onImported={(result) => void onChaptersImported(result)}
-        />
-      )}
       {publishing && <PublishProgressDialog steps={publishSteps} activeKey={publishStep} />}
       {!publishing && publishOutcome?.kind === 'published' && (
         <PublishOutcomeDialog
@@ -1460,7 +808,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
           facts={{
             wasPublished: publishOutcome.wasPublished,
             visibility: p.visibility,
-            chapterCount: chapters.filter((chapter) => chapter.kind !== 'pauseIn' && chapter.kind !== 'pauseOut').length,
+            chapterCount,
             captions: p.recording?.captions ? { label: p.recording.captions.label, cueCount: p.recording.captions.cueCount } : null,
           } satisfies PublishedFacts}
           playerUrl={p.playerUrl}
@@ -1535,57 +883,6 @@ function UploadApproval({ recording, previous, onDone }: UploadApprovalProps) {
           {previousCount > 0 ? 'Behåll tidigare — ignorera filen' : 'Ignorera filen'}
         </button>
       </div>
-      {error && <span class="od-download-error">{error}</span>}
-    </div>
-  )
-}
-
-interface AddChapterFormProps {
-  position: number
-  onAdd: (kind: CueKind, label: string) => Promise<void>
-}
-
-// Eget kapitel på nuvarande videoposition — för uppladdade videor, där inga
-// cues gjordes live (eller där några saknas).
-function AddChapterForm({ position, onAdd }: AddChapterFormProps) {
-  const [kind, setKind] = useState<CueKind>('agendaItem')
-  const [label, setLabel] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-
-  async function add() {
-    if (!label.trim()) return
-    setBusy(true)
-    setError('')
-    try {
-      await onAdd(kind, label.trim())
-      setLabel('')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Kapitlet kunde inte läggas till.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <div class="od-add-chapter">
-      <select aria-label="Typ av kapitel" value={kind} disabled={busy} onChange={(event) => setKind(event.currentTarget.value as CueKind)}>
-        {(Object.keys(CHAPTER_KIND) as CueKind[]).map((value) => (
-          <option key={value} value={value}>{CHAPTER_KIND[value]}</option>
-        ))}
-      </select>
-      <input
-        type="text"
-        placeholder="Text för nytt kapitel"
-        aria-label="Text för nytt kapitel"
-        value={label}
-        disabled={busy}
-        onInput={(event) => setLabel(event.currentTarget.value)}
-        onKeyDown={(event) => { if (event.key === 'Enter') void add() }}
-      />
-      <button class="btn btn-sm" type="button" disabled={busy || !label.trim()} onClick={() => void add()}>
-        Lägg till vid {formatHms(Math.round(position))}
-      </button>
       {error && <span class="od-download-error">{error}</span>}
     </div>
   )

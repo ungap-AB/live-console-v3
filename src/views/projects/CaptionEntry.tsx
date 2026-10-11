@@ -21,11 +21,13 @@ interface CaptionEntryProps {
   trimLock?: { onUnpublish: () => void }
   /** UNG-249: projektets uppgifter för kapitelverktygen i redigeraren. */
   chapterTools?: EditorChapterTools
+  /** UNG-251: egen etikett på knappen (översikten säger "Redigera"); framsteget under generering visas ändå. */
+  label?: string
 }
 
 // UNG-165: knappen ovanför videofönstret som leder direkt till att skapa eller redigera undertexter. Etiketten följer serverns läge
 // (skapa, genererar n %, redigera). Knappen äger också studion (redigeraren med skapandet som overlay) och dess öppna/stängda läge.
-export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged, trim, trimLock, chapterTools }: CaptionEntryProps) {
+export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged, trim, trimLock, chapterTools, label }: CaptionEntryProps) {
   const captions = useCaptionGeneration(projectId)
   // Öppnas direkt när man kommit hit via knappen i projektlistan, eller (UNG-250) när adressen är editorns (omladdning, delad länk).
   const [open, setOpen] = useState(() => consumeCaptionStudio(projectId) || parseEditorLink(window.location.hash) === projectId)
@@ -94,7 +96,7 @@ export function CaptionEntry({ projectId, projectName, videoDurationSeconds, pos
           : entry.kind === 'create' ? 'Öppnar redigeraren: trim och kapitel. Undertexter skapas därifrån.' : 'Öppnar undertextredigeraren')}
         onClick={() => setOpen(true)}
       >
-        <Icon name={entry.kind === 'create' ? 'edit' : 'closed_caption'} size={18} /> {entry.label}
+        <Icon name={label || entry.kind === 'create' ? 'edit' : 'closed_caption'} size={18} /> {label && entry.kind !== 'progress' ? label : entry.label}
       </button>
       {open && (
         <CaptionStudio
