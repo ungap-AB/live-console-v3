@@ -886,10 +886,10 @@ export const mockClient: Client = {
       return delay(projectSnapshot(p))
     },
     // Undertexter finns bara mot riktig backend.
-    async setCaptions() {
+    async importCaptionMaster() {
       throw new Error('Undertexter finns inte i mock-läget')
     },
-    async removeCaptions() {
+    async removeCaptionMaster() {
       throw new Error('Undertexter finns inte i mock-läget')
     },
     async getCaptionGeneration() {

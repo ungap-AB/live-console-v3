@@ -206,9 +206,13 @@ export interface Client {
     rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText' | 'textPlacement' | 'muxEnabled' | 'muxRespectDoNotTrack' | 'dvrEnabled' | 'exclamationsAsSpeakers' | 'liveOnly'>>): Promise<Project>
     trash(id: string): Promise<void>
     /** Laddar upp spelarens poster (JPG/PNG/WebP, högst 5 MB). Ersätter en tidigare poster. */
-    /** Laddar upp undertexter (WebVTT) för den trimmade, publicerade inspelningen. Ersätter en tidigare fil. */
-    setCaptions(id: string, file: File): Promise<import('./types').ProjectCaptions>
-    removeCaptions(id: string): Promise<void>
+    /**
+     * UNG-272: läser in en egen VTT-fil som redigerarens utkast (publiceras med Publicera ändringar). timeline: 'published' = tiderna
+     * räknas från den publicerade videons start, 'original' = från originalinspelningens. ifVersion = mastern du utgick från (om den finns).
+     */
+    importCaptionMaster(id: string, file: File, timeline: 'published' | 'original', ifVersion?: number, ifDraftRevision?: number): Promise<import('./types').CaptionMaster>
+    /** UNG-272: tar bort undertexterna helt (utkast med versioner och den publicerade filen). */
+    removeCaptionMaster(id: string, ifDraftRevision?: number): Promise<void>
     /** UNG-126: senaste automatiska genereringen (jobb + utkast) för projektets uppspelningsinspelning. */
     getCaptionGeneration(id: string): Promise<import('./types').CaptionGeneration>
     /** Startar automatisk undertextning. Ett redan pågående jobb för inspelningen återanvänds. */

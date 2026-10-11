@@ -31,11 +31,13 @@ interface CaptionEntryProps {
    * redigeraren, med det moment som ska stå i fokus.
    */
   renderTrigger?: (open: (focus?: EditorFocus) => void, entry: CaptionEntryState) => ComponentChildren
+  /** UNG-272: öppna redigeraren utifrån (t.ex. Undertexter i Exportera & importera). En ny seq öppnar den med fokus. */
+  openRequest?: { focus?: EditorFocus; seq: number }
 }
 
 // UNG-165: knappen ovanför videofönstret som leder direkt till att skapa eller redigera undertexter. Etiketten följer serverns läge
 // (skapa, genererar n %, redigera). Knappen äger också studion (redigeraren med skapandet som overlay) och dess öppna/stängda läge.
-export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged, trim, trimLock, chapterTools, label, onOpenChange, renderTrigger }: CaptionEntryProps) {
+export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged, trim, trimLock, chapterTools, label, onOpenChange, renderTrigger, openRequest }: CaptionEntryProps) {
   const captions = useCaptionGeneration(projectId)
   // Öppnas direkt när man kommit hit via knappen i projektlistan, eller (UNG-250) när adressen är editorns (omladdning, delad länk).
   const [open, setOpen] = useState(() => consumeCaptionStudio(projectId) || parseEditorLink(window.location.hash) === projectId)
@@ -53,6 +55,12 @@ export function CaptionEntry({ projectId, projectName, videoDurationSeconds, pos
   useEffect(() => {
     onOpenChange?.(open)
   }, [open])
+
+  useEffect(() => {
+    if (!openRequest || openRef.current) return
+    setFocus(openRequest.focus)
+    setOpen(true)
+  }, [openRequest?.seq])
 
   // Öppen editor har sin egen adress (en ny historikpost, så att bakåt stänger den).
   useEffect(() => {

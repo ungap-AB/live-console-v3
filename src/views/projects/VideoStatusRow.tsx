@@ -2,7 +2,7 @@ import type { ComponentChildren } from 'preact'
 import type { Project } from '../../data/types'
 import { Icon } from '../../components/Icon'
 import { JobProgress } from '../../components/JobProgress'
-import './VideoActionsDialog.css'
+import './VideoStatusRow.css'
 
 interface VideoStatusRowProps {
   recording: Project['recording']

@@ -13,7 +13,6 @@ import type { CaptionEntry as CaptionEntryState } from './captionEntryLogic'
 import { Icon } from '../../components/Icon'
 import { ModeSelector } from './ModeSelector'
 import { PlayerSettingsDialog, type PlayerSettingsCategory } from './PlayerSettingsDialog'
-import { VideoActionsDialog } from './VideoActionsDialog'
 import { ExportImportDialog } from './ExportImportDialog'
 import { PublishProgressDialog } from './PublishProgressDialog'
 import { PublishOutcomeDialog } from './PublishOutcomeDialog'
@@ -87,7 +86,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   // Misslyckad transkodning: servern tar bort inspelningsraden, så projektet går
   // från "bearbetas" (upload) till ingen inspelning alls — berätta varför.
   const [uploadFailed, setUploadFailed] = useState(false)
-  const [showVideoDialog, setShowVideoDialog] = useState(false)
+  // UNG-272: Undertexter i Exportera & importera öppnar redigeraren med undertexterna i fokus (seq ökar per begäran).
+  const [editorRequest, setEditorRequest] = useState<{ focus: EditorFocus; seq: number } | undefined>(undefined)
   // Flik som "Video och undertexter" öppnas på när den öppnas från Exportera och importera.
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [uploadNote, setUploadNote] = useState('')
@@ -512,6 +512,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
               // UNG-249: import och förankring i editorn.
               chapterTools={{ uploadedRecording, agendaId: p.agendaId, importDefaultDate }}
               onOpenChange={setEditorOpen}
+              openRequest={editorRequest}
             />
   )
 
@@ -751,14 +752,9 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
 
             {(source || published) && !awaitingApproval && (
               <div class="od-secondary-actions">
-                <>
-                  <button class="btn btn-sm" type="button" onClick={() => setShowExportDialog(true)}>
-                    <Icon name="ios_share" size={18} /> Exportera & importera…
-                  </button>
-                  <button class="btn btn-sm" type="button" disabled={!editorAvailable} onClick={() => setShowVideoDialog(true)}>
-                    <Icon name="closed_caption" size={18} /> Undertexter…
-                  </button>
-                </>
+                <button class="btn btn-sm" type="button" onClick={() => setShowExportDialog(true)}>
+                  <Icon name="ios_share" size={18} /> Exportera & importera…
+                </button>
               </div>
             )}
 
@@ -791,22 +787,11 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
               />
             )}
 
-            {showVideoDialog && (
-              <VideoActionsDialog
-                projectId={p.id}
-                projectName={p.name}
-                captionsEnabled={editorAvailable}
-                captions={p.recording?.captions ?? null}
-                videoDurationSeconds={recording?.durationSeconds}
-                onChanged={() => void actions.refreshProject()}
-                onClose={() => setShowVideoDialog(false)}
-              />
-            )}
             {showExportDialog && (
               <ExportImportDialog
                 project={p}
                 onClose={() => setShowExportDialog(false)}
-                onOpenCaptions={() => setShowVideoDialog(true)}
+                onOpenCaptions={editorAvailable ? () => setEditorRequest((request) => ({ focus: 'captions', seq: (request?.seq ?? 0) + 1 })) : undefined}
                 // Uppladdning av video (fil eller HLS-adress) görs här; en ny video ersätter den gamla först när den godkänts.
                 upload={{ blockedReason: canUpload ? null : uploadBlockedReason, replacing: !!source, onUploaded: () => void actions.refreshProject() }}
               />

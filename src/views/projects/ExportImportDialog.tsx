@@ -23,10 +23,11 @@ interface ExportImportDialogProps extends ImportHandlers {
 }
 
 type Mode = 'export' | 'import'
-type ExportTab = 'chapters' | 'captions' | 'video'
+type Category = 'chapters' | 'captions' | 'video'
 interface RowStatus { kind: 'ok' | 'error'; text: string }
 
-const EXPORT_TABS = [
+// Samma kategorier under Exportera och Importera; vald kategori följer med vid byte mellan dem.
+const CATEGORY_TABS = [
   { id: 'chapters', label: 'Kapitel' },
   { id: 'captions', label: 'Undertexter' },
   { id: 'video', label: 'Video' },
@@ -81,7 +82,7 @@ function Row({ title, description, availability, status, children, fallbackActio
 // rena funktioner (exportImportLogic.ts); här ritas de. Öppnas från ...-menyn på projektraden och från projektet självt.
 export function ExportImportDialog({ project, onClose, onOpenProject, onImportChapters, onOpenCaptions, upload }: ExportImportDialogProps) {
   const [mode, setMode] = useState<Mode>('export')
-  const [exportTab, setExportTab] = useState<ExportTab>('chapters')
+  const [category, setCategory] = useState<Category>('chapters')
   const [includeSpeakers, setIncludeSpeakers] = useState(false)
   const [statuses, setStatuses] = useState<Record<string, RowStatus>>({})
   const [copied, setCopied] = useState(false)
@@ -246,9 +247,9 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
       <div class="ei-panel" role="tabpanel" id={`eid-panel-${mode}`} aria-labelledby={`eid-tab-${mode}`}>
         {mode === 'export' ? (
           <>
-            <Tabs tabs={EXPORT_TABS} active={exportTab} onChange={(id) => setExportTab(id as ExportTab)} label="Vad vill du exportera" idPrefix="eis" />
-            <div class="ei-subpanel" role="tabpanel" id={`eis-panel-${exportTab}`} aria-labelledby={`eis-tab-${exportTab}`}>
-            {exportTab === 'chapters' && (
+            <Tabs tabs={CATEGORY_TABS} active={category} onChange={(id) => setCategory(id as Category)} label="Vad vill du exportera" idPrefix="eis" />
+            <div class="ei-subpanel" role="tabpanel" id={`eis-panel-${category}`} aria-labelledby={`eis-tab-${category}`}>
+            {category === 'chapters' && (
             <section class="ei-group" aria-label="Kapitel">
               <p class="ei-help">Tiderna räknas från den publicerade videons start.</p>
               {chaptersAvailability.enabled && (
@@ -286,7 +287,7 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
             </section>
             )}
 
-            {exportTab === 'captions' && (
+            {category === 'captions' && (
             <section class="ei-group" aria-label="Undertexter">
               <p class="ei-help">De publicerade undertexterna är i den publicerade videons tid.</p>
               <ul class="ei-list">
@@ -307,7 +308,7 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
             </section>
             )}
 
-            {exportTab === 'video' && (
+            {category === 'video' && (
             <section class="ei-group" aria-label="Video">
               <ul class="ei-list">
                 <Row
@@ -340,34 +341,47 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
             </div>
           </>
         ) : (
-          <section class="ei-group" aria-labelledby="ei-import">
-            <h3 id="ei-import">Läs in i projektet</h3>
-            <ul class="ei-list">
-              <Row title="Kapitel" description="Från dagordningen, en namnlista eller en klistrad lista med tider." availability={imports.chapters} fallbackAction={openProject}>
-                <button class="btn btn-sm" type="button" onClick={leave(() => onImportChapters?.())}>Importera kapitel…</button>
-              </Row>
-              <Row title="Undertexter" description="Läs in en egen VTT-fil eller skapa undertexter automatiskt." availability={imports.captions} fallbackAction={openProject}>
-                <button class="btn btn-sm" type="button" onClick={leave(() => onOpenCaptions?.())}>Undertexter…</button>
-              </Row>
-              <Row title="Video" description="Ladda upp en fil eller ange en HLS-adress." availability={imports.upload} fallbackAction={upload ? undefined : openProject}>
-                {upload && (
-                  <div class="ei-upload">
-                    <UploadPanel
-                      projectId={project.id}
-                      projectName={project.name}
-                      replacing={upload.replacing}
-                      failed={false}
-                      onBusyChange={setUploadBusy}
-                      onUploaded={() => {
-                        upload.onUploaded()
-                        onClose()
-                      }}
-                    />
-                  </div>
-                )}
-              </Row>
-            </ul>
-          </section>
+          <>
+            <Tabs tabs={CATEGORY_TABS} active={category} onChange={(id) => setCategory(id as Category)} label="Vad vill du läsa in" idPrefix="eii" />
+            <div class="ei-subpanel" role="tabpanel" id={`eii-panel-${category}`} aria-labelledby={`eii-tab-${category}`}>
+            {/* Alla tre ligger kvar (dolda), så att en pågående videouppladdning inte avbryts av ett kategoribyte. */}
+            <section class="ei-group" aria-label="Kapitel" hidden={category !== 'chapters'}>
+              <ul class="ei-list">
+                <Row title="Kapitel" description="Från dagordningen, en namnlista eller en klistrad lista med tider." availability={imports.chapters} fallbackAction={openProject}>
+                  <button class="btn btn-sm" type="button" onClick={leave(() => onImportChapters?.())}>Importera kapitel…</button>
+                </Row>
+              </ul>
+            </section>
+            <section class="ei-group" aria-label="Undertexter" hidden={category !== 'captions'}>
+              <ul class="ei-list">
+                <Row title="Undertexter" description="I redigeraren: läs in en egen VTT-fil (⋯-menyn) eller skapa undertexter automatiskt. Publiceras med Publicera ändringar." availability={imports.captions} fallbackAction={openProject}>
+                  <button class="btn btn-sm" type="button" onClick={leave(() => onOpenCaptions?.())}>Öppna redigeraren…</button>
+                </Row>
+              </ul>
+            </section>
+            <section class="ei-group" aria-label="Video" hidden={category !== 'video'}>
+              <ul class="ei-list">
+                <Row title="Video" description="Ladda upp en fil eller ange en HLS-adress." availability={imports.upload} fallbackAction={upload ? undefined : openProject}>
+                  {upload && (
+                    <div class="ei-upload">
+                      <UploadPanel
+                        projectId={project.id}
+                        projectName={project.name}
+                        replacing={upload.replacing}
+                        failed={false}
+                        onBusyChange={setUploadBusy}
+                        onUploaded={() => {
+                          upload.onUploaded()
+                          onClose()
+                        }}
+                      />
+                    </div>
+                  )}
+                </Row>
+              </ul>
+            </section>
+            </div>
+          </>
         )}
       </div>
       {shareRecordingId && <ShareDialog initialRecordingIds={[shareRecordingId]} onClose={() => setShareRecordingId(null)} />}

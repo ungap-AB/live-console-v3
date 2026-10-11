@@ -1026,3 +1026,45 @@ button.ce-time:hover {
   color: var(--warn);
   font-weight: 600;
 }
+
+/* UNG-272: Läs in VTT-fil */
+.ce-vtt-import {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ce-vtt-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.ce-vtt-timeline legend {
+  padding: 0 4px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.ce-vtt-timeline label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ce-vtt-help {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.ce-vtt-error {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--danger);
+}

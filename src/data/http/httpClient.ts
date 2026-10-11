@@ -24,7 +24,6 @@ import type {
   WordImportResult,
   ForkWindow,
   CaptionVersionInfo,
-  ProjectCaptions,
   PublicMode,
   PublicShare,
   AfterReason,
@@ -855,13 +854,13 @@ export const httpClient: Client = {
       const dto = await api<ServerProject>(`/projects/${id}`, { method: 'PATCH', body: { name, ...texts } })
       return toProjectFull(dto)
     },
-    async setCaptions(id, file) {
+    importCaptionMaster(id, file, timeline, ifVersion, ifDraftRevision) {
       const body = new FormData()
       body.append('file', file, file.name)
-      return api<ProjectCaptions>(`/projects/${id}/captions`, { method: 'PUT', body })
+      return api<CaptionMaster>(`/projects/${id}/captions/master/import`, { method: 'POST', body, query: { timeline, ifVersion }, ifDraftRevision })
     },
-    async removeCaptions(id) {
-      await api<void>(`/projects/${id}/captions`, { method: 'DELETE' })
+    async removeCaptionMaster(id, ifDraftRevision) {
+      await api<void>(`/projects/${id}/captions/master`, { method: 'DELETE', ifDraftRevision })
     },
     getCaptionGeneration(id) {
       return api<CaptionGeneration>(`/projects/${id}/captions/generation`)

@@ -44,6 +44,8 @@ import { AnchorGuide, SyncStepper } from './ChapterSyncTools'
 import { exportFileName } from './chapterExport'
 import { saveFile } from './ExportImportDialog'
 import { Modal } from '../../components/Modal'
+import { OverflowMenu } from '../../components/OverflowMenu'
+import { VttImportDialog, type VttTimeline } from './VttImportDialog'
 import { WordReviewBar } from './WordReviewBar'
 import { buildReview, isLocked, nextReviewIndex, openConflicts, reviewIndexes, conflictKey, type WordReview } from './wordImportLogic'
 import './CaptionEditor.css'
@@ -194,6 +196,11 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   // "Skapa på nytt" i huvudet: nytt jobb från ljudet, efter bekräftelse.
   const [canRegenerate, setCanRegenerate] = useState(false)
   const [confirmRegenerate, setConfirmRegenerate] = useState(false)
+  // UNG-272: egen VTT-fil som utkast, och borttagning av undertexterna.
+  const [showVttImport, setShowVttImport] = useState(false)
+  const [vttError, setVttError] = useState('')
+  const [confirmRemoveCaptions, setConfirmRemoveCaptions] = useState(false)
+  const [captionsBusy, setCaptionsBusy] = useState(false)
   // Öppnad med Skapa undertexter (After) i ett projekt utan undertexter: frågan om att skapa dem visas direkt, en gång.
   const askedToCreate = useRef(false)
   useEffect(() => {
@@ -1288,6 +1295,53 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
     }
   }
 
+  // UNG-272: en egen VTT-fil blir arbetsversionen (ett utkast, publiceras med Publicera ändringar). Osparat sparas först.
+  async function importVtt(file: File, timeline: VttTimeline) {
+    actionRef.current = 'save'
+    setCaptionsBusy(true)
+    setVttError('')
+    try {
+      if (dirty && !(await saveAll())) {
+        setShowVttImport(false)
+        return
+      }
+      const next = await client.projects.importCaptionMaster(projectId, file, timeline, hasCaptions ? captionVersion.current : undefined, draftRevision.current)
+      setHasCaptions(true)
+      adopt(next)
+      setShowVttImport(false)
+      await refreshDraftInfo()
+      await refreshStatus()
+      onSaved?.()
+      setNotice(`VTT-filen är inläst (${next.cues.length.toLocaleString('sv-SE')} repliker). Den syns för tittarna när du publicerar.`)
+    } catch (err) {
+      setVttError(isConflict(err)
+        ? 'Utkastet har ändrats av någon annan. Stäng, ladda om och försök igen.'
+        : err instanceof Error ? err.message : 'Filen kunde inte läsas in.')
+    } finally {
+      setCaptionsBusy(false)
+    }
+  }
+
+  // UNG-272: tar bort undertexterna helt (arbetsversion, historik och den publicerade filen). Kapitel och trim rörs inte.
+  async function removeAllCaptions() {
+    setConfirmRemoveCaptions(false)
+    setCaptionsBusy(true)
+    setSaveError('')
+    try {
+      await client.projects.removeCaptionMaster(projectId, draftRevision.current)
+      await load()
+      await refreshRevision()
+      await refreshDraftInfo()
+      onSaved?.()
+      setNotice('Undertexterna är borttagna.')
+    } catch (err) {
+      if (isConflict(err)) setSaveError('Utkastet har ändrats av någon annan. Ladda om och försök igen.')
+      else setSaveError(err instanceof Error ? err.message : 'Undertexterna kunde inte tas bort.')
+    } finally {
+      setCaptionsBusy(false)
+    }
+  }
+
   // Godkänn undertexterna (UNG-244): ett maskinellt utkast måste godkännas en gång. Osparade ändringar sparas först; därefter följer
   // varje redigering med när man publicerar.
   async function approve() {
@@ -1753,6 +1807,24 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
               {publishing ? 'Publicerar…' : 'Publicera ändringar'}
             </button>
           )}
+          <OverflowMenu
+            label="Fler undertextåtgärder"
+            items={[
+              {
+                label: 'Läs in VTT-fil…',
+                disabled: !master || readOnly || saving || publishing || regenerating || captionsBusy,
+                title: 'Läser in en egen undertextfil som utkast',
+                onClick: () => { setVttError(''); setShowVttImport(true) },
+              },
+              {
+                label: 'Ta bort undertexter…',
+                danger: true,
+                disabled: !hasCaptions || readOnly || saving || publishing || regenerating || captionsBusy,
+                title: hasCaptions ? 'Tar bort undertexterna, även för tittarna' : 'Projektet har inga undertexter',
+                onClick: () => setConfirmRemoveCaptions(true),
+              },
+            ]}
+          />
           <button class="btn btn-sm" type="button" title="Stäng redigeraren (Esc)" onClick={requestClose}>Stäng</button>
         </div>
       </header>
@@ -2426,6 +2498,37 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
           {speakersAvailable && speakersReady && !regenSpeakers && (
             <p class="ce-regen-hint">Talarbyten som redan är analyserade behålls: de hör till ljudet, inte till texten.</p>
           )}
+          {!hasCaptions && (
+            <p class="ce-regen-hint">
+              Har du redan en undertextfil?{' '}
+              <button class="btn btn-sm" type="button" onClick={() => { setConfirmRegenerate(false); setVttError(''); setShowVttImport(true) }}>
+                Läs in egen VTT-fil i stället
+              </button>
+            </p>
+          )}
+        </ConfirmModal>
+      )}
+
+      {showVttImport && (
+        <VttImportDialog
+          projectName={projectName}
+          publishedStart={master?.publishedStartSeconds}
+          hasCaptions={hasCaptions}
+          dirtyCount={dirty ? changeCount : 0}
+          busy={captionsBusy}
+          error={vttError}
+          onImport={(file, timeline) => void importVtt(file, timeline)}
+          onClose={() => setShowVttImport(false)}
+        />
+      )}
+
+      {confirmRemoveCaptions && (
+        <ConfirmModal title="Ta bort undertexterna?" confirmLabel="Ta bort" danger onCancel={() => setConfirmRemoveCaptions(false)} onConfirm={() => void removeAllCaptions()}>
+          <p>
+            Undertexterna tas bort helt: arbetsversionen med hela versionshistoriken, och de publicerade undertexterna försvinner för tittarna
+            direkt. Kapitel och trim rörs inte. Det går inte att ångra.
+            {cuesDirty ? ' Dina osparade ändringar i undertexterna går förlorade.' : ''}
+          </p>
         </ConfirmModal>
       )}
 
