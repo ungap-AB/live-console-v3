@@ -83,22 +83,32 @@
   border-bottom: 1px solid var(--line);
 }
 
-/* Korta meddelanden: ett fast lager nere i hörnet över hela sidan. Det ligger helt utanför editorns layout (kan inte flytta eller trycka
-   ut något), klickar igenom och försvinner av sig självt. */
+/* Korta meddelanden: ett fast lager mitt i fönstrets överkant, i samma inverterade yta som toasten (syns mot mörk bakgrund). Det ligger
+   helt utanför editorns layout (kan inte flytta eller trycka ut något), klickar igenom och försvinner av sig självt. */
 .ce-banner.ce-notice {
   position: fixed;
-  right: 16px;
-  bottom: 16px;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
   z-index: 90;
-  max-width: min(420px, calc(100vw - 32px));
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  width: max-content;
+  max-width: min(520px, calc(100vw - 32px));
+  border: 0;
+  border-radius: 8px;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+  font-size: 13.5px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   pointer-events: none;
 }
 
 .ce-banner.ce-notice button {
   pointer-events: auto;
+  color: inherit;
+}
+
+.ce-banner.ce-notice button:hover {
+  background: var(--toast-btn-hover);
 }
 
 .ce-loading {

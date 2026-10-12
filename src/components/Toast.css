@@ -1,7 +1,7 @@
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 24px;
+  top: 16px;
   transform: translateX(-50%);
   background: var(--btn-primary-bg);
   color: var(--btn-primary-fg);
