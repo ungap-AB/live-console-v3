@@ -340,6 +340,14 @@
   padding: 0 8px;
 }
 
+.ce-list-head .ce-list-head-chapter {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
 .ce-list-main {
   flex: 1;
   min-height: 0;
@@ -854,39 +862,10 @@ button.ce-time:hover {
   background: color-mix(in srgb, var(--focus) 10%, var(--panel));
 }
 
-.ce-chapterbar-now {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-}
 
-.ce-chapterbar-kind {
-  flex: none;
-  font-size: 11px;
-  padding: 1px 6px;
-  border: 1px solid var(--live);
-  border-radius: 9px;
-  color: var(--live);
-}
 
-.ce-chapterbar-label {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
-.ce-chapterbar-person {
-  color: var(--ink-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
-.ce-chapterbar-none {
-  color: var(--ink-3);
-}
 
 .ce-chrow {
   position: absolute;
@@ -1156,4 +1135,13 @@ button.ce-time:hover {
 
 .ctd-list li .btn {
   flex: none;
+}
+
+.ce-chapterbar-kind {
+  flex: none;
+  font-size: 11px;
+  padding: 1px 6px;
+  border: 1px solid var(--live);
+  border-radius: 9px;
+  color: var(--live);
 }

@@ -6,14 +6,12 @@ import { OverflowMenu } from '../../components/OverflowMenu'
 import { Icon } from '../../components/Icon'
 import { JobProgress } from '../../components/JobProgress'
 import { JobsContext } from '../../app/jobsContext'
-import { RenameModal } from '../../components/RenameModal'
 import { CreateProjectDialog } from './CreateProjectDialog'
 import { recordingDurationLabel } from './recordingDuration'
 import { attachPlan } from './createProjectLists'
 import { forkWarningText } from './forkLogic'
 import type { ListChoices } from './createProjectLists'
 import { requestMeetingBinding } from './meetingBindingRequest'
-import { ExportImportDialog } from './ExportImportDialog'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Toast } from '../../components/Toast'
 import { formatShortDate } from '../../app/time'
@@ -135,8 +133,6 @@ export function ProjectsView({
   const [projects, setProjects] = useState<Project[]>([])
   const [toast, setToast] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Project | null>(null)
-  const [renaming, setRenaming] = useState<Project | null>(null)
-  const [exporting, setExporting] = useState<Project | null>(null)
 
   useEffect(() => {
     if (resource.data) setProjects(resource.data)
@@ -686,20 +682,6 @@ export function ProjectsView({
                         <OverflowMenu
                           label={`Fler åtgärder för ${p.name}`}
                           items={[
-                            // UNG-188: Kopiera länk ligger i menyn, inte som egen knapp på raden. Inaktivt (med förklaring) om länk saknas.
-                            {
-                              label: 'Kopiera länk',
-                              disabled: !p.playerUrl,
-                              title: p.playerUrl ? undefined : 'Projektet saknar spelarlänk',
-                              onClick: () =>
-                                void navigator.clipboard.writeText(p.playerUrl).then(
-                                  () => setToast('Spelarlänken kopierades.'),
-                                  () => setToast('Det gick inte att kopiera länken.'),
-                                ),
-                            },
-                            // UNG-193/194: all export och import samlad i en dialog (kapitel, video), med återkoppling på raden.
-                            { label: 'Exportera och importera…', onClick: () => setExporting(p) },
-                            { label: 'Byt namn', onClick: () => setRenaming(p) },
                             {
                               label: 'Flytta till papperskorgen',
                               danger: true,
@@ -735,29 +717,6 @@ export function ProjectsView({
             gallringstiden löper ut.
           </p>
         </ConfirmModal>
-      )}
-
-      {exporting && (
-        <ExportImportDialog
-          project={exporting}
-          onClose={() => setExporting(null)}
-          onOpenProject={() => {
-            onSelectedIdChange(exporting.id)
-            onScreenChange(screenForMode(exporting.publicMode))
-          }}
-        />
-      )}
-
-      {renaming && (
-        <RenameModal
-          initialValue={renaming.name}
-          onCancel={() => setRenaming(null)}
-          onSave={(name) => {
-            const project = renaming
-            setRenaming(null)
-            void renameProject(project, name)
-          }}
-        />
       )}
 
       {creating && (

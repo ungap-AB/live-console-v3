@@ -1635,16 +1635,13 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   const pendingInfo = pendingMerge === null ? null : mergeInfo(cues, pendingMerge)
 
   return (
-    <div class="ce-scrim" role="dialog" aria-modal="true" aria-label="Redigera undertexter">
+    <div class="ce-scrim" role="dialog" aria-modal="true" aria-label="Redigera projekt">
       <header class="ce-head">
         <div class="ce-title">
-          <h2>{hasCaptions ? 'Redigera undertexter' : 'Redigera'}</h2>
+          <h2>Redigera projekt</h2>
           <div class="ce-sub">
             {projectName}
             {master && hasCaptions && <> · version {master.version}{master.updatedByName ? ` (${master.updatedByName})` : ''}</>}
-            {publishedStart !== undefined && publishedEnd !== undefined && (
-              <> · publiceras: {formatHms(publishedStart)}–{formatHms(publishedEnd)}</>
-            )}
           </div>
         </div>
         <div class="ce-actions">
@@ -2051,25 +2048,15 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                     Undertext…
                   </button>
                 )}
-                {topChapters && (
-                  <span class="ce-chapterbar-now" aria-live="polite">
-                    {topChapters.agenda ? (
-                      <>
-                        <span class="ce-chapterbar-kind">Punkt</span>
-                        <span class="ce-chapterbar-label">{topChapters.agenda.label}</span>
-                        {topChapters.person && <span class="ce-chapterbar-person">· {topChapters.person.label}</span>}
-                      </>
-                    ) : (
-                      <span class="ce-chapterbar-none">Före första kapitlet</span>
-                    )}
-                  </span>
-                )}
               </>
               )}
             </div>
             {!chaptersOnly && (
               <div class="ce-list-head" aria-hidden="true" style={energy ? { marginLeft: `${WAVEFORM_WIDTH}px` } : undefined}>
-                <span /><span>Text</span><span>#</span><span>Start</span><span />
+                <span />
+                {/* Kapitlet som spelhuvudet står i ersätter rubriken Text, så att det syns när listan skrollar. */}
+                {topChapters?.agenda ? <span class="ce-list-head-chapter" title={topChapters.agenda.label}>{topChapters.agenda.label}</span> : <span>Text</span>}
+                <span>#</span><span>Start</span><span />
               </div>
             )}
             {chaptersOnly && chapterList.length === 0 && (
