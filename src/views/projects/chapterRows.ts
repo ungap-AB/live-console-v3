@@ -161,7 +161,9 @@ export function diffChapters(saved: readonly EditorChapter[], current: readonly 
   for (const chapter of current) {
     const before = savedById.get(chapter.id)
     if (!before) {
-      changes.added.push(chapter)
+      // Ett befintligt kapitel utan tid som fått en tid i editorn (Tid här) är en ändring av det kapitlet, inte ett nytt.
+      if (isNewChapter(chapter.id)) changes.added.push(chapter)
+      else changes.changed.push({ id: chapter.id, label: chapter.label, time: chapter.time })
       continue
     }
     const label = before.label !== chapter.label ? chapter.label : undefined

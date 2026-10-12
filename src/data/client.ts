@@ -276,6 +276,8 @@ export interface Client {
     resume(id: string): Promise<TimelineEvent>
     updateTimelineEvent(id: string, eventId: string, input: { label?: string; offsetSeconds?: number }): Promise<TimelineEvent>
     deleteTimelineEvent(id: string, eventId: string): Promise<void>
+    /** Parkerar ett nytt kapitel utan tid (Ej synkade kapitel). Påverkar inte tittarna, sparas direkt. Svarar med utkastets nya version. */
+    addUntimedChapter(id: string, input: { kind: 'agendaItem' | 'person'; label: string }, ifDraftRevision?: number): Promise<{ draftRevision?: number }>
     updateDraftChapter(id: string, chapterId: string, input: { label?: string; offsetSeconds?: number }, ifDraftRevision?: number): Promise<void>
     /** Uppladdad video: förankrar kapitellistan — ankarkapitlet ligger vid anchorOffsetSeconds; redan förankrade kapitel flyttas lika mycket, övriga räknas efter sin tidsskillnad mot det. */
     syncChapters(id: string, anchorChapterId: string, anchorOffsetSeconds: number, ifDraftRevision?: number): Promise<{ synced: number; outsideVideo: number }>

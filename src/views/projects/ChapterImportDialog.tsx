@@ -16,6 +16,8 @@ interface ChapterImportDialogProps {
   defaultDate?: string
   /** UNG-249: utkastets version som importen villkoras på (editorn). Saknas den är importen villkorslös. */
   ifDraftRevision?: number
+  /** Kapitel med tid i utkastet (de som tas bort vid Ersätt och syns för tittarna efter publicering). */
+  positionedChapterCount?: number
   onClose: () => void
   onImported: (result: ChapterImportResult) => void
 }
@@ -29,7 +31,7 @@ function todayIso(): string {
 }
 
 // UNG-65/UNG-64: en källa åt gången — importen ersätter hela kapitellistan.
-export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, directClock = false, defaultDate, ifDraftRevision, onClose, onImported }: ChapterImportDialogProps) {
+export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, positionedChapterCount, directClock = false, defaultDate, ifDraftRevision, onClose, onImported }: ChapterImportDialogProps) {
   const [source, setSource] = useState<Source>('paste')
   const [text, setText] = useState('')
   const [mode, setMode] = useState<TimeMode | null>(null)
@@ -163,7 +165,7 @@ export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, 
         )}
         <p class="od-empty">
           {currentChapterCount > 0 && !(canAdd && importMode === 'add')
-            ? `Importen ersätter de ${currentChapterCount} nuvarande kapitlen${directClock ? '' : ' och förankringen'}.`
+            ? `Importen ersätter de ${currentChapterCount} nuvarande kapitlen${directClock ? '' : ' och förankringen'}.${positionedChapterCount ? ` ${positionedChapterCount} kapitel med tid tas bort ur utkastet.` : ''}`
             : currentChapterCount > 0
               ? 'De nya kapitlen läggs efter de nuvarande.'
               : 'Importen skapar kapitellistan.'}

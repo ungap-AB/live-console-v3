@@ -1068,6 +1068,10 @@ export const httpClient: Client = {
     async deleteTimelineEvent(id, eventId) {
       await api<void>(`/projects/${id}/timeline/${eventId}`, { method: 'DELETE' })
     },
+    async addUntimedChapter(id, input, ifDraftRevision) {
+      const result = await api<{ draftRevision?: number }>(`/projects/${id}/timeline-draft/chapters/untimed`, { method: 'POST', body: input, ifDraftRevision })
+      return { draftRevision: result.draftRevision }
+    },
     async updateDraftChapter(id, chapterId, input, ifDraftRevision) {
       await api<void>(`/projects/${id}/timeline-draft/chapters/${chapterId}`, { method: 'PATCH', body: input, ifDraftRevision })
     },

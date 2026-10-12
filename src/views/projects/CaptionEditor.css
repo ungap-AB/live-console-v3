@@ -1079,18 +1079,81 @@ button.ce-time:hover {
   color: var(--danger);
 }
 
-/* Följ med, osparat-status och ⋯-menyn till höger i listans huvud. */
-.ce-chapterbar-end {
-  position: relative;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: none;
-  margin-left: auto;
+/* Spara är grön så att den syns (släckt när allt är sparat). */
+.btn.ce-save:not(:disabled) {
+  background: var(--live);
+  border-color: var(--live);
+  color: #fff;
+  font-weight: 600;
 }
 
-.ce-chapterbar-end .ce-dirty {
+.btn.ce-save:not(:disabled):hover {
+  filter: brightness(1.1);
+}
+
+/* Ej synkade kapitel: rubrik med +-knapp, och raden för ett nytt kapitel inne i avsnittet. */
+.ce-unplaced-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ce-unplaced .ce-addchapter {
+  flex-wrap: wrap;
+  margin: 6px 0;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.ce-unplaced .ce-addchapter-name {
+  flex: 1;
+  min-width: 140px;
+}
+
+.ce-unplaced-empty {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+/* Undertext-dialogen: en rad per funktion med förklaring och knapp. */
+.ctd-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ctd-list li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.ctd-list li:last-child {
+  border-bottom: 0;
+}
+
+.ctd-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
   min-width: 0;
-  white-space: nowrap;
+}
+
+.ctd-text small {
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.ctd-list li.is-disabled .ctd-text {
+  opacity: 0.6;
+}
+
+.ctd-list li .btn {
+  flex: none;
 }

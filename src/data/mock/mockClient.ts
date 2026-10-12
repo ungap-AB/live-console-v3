@@ -1304,6 +1304,9 @@ export const mockClient: Client = {
       project.playout.timeline = project.playout.timeline.filter((event) => event.id !== eventId)
       return delay(undefined)
     },
+    async addUntimedChapter() {
+      return delay({})
+    },
     async updateDraftChapter(_id, _chapterId, _input) {
       return delay(undefined)
     },
