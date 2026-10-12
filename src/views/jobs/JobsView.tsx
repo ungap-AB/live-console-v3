@@ -249,16 +249,16 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
         </div>
       </header>
 
-      <div class="content">
+      <div class="content jobs-content">
         <div class="jobs-body">
           {message && <p class="jobs-error" role="alert">{message}</p>}
 
-          <section>
+          <section class="jobs-section jobs-section-active">
             <h2>Pågår</h2>
             {active.length === 0 ? <p class="jobs-empty">Inga jobb pågår.</p> : <ul class="jobs-rows">{active.map(renderRow)}</ul>}
           </section>
 
-          <section>
+          <section class="jobs-section jobs-section-done">
             <h2>Klara</h2>
             <p class="jobs-help">Jobb försvinner av sig själva efter 7 dagar. Klara nedladdningar går att dela med externa, och en delning följs upp och återkallas på raden.</p>
             {finished.length === 0 ? <p class="jobs-empty">Inga klara jobb.</p> : <ul class="jobs-rows">{finished.map(renderRow)}</ul>}

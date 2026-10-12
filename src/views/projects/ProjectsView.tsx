@@ -20,7 +20,7 @@ import { formatShortDate } from '../../app/time'
 import { errorMessage, runOptimistic } from '../../app/optimistic'
 import { Livesandning } from './Livesandning'
 import { OndemandView } from './OndemandView'
-import { MODE_LABEL } from './projectMode'
+import { MODES, MODE_LABEL } from './projectMode'
 import { listCaptionButton, requestCaptionStudio } from './captionEntryLogic'
 import { currentPauseFromTimeline, normalizePauseText } from './pauseLogic'
 import { activeJobsByProject, jobKindIcon, jobKindLabel } from './projectJobLogic'
@@ -50,6 +50,27 @@ const MODE_TONE: Record<PublicMode, string> = {
   live: 'live',
   after: 'after',
   ondemand: 'ondemand',
+}
+
+// Lägesfiltret i listans huvud. Sparas per webbläsare (bekvämlighet; saknas lagringen gäller Alla).
+type ModeFilter = 'all' | PublicMode
+const MODE_FILTER_KEY = 'console.projects.modeFilter'
+
+function readModeFilter(): ModeFilter {
+  try {
+    const value = window.localStorage.getItem(MODE_FILTER_KEY)
+    return value === 'all' || (MODES as string[]).includes(value ?? '') ? (value as ModeFilter) : 'all'
+  } catch {
+    return 'all'
+  }
+}
+
+function storeModeFilter(value: ModeFilter) {
+  try {
+    window.localStorage.setItem(MODE_FILTER_KEY, value)
+  } catch {
+    // Utan lagring gäller filtret bara den här sessionen.
+  }
 }
 
 // Samma spärrar som ProjectDetail tillämpar på "Radera projekt".
@@ -123,9 +144,19 @@ export function ProjectsView({
 
   const jobs = useContext(JobsContext)
   const activeJobs = useMemo(() => activeJobsByProject(jobs), [jobs])
-  const sortedProjects = [...projects].sort(
-    (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
-  )
+  const [modeFilter, setModeFilterState] = useState<ModeFilter>(readModeFilter)
+  const setModeFilter = (value: ModeFilter) => {
+    setModeFilterState(value)
+    storeModeFilter(value)
+  }
+  const modeCounts = useMemo(() => {
+    const counts: Record<PublicMode, number> = { before: 0, live: 0, after: 0, ondemand: 0 }
+    for (const project of projects) counts[project.publicMode] += 1
+    return counts
+  }, [projects])
+  const sortedProjects = projects
+    .filter((project) => modeFilter === 'all' || project.publicMode === modeFilter)
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
 
   // Ett borttaget/okänt sparat val ska landa på listan, inte på en tom vy. Jämförs även mot den hämtade listan: när den kommer är
   // `projects` ännu tom i samma omgång (den fylls av effekten ovan), och då nollställdes valet efter omladdning (UNG-250).
@@ -534,6 +565,20 @@ export function ProjectsView({
       <header class={`project-header${selected ? ' collapsed' : ''}`}>
         <div class="header-list-zone">
           <h1>Projekt</h1>
+          <div class="project-filter" role="group" aria-label="Visa projekt i läget">
+            {(['all', ...MODES] as ModeFilter[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                class={modeFilter === mode ? 'is-active' : ''}
+                aria-pressed={modeFilter === mode}
+                onClick={() => setModeFilter(mode)}
+              >
+                {mode === 'all' ? 'Alla' : MODE_LABEL[mode]}
+                <span class="project-filter-count">{mode === 'all' ? projects.length : modeCounts[mode]}</span>
+              </button>
+            ))}
+          </div>
           <span class="spacer" />
           <button class="btn btn-sm" type="button" onClick={() => onCreatingChange(true)}>
             + Nytt
@@ -561,13 +606,19 @@ export function ProjectsView({
           <div class="project-list">
             {resource.loading && projects.length === 0 && <p class="project-list-empty">Laddar…</p>}
             {!resource.loading && projects.length === 0 && <p class="project-list-empty">Inga projekt ännu.</p>}
+            {projects.length > 0 && sortedProjects.length === 0 && (
+              <p class="project-list-empty">
+                Inga projekt i läget {modeFilter === 'all' ? '' : MODE_LABEL[modeFilter]}.{' '}
+                <button class="btn btn-sm" type="button" onClick={() => setModeFilter('all')}>Visa alla</button>
+              </p>
+            )}
             {sortedProjects.length > 0 && (
               <>
                 <div class="project-list-head" aria-hidden="true">
                   <span class="col-name">Projekt</span>
+                  <span class="col-mode">Läge</span>
                   <span class="col-date">Datum</span>
                   <span class="col-duration">Längd</span>
-                  <span class="col-mode">Läge</span>
                   <span class="col-visibility">Synlighet</span>
                   <span class="col-captions">Undertexter</span>
                   <span class="col-actions" />
@@ -601,12 +652,12 @@ export function ProjectsView({
                           </button>
                         )
                       })()}
-                      <span class="col-date">{formatShortDate(p.createdAt)}</span>
-                      <span class="col-duration">{recordingDurationLabel(p.recording)}</span>
                       <span class="col-mode">
                         <span class={`mode-chip mode-${MODE_TONE[p.publicMode]}`}>{MODE_LABEL[p.publicMode]}</span>
                         {p.liveOnly && <span class="liveonly-chip" title="Markerat som endast live">Endast live</span>}
                       </span>
+                      <span class="col-date">{formatShortDate(p.createdAt)}</span>
+                      <span class="col-duration">{recordingDurationLabel(p.recording)}</span>
                       <span class={`col-visibility vis-${p.visibility}`}>
                         <Icon name={p.visibility === 'open' ? 'visibility' : 'visibility_off'} size={16} />
                         {p.visibility === 'open' ? 'Öppen' : 'Stängd'}

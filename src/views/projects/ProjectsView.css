@@ -40,7 +40,14 @@
 .project-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.project-list:has(> .project-list-empty:only-child) {
+  border: 0;
+  background: none;
 }
 
 .project-list-head,
@@ -48,10 +55,18 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 0 8px 0 18px;
+  padding: 0 6px 0 14px;
 }
 
+/* Kolumnrubrikerna ligger kvar överst när listan skrollar. */
 .project-list-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 34px;
+  border-bottom: 1px solid var(--line);
+  border-radius: 8px 8px 0 0;
+  background: var(--surface-2);
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -71,16 +86,18 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .project-row {
-  min-height: 60px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  min-height: 42px;
+}
+
+.project-row + .project-row {
+  border-top: 1px solid var(--line);
+}
+
+.project-row:last-child {
+  border-radius: 0 0 8px 8px;
 }
 
 /* UNG-183: hovring över listan. En svag tonad bakgrund och en tydligare ram på raden under pekaren. */
@@ -90,19 +107,16 @@
 
 .project-row:hover {
   background: var(--surface-2);
-  border-color: var(--ink-3);
 }
 
 .project-row.is-last-opened {
   background: color-mix(in srgb, var(--focus) 8%, var(--panel));
-  border-color: var(--focus);
-  box-shadow: inset 4px 0 0 var(--focus);
+  box-shadow: inset 3px 0 0 var(--focus);
 }
 
-/* Det senast öppnade projektet behåller sin blå ram vid hovring och får en något kraftigare ton. */
+/* Det senast öppnade projektet behåller sin markering vid hovring och får en något kraftigare ton. */
 .project-row.is-last-opened:hover {
   background: color-mix(in srgb, var(--focus) 14%, var(--panel));
-  border-color: var(--focus);
 }
 
 .project-row-name {
@@ -110,11 +124,14 @@
   min-width: 0;
   border: 0;
   background: none;
-  padding: 8px 0;
+  padding: 6px 0;
   text-align: left;
   font: inherit;
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--ink);
   cursor: pointer;
 }
@@ -168,8 +185,10 @@
 }
 
 .project-list .col-mode {
-  width: 96px;
+  width: 150px;
   flex: none;
+  display: flex;
+  align-items: center;
 }
 
 .project-list .col-visibility {
@@ -221,10 +240,10 @@
 
 .mode-chip {
   display: inline-block;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 6px;
+  padding: 1px 7px;
+  border-radius: 5px;
   border: 1px solid currentColor;
 }
 
@@ -300,11 +319,66 @@
 .liveonly-chip {
   display: inline-block;
   margin-left: 6px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 6px;
+  padding: 1px 7px;
+  border-radius: 5px;
   color: var(--warn);
   background: var(--warn-bg);
   border: 1px solid var(--warn-line);
+}
+
+.project-list .caption-list-button {
+  min-height: 0;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+/* Lägesfiltret i huvudet: vald knapp markeras som lägesknapparna (ljusare yta och understrykning). */
+.project-filter {
+  display: inline-flex;
+  margin-left: 18px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.project-filter button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border: 0;
+  background: var(--btn-bg);
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.project-filter button + button {
+  border-left: 1px solid var(--line);
+}
+
+.project-filter button:hover {
+  background: var(--btn-bg-hover);
+  color: var(--ink);
+}
+
+.project-filter button.is-active {
+  background: var(--surface-3);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--focus);
+}
+
+.project-filter-count {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.project-filter button.is-active .project-filter-count {
+  color: var(--ink-2);
 }

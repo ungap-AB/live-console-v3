@@ -3,7 +3,37 @@
   flex-direction: column;
   gap: 28px;
   max-width: 920px;
-  padding: 18px 22px 40px;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 18px 22px 22px;
+}
+
+/* Sidan står still; Pågår och Klara skrollar var för sig. */
+.view > .content.jobs-content {
+  overflow: hidden;
+  padding: 0;
+}
+
+.jobs-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.jobs-section-active {
+  flex: 0 1 auto;
+  max-height: 35%;
+}
+
+.jobs-section-done {
+  flex: 1 1 0;
+}
+
+.jobs-section .jobs-rows {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .jobs-body h2 {
