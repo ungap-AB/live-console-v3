@@ -1,7 +1,7 @@
 import type { ComponentChildren } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
-import type { Chapter, DraftStatus, ForkResult, Project, ProjectRecording, Recording } from '../../data/types'
+import type { CaptionDraft, Chapter, DraftStatus, ForkResult, Project, ProjectRecording, Recording } from '../../data/types'
 import { formatBytes, formatDateTime, formatHms } from '../../app/time'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
@@ -211,6 +211,18 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     return () => { cancelled = true }
   }, [draftStatusKey])
 
+  // Undertexternas arbetsversion (utkastet), så att sammanfattningen visar även inlästa och opublicerade undertexter.
+  const [captionDraft, setCaptionDraft] = useState<CaptionDraft | null>(null)
+  useEffect(() => {
+    if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return
+    let cancelled = false
+    client.projects.getCaptionGeneration(p.id).then(
+      (generation) => { if (!cancelled) setCaptionDraft(generation.draft ?? null) },
+      () => { if (!cancelled) setCaptionDraft(null) },
+    )
+    return () => { cancelled = true }
+  }, [draftStatusKey, p.recording?.captions?.cueCount])
+
   if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return null
 
   const isAfter = p.publicMode === 'after'
@@ -341,9 +353,10 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   const showTrim = isAfter && !awaitingApproval && !chaptersReadOnly && !broadcastInProgress && !recordingProcessing && sourceDuration > 0
 
   // Sammanfattningen.
-  const chapterCount = chapters.filter((chapter) => chapter.kind !== 'pauseIn' && chapter.kind !== 'pauseOut').length
-  const pauseCount = chapters.filter((chapter) => chapter.kind === 'pauseIn').length
-  const unplacedCount = chapters.filter((chapter) => chapter.synced === false).length
+  // Bara kapitel som syns för tittarna (med tid i videon) räknas.
+  const visibleChapters = chapters.filter((chapter) => chapter.synced !== false && (chapter.timing === undefined || chapter.timing === 'positioned'))
+  const chapterCount = visibleChapters.filter((chapter) => chapter.kind !== 'pauseIn' && chapter.kind !== 'pauseOut').length
+  const pauseCount = visibleChapters.filter((chapter) => chapter.kind === 'pauseIn').length
   const isTrimmed = sourceDuration > 0 && (trimStart > 0 || trimEnd < sourceDuration)
   const lastPublish = [...p.publicationHistory]
     .filter((entry) => PUBLISH_ACTIONS.has(entry.action))
@@ -709,8 +722,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                       {externalVideo
                         ? <>Extern adress · kan inte trimmas</>
                         : isTrimmed
-                          ? <>Trimmad {formatHms(trimStart)}–{formatHms(trimEnd)} · {formatHms(trimEnd - trimStart)} av {formatHms(sourceDuration)}</>
-                          : <>Hela inspelningen · {formatHms(sourceDuration)}</>}
+                          ? 'Trimmad'
+                          : 'Ej trimmad'}
                       {trimDirty && <span class="od-summary-sub">Trimningen tillämpas när du publicerar.</span>}
                     </dd>
                   </>
@@ -738,14 +751,20 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                       : chapterCount === 0
                         ? 'Inga kapitel'
                         : `${chapterCount} kapitel${pauseCount > 0 ? ` · ${pauseCount} ${pauseCount === 1 ? 'paus' : 'pauser'}` : ''}`}
-                  {unplacedCount > 0 && <span class="od-summary-sub">{unplacedCount} utan tid i videon (syns inte för tittarna)</span>}
                   {syncState === 'pending' && <span class="od-summary-sub is-warn">Förankringen mot videon är inte bekräftad.</span>}
                 </dd>
                 <dt>Undertexter</dt>
                 <dd>
-                  {p.recording?.captions
-                    ? <>{p.recording.captions.label} · {p.recording.captions.cueCount.toLocaleString('sv-SE')} repliker</>
-                    : 'Inga'}
+                  {captionDraft && !captionDraft.stale
+                    ? <>
+                        {captionDraft.cueCount.toLocaleString('sv-SE')} repliker
+                        {captionDraft.needsApproval
+                          ? <span class="od-summary-sub is-warn">Väntar på godkännande i redigeraren.</span>
+                          : captionDraft.unpublishedChanges && <span class="od-summary-sub">{published ? 'Opublicerade ändringar.' : 'Publiceras med projektet.'}</span>}
+                      </>
+                    : p.recording?.captions
+                      ? <>{p.recording.captions.cueCount.toLocaleString('sv-SE')} repliker</>
+                      : 'Inga'}
                 </dd>
               </dl>
             )}

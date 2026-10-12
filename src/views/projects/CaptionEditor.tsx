@@ -1250,7 +1250,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       await refreshDraftInfo()
       await refreshStatus()
       onSaved?.()
-      setNotice(`VTT-filen är inläst (${next.cues.length.toLocaleString('sv-SE')} repliker). Den syns för tittarna när du publicerar.`)
+      setNotice(`VTT-filen är inläst och sparad som utkast (${next.cues.length.toLocaleString('sv-SE')} repliker). Den syns för tittarna när du publicerar.`)
     } catch (err) {
       setVttError(isConflict(err)
         ? 'Utkastet har ändrats av någon annan. Stäng, ladda om och försök igen.'
