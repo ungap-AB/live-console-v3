@@ -83,7 +83,7 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
       projectId={p.id}
       header={header}
       modes={<ModeSelector project={p} actions={actions} />}
-      player={p.playerUrl ? { url: p.playerUrl, version: 0 } : null}
+      player={p.playerUrl ? { url: p.playerUrl, version: 0, actions: <button class="btn btn-sm" type="button" onClick={() => setPlayerSettings('link')}><Icon name="settings" size={18} /> Spelarinställningar…</button> } : null}
       workOpen={playout.open}
       overlays={<>
         {playerSettings && (
@@ -163,9 +163,6 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
 
       <div class="ovs-bottom lw-bottom">
         <div class="lw-actions">
-          <button class="btn" type="button" onClick={() => setPlayerSettings('link')}>
-            <Icon name="settings" size={18} /> Spelarinställningar…
-          </button>
           <button class="btn" type="button" disabled={!channel} onClick={() => setPlayerSettings('ingest')}>
             <Icon name="info" size={18} /> Ingest info
           </button>

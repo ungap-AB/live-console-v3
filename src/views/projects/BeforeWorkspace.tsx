@@ -125,7 +125,7 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
       projectId={p.id}
       header={header}
       modes={<ModeSelector project={p} actions={actions} />}
-      player={p.playerUrl ? { url: p.playerUrl, version: playerVersion, preview: { label: 'Live (förhandsvisning)', variant: 'published', mode: 'live' } } : null}
+      player={p.playerUrl ? { url: p.playerUrl, version: playerVersion, preview: { label: 'Live (förhandsvisning)', variant: 'published', mode: 'live' }, actions: <button class="btn btn-sm" type="button" onClick={() => setPlayerSettings('link')}><Icon name="settings" size={18} /> Spelarinställningar…</button> } : null}
       workOpen={playout.open}
       overlays={<>
         {picking && <ListPicker kind={picking} project={p} actions={actions} onClose={() => setPicking(null)} />}
@@ -204,9 +204,6 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
 
 
       <div class="bw-actions ovs-bottom">
-        <button class="btn" type="button" onClick={() => setPlayerSettings('link')}>
-          <Icon name="settings" size={18} /> Spelarinställningar…
-        </button>
         {onForked && <ForkButton project={p} livePhase={health?.livePhase} onForked={onForked} />}
       </div>
     </OverviewShell>

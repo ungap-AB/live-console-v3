@@ -71,3 +71,18 @@
   font-weight: 600;
   box-shadow: inset 0 -2px 0 var(--focus);
 }
+
+/* Raden ovanför spelaren: visningsläget till vänster, knappar (Spelarinställningar…) till höger. */
+.pp-bar {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pp-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}

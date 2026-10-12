@@ -38,12 +38,14 @@ interface PlayerPreviewProps {
   version: number
   /** Finns: operatören kan växla mellan det tittarna ser och förhandsvisningen. */
   preview?: PlayerPreviewMode
+  /** Knappar till höger på raden ovanför spelaren. */
+  actions?: ComponentChildren
 }
 
 // UNG-252: den riktiga spelaren (live-player-v3) inbäddad i konsolen. UNG-251: alltid synlig i översikten.
 // UNG-270: visar alltid det tittarna ser i lägets spelare, publicerat eller inte. Med `preview` kan spelaren i stället visas i ett annat
 // läge via en förhandsvisningslänk: Live i Before, Ondemand i After (utkastets kapitel, otrimmad inspelning).
-export function PlayerPreview({ projectId, url, version, preview }: PlayerPreviewProps) {
+export function PlayerPreview({ projectId, url, version, preview, actions }: PlayerPreviewProps) {
   const [asPreview, setAsPreview] = useState(false)
   const [link, setLink] = useState<PreviewLink | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -65,14 +67,19 @@ export function PlayerPreview({ projectId, url, version, preview }: PlayerPrevie
 
   return (
     <section class="pp" aria-label="Förhandsvisning av spelaren">
-      {preview && (
-        <div class="pp-showas" role="group" aria-label="Visa spelaren som">
-          <button type="button" class={!active ? 'is-active' : ''} aria-pressed={!active} onClick={() => setAsPreview(false)}>
-            Som tittarna ser den
-          </button>
-          <button type="button" class={active ? 'is-active' : ''} aria-pressed={active} onClick={() => setAsPreview(true)}>
-            {preview.label}
-          </button>
+      {(preview || actions) && (
+        <div class="pp-bar">
+          {preview && (
+            <div class="pp-showas" role="group" aria-label="Visa spelaren som">
+              <button type="button" class={!active ? 'is-active' : ''} aria-pressed={!active} onClick={() => setAsPreview(false)}>
+                Som tittarna ser den
+              </button>
+              <button type="button" class={active ? 'is-active' : ''} aria-pressed={active} onClick={() => setAsPreview(true)}>
+                {preview.label}
+              </button>
+            </div>
+          )}
+          {actions && <div class="pp-actions">{actions}</div>}
         </div>
       )}
       {active ? (

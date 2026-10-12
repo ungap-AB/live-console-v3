@@ -581,7 +581,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
       />}
       modes={<ModeSelector project={p} actions={actions} onModeSelect={handleModeSelect} />}
       player={p.playerUrl && !awaitingApproval
-        ? { url: p.playerUrl, version: previewVersion, preview: isAfter && recording ? { label: 'Ondemand (förhandsvisning)', variant: 'draft', mode: 'ondemand' } : undefined }
+        ? { url: p.playerUrl, version: previewVersion, preview: isAfter && recording ? { label: 'Ondemand (förhandsvisning)', variant: 'draft', mode: 'ondemand' } : undefined,
+            actions: <button class="btn btn-sm" type="button" onClick={() => setPlayerSettings('link')}><Icon name="settings" size={18} /> Spelarinställningar…</button> }
         : null}
       workOpen={editorOpen}
       overlays={<>
@@ -790,6 +791,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                 <button class="btn btn-sm" type="button" onClick={() => setShowExportDialog(true)}>
                   <Icon name="ios_share" size={18} /> Exportera & importera…
                 </button>
+                {onForked && <ForkButton project={p} livePhase={live.health?.livePhase} onForked={onForked} />}
               </div>
             )}
 
@@ -833,19 +835,15 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
             )}
 
             {/* Längst ner, som i Before och Live. */}
-            <div class="ovs-bottom od-bottom">
-              <div class="od-secondary-actions">
-                <button class="btn" type="button" onClick={() => setPlayerSettings('link')}>
-                  <Icon name="settings" size={18} /> Spelarinställningar…
-                </button>
-                {live.channel && (
+            {live.channel && (
+              <div class="ovs-bottom od-bottom">
+                <div class="od-secondary-actions">
                   <button class="btn" type="button" onClick={() => setPlayerSettings('ingest')}>
                     <Icon name="info" size={18} /> Ingest info
                   </button>
-                )}
-                {onForked && <ForkButton project={p} livePhase={live.health?.livePhase} onForked={onForked} />}
+                </div>
               </div>
-            </div>
+            )}
     </OverviewShell>
   )
 }
