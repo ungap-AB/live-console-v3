@@ -170,6 +170,7 @@ export function ProjectsView({
   }, [selectedId, selectionScope])
 
   const selected = projects.find((p) => p.id === selectedId) ?? null
+  const showList = !(selected && (screen === 'livesandning' || screen === 'ondemand'))
 
   // UNG-183: när listan visas (tillbaka från ett projekt, eller när man kommer hit från en annan vy) scrollas det senast öppnade
   // projektet fram och får fokus på sin namnknapp, så Enter öppnar det igen. Raden markeras så länge det är det senast öppnade.
@@ -185,7 +186,7 @@ export function ProjectsView({
     const row = target ? listRef.current?.querySelector<HTMLElement>(`[data-project-id="${CSS.escape(target)}"]`) : null
     if (!row) return
     revealPending.current = false
-    const container = row.closest<HTMLElement>('.content')
+    const container = listRef.current
     const view = container?.getBoundingClientRect() ?? { top: 0, bottom: window.innerHeight }
     const rect = row.getBoundingClientRect()
     if (needsScroll(rect, view)) row.scrollIntoView({ block: 'center' })
@@ -565,28 +566,28 @@ export function ProjectsView({
       <header class={`project-header${selected ? ' collapsed' : ''}`}>
         <div class="header-list-zone">
           <h1>Projekt</h1>
-          <div class="project-filter" role="group" aria-label="Visa projekt i läget">
-            {(['all', ...MODES] as ModeFilter[]).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                class={modeFilter === mode ? 'is-active' : ''}
-                aria-pressed={modeFilter === mode}
-                onClick={() => setModeFilter(mode)}
-              >
-                {mode === 'all' ? 'Alla' : MODE_LABEL[mode]}
-                <span class="project-filter-count">{mode === 'all' ? projects.length : modeCounts[mode]}</span>
-              </button>
-            ))}
-          </div>
           <span class="spacer" />
           <button class="btn btn-sm" type="button" onClick={() => onCreatingChange(true)}>
             + Nytt
           </button>
         </div>
+        <div class="project-filter" role="group" aria-label="Visa projekt i läget">
+          {(['all', ...MODES] as ModeFilter[]).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              class={modeFilter === mode ? 'is-active' : ''}
+              aria-pressed={modeFilter === mode}
+              onClick={() => setModeFilter(mode)}
+            >
+              {mode === 'all' ? 'Alla' : MODE_LABEL[mode]}
+              <span class="project-filter-count">{mode === 'all' ? projects.length : modeCounts[mode]}</span>
+            </button>
+          ))}
+        </div>
       </header>
 
-      <div class="content">
+      <div class={`content${showList ? ' project-list-content' : ''}`}>
         {selected && screen === 'livesandning' ? (
           <Livesandning
             project={selected}

@@ -37,9 +37,19 @@
   overflow: auto;
 }
 
+.view > .content.project-list-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Sidan står still; rubrikraden ligger fast och bara raderna under den skrollar. */
 .project-list {
   display: flex;
   flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
@@ -58,11 +68,8 @@
   padding: 0 6px 0 14px;
 }
 
-/* Kolumnrubrikerna ligger kvar överst när listan skrollar. */
 .project-list-head {
-  position: sticky;
-  top: 0;
-  z-index: 2;
+  flex: none;
   height: 34px;
   border-bottom: 1px solid var(--line);
   border-radius: 8px 8px 0 0;
@@ -86,6 +93,9 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .project-row {
@@ -334,10 +344,11 @@
   font-size: 12px;
 }
 
-/* Lägesfiltret i huvudet: vald knapp markeras som lägesknapparna (ljusare yta och understrykning). */
+/* Lägesfiltret i huvudet, längst till höger: vald knapp markeras som lägesknapparna (ljusare yta och understrykning). */
 .project-filter {
   display: inline-flex;
-  margin-left: 18px;
+  flex: none;
+  margin-left: auto;
   border: 1px solid var(--line);
   border-radius: 6px;
   overflow: hidden;
