@@ -503,7 +503,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
             <CaptionEntry
               projectId={p.id}
               projectName={p.name}
-              label="Redigera"
+              label="Redigera projekt"
             renderTrigger={renderTrigger}
               videoDurationSeconds={recording?.durationSeconds}
               posterUrl={p.posterUrl}
@@ -724,12 +724,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                   {published && anyUnpublished && (
                     <span class="od-unpublished-row">
                       <span class="od-unpublished">Opublicerade ändringar</span>
-                      {/* Publicera ändringar görs i redigeraren: där syns vad som ändrats. */}
-                      {editorAvailable && (
-                        <button class="btn btn-sm btn-primary" type="button" onClick={() => setEditorRequest((request) => ({ focus: 'captions', seq: (request?.seq ?? 0) + 1 }))}>
-                          Granska och publicera…
-                        </button>
-                      )}
                     </span>
                   )}
                 </dd>
@@ -784,6 +778,13 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                       : 'Inga'}
                 </dd>
               </dl>
+            )}
+
+            {/* Publicerar ändringarna direkt (som Publicera ondemand i After-flödet: bred knapp under sammanfattningen). */}
+            {published && anyUnpublished && !awaitingApproval && (
+              <button class="btn btn-primary od-flow-publish" type="button" disabled={publishing || publishBlocked} onClick={() => void publishChangesOnly()}>
+                <Icon name="publish" size={18} /> Publicera
+              </button>
             )}
 
             {(source || published) && !awaitingApproval && (
