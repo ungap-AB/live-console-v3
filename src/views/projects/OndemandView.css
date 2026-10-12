@@ -1208,3 +1208,24 @@
   flex-direction: column;
   gap: 12px;
 }
+
+.od-unpublished-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.od-publish-contents {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.od-publish-warning {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--warn);
+}

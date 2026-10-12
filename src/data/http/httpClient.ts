@@ -874,9 +874,6 @@ export const httpClient: Client = {
     analyzeSpeakers(id) {
       return api<CaptionGeneration>(`/projects/${id}/captions/speakers/analyze`, { method: 'POST' })
     },
-    approveCaptionDraft(id, version) {
-      return api<CaptionGeneration>(`/projects/${id}/captions/draft/approve`, { method: 'POST', query: { version } })
-    },
     getCaptionMaster(id) {
       return api<CaptionMaster>(`/projects/${id}/captions/master`)
     },
@@ -1118,11 +1115,11 @@ export const httpClient: Client = {
       return api<import('../types').DraftStatus>(`/projects/${id}/draft-status`)
     },
     async publishChanges(id, ifDraftRevision) {
-      const result = await api<{ project: ServerProject; captionsPendingApproval: boolean; captionsPublished: boolean }>(`/projects/${id}/publish-changes`, {
+      const result = await api<{ project: ServerProject; captionsPublished: boolean }>(`/projects/${id}/publish-changes`, {
         method: 'POST',
         ifDraftRevision,
       })
-      return { project: await toProjectFull(result.project), captionsPendingApproval: result.captionsPendingApproval, captionsPublished: result.captionsPublished }
+      return { project: await toProjectFull(result.project), captionsPublished: result.captionsPublished }
     },
     discardChanges(id, ifDraftRevision) {
       return api<import('../types').DraftStatus>(`/projects/${id}/discard-changes`, { method: 'POST', ifDraftRevision })

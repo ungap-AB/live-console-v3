@@ -34,7 +34,6 @@ import {
   diffChapters, mergeRows, positionedChapters, removeChapter, renameChapter, setChapterTime, sortChapters, type EditorChapter,
 } from './chapterRows'
 import { timeAtRow, type GrabRole } from './captionWaveformLogic'
-import { approveBlockedReason } from './autoCaptionsLogic'
 import { showUnmute, unmuted } from './videoSoundLogic'
 import { WordImportDialog } from './WordImportDialog'
 import { ChapterImportDialog } from './ChapterImportDialog'
@@ -183,7 +182,6 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   const [confirmPublish, setConfirmPublish] = useState(false)
   const [publishing, setPublishing] = useState(false)
   // UNG-245: en publicering för undertexter och kapitel (Publicera ändringar), godkännande av maskinutkast, och förkasta.
-  const [confirmApprove, setConfirmApprove] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [draftStatus, setDraftStatus] = useState<DraftStatus | null>(null)
   // Utkastets versionsnummer som nästa skrivning villkoras på (UNG-241). Uppdateras av varje svar som bär det.
@@ -394,13 +392,11 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   const changeCount = diff.changedIds.size + diff.removed + (diff.reordered && diff.changedIds.size + diff.removed === 0 ? 1 : 0) + chapterChangeTotal(chapterChanges) + (trimDirty ? 1 : 0)
   const readOnly = master?.legacy ?? false
   // Publicera i huvudet: publicerad = den sparade versionen är den godkända och inget är ändrat sedan dess.
-  const publishBlocked = draftInfo ? approveBlockedReason(draftInfo) : null
-  const needsApproval = Boolean(draftInfo?.needsApproval) && !readOnly
+  const unreviewed = Boolean(draftInfo?.unreviewed) && !readOnly
   const actions = headerActions({
     published: draftStatus?.published ?? false,
     serverChanges: draftStatus?.hasUnpublishedChanges ?? false,
     localDirty: dirty,
-    needsApproval,
     busy: saving || publishing || regenerating,
     readOnly,
   })
@@ -1280,31 +1276,6 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
     }
   }
 
-  // Godkänn undertexterna (UNG-244): ett maskinellt utkast måste godkännas en gång. Osparade ändringar sparas först; därefter följer
-  // varje redigering med när man publicerar.
-  async function approve() {
-    if (!master) return
-    actionRef.current = 'approve'
-    setConfirmApprove(false)
-    setPublishing(true)
-    setSaveError('')
-    try {
-      if (!(await saveAll())) return
-      const version = (await client.projects.getCaptionMaster(projectId)).version
-      await client.projects.approveCaptionDraft(projectId, version)
-      await load()
-      await refreshDraftInfo()
-      await refreshStatus()
-      onSaved?.()
-      setNotice('Undertexterna är godkända.')
-    } catch (err) {
-      if (isConflict(err)) void markConflict()
-      else setSaveError(err instanceof Error ? err.message : 'Undertexterna kunde inte godkännas.')
-    } finally {
-      setPublishing(false)
-    }
-  }
-
   // Publicera ändringar (UNG-242): sparar det osparade och släpper kapitel och godkända undertexter i ett publicerat projekt.
   async function publishChanges() {
     if (!master) return
@@ -1409,7 +1380,6 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
     if (!retry) return
     setRetry(null)
     if (retry === 'save') void save()
-    else if (retry === 'approve') void approve()
     else if (retry === 'publish') void publishChanges()
     else void discardChanges()
   }, [retry])
@@ -1680,17 +1650,6 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
           <button class="btn btn-sm" type="button" disabled={!dirty || saving || publishing || readOnly} onClick={() => void save()}>
             {saving ? 'Sparar…' : 'Spara'}
           </button>
-          {actions.showApprove && (
-            <button
-              class="btn btn-sm"
-              type="button"
-              disabled={!master || readOnly || saving || publishing || Boolean(publishBlocked)}
-              title={publishBlocked ?? 'Godkänner undertexterna. Därefter följer varje redigering med när du publicerar.'}
-              onClick={() => setConfirmApprove(true)}
-            >
-              Godkänn undertexter
-            </button>
-          )}
           {actions.showDiscard && (
             <button
               class="btn btn-sm"
@@ -2432,21 +2391,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
           <p>
             Ändringarna i kapitel och undertexter blir synliga för tittarna direkt och ersätter de nuvarande.
             {dirty ? ' Dina osparade ändringar sparas först.' : ''}
-            {needsApproval ? ' Undertexterna väntar på godkännande och följer inte med förrän du har godkänt dem.' : ''}
-          </p>
-        </ConfirmModal>
-      )}
-
-      {confirmApprove && (
-        <ConfirmModal
-          title="Godkänn undertexterna?"
-          confirmLabel={dirty ? 'Spara och godkänn' : 'Godkänn'}
-          onCancel={() => setConfirmApprove(false)}
-          onConfirm={() => void approve()}
-        >
-          <p>
-            Undertexterna är gjorda av AI och kan innehålla fel, så granska dem först. När du har godkänt dem följer varje redigering med
-            när du publicerar.{dirty ? ' Dina osparade ändringar sparas först.' : ''}
+            {unreviewed ? ' Obs: undertexterna är maskingenererade och inte granskade.' : ''}
           </p>
         </ConfirmModal>
       )}

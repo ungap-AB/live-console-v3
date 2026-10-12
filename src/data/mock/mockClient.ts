@@ -901,9 +901,6 @@ export const mockClient: Client = {
     async analyzeSpeakers() {
       throw new Error('Automatiska undertexter finns inte i mock-läget')
     },
-    async approveCaptionDraft() {
-      throw new Error('Automatiska undertexter finns inte i mock-läget')
-    },
     async discardCaptionDraft() {
       throw new Error('Automatiska undertexter finns inte i mock-läget')
     },
@@ -1369,7 +1366,7 @@ export const mockClient: Client = {
     },
     async publishChanges(id) {
       const project = findProject(id)
-      return delay({ project: projectSnapshot(project), captionsPendingApproval: false, captionsPublished: false })
+      return delay({ project: projectSnapshot(project), captionsPublished: false })
     },
     async discardChanges(id) {
       const project = findProject(id)

@@ -419,8 +419,8 @@ export interface CaptionDraft {
   unpublishedChanges?: boolean
   updatedAtUtc?: string
   updatedByName?: string
-  /** UNG-244: ett maskinellt utkast som inte godkänts går aldrig live. Efter ett godkännande följer varje redigering med. */
-  needsApproval?: boolean
+  /** Arbetsversionen är ett oredigerat, opublicerat maskinutkast (varning när man publicerar; ingen spärr). */
+  unreviewed?: boolean
 }
 
 /** UNG-138: en replik i undertextmastern. Tider i sekunder på ORIGINALinspelningens tidslinje. */
@@ -735,10 +735,9 @@ export interface DraftStatus {
   hasUnpublishedChanges: boolean
 }
 
-/** UNG-242: resultatet av Publicera ändringar. captionsPendingApproval = undertexterna väntar på godkännande och följde inte med. */
+/** UNG-242: resultatet av Publicera ändringar. captionsPublished = undertexternas arbetsversion publicerades. */
 export interface PublishChangesResult {
   project: Project
-  captionsPendingApproval: boolean
   captionsPublished: boolean
 }
 

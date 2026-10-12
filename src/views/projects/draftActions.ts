@@ -36,8 +36,6 @@ export interface HeaderInput {
   serverChanges: boolean
   /** Något är osparat i redigeraren (undertexter, kapitel eller trim). */
   localDirty: boolean
-  /** Ett maskinellt undertextutkast väntar på godkännande. */
-  needsApproval: boolean
   /** Spara, publicera eller något annat pågår. */
   busy: boolean
   readOnly: boolean
@@ -46,7 +44,6 @@ export interface HeaderInput {
 export interface HeaderActions {
   /** "Opublicerade ändringar" som märke i rubriken. */
   unpublishedBadge: boolean
-  showApprove: boolean
   showPublishChanges: boolean
   publishChangesEnabled: boolean
   showDiscard: boolean
@@ -54,10 +51,9 @@ export interface HeaderActions {
 }
 
 export function headerActions(input: HeaderInput): HeaderActions {
-  const { published, serverChanges, localDirty, needsApproval, busy, readOnly } = input
+  const { published, serverChanges, localDirty, busy, readOnly } = input
   return {
     unpublishedBadge: localDirty || (published && serverChanges),
-    showApprove: needsApproval,
     showPublishChanges: published,
     // Det som är osparat sparas först, så knappen går att trycka även då.
     publishChangesEnabled: published && !busy && !readOnly && (serverChanges || localDirty),
@@ -68,17 +64,14 @@ export function headerActions(input: HeaderInput): HeaderActions {
 }
 
 /** Texten efter Publicera ändringar. */
-export function publishChangesNotice(result: { captionsPendingApproval: boolean; captionsPublished: boolean }): string {
-  if (result.captionsPendingApproval) {
-    return 'Ändringarna är publicerade. Undertexterna väntar på godkännande och följde inte med.'
-  }
+export function publishChangesNotice(result: { captionsPublished: boolean }): string {
   return result.captionsPublished ? 'Kapitel och undertexter är publicerade.' : 'Ändringarna är publicerade.'
 }
 
 // ---- UNG-246: konflikt i utkastet ----
 
 /** Det som gick att göra i redigeraren och som kan stoppas av en konflikt (och göras om efter "Skriv över"). */
-export type DraftAction = 'save' | 'approve' | 'publish' | 'discard'
+export type DraftAction = 'save' | 'publish' | 'discard'
 
 /** Felkoder som betyder att någon annan har sparat sedan redigeraren öppnades: utkastet (draft_conflict) eller undertexterna (version_conflict). */
 export function isConflictCode(code: string | undefined): boolean {
@@ -106,7 +99,6 @@ export function conflictDescription(info: ConflictInfo): string {
 export function overwriteLabel(action: DraftAction): string {
   switch (action) {
     case 'publish': return 'Skriv över och publicera'
-    case 'approve': return 'Skriv över och godkänn'
     case 'discard': return 'Förkasta ändå'
     default: return 'Skriv över'
   }

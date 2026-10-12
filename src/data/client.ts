@@ -219,8 +219,6 @@ export interface Client {
     generateCaptions(id: string, notifyByEmail: boolean, includeSpeakers?: boolean): Promise<import('./types').CaptionGeneration>
     /** UNG-205: analyserar bara talarbyten för ett projekt som redan har undertexter (ingen ny transkribering). */
     analyzeSpeakers(id: string): Promise<import('./types').CaptionGeneration>
-    /** Godkänner utkastet: det publiceras som projektets undertext (samma väg som en uppladdad VTT-fil). */
-    approveCaptionDraft(id: string, version?: number): Promise<import('./types').CaptionGeneration>
     /** UNG-138: mastern som radlista. Spara med den version du utgick från (409 om någon annan hunnit före). */
     getCaptionMaster(id: string): Promise<import('./types').CaptionMaster>
     /** UNG-248: redigerarens källa (video, längd, trim) för ett projekt som saknar undertexter. */

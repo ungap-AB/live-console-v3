@@ -21,13 +21,13 @@ test('trimutkastet bär intervallet och kapitellistan i serverns ordning', () =>
   })
 })
 
-const base = { published: false, serverChanges: false, localDirty: false, needsApproval: false, busy: false, readOnly: false }
+const base = { published: false, serverChanges: false, localDirty: false, busy: false, readOnly: false }
 
-test('före publicering: bara godkännande (när det behövs), inga publicerings- eller förkastaknappar', () => {
-  const a = headerActions({ ...base, needsApproval: true })
+test('före publicering: inga publicerings- eller förkastaknappar', () => {
+  const a = headerActions(base)
   assert.deepEqual(
-    [a.showApprove, a.showPublishChanges, a.showDiscard, a.unpublishedBadge],
-    [true, false, false, false],
+    [a.showPublishChanges, a.showDiscard, a.unpublishedBadge],
+    [false, false, false],
   )
   assert.equal(headerActions({ ...base, localDirty: true }).unpublishedBadge, true)
 })
@@ -55,9 +55,8 @@ test('knapparna är avstängda medan något pågår och i skrivskyddat läge', (
 })
 
 test('meddelandet efter Publicera ändringar säger om undertexterna väntar', () => {
-  assert.match(publishChangesNotice({ captionsPendingApproval: true, captionsPublished: false }), /väntar på godkännande/)
-  assert.match(publishChangesNotice({ captionsPendingApproval: false, captionsPublished: true }), /Kapitel och undertexter/)
-  assert.equal(publishChangesNotice({ captionsPendingApproval: false, captionsPublished: false }), 'Ändringarna är publicerade.')
+  assert.match(publishChangesNotice({ captionsPublished: true }), /Kapitel och undertexter/)
+  assert.equal(publishChangesNotice({ captionsPublished: false }), 'Ändringarna är publicerade.')
 })
 
 test('konfliktkoderna är utkastets och undertexternas', () => {
@@ -76,6 +75,5 @@ test('konfliktdialogen säger vad som ändrats och vem som sparade undertexterna
 test('Skriv över gör om det som stoppades', () => {
   assert.equal(overwriteLabel('save'), 'Skriv över')
   assert.equal(overwriteLabel('publish'), 'Skriv över och publicera')
-  assert.equal(overwriteLabel('approve'), 'Skriv över och godkänn')
   assert.equal(overwriteLabel('discard'), 'Förkasta ändå')
 })

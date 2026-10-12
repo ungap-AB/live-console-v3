@@ -393,13 +393,13 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     let succeeded = false
     try {
       // Villkorat på utkastets version: har någon annan ändrat sedan läget hämtades publiceras inget.
-      const result = await client.projects.publishChanges(p.id, draftStatus?.draftRevision)
+      await client.projects.publishChanges(p.id, draftStatus?.draftRevision)
       await actions.refreshProject()
       setHasUnpublishedChanges(false)
       setPublishStep('chapters')
       await reloadChaptersNow()
       succeeded = true
-      setActionNote(result.captionsPendingApproval ? 'Ändringarna är publicerade. Undertexterna väntar på godkännande och följde inte med.' : '')
+      setActionNote('')
     } catch (error) {
       failed = true
       setActionNote(error instanceof Error ? error.message : 'Ändringarna kunde inte publiceras.')
@@ -562,7 +562,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
         />
       </ol>
       <button class="btn btn-primary od-flow-publish" type="button" disabled={!canPublish} onClick={() => setConfirmOndemand(true)}>
-        <Icon name="publish" size={18} /> Publicera
+        <Icon name="publish" size={18} /> Publicera ondemand
       </button>
     </div>
   )
@@ -587,11 +587,18 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
       overlays={<>
         {dialog}
         {confirmOndemand && (
-          <Modal title="Publicera ändringarna?" onClose={() => setConfirmOndemand(false)}>
-            <p>{published ? 'Kapitel och godkända undertexter släpps till tittarna.' : 'Sändningen sätts i Ondemand-läge när du publicerar.'}</p>
+          <Modal title={published ? 'Publicera ändringarna?' : 'Publicera ondemand?'} onClose={() => setConfirmOndemand(false)}>
+            <p>{published ? 'Ändringarna i kapitel och undertexter släpps till tittarna.' : 'Sändningen sätts i Ondemand-läge och allt nedan blir synligt för tittarna.'}</p>
+            {/* Allt i arbetsversionen publiceras i ett steg: video, kapitel och undertexter (ingen separat godkännande för undertexterna). */}
+            <ul class="od-publish-contents">
+              <li>Video: {externalVideo ? 'extern adress' : isTrimmed ? 'trimmad' : 'ej trimmad'}</li>
+              <li>Kapitel: {chapterCount === 0 ? 'inga' : chapterCount}</li>
+              <li>Undertexter: {captionDraft && !captionDraft.stale ? `${captionDraft.cueCount.toLocaleString('sv-SE')} repliker` : p.recording?.captions ? `${p.recording.captions.cueCount.toLocaleString('sv-SE')} repliker` : 'inga'}</li>
+            </ul>
+            {captionDraft?.unreviewed && <p class="od-publish-warning">Undertexterna är maskingenererade och inte granskade.</p>}
             <div class="modal-actions">
               <button class="btn" type="button" onClick={() => setConfirmOndemand(false)}>Avbryt</button>
-              <button class="btn btn-primary" type="button" onClick={() => void publishWithTrim()}>Publicera</button>
+              <button class="btn btn-primary" type="button" onClick={() => void publishWithTrim()}>{published ? 'Publicera' : 'Publicera ondemand'}</button>
             </div>
           </Modal>
         )}
@@ -713,7 +720,17 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                   {published && lastPublish && (
                     <span class="od-summary-sub">Senast {formatDateTime(lastPublish.occurredAt)} av {lastPublish.actorName}</span>
                   )}
-                  {published && anyUnpublished && <span class="od-unpublished">Opublicerade ändringar</span>}
+                  {published && anyUnpublished && (
+                    <span class="od-unpublished-row">
+                      <span class="od-unpublished">Opublicerade ändringar</span>
+                      {/* Publicera ändringar görs i redigeraren: där syns vad som ändrats. */}
+                      {editorAvailable && (
+                        <button class="btn btn-sm btn-primary" type="button" onClick={() => setEditorRequest((request) => ({ focus: 'captions', seq: (request?.seq ?? 0) + 1 }))}>
+                          Granska och publicera…
+                        </button>
+                      )}
+                    </span>
+                  )}
                 </dd>
                 {source && (
                   <>
@@ -758,9 +775,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                   {captionDraft && !captionDraft.stale
                     ? <>
                         {captionDraft.cueCount.toLocaleString('sv-SE')} repliker
-                        {captionDraft.needsApproval
-                          ? <span class="od-summary-sub is-warn">Väntar på godkännande i redigeraren.</span>
-                          : captionDraft.unpublishedChanges && <span class="od-summary-sub">{published ? 'Opublicerade ändringar.' : 'Publiceras med projektet.'}</span>}
+                        {captionDraft.unpublishedChanges && <span class="od-summary-sub">{published ? 'Inte publicerade än.' : 'Publiceras med projektet.'}</span>}
+                        {captionDraft.unreviewed && <span class="od-summary-sub is-warn">Maskingenererade, inte granskade.</span>}
                       </>
                     : p.recording?.captions
                       ? <>{p.recording.captions.cueCount.toLocaleString('sv-SE')} repliker</>
@@ -788,7 +804,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                   </button>
                 ) : (
                   <button class="btn btn-sm btn-primary od-publish-button" type="button" disabled={!canPublish} onClick={() => setConfirmOndemand(true)}>
-                    Publicera
+                    Publicera ondemand
                   </button>
                 )}
                 {publishHint && <span class="od-summary-sub od-publish-hint">{publishHint}</span>}
