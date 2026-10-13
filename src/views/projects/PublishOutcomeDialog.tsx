@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { Modal } from '../../components/Modal'
 import { Icon } from '../../components/Icon'
 import { failedCopy, publishedCopy } from './publishOutcome'
@@ -14,7 +15,7 @@ export function PublishOutcomeDialog(props: PublishOutcomeDialogProps) {
   if (props.kind === 'failed') {
     const copy = failedCopy(props.stepLabel)
     return (
-      <Modal title={copy.title} onClose={props.onClose} footer={<button class="btn btn-sm btn-primary" type="button" onClick={props.onClose}>Stäng</button>}>
+      <Modal title={copy.title} onClose={props.onClose} footer={<button class="btn btn-sm btn-primary" type="button" onClick={props.onClose}>{t`Close`}</button>}>
         <p class="publish-outcome-text" role="alert">{copy.text}</p>
       </Modal>
     )
@@ -30,9 +31,9 @@ export function PublishOutcomeDialog(props: PublishOutcomeDialogProps) {
       footer={
         <>
           {copy.closed && (
-            <button class="btn btn-sm" type="button" onClick={() => { props.onOpenForViewers(); props.onClose() }}>Öppna för tittare</button>
+            <button class="btn btn-sm" type="button" onClick={() => { props.onOpenForViewers(); props.onClose() }}>{t`Open to viewers`}</button>
           )}
-          <button class="btn btn-sm btn-primary" type="button" onClick={props.onClose}>Stäng</button>
+          <button class="btn btn-sm btn-primary" type="button" onClick={props.onClose}>{t`Close`}</button>
         </>
       }
     >

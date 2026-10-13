@@ -17,5 +17,6 @@ jobs:
         with:
           node-version: "22"
       - run: npm ci
+      - run: npm run i18n:check
       - run: npm test
       - run: npm run build

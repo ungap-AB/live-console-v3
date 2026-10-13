@@ -2,6 +2,7 @@ import preact from '@preact/preset-vite'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
+import { linguiMacros } from './scripts/lingui-macro.mjs'
 
 const port = Number(process.env.PORT) || 5173
 const certDir = resolve(import.meta.dirname, '../live-server-v3/certs')
@@ -12,7 +13,7 @@ const https = existsSync(certFile) && existsSync(keyFile)
   : undefined
 
 export default defineConfig({
-  plugins: [preact()],
+  plugins: [linguiMacros(), preact()],
   resolve: {
     alias: { events: 'events' },
   },

@@ -1,0 +1,60 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-10-13 21:30+0200\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: sv\n"
+
+#: src/views/projects/publishOutcome.ts
+msgid "{chapterCount, plural, =0 {No chapters} one {# chapter} other {# chapters}}"
+msgstr "{chapterCount, plural, =0 {Inga kapitel} one {# kapitel} other {# kapitel}}"
+
+#: src/views/projects/publishOutcome.ts
+msgid "{cueCount, plural, one {Captions: {label} ({cues} line)} other {Captions: {label} ({cues} lines)}}"
+msgstr "{cueCount, plural, one {Undertexter: {label} ({cues} repliker)} other {Undertexter: {label} ({cues} repliker)}}"
+
+#: src/views/projects/PublishOutcomeDialog.tsx
+msgid "Close"
+msgstr "Stäng"
+
+#: src/views/projects/publishOutcome.ts
+msgid "No captions"
+msgstr "Inga undertexter"
+
+#: src/views/projects/publishOutcome.ts
+msgid "On demand published"
+msgstr "Ondemand publicerad"
+
+#: src/views/projects/publishOutcome.ts
+msgid "On demand updated"
+msgstr "Ondemand uppdaterad"
+
+#: src/views/projects/PublishOutcomeDialog.tsx
+msgid "Open to viewers"
+msgstr "Öppna för tittare"
+
+#: src/views/projects/publishOutcome.ts
+msgid "Publishing"
+msgstr "Publicerar"
+
+#: src/views/projects/publishOutcome.ts
+msgid "Publishing was stopped"
+msgstr "Publiceringen avbröts"
+
+#: src/views/projects/publishOutcome.ts
+msgid "The recording is published, but the project is closed, so viewers cannot see it yet."
+msgstr "Inspelningen är publicerad, men projektet är stängt så tittarna ser den inte än."
+
+#: src/views/projects/publishOutcome.ts
+msgid "The step “{stepLabel}” failed. The error message was shown as a notification. On demand has not been updated, so you can try again."
+msgstr "Steget ”{stepLabel}” misslyckades. Felmeddelandet visades som en notis. Ondemand är inte uppdaterat, så du kan försöka igen."
+
+#: src/views/projects/publishOutcome.ts
+msgid "Viewers can now see the changes."
+msgstr "Ändringarna syns nu för tittarna."
+
+#: src/views/projects/publishOutcome.ts
+msgid "Viewers can now see the recording."
+msgstr "Inspelningen syns nu för tittarna."
