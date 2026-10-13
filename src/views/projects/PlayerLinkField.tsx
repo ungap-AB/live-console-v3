@@ -8,11 +8,13 @@ import './ProjectHeader.css'
 interface PlayerLinkFieldProps {
   project: Project
   actions: ProjectActions
+  /** Etiketten "Spelarlänk" ovanför fältet (standard). Utan den under spelaren i översikten. */
+  label?: boolean
 }
 
 // Spelarlänken: öppen/stängd för publik, adressen, kopiera, IFRAME-alternativ och öppna i ny flik. Låg i projektets huvud, ligger nu
 // överst i spelarinställningarna.
-export function PlayerLinkField({ project: p, actions }: PlayerLinkFieldProps) {
+export function PlayerLinkField({ project: p, actions, label = true }: PlayerLinkFieldProps) {
   const [copied, setCopied] = useState(false)
   const [iframeCopied, setIframeCopied] = useState(false)
   const [showIframeMenu, setShowIframeMenu] = useState(false)
@@ -56,7 +58,7 @@ export function PlayerLinkField({ project: p, actions }: PlayerLinkFieldProps) {
 
   return (
     <div class="pv-field pv-link-field">
-      <div class="pv-label">Spelarlänk</div>
+      {label && <div class="pv-label">Spelarlänk</div>}
       <div class="pv-link">
         <button
           class="pv-icon-btn"
@@ -96,6 +98,16 @@ export function PlayerLinkField({ project: p, actions }: PlayerLinkFieldProps) {
           <Icon name="open_in_new" size={18} />
         </a>
       </div>
+    </div>
+  )
+}
+
+/** Raden under spelaren i översikten: Spelarinställningar… och spelarlänken med sina knappar. */
+export function PlayerFooter({ project, actions, onSettings }: { project: Project; actions: ProjectActions; onSettings: () => void }) {
+  return (
+    <div class="pp-foot">
+      <button class="btn btn-sm" type="button" onClick={onSettings}><Icon name="settings" size={18} /> Spelarinställningar…</button>
+      <PlayerLinkField project={project} actions={actions} label={false} />
     </div>
   )
 }

@@ -72,7 +72,7 @@
   box-shadow: inset 0 -2px 0 var(--focus);
 }
 
-/* Raden ovanför spelaren: visningsläget till vänster, knappar (Spelarinställningar…) till höger. */
+/* Raden ovanför spelaren: visningsläget (Publicerad / Preview). */
 .pp-bar {
   align-self: stretch;
   display: flex;
@@ -80,9 +80,15 @@
   gap: 10px;
 }
 
-.pp-actions {
+/* Raden under spelaren: Spelarinställningar… och spelarlänken. */
+.pp-foot {
+  align-self: stretch;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-left: auto;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.pp-foot .pv-link-field {
+  flex: 1 1 auto;
 }

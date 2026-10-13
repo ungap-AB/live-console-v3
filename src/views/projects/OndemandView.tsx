@@ -11,6 +11,7 @@ import { CaptionEntry } from './CaptionEntry'
 import type { EditorFocus } from './CaptionEditor'
 import type { CaptionEntry as CaptionEntryState } from './captionEntryLogic'
 import { Icon } from '../../components/Icon'
+import { PlayerFooter } from './PlayerLinkField'
 import { ModeSelector } from './ModeSelector'
 import { PlayerSettingsDialog, type PlayerSettingsCategory } from './PlayerSettingsDialog'
 import { ExportImportDialog } from './ExportImportDialog'
@@ -528,8 +529,9 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
             />
   )
 
-  // UI-finslipning omgång 1: i After (opublicerat) leder stegen till respektive moment i stället för en Redigera-knapp.
-  const guided = isAfter && !published
+  // UI-finslipning omgång 1: stegen leder till respektive moment i stället för en Redigera-knapp. Efter prod-provet 2026-10-13: även i
+  // Ondemand, med publiceringen som sista steg (Publicera ändringar när projektet redan är publicerat). Trimning görs bara i After.
+  const trimOnlyInAfter = !isAfter && !externalVideo
   const guideSteps = (open: ((focus?: EditorFocus) => void) | null, entry: CaptionEntryState | null) => (
     <div class="od-flow">
       <ol class="od-flow-steps" aria-label="Gör klart för ondemand">
@@ -539,7 +541,9 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
           status={externalVideo ? 'Extern video' : isTrimmed ? `Trimmad · ${formatHms(trimEnd - trimStart)}` : 'Hela inspelningen'}
           done={isTrimmed}
           disabled={!open || !showTrim || externalVideo}
-          title={externalVideo ? 'En extern video kan inte trimmas.' : undefined}
+          locked={trimOnlyInAfter}
+          note={trimOnlyInAfter ? 'Bara i After' : undefined}
+          title={externalVideo ? 'En extern video kan inte trimmas.' : trimOnlyInAfter ? 'Videon trimmas i läget After.' : undefined}
           onClick={() => open?.('trim')}
         />
         <GuideStep
@@ -560,10 +564,26 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
           title={entry?.disabledReason}
           onClick={() => open?.('captions')}
         />
+        {published ? (
+          <GuideStep
+            n={4}
+            label="Publicera ändringar"
+            status={anyUnpublished ? 'Opublicerade ändringar' : 'Inga ändringar'}
+            publish
+            disabled={!anyUnpublished || publishing || publishBlocked}
+            onClick={() => void publishChangesOnly()}
+          />
+        ) : (
+          <GuideStep
+            n={4}
+            label="Publicera ondemand"
+            status=""
+            publish
+            disabled={!canPublish}
+            onClick={() => setConfirmOndemand(true)}
+          />
+        )}
       </ol>
-      <button class="btn btn-primary od-flow-publish" type="button" disabled={!canPublish} onClick={() => setConfirmOndemand(true)}>
-        <Icon name="publish" size={18} /> Publicera ondemand
-      </button>
     </div>
   )
 
@@ -578,11 +598,12 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
         health={live.health}
         showIngestInfo={showIngestInfo}
         onShowIngestInfoChange={setShowIngestInfo}
+        onIngestInfo={live.channel ? () => setPlayerSettings('ingest') : undefined}
       />}
       modes={<ModeSelector project={p} actions={actions} onModeSelect={handleModeSelect} />}
       player={p.playerUrl && !awaitingApproval
-        ? { url: p.playerUrl, version: previewVersion, preview: isAfter && recording ? { label: 'Ondemand (förhandsvisning)', variant: 'draft', mode: 'ondemand' } : undefined,
-            actions: <button class="btn btn-sm" type="button" onClick={() => setPlayerSettings('link')}><Icon name="settings" size={18} /> Spelarinställningar…</button> }
+        ? { url: p.playerUrl, version: previewVersion, preview: isAfter && recording ? { label: 'Preview (ondemand)', variant: 'draft', mode: 'ondemand' } : undefined,
+            footer: <PlayerFooter project={p} actions={actions} onSettings={() => setPlayerSettings('link')} /> }
         : null}
       workOpen={editorOpen}
       overlays={<>
@@ -644,7 +665,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
               chapterCount,
               captions: p.recording?.captions ? { label: p.recording.captions.label, cueCount: p.recording.captions.cueCount } : null,
             } satisfies PublishedFacts}
-            playerUrl={p.playerUrl}
             onOpenForViewers={() => void actions.setVisibility('open')}
             onClose={() => setPublishOutcome(null)}
           />
@@ -706,7 +726,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
               />
             )}
 
-            {source && !awaitingApproval && guided && (
+            {(source || published) && !awaitingApproval && (
               <>
                 {editorAvailable ? editorEntry(guideSteps) : guideSteps(null, null)}
                 {publishHint && <p class="od-summary-sub od-publish-hint">{publishHint}</p>}
@@ -782,13 +802,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
               </dl>
             )}
 
-            {/* Publicerar ändringarna direkt (som Publicera ondemand i After-flödet: bred knapp under sammanfattningen). */}
-            {published && anyUnpublished && !awaitingApproval && (
-              <button class="btn btn-primary od-flow-publish" type="button" disabled={publishing || publishBlocked} onClick={() => void publishChangesOnly()}>
-                <Icon name="publish" size={18} /> Publicera
-              </button>
-            )}
-
             {(source || published) && !awaitingApproval && (
               <div class="od-secondary-actions">
                 <button class="btn btn-sm" type="button" onClick={() => setShowExportDialog(true)}>
@@ -799,22 +812,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
             )}
 
             {actionNote && <p class="od-download-error">{actionNote}</p>}
-            {(source || published) && !awaitingApproval && !guided && (
-              <footer class="od-chapters-footer od-overview-actions">
-                {editorAvailable && editorEntry()}
-                {/* Publicera ändringar och Förkasta ändringar görs i redigeraren. */}
-                {published ? (
-                  <button class="btn btn-sm" type="button" onClick={() => selectMode('after')}>
-                    Avpublicera
-                  </button>
-                ) : (
-                  <button class="btn btn-sm btn-primary od-publish-button" type="button" disabled={!canPublish} onClick={() => setConfirmOndemand(true)}>
-                    Publicera ondemand
-                  </button>
-                )}
-                {publishHint && <span class="od-summary-sub od-publish-hint">{publishHint}</span>}
-              </footer>
-            )}
 
             {playerSettings && (
               <PlayerSettingsDialog
@@ -837,16 +834,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
               />
             )}
 
-            {/* Direkt efter innehållet, som i Before och Live (UNG-293). */}
-            {live.channel && (
-              <div class="ovs-secondary od-bottom">
-                <div class="od-secondary-actions">
-                  <button class="btn" type="button" onClick={() => setPlayerSettings('ingest')}>
-                    <Icon name="info" size={18} /> Ingest info
-                  </button>
-                </div>
-              </div>
-            )}
     </OverviewShell>
   )
 }
@@ -857,6 +844,11 @@ interface GuideStepProps {
   /** Kort läge till höger (t.ex. "3 kapitel"). */
   status: string
   done?: boolean
+  /** Momentet görs i ett annat läge (Trimma video i Ondemand): lås i stället för pil, och en kort förklaring. */
+  locked?: boolean
+  note?: string
+  /** Publiceringen, sista steget: publiceringsikon i stället för nummer och pil. */
+  publish?: boolean
   /** UNG-278: något pågår (undertexter genereras): snurra i stället för numret, läget i accentfärg och inte avkortat. */
   busy?: boolean
   disabled?: boolean
@@ -865,14 +857,17 @@ interface GuideStepProps {
 }
 
 // Ett av de guidade stegen i After: en rad med nummer (bock när något är gjort), stegets namn, läget och en pil till momentet.
-function GuideStep({ n, label, status, done = false, busy = false, disabled = false, title, onClick }: GuideStepProps) {
+function GuideStep({ n, label, status, done = false, busy = false, disabled = false, locked = false, note, publish = false, title, onClick }: GuideStepProps) {
+  const state = [busy ? 'is-busy' : done && !publish ? 'is-done' : '', locked ? 'is-locked' : '', publish ? 'is-publish' : ''].filter(Boolean).join(' ')
   return (
-    <li class={busy ? 'is-busy' : done ? 'is-done' : undefined}>
-      <button class="od-flow-step" type="button" disabled={disabled} title={title} onClick={onClick}>
-        <span class="od-flow-num" aria-hidden="true">{busy ? <span class="od-flow-spinner" /> : done ? <Icon name="check" size={16} /> : n}</span>
+    <li class={state || undefined}>
+      <button class="od-flow-step" type="button" disabled={disabled || locked} title={title} onClick={onClick}>
+        <span class="od-flow-num" aria-hidden="true">
+          {busy ? <span class="od-flow-spinner" /> : publish ? <Icon name="publish" size={16} /> : done ? <Icon name="check" size={16} /> : n}
+        </span>
         <span class="od-flow-label">{label}</span>
-        <span class="od-flow-status">{status}</span>
-        <Icon name="chevron_right" size={18} />
+        <span class="od-flow-status">{note ? `${status} · ${note}` : status}</span>
+        <Icon name={locked ? 'lock' : 'chevron_right'} size={18} />
       </button>
     </li>
   )

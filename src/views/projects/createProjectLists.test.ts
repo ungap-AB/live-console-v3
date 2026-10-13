@@ -14,7 +14,7 @@ test('senast skapade oanvända dagordning: använda och mallar räknas inte, nya
 test('dagordning: den föreslagna oanvända och Ingen, ingen "skapa ny", och Ingen när inget finns', () => {
   const options = agendaOptions({ agendas: [agenda('c', 0, '2026-03-01T00:00:00Z')], meeting: false })
   assert.deepEqual(options.map((o) => o.id), ['c', NONE])
-  assert.match(options[0].label, /Senast skapade oanvända dagordning: Dagordning c/)
+  assert.match(options[0].label, /^Dagordning c$/)
   assert.deepEqual(agendaOptions({ agendas: [], meeting: false }).map((o) => o.id), [NONE])
   assert.equal(defaultChoice(options), 'c')
   assert.equal(defaultChoice(agendaOptions({ agendas: [], meeting: false })), NONE)
@@ -59,7 +59,7 @@ test('UNG-287: en lista vald i väljardialogen blir ett eget alternativ före In
     { id: 'a2', name: 'Dagordning b', usedInProjects: 0, changedAt: '2026-02-01T00:00:00Z' },
   ]
   assert.deepEqual(agendaOptions({ agendas, meeting: false, picked: 'a1' }).map((o) => [o.id, o.label]), [
-    ['a2', 'Senast skapade oanvända dagordning: Dagordning b'], ['a1', 'Vald: Dagordning a'], ['none', 'Ingen dagordning, jag kopplar senare'],
+    ['a2', 'Dagordning b'], ['a1', 'Vald: Dagordning a'], ['none', 'Ingen dagordning, jag kopplar senare'],
   ])
   assert.equal(agendaOptions({ agendas, meeting: false, picked: 'a2' }).length, 2)
   assert.deepEqual(nameListOptions({ source: undefined, nameLists: [{ id: 'n1', name: 'Ledamöter' }], meeting: false, picked: 'n1' }).map((o) => o.id), ['n1', 'none'])

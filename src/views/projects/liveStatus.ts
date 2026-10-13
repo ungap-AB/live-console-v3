@@ -11,7 +11,8 @@ export interface EncoderStatus {
 export function encoderStatusOf(input: { hasChannel: boolean; publicMode: PublicMode; livePhase?: string | null; healthState?: string | null }): EncoderStatus {
   const phase = input.livePhase?.toLowerCase()
   const healthLive = input.healthState?.toLowerCase() === 'live'
-  if (!input.hasChannel) return { label: 'Ingen ingest', tone: 'neutral' }
+  // Live utan ingest går inte att sända: varning i rött (UI-finslipning efter prod-prov 2026-10-13).
+  if (!input.hasChannel) return { label: 'Ingen ingest', tone: input.publicMode === 'live' ? 'danger' : 'neutral' }
   if (input.publicMode === 'after' && (phase === 'live' || phase === 'waitingforstream' || healthLive)) return { label: 'Väntar på att enkoder stoppar', tone: 'warn' }
   if (phase === 'live' || healthLive) return { label: 'Signal OK', tone: 'ok' }
   if (phase === 'signalinterrupted' || phase === 'signalinterrupteddeclined') return { label: 'Avbrott i signal', tone: 'danger' }

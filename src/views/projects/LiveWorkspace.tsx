@@ -1,5 +1,6 @@
 import type { ComponentChildren } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
+import { useIngestInfoRequest } from './useIngestInfoRequest'
 import { client } from '../../data'
 import type { Channel, ChannelHealth, ForkResult, Project } from '../../data/types'
 import { useIsRootAdmin } from '../../app/currentUserContext'
@@ -13,6 +14,7 @@ import { NowPanels, SignalInterrupt } from './PlayoutWorkOverlay'
 import { usePlayoutTestbed } from './playoutTestbed'
 import { useNameList } from './useNameList'
 import { Icon } from '../../components/Icon'
+import { PlayerFooter } from './PlayerLinkField'
 import { Modal } from '../../components/Modal'
 import { ModeSelector } from './ModeSelector'
 import { MAX_PAUSE_TEXT_LENGTH, pauseDurationText } from './pauseLogic'
@@ -31,12 +33,14 @@ interface LiveWorkspaceProps {
   streamKey: string | null
   /** UNG-198: anropas när ett projekt skapats ur det här. Saknas den visas inte knappen Fork. */
   onForked?: (result: ForkResult) => void
+  /** Ökar när rubrikens Ingest info klickas: öppnar spelarinställningarnas flik Ingest. */
+  ingestInfoRequest?: number
 }
 
 // Läget Live. UNG-269: översikt till vänster (lägesknapparna, signalens detaljer, det som är utspelat nu med Spela ut kapitel under och
 // övriga knappar längst ner), spelaren till höger med samma länk som tittarna; utspelningen sker i den överlagrade arbetsvyn, som
 // ersätter det expanderade läget (UNG-129/179) och öppnas bara med knappen. Sändningen avslutas med lägesknappen After.
-export function LiveWorkspace({ header, project: p, actions, channel, health, playout, streamKey, onForked }: LiveWorkspaceProps) {
+export function LiveWorkspace({ header, project: p, actions, channel, health, playout, streamKey, onForked, ingestInfoRequest = 0 }: LiveWorkspaceProps) {
   const testbed = usePlayoutTestbed(p, actions)
   // Testbädden är ett verktyg för oss (root admin), inte för operatörer.
   const isRootAdmin = useIsRootAdmin()
@@ -47,6 +51,7 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
   const nameListResource = useNameList(p)
   // Spelarinställningarna och fliken de öppnas på (Ingest info öppnar fliken Ingest).
   const [playerSettings, setPlayerSettings] = useState<PlayerSettingsCategory | null>(null)
+  useIngestInfoRequest(ingestInfoRequest, () => setPlayerSettings('ingest'))
   const phase = health?.livePhase
 
   // UNG-119: medan en paus pågår ligger en spärrande, stängbar ruta över vyn som påminner om att avsluta pausen. Stängs den
@@ -83,7 +88,7 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
       projectId={p.id}
       header={header}
       modes={<ModeSelector project={p} actions={actions} />}
-      player={p.playerUrl ? { url: p.playerUrl, version: 0, actions: <button class="btn btn-sm" type="button" onClick={() => setPlayerSettings('link')}><Icon name="settings" size={18} /> Spelarinställningar…</button> } : null}
+      player={p.playerUrl ? { url: p.playerUrl, version: 0, footer: <PlayerFooter project={p} actions={actions} onSettings={() => setPlayerSettings('link')} /> } : null}
       workOpen={playout.open}
       overlays={<>
         {playerSettings && (
@@ -134,14 +139,13 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
         </div>
       )}
 
-      <div class="lw-summary">
-        <span class="lw-summary-label">Utspelat nu</span>
-        <NowPanels project={p} actions={actions} showTime={false} />
-      </div>
-
       <button class="btn btn-primary ovs-wide" type="button" onClick={playout.openPlayout}>
         <Icon name="playlist_play" size={18} /> Spela ut kapitel
       </button>
+
+      <div class="lw-summary">
+        <NowPanels project={p} actions={actions} showTime={false} />
+      </div>
 
       {isRootAdmin && <section class="lw-testbed" aria-label="Testbädd">
         <div>
@@ -161,14 +165,13 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
         )}
       </section>}
 
-      <div class="ovs-secondary lw-bottom">
-        <div class="lw-actions">
-          <button class="btn" type="button" disabled={!channel} onClick={() => setPlayerSettings('ingest')}>
-            <Icon name="info" size={18} /> Ingest info
-          </button>
-          {onForked && <ForkButton project={p} livePhase={health?.livePhase} onForked={onForked} />}
+      {onForked && (
+        <div class="ovs-secondary lw-bottom">
+          <div class="lw-actions">
+            <ForkButton project={p} livePhase={health?.livePhase} onForked={onForked} />
+          </div>
         </div>
-      </div>
+      )}
     </OverviewShell>
   )
 }

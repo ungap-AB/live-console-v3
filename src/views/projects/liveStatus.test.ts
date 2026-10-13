@@ -5,7 +5,8 @@ import { encoderStatusOf, viewerCountOf } from './liveStatus.ts'
 const live = { hasChannel: true, publicMode: 'live' as const }
 
 test('utan ingest, med signal och med avbrott', () => {
-  assert.deepEqual(encoderStatusOf({ ...live, hasChannel: false }), { label: 'Ingen ingest', tone: 'neutral' })
+  assert.deepEqual(encoderStatusOf({ ...live, hasChannel: false }), { label: 'Ingen ingest', tone: 'danger' }) // i Live: rött
+  assert.deepEqual(encoderStatusOf({ hasChannel: false, publicMode: 'before' }), { label: 'Ingen ingest', tone: 'neutral' })
   assert.deepEqual(encoderStatusOf({ ...live, livePhase: 'Live' }), { label: 'Signal OK', tone: 'ok' })
   assert.deepEqual(encoderStatusOf({ ...live, healthState: 'live' }), { label: 'Signal OK', tone: 'ok' })
   assert.deepEqual(encoderStatusOf({ ...live, livePhase: 'SignalInterrupted' }), { label: 'Avbrott i signal', tone: 'danger' })

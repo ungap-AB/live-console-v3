@@ -144,7 +144,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
     const purge = purgeText(daysUntilPurge(job))
     return (
       <li key={job.id} class={`jobs-row ${job.state}`}>
-        <div class="jobs-row-main">
+        <div class="dl-row jobs-row-main">
           {shareable ? (
             <input
               class="jobs-check"
@@ -156,20 +156,20 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
           ) : (
             <span class="jobs-check-space" aria-hidden="true" />
           )}
-          <Icon name={job.kind === 'download' ? 'download' : job.kind === 'captions' ? 'subtitles' : job.kind === 'speakers' ? 'record_voice_over' : 'upload'} size={18} />
-          <div class="jobs-text">
-            <div class="jobs-title">{jobTitle(job)}</div>
-            <div class="jobs-meta">
-              {job.startedByName ? `${job.startedByName} · ` : ''}
-              {formatAgo(job.completedAtUtc ?? job.createdAtUtc)}
-              {purge ? ` · ${purge}` : ''}
+          <div class="dl-name">
+            <span class="dl-icon"><Icon name={job.kind === 'download' ? 'download' : job.kind === 'captions' ? 'subtitles' : job.kind === 'speakers' ? 'record_voice_over' : 'upload'} size={18} /></span>
+            <div class="jobs-text">
+              <div class="dl-title">{jobTitle(job)}</div>
+              {job.state === 'processing' && <JobProgress progress={job.progress} phase={job.phase} />}
+              {job.state === 'error' && <div class="jobs-error">{job.errorMessage ?? 'Bearbetningen misslyckades.'}</div>}
+              {job.state === 'canceled' && <div class="jobs-note">Avbrutet</div>}
+              {rowErrors[job.id] && <div class="jobs-error" role="alert">{rowErrors[job.id]}</div>}
             </div>
-            {job.state === 'processing' && <JobProgress progress={job.progress} phase={job.phase} />}
-            {job.state === 'error' && <div class="jobs-error">{job.errorMessage ?? 'Bearbetningen misslyckades.'}</div>}
-            {job.state === 'canceled' && <div class="jobs-note">Avbrutet</div>}
-            {rowErrors[job.id] && <div class="jobs-error" role="alert">{rowErrors[job.id]}</div>}
           </div>
-          <div class="jobs-actions">
+          <span class="dl-cell jobs-col-by">{job.startedByName ?? '–'}</span>
+          <span class="dl-cell jobs-col-time">{formatAgo(job.completedAtUtc ?? job.createdAtUtc)}</span>
+          <span class="dl-cell dl-muted jobs-col-purge">{purge || '–'}</span>
+          <div class="dl-actions jobs-actions">
             {related.length > 0 && (
               <button class="jobs-share-chip" type="button" aria-expanded={open} onClick={() => void toggleRow(job)}>
                 <StatusChip tone={activeShares > 0 ? 'accent' : 'neutral'}>
@@ -250,6 +250,20 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
     )
   }
 
+  const list = (rows: MediaJob[]) => (
+    <div class="dl jobs-list">
+      <div class="dl-head" aria-hidden="true">
+      <span class="jobs-check-space" />
+      <span class="dl-name">Jobb</span>
+      <span class="jobs-col-by">Startat av</span>
+      <span class="jobs-col-time">Tid</span>
+      <span class="jobs-col-purge">Försvinner</span>
+      <span class="jobs-col-actions" />
+    </div>
+      <ul class="dl-rows jobs-rows">{rows.map(renderRow)}</ul>
+    </div>
+  )
+
   return (
     <div class="view">
       <header>
@@ -273,13 +287,13 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
 
           <section class="jobs-section jobs-section-active">
             <h2>Pågår</h2>
-            {active.length === 0 ? <p class="jobs-empty">Inga jobb pågår.</p> : <ul class="jobs-rows">{active.map(renderRow)}</ul>}
+            {active.length === 0 ? <p class="jobs-empty">Inga jobb pågår.</p> : list(active)}
           </section>
 
           <section class="jobs-section jobs-section-done">
             <h2>Klara</h2>
             <p class="jobs-help">Jobb försvinner av sig själva efter 7 dagar. Klara nedladdningar går att dela med externa, och en delning följs upp och återkallas på raden.</p>
-            {finished.length === 0 ? <p class="jobs-empty">Inga klara jobb.</p> : <ul class="jobs-rows">{finished.map(renderRow)}</ul>}
+            {finished.length === 0 ? <p class="jobs-empty">Inga klara jobb.</p> : list(finished)}
           </section>
         </div>
       </div>

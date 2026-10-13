@@ -10,8 +10,8 @@ export interface OverviewPlayer {
   version: number
   /** Ett annat läge att visa spelaren i som förhandsvisning (Live i Before, Ondemand i After). */
   preview?: PlayerPreviewMode
-  /** Knappar till höger på raden ovanför spelaren (Spelarinställningar…). */
-  actions?: ComponentChildren
+  /** Raden under spelaren (Spelarinställningar… och spelarlänken). */
+  footer?: ComponentChildren
 }
 
 interface OverviewShellProps {
@@ -44,7 +44,7 @@ export function OverviewShell({ projectId, header, modes, children, player, work
             {children}
           </section>
           <section class="ovs-col ovs-player" aria-label="Spelaren">
-            {player && !workOpen && <PlayerPreview projectId={projectId} url={player.url} version={player.version} preview={player.preview} actions={player.actions} />}
+            {player && !workOpen && <PlayerPreview projectId={projectId} url={player.url} version={player.version} preview={player.preview} footer={player.footer} />}
           </section>
         </div>
       </div>

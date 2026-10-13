@@ -8,6 +8,8 @@
 
   --bg: #f2f4f7;
   --panel: #fff;
+  /* Dialoger: en aning ljusare än panelerna i mörkt läge, så att de lyfter från bakgrunden. */
+  --modal-bg: #fff;
   --rail: #f7f9fb;
 
   --accent: #1b2027;
@@ -89,6 +91,8 @@
 
     --bg: #14171d;
     --panel: #1c2028;
+  --modal-bg: #242934;
+    --modal-bg: #242934;
     --rail: #10131a;
 
     --accent: #e9ecf1;

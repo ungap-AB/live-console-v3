@@ -49,7 +49,7 @@ export function agendaOptions(input: { agendas: readonly AgendaLike[]; meeting: 
   const options: ListOption[] = []
   if (input.meeting) options.push({ id: MEETING, label: 'Koppla till Meeting' })
   const latest = latestUnusedAgenda(input.agendas)
-  if (latest) options.push({ id: latest.id, label: `Senast skapade oanvända dagordning: ${latest.name}` })
+  if (latest) options.push({ id: latest.id, label: latest.name })
   pushPicked(options, input.agendas, input.picked)
   options.push({ id: NONE, label: 'Ingen dagordning, jag kopplar senare' })
   return options

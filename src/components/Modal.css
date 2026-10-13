@@ -9,7 +9,7 @@
 }
 
 .modal {
-  background: var(--panel);
+  background: var(--modal-bg);
   border: 1px solid color-mix(in srgb, var(--ink) 38%, transparent);
   border-radius: 12px;
   width: min(560px, 100%);
@@ -63,6 +63,10 @@
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 8px 10px;
+}
+
+select.rename-input {
+  padding-right: 34px;
 }
 
 .modal-actions {

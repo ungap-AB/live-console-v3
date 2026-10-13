@@ -1,11 +1,13 @@
 import type { ComponentChildren } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
+import { useIngestInfoRequest } from './useIngestInfoRequest'
 import { client } from '../../data'
 import type { Channel, ChannelHealth, ForkResult, Project } from '../../data/types'
 import { useDismiss } from '../../app/useDismiss'
 import { useResource } from '../../app/useResource'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
+import { PlayerFooter } from './PlayerLinkField'
 import { PickerModal } from '../../components/PickerModal'
 import type { ProjectActions } from './actions'
 import { MeetingBindingModal } from './MeetingBindingModal'
@@ -37,12 +39,14 @@ interface BeforeWorkspaceProps {
   playout: PlayoutAddress
   /** UNG-198: anropas när ett projekt skapats ur det här. Saknas den visas inte knappen Fork. */
   onForked?: (result: ForkResult) => void
+  /** Ökar när rubrikens Ingest info klickas: öppnar spelarinställningarnas flik Ingest. */
+  ingestInfoRequest?: number
 }
 
 // Läget Before. UNG-268: översikt till vänster (lägesknapparna, förberedelserna, Spela ut kapitel under dem och Spelarinställningar längst ner), spelaren till
 // höger; utspelningen av dagordning och namnlista ligger i den överlagrade arbetsvyn (Livesandning), som döljer spelaren. Koppla i
 // korten väljer listan direkt, utan att öppna arbetsvyn.
-export function BeforeWorkspace({ header, project: p, actions, channel, health, streamKey, refresh, stopPolling, showIngestInfo, onShowIngestInfoChange, meetingDomain, playout, onForked }: BeforeWorkspaceProps) {
+export function BeforeWorkspace({ header, project: p, actions, channel, health, streamKey, refresh, stopPolling, showIngestInfo, onShowIngestInfoChange, meetingDomain, playout, onForked, ingestInfoRequest = 0 }: BeforeWorkspaceProps) {
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
     [p.agendaId],
@@ -56,6 +60,7 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
   const [showMeeting, setShowMeeting] = useState(() => consumeMeetingBindingRequest(p.id))
   // Spelarinställningarna och fliken de öppnas på (i-ikonen och Visa ingest-info öppnar fliken Ingest).
   const [playerSettings, setPlayerSettings] = useState<PlayerSettingsCategory | null>(null)
+  useIngestInfoRequest(ingestInfoRequest, () => setPlayerSettings('ingest'))
   // Spelaren laddas om när det tittarna ser i Before ändras (från spelarinställningarna).
   const [playerVersion, setPlayerVersion] = useState(0)
   useEffect(() => setPlayerVersion((v) => v + 1), [p.beforeText, p.posterUrl, p.textPlacement])
@@ -125,7 +130,7 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
       projectId={p.id}
       header={header}
       modes={<ModeSelector project={p} actions={actions} />}
-      player={p.playerUrl ? { url: p.playerUrl, version: playerVersion, preview: { label: 'Live (förhandsvisning)', variant: 'published', mode: 'live' }, actions: <button class="btn btn-sm" type="button" onClick={() => setPlayerSettings('link')}><Icon name="settings" size={18} /> Spelarinställningar…</button> } : null}
+      player={p.playerUrl ? { url: p.playerUrl, version: playerVersion, preview: { label: 'Preview (live)', variant: 'published', mode: 'live' }, footer: <PlayerFooter project={p} actions={actions} onSettings={() => setPlayerSettings('link')} /> } : null}
       workOpen={playout.open}
       overlays={<>
         {picking && <ListPicker kind={picking} project={p} actions={actions} onClose={() => setPicking(null)} />}

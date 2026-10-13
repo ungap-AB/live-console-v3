@@ -2,7 +2,6 @@
   display: flex;
   flex-direction: column;
   gap: 28px;
-  max-width: 920px;
   height: 100%;
   min-height: 0;
   box-sizing: border-box;
@@ -30,11 +29,6 @@
   flex: 1 1 0;
 }
 
-.jobs-section .jobs-rows {
-  flex: 0 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-}
 
 .jobs-body h2 {
   margin: 0 0 4px;
@@ -42,8 +36,7 @@
 }
 
 .jobs-help,
-.jobs-empty,
-.jobs-note {
+.jobs-empty {
   margin: 0 0 10px;
   font-size: 12.5px;
   color: var(--ink-3);
@@ -55,36 +48,48 @@
   color: var(--warn);
 }
 
-.jobs-rows {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-
-.jobs-row + .jobs-row {
-  border-top: 1px solid var(--line);
-}
-
-.jobs-row-main {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 14px;
-}
-
-.jobs-row-main > .material-symbols-outlined {
-  flex: none;
-  margin-top: 2px;
-  color: var(--ink-3);
-}
 
 .jobs-check,
 .jobs-check-space {
   flex: none;
   width: 16px;
-  margin-top: 3px;
+  margin: 0;
+}
+
+/* Kolumnerna (samma bredd i rubrikraden och raderna). */
+.jobs-col-by {
+  width: 140px;
+}
+
+.jobs-col-time {
+  width: 110px;
+}
+
+.jobs-col-purge {
+  width: 140px;
+}
+
+.jobs-col-actions {
+  min-width: 120px;
+}
+
+.jobs-list .dl-actions {
+  min-width: 120px;
+}
+
+/* Raden växer om jobbet visar förlopp eller fel under titeln. */
+.dl-row.jobs-row-main {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.jobs-list .dl-head .dl-name {
+  padding-left: 28px;
+}
+
+.jobs-section .jobs-list {
+  flex: 0 1 auto;
+  min-height: 0;
 }
 
 .jobs-text {
@@ -92,22 +97,10 @@
   min-width: 0;
 }
 
-.jobs-title {
-  font-weight: 600;
-  font-size: 13.5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.jobs-meta {
-  font-size: 12.5px;
-  color: var(--ink-3);
-}
 
 .jobs-text .job-progress {
   display: flex;
-  margin-top: 4px;
+  margin-top: 3px;
   max-width: 360px;
 }
 
@@ -116,12 +109,6 @@
   width: auto;
 }
 
-.jobs-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: none;
-}
 
 .jobs-share-chip {
   border: 0;
@@ -186,4 +173,10 @@
   color: var(--ink-3);
   font-size: 12px;
   margin-right: 6px;
+}
+
+.jobs-note {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
 }

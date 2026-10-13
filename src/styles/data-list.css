@@ -1,0 +1,115 @@
+/* Listor i samma form som projektlistan (ProjectsView.css): en ram, en rubrikrad i versaler och kompakta rader med kolumner.
+   Används av Jobb och Papperskorg (efter prod-provet 2026-10-13). */
+
+.dl {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.dl-head,
+.dl-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 10px 0 14px;
+}
+
+.dl-head {
+  flex: none;
+  height: 34px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.dl-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.dl-rows > li + li {
+  border-top: 1px solid var(--line);
+}
+
+.dl-row {
+  min-height: 42px;
+  transition: background-color 120ms ease;
+}
+
+.dl-row:hover {
+  background: var(--surface-2);
+}
+
+/* Namnkolumnen tar resten av bredden. */
+.dl-name {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dl-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.dl-icon {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: var(--ink-3);
+}
+
+.dl-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.dl-cell {
+  flex: none;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dl-muted {
+  color: var(--ink-3);
+}
+
+.dl-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dl-empty {
+  margin: 0;
+  padding: 18px 14px;
+  font-size: 13px;
+  color: var(--ink-3);
+}

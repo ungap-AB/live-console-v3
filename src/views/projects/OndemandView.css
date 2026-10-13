@@ -1116,14 +1116,26 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.od-flow-steps li + li {
-  border-top: 1px solid var(--line);
+/* Efter prod-provet 2026-10-13: varje steg är en egen knapp, men en linje mellan numren håller ihop dem som ett flöde. */
+.od-flow-steps li {
+  position: relative;
+}
+
+.od-flow-steps li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 24px;
+  top: calc(50% + 12px);
+  height: calc(100% - 18px);
+  width: 1px;
+  background: var(--line);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .od-flow-step {
@@ -1131,22 +1143,58 @@
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 11px 12px;
-  border: 0;
-  background: none;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--btn-bg);
   color: var(--ink);
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition: background-color 0.12s, border-color 0.12s;
 }
 
 .od-flow-step:hover:not(:disabled) {
-  background: var(--surface-3);
+  background: var(--btn-bg-hover);
+  border-color: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.od-flow-step:hover:not(:disabled) > .material-symbols-outlined {
+  color: var(--ink);
 }
 
 .od-flow-step:disabled {
   color: var(--ink-3);
   cursor: default;
+  background: transparent;
+}
+
+/* Publiceringen: samma rad, men som primärknapp när den går att göra. */
+.od-flow-steps li.is-publish .od-flow-step:not(:disabled) {
+  background: var(--btn-primary-bg);
+  border-color: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+}
+
+.od-flow-steps li.is-publish .od-flow-step:not(:disabled):hover {
+  background: var(--btn-primary-bg-hover);
+}
+
+.od-flow-steps li.is-publish .od-flow-step:not(:disabled) .od-flow-num,
+.od-flow-steps li.is-publish .od-flow-step:not(:disabled) .od-flow-status,
+.od-flow-steps li.is-publish .od-flow-step:not(:disabled) > .material-symbols-outlined {
+  color: inherit;
+  border-color: currentColor;
+}
+
+.od-flow-steps li.is-publish .od-flow-label {
+  font-weight: 600;
+}
+
+/* Trimma video i Ondemand: görs i After (låst, men bocken syns om videon är trimmad). */
+.od-flow-steps li.is-locked .od-flow-step:disabled {
+  background: transparent;
+  border-style: dashed;
 }
 
 .od-flow-num {
@@ -1223,13 +1271,6 @@
   color: var(--ink-3);
 }
 
-.od-flow-publish {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-}
 
 .od-secondary-actions {
   display: flex;

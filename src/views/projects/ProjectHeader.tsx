@@ -16,12 +16,14 @@ interface ProjectHeaderProps {
   health?: ChannelHealth | null
   showIngestInfo: boolean
   onShowIngestInfoChange: (show: boolean) => void
+  /** Knappen Ingest info i rubriken: öppnar spelarinställningarnas flik Ingest. */
+  onIngestInfo?: () => void
 }
 
 // Gemensam för Livesändning och Ondemand. showIngestInfo ägs av föräldern; ingest-panelen och knappen som öppnar den ligger i
 // översiktens vänsterspalt (i Before under förberedelsen Ingest), och rubriken stänger panelen när signalen blir OK. Lägesknapparna
 // ligger också i vänsterspalten, spelarlänken och HLS-adresserna i spelarinställningarna (UI-finslipning omgång 1).
-export function ProjectHeader({ project: p, actions, onBack, channel = null, health = null, showIngestInfo, onShowIngestInfoChange }: ProjectHeaderProps) {
+export function ProjectHeader({ project: p, actions, onBack, channel = null, health = null, showIngestInfo, onShowIngestInfoChange, onIngestInfo }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
   const [confirmTeardown, setConfirmTeardown] = useState(false)
@@ -114,6 +116,11 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
         <span class="spacer" />
         <EncoderStatusChip status={encoderStatus} />
         {viewerCount !== null && <ViewersChip count={viewerCount} />}
+        {onIngestInfo && (
+          <button class="btn btn-sm" type="button" disabled={!channel} onClick={onIngestInfo}>
+            <Icon name="info" size={18} /> Ingest info
+          </button>
+        )}
         <span class="spacer" />
         <span class="pv-clock"><Clock /></span>
       </div>

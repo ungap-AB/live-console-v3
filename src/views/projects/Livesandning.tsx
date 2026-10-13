@@ -26,6 +26,8 @@ export function Livesandning({ project: p, actions, meetingDomain, onBack, onFor
   const [showIngestInfo, setShowIngestInfo] = useState(false)
   // UNG-268/269: utspelningsvyn (överlagrad, egen adress) är densamma i Before och Live och står kvar öppen när läget byts mellan dem.
   const playout = usePlayoutAddress(p.id)
+  // Rubrikens Ingest info-knapp: räknaren ökar vid varje klick och arbetsvyn öppnar spelarinställningarnas flik Ingest.
+  const [ingestInfoRequest, setIngestInfoRequest] = useState(0)
 
   // Samma pollning som Playout: håller utspelningsläget i synk mellan operatörer.
   useEffect(() => {
@@ -55,6 +57,7 @@ export function Livesandning({ project: p, actions, meetingDomain, onBack, onFor
       health={live.health}
       showIngestInfo={showIngestInfo}
       onShowIngestInfoChange={setShowIngestInfo}
+      onIngestInfo={() => setIngestInfoRequest((count) => count + 1)}
     />
   )
 
@@ -74,6 +77,7 @@ export function Livesandning({ project: p, actions, meetingDomain, onBack, onFor
       meetingDomain={meetingDomain}
       playout={playout}
       onForked={onForked}
+      ingestInfoRequest={ingestInfoRequest}
     />
   ) : (
     <LiveWorkspace
@@ -85,6 +89,7 @@ export function Livesandning({ project: p, actions, meetingDomain, onBack, onFor
       playout={playout}
       streamKey={live.streamKey}
       onForked={onForked}
+      ingestInfoRequest={ingestInfoRequest}
     />
   )
 

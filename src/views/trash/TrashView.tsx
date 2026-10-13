@@ -98,8 +98,8 @@ export function TrashView() {
       </header>
 
       <div class="content">
-        <section class="pane">
-          <div class="top">
+        <section class="trash-pane">
+          <div class="trash-top">
             <div class="search">
               <SearchIcon />
               <input
@@ -135,50 +135,53 @@ export function TrashView() {
             </span>
           </div>
 
-          <ul class="rows">
-            {!resource.loading && visible.length === 0 && (
-              <li>
-                <div class="empty">
-                  <p>{items.length ? 'Ingen post matchar filtret.' : 'Papperskorgen är tom.'}</p>
-                  {items.length === 0 && (
-                    <p>Borttagna projekt, dagordningar, namnlistor och inspelningar hamnar här.</p>
-                  )}
-                </div>
-              </li>
-            )}
-            {visible.map((i) => {
-              const left = daysLeft(i.purgeAt)
-              const u = urgency(left)
-              const Icon = TYPE_META[i.type].icon
-              return (
-                <li key={i.id} class={u === 'urgent' ? 'soon' : ''}>
-                  <span class="icon">
-                    <Icon />
-                  </span>
-                  <span class="main">
-                    <span class="nm">{i.name}</span>
-                    <span class="meta">
-                      <span class="type">{TYPE_META[i.type].label}</span>
-                      <span>{i.detail}</span>
-                      <span class="dot">·</span>
-                      <span>
-                        Borttagen {formatDeletedDate(i.deletedAt)} av {i.deletedBy.name}
+          {!resource.loading && visible.length === 0 ? (
+            <div class="empty">
+              <p>{items.length ? 'Ingen post matchar filtret.' : 'Papperskorgen är tom.'}</p>
+              {items.length === 0 && (
+                <p>Borttagna projekt, dagordningar, namnlistor och inspelningar hamnar här.</p>
+              )}
+            </div>
+          ) : (
+            <div class="dl trash-list">
+              <div class="dl-head" aria-hidden="true">
+                <span class="dl-name">Namn</span>
+                <span class="trash-col-type">Typ</span>
+                <span class="trash-col-detail">Innehåll</span>
+                <span class="trash-col-deleted">Borttagen</span>
+                <span class="trash-col-purge">Rensas</span>
+                <span class="trash-col-actions" />
+              </div>
+              <ul class="dl-rows">
+                {visible.map((i) => {
+                  const left = daysLeft(i.purgeAt)
+                  const u = urgency(left)
+                  const Icon = TYPE_META[i.type].icon
+                  return (
+                    <li key={i.id} class={`dl-row${u === 'urgent' ? ' soon' : ''}`}>
+                      <span class="dl-name">
+                        <span class="dl-icon"><Icon /></span>
+                        <span class="dl-title" title={i.name}>{i.name}</span>
                       </span>
-                    </span>
-                  </span>
-                  <span class={`purge ${u}`}>
-                    <span class="left">{leftText(left)}</span>
-                    <span class="date">{formatPurgeDate(i.purgeAt)}</span>
-                  </span>
-                  <button class="btn btn-sm" type="button" onClick={() => restore(i)}>
-                    Återställ
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
+                      <span class="dl-cell trash-col-type"><span class="type">{TYPE_META[i.type].label}</span></span>
+                      <span class="dl-cell dl-muted trash-col-detail" title={i.detail}>{i.detail}</span>
+                      <span class="dl-cell trash-col-deleted" title={`Borttagen ${formatDeletedDate(i.deletedAt)} av ${i.deletedBy.name}`}>
+                        {formatDeletedDate(i.deletedAt)} <span class="dl-muted">· {i.deletedBy.name}</span>
+                      </span>
+                      <span class={`dl-cell trash-col-purge purge ${u}`} title={formatPurgeDate(i.purgeAt)}>{leftText(left)}</span>
+                      <span class="dl-actions trash-col-actions">
+                        <button class="btn btn-sm" type="button" onClick={() => restore(i)}>
+                          Återställ
+                        </button>
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
 
-          <div class="foot">
+          <div class="trash-foot">
             Poster rensas automatiskt {retentionDays !== null ? formatRetentionPeriod(retentionDays) : '…'} efter att
             de tagits bort. Efter det går de inte att återställa.
           </div>
