@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useState } from 'preact/hooks'
 import { notifyJobsChanged } from '../../app/jobsBus'
 import { Modal } from '../../components/Modal'
@@ -29,6 +30,12 @@ interface ManuscriptSpeakersWarningProps {
   onExport: () => void
 }
 
+function notReadyText(progress: number | undefined): string {
+  return progress !== undefined
+    ? t`The speaker changes are not ready yet (${progress} %). If you take out the manuscript now, it will be without speakers. When the job is done, you download the manuscript with speakers under Jobs.`
+    : t`The speaker changes are not ready yet. If you take out the manuscript now, it will be without speakers. When the job is done, you download the manuscript with speakers under Jobs.`
+}
+
 export function ManuscriptSpeakersWarning({ projectId, gap, onClose, onExport }: ManuscriptSpeakersWarningProps) {
   const [notify, setNotify] = useState(false)
   const [started, setStarted] = useState(false)
@@ -45,7 +52,7 @@ export function ManuscriptSpeakersWarning({ projectId, gap, onClose, onExport }:
       notifyJobsChanged()
       return true
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Talarbytena kunde inte startas.')
+      setError(reason instanceof Error ? reason.message : t`The speaker changes could not be started.`)
       return false
     } finally {
       setBusy(false)
@@ -63,32 +70,32 @@ export function ManuscriptSpeakersWarning({ projectId, gap, onClose, onExport }:
   }
 
   const text = started
-    ? 'Talarbytena analyseras nu. Jobbet finns under Jobb, där du laddar ner Word-manuset med talare när det är klart.'
+    ? t`The speaker changes are being analyzed now. The job is under Jobs, where you download the Word manuscript with speakers when it is done.`
     : gap.state === 'analyzing'
-      ? `Talarbytena är inte klara än${gap.progress !== undefined ? ` (${gap.progress} %)` : ''}. Tar du ut manuset nu blir det utan talare. När jobbet är klart laddar du ner manuset med talare under Jobb.`
+      ? notReadyText(gap.progress)
       : gap.state === 'failed'
-        ? 'Talarbytena kunde inte analyseras förra gången. Manuset blir utan talare, men du kan försöka analysera dem igen. Det tar en stund.'
-        : 'Talarbytena är inte analyserade. Manuset blir utan talare, men du kan analysera dem. Det tar en stund.'
+        ? t`The speaker changes could not be analyzed last time. The manuscript will be without speakers, but you can try to analyze them again. It takes a while.`
+        : t`The speaker changes are not analyzed. The manuscript will be without speakers, but you can analyze them. It takes a while.`
 
   return (
-    <Modal title={analyzing ? 'Talarbyten analyseras' : 'Manus utan talare'} onClose={onClose}>
+    <Modal title={analyzing ? t`Speaker changes are being analyzed` : t`Manuscript without speakers`} onClose={onClose}>
       <p>{text}</p>
       {!started && (
         <label class="msw-option">
           <input type="checkbox" checked={notify} disabled={busy} onChange={(event) => setNotify(event.currentTarget.checked)} />
-          Mejla mig när talarbytena är klara
+          {t`Email me when the speaker changes are done`}
         </label>
       )}
       {error && <p class="msw-error" role="alert">{error}</p>}
       <div class="modal-actions">
         {analyzing ? (
-          <button class="btn btn-sm" type="button" disabled={busy} onClick={() => void leave(onClose)}>{started ? 'Stäng' : 'Vänta'}</button>
+          <button class="btn btn-sm" type="button" disabled={busy} onClick={() => void leave(onClose)}>{started ? t`Close` : t`Wait`}</button>
         ) : (
           <button class="btn btn-sm" type="button" disabled={busy} onClick={() => void startAnalysis()}>
-            {busy ? 'Startar…' : 'Analysera talarbyten'}
+            {busy ? t`Starting…` : t`Analyze speaker changes`}
           </button>
         )}
-        <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={() => void leave(onExport)}>Ta ut utan talare</button>
+        <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={() => void leave(onExport)}>{t`Take out without speakers`}</button>
       </div>
     </Modal>
   )

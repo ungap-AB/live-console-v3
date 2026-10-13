@@ -73,6 +73,10 @@ msgstr "{chapterCount, plural, =0 {Inga kapitel} one {# kapitel} other {# kapite
 msgid "{count, plural, one {{cues} line} other {{cues} lines}}"
 msgstr "{count, plural, one {{cues} repliker} other {{cues} repliker}}"
 
+#: src/views/projects/exportImportLogic.ts
+msgid "{count, plural, one {# chapter was copied. Paste it into the video description on YouTube.} other {# chapters were copied. Paste them into the video description on YouTube.}}"
+msgstr "{count, plural, one {# kapitel kopierades. Klistra in dem i videons beskrivning på YouTube.} other {# kapitel kopierades. Klistra in dem i videons beskrivning på YouTube.}}"
+
 #: src/views/projects/OndemandView.tsx
 msgid "{count, plural, one {# chapter} other {# chapters}}"
 msgstr "{count, plural, one {# kapitel} other {# kapitel}}"
@@ -101,6 +105,10 @@ msgstr "{days} dygn"
 msgid "{deleteOrganization} ({deleteHost}) is removed permanently. It cannot be undone."
 msgstr "{deleteOrganization} ({deleteHost}) tas bort permanent. Det går inte att ångra."
 
+#: src/views/projects/VttImportDialog.tsx
+msgid "{dirtyCount, plural, one {Your # unsaved change is saved first.} other {Your # unsaved changes are saved first.}}"
+msgstr "{dirtyCount, plural, one {Dina # osparade ändringar sparas först.} other {Dina # osparade ändringar sparas först.}}"
+
 #: src/app/SharedDownloadsView.tsx
 msgid "{fileCount, plural, one {{sender} has shared one file with you} other {{sender} has shared # files with you}}"
 msgstr "{fileCount, plural, one {{sender} har delat en fil med dig} other {{sender} har delat # filer med dig}}"
@@ -120,6 +128,14 @@ msgstr "{kind} pågår. Öppna Jobb."
 #: src/app/time.ts
 msgid "{minutes} min ago"
 msgstr "{minutes} min sedan"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "{name} (original)"
+msgstr "{name} (original)"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "{name} (trimmed)"
+msgstr "{name} (trimmad)"
 
 #: src/views/projects/ProjectsView.tsx
 msgid "{name} is moved to the trash. It can be restored from there before the retention period runs out."
@@ -289,6 +305,10 @@ msgstr "En extern video kan inte trimmas."
 msgid "Analysing speaker changes"
 msgstr "Analyserar talarbyten"
 
+#: src/views/projects/ManuscriptSpeakersWarning.tsx
+msgid "Analyze speaker changes"
+msgstr "Analysera talarbyten"
+
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Announcement"
 msgstr "Utrop"
@@ -300,6 +320,10 @@ msgstr "Utseende"
 #: src/views/projects/OndemandView.tsx
 msgid "Approve or ignore the uploaded file first."
 msgstr "Godkänn eller ignorera den uppladdade filen först."
+
+#: src/views/projects/exportImportLogic.ts
+msgid "Approve or ignore the uploaded video first."
+msgstr "Godkänn eller ignorera den uppladdade videon först."
 
 #: src/views/projects/OndemandView.tsx
 msgid "Approve uploaded video"
@@ -380,6 +404,7 @@ msgstr "Kan redigeras när inspelningen är klar"
 #: src/views/projects/InheritLayoutDialog.tsx
 #: src/views/projects/OndemandView.tsx
 #: src/views/projects/UploadPanel.tsx
+#: src/views/projects/VttImportDialog.tsx
 #: src/views/users/UsersView.tsx
 msgid "Cancel"
 msgstr "Avbryt"
@@ -412,6 +437,7 @@ msgstr "Går inte att radera medan signal tas emot"
 msgid "Cannot be torn down while a signal is being received"
 msgstr "Går inte att riva medan signal tas emot"
 
+#: src/views/projects/ExportImportDialog.tsx
 #: src/views/projects/OndemandView.tsx
 #: src/views/projects/ProjectsView.tsx
 msgid "Captions"
@@ -420,6 +446,14 @@ msgstr "Undertexter"
 #: src/app/jobActions.ts
 msgid "Captions · {name}"
 msgstr "Undertexter · {name}"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Captions (.srt)"
+msgstr "Undertexter (.srt)"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Captions (.vtt)"
+msgstr "Undertexter (.vtt)"
 
 #: src/views/projects/VideoStatusRow.tsx
 msgid "Captions and upload video"
@@ -443,7 +477,12 @@ msgstr "Ändrad {changed}"
 msgid "Changes take effect in projects that have not been published yet. Published broadcasts have a frozen copy and are not affected."
 msgstr "Ändringar slår igenom i projekt som ännu inte publicerats. Publicerade sändningar har en fryst kopia och påverkas inte."
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "chapters"
+msgstr "kapitel"
+
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/ExportImportDialog.tsx
 #: src/views/projects/OndemandView.tsx
 msgid "Chapters"
 msgstr "Kapitel"
@@ -455,6 +494,18 @@ msgstr "Kapitel (offset räknat från trimstart)"
 #: src/views/projects/draftActions.ts
 msgid "Chapters and captions are published."
 msgstr "Kapitel och undertexter är publicerade."
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Chapters as time ranges, for players and platforms that read WebVTT chapters."
+msgstr "Kapitel som tidsintervall, för spelare och plattformar som läser WebVTT-kapitel."
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Chapters for archiving (Word)"
+msgstr "Kapitel för arkivering (Word)"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "chapters youtube"
+msgstr "kapitel youtube"
 
 #: src/views/projects/OndemandView.tsx
 msgid "Chapters: {value}"
@@ -492,6 +543,10 @@ msgstr "Välj namnlista"
 msgid "Choose video file"
 msgstr "Välj videofil"
 
+#: src/views/projects/VttImportDialog.tsx
+msgid "Choose VTT file"
+msgstr "Välj VTT-fil"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Choose which broadcast to use"
 msgstr "Välj vilken sändning som ska användas"
@@ -517,6 +572,8 @@ msgid "Clone to new agenda"
 msgstr "Klona till ny dagordning"
 
 #: src/app/Shell.tsx
+#: src/views/projects/ExportImportDialog.tsx
+#: src/views/projects/ManuscriptSpeakersWarning.tsx
 #: src/views/projects/PublishOutcomeDialog.tsx
 #: src/views/users/UsersView.tsx
 msgid "Close"
@@ -559,9 +616,21 @@ msgstr "Avtalsperiod till"
 msgid "Converting"
 msgstr "Konverterar"
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Copied ✓"
+msgstr "Kopierat ✓"
+
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "Copies the message texts, the text placement, the Mux setting and the poster image. More choices: mark a project as a template in the project list's ⋯ menu."
 msgstr "Kopierar meddelandetexterna, textens placering, Mux-inställningen och posterbilden. Fler val: markera ett projekt som mall i projektlistans ⋯-meny."
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Copy"
+msgstr "Kopiera"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Copying failed. Select the text and copy it yourself."
+msgstr "Det gick inte att kopiera. Markera texten och kopiera själv."
 
 #: src/app/jobPhase.ts
 msgid "Correcting and building captions"
@@ -647,8 +716,13 @@ msgstr "Skapar projekt, sänder och publicerar ondemand."
 msgid "Creating captions is stopped and no draft is saved. You can start it again at any time."
 msgstr "Skapandet av undertexter stoppas och inget utkast sparas. Du kan starta det igen när som helst."
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Creating the document…"
+msgstr "Skapar dokumentet…"
+
 #: src/app/CredentialLinkView.tsx
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/ExportImportDialog.tsx
 #: src/views/projects/ForkDialog.tsx
 msgid "Creating…"
 msgstr "Skapar…"
@@ -726,6 +800,10 @@ msgstr "Försvinner"
 msgid "Discard anyway"
 msgstr "Förkasta ändå"
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Document with items and start times, speakers, attachment names and breaks."
+msgstr "Dokument med punkter och starttider, talare, bilagornas namn och pauser."
+
 #: src/views/users/UsersView.tsx
 msgid "Domain"
 msgstr "Domän"
@@ -746,12 +824,21 @@ msgstr "Domäner"
 msgid "Done"
 msgstr "Klart"
 
+#: src/views/projects/exportImportLogic.ts
+msgid "Done inside the project."
+msgstr "Görs inne i projektet."
+
 #: src/app/SharedDownloadsView.tsx
 #: src/app/Shell.tsx
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/ExportImportDialog.tsx
 msgid "Download"
 msgstr "Ladda ner"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Download .txt"
+msgstr "Ladda ner .txt"
 
 #: src/app/jobActions.ts
 msgid "Download · {name}"
@@ -761,6 +848,14 @@ msgstr "Nedladdning · {name}"
 #: src/views/projects/RecordingDownload.tsx
 msgid "Download {fileName}"
 msgstr "Ladda ner {fileName}"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Download original recording"
+msgstr "Ladda ner originalinspelning"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Download trimmed version"
+msgstr "Ladda ner trimmad version"
 
 #: src/views/jobs/JobsView.tsx
 msgid "Download Word manuscript"
@@ -774,6 +869,10 @@ msgstr "Ladda ner Word-manus"
 #: src/views/namelists/NameListsView.tsx
 msgid "Draft"
 msgstr "Utkast"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Draft for editing (.vtt)"
+msgstr "Utkast för redigering (.vtt)"
 
 #: src/views/projects/UploadPanel.tsx
 msgid "Drag a video file here, or click to choose"
@@ -817,6 +916,10 @@ msgstr "e-post"
 #: src/views/users/UsersView.tsx
 msgid "Email"
 msgstr "E-post"
+
+#: src/views/projects/ManuscriptSpeakersWarning.tsx
+msgid "Email me when the speaker changes are done"
+msgstr "Mejla mig när talarbytena är klara"
 
 #: src/views/users/UsersView.tsx
 msgid "Enable account"
@@ -862,10 +965,15 @@ msgstr "Ange din e-postadress så skickar vi en länk där du får en ny PIN-kod
 msgid "Expired"
 msgstr "Utgången"
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Export"
+msgstr "Exportera"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Export & import…"
 msgstr "Exportera & importera…"
 
+#: src/views/projects/ExportImportDialog.tsx
 #: src/views/projects/VideoStatusRow.tsx
 msgid "Export and import"
 msgstr "Exportera och importera"
@@ -900,6 +1008,7 @@ msgid "Fetching the projects…"
 msgstr "Hämtar projekten…"
 
 #: src/app/SharedDownloadsView.tsx
+#: src/views/projects/ExportImportDialog.tsx
 #: src/views/projects/InheritLayoutDialog.tsx
 #: src/views/projects/ListPickerDialog.tsx
 #: src/views/projects/OndemandView.tsx
@@ -937,6 +1046,10 @@ msgstr "Fork är inte gjord för tajta klipp: start och slut läggs på närmast
 #: src/views/projects/ForkButton.tsx
 msgid "Fork…"
 msgstr "Fork…"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "From the agenda, a name list or a pasted list with times."
+msgstr "Från dagordningen, en namnlista eller en klistrad lista med tider."
 
 #: src/views/projects/forkLogic.ts
 msgid "From the latest item: {item} ({time})"
@@ -1042,10 +1155,31 @@ msgstr "Ignorera filen"
 msgid "Image"
 msgstr "Bild"
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Import"
+msgstr "Importera"
+
+#: src/views/projects/VttImportDialog.tsx
+msgctxt "caption file"
+msgid "Import"
+msgstr "Läs in"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Import chapters…"
+msgstr "Importera kapitel…"
+
+#: src/views/projects/VttImportDialog.tsx
+msgid "Import VTT file"
+msgstr "Läs in VTT-fil"
+
 #: src/views/agendas/AgendasView.tsx
 #: src/views/namelists/NameListsView.tsx
 msgid "Import..."
 msgstr "Importera..."
+
+#: src/views/projects/VttImportDialog.tsx
+msgid "Importing…"
+msgstr "Läser in…"
 
 #: src/app/jobRetention.ts
 #: src/views/trash/TrashView.tsx
@@ -1057,6 +1191,10 @@ msgstr "om {days} dagar"
 msgid "In progress"
 msgstr "Pågår"
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "In the editor: import your own VTT file (the ⋯ menu) or create captions automatically. Published with Publish changes."
+msgstr "I redigeraren: läs in en egen VTT-fil (⋯-menyn) eller skapa undertexter automatiskt. Publiceras med Publicera ändringar."
+
 #: src/views/projects/ForkDialog.tsx
 msgid "in this project and the stream is not interrupted. In the new project you trim, create captions and publish as a separate on-demand broadcast with its own link. The very latest seconds are not included."
 msgstr "i det här projektet och strömmen bryts inte. I det nya projektet trimmar du, skapar undertexter och publicerar som en egen ondemand-sändning med egen länk. De allra senaste sekunderna tas inte med."
@@ -1064,6 +1202,10 @@ msgstr "i det här projektet och strömmen bryts inte. I det nya projektet trimm
 #: src/views/users/UsersView.tsx
 msgid "Inactive"
 msgstr "Inaktiv"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Include speakers as chapters of their own (YouTube and WebVTT)"
+msgstr "Ta med talare som egna kapitel (YouTube och WebVTT)"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Incoming signal"
@@ -1222,6 +1364,14 @@ msgstr "Gör till mall"
 #: src/views/users/UsersView.tsx
 msgid "Manages the whole installation and all domains."
 msgstr "Hanterar hela installationen och alla domäner."
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Manuscript (Word)"
+msgstr "Manus (Word)"
+
+#: src/views/projects/ManuscriptSpeakersWarning.tsx
+msgid "Manuscript without speakers"
+msgstr "Manus utan talare"
 
 #: src/views/projects/ProjectsView.tsx
 msgid "Marked as live only"
@@ -1500,8 +1650,13 @@ msgstr "Öppna meny"
 msgid "Open PDF documents for {title}"
 msgstr "Öppna PDF-dokument för {title}"
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Open the editor…"
+msgstr "Öppna redigeraren…"
+
 #: src/app/Shell.tsx
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/ExportImportDialog.tsx
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Open the project"
 msgstr "Öppna projektet"
@@ -1587,6 +1742,10 @@ msgstr "Posterbild"
 msgid "Prepare again"
 msgstr "Förbered på nytt"
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Prepared as a file to download. The file is kept for 7 days."
+msgstr "Förbereds som en fil att ladda ner. Filen sparas i 7 dagar."
+
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/projects/RecordingDownload.tsx
 msgid "Prepares a downloadable file (can take a few minutes). The file is kept for 7 days."
@@ -1611,6 +1770,10 @@ msgstr "Förbereder den trimmade videon"
 #: src/views/projects/OndemandView.tsx
 msgid "Present"
 msgstr "Finns"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Presenter's own format with all chapters and speakers, for backup and moving."
+msgstr "Presenters eget format med alla kapitel och talare, för säkerhetskopia och flytt."
 
 #: src/views/projects/OndemandView.tsx
 msgid "Preview (ondemand)"
@@ -1673,6 +1836,10 @@ msgctxt "project state"
 msgid "Published"
 msgstr "Publicerat"
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Published part"
+msgstr "Publicerad del"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Published with the project."
 msgstr "Publiceras med projektet."
@@ -1709,9 +1876,17 @@ msgstr "Rensas"
 msgid "Queued"
 msgstr "Köad"
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Reading the chapters…"
+msgstr "Läser kapitlen…"
+
 #: src/app/jobPhase.ts
 msgid "Reading the file"
 msgstr "Läser filen"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Reading the video…"
+msgstr "Läser videon…"
 
 #: src/views/users/UsersView.tsx
 msgid "Recent activity"
@@ -1841,6 +2016,14 @@ msgstr "Samma lista som {project}: {list}"
 msgid "Save"
 msgstr "Spara"
 
+#: src/views/projects/VttImportDialog.tsx
+msgid "Save and import"
+msgstr "Spara och läs in"
+
+#: src/views/projects/exportImportLogic.ts
+msgid "Saved as \"{fileName}\". The file is among your downloaded files."
+msgstr "Sparad som \"{fileName}\". Filen ligger bland dina hämtade filer."
+
 #: src/views/projects/publishProgress.ts
 msgid "Saving chapters and times"
 msgstr "Sparar kapitel och tider"
@@ -1958,6 +2141,10 @@ msgstr "Visa min PIN-kod"
 msgid "Show projects in the mode"
 msgstr "Visa projekt i läget"
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Show the text"
+msgstr "Visa texten"
+
 #: src/views/users/UsersView.tsx
 msgid "Sign-in"
 msgstr "Inloggning"
@@ -2001,6 +2188,14 @@ msgstr "Talare"
 msgid "Speaker changes · {name}"
 msgstr "Talarbyten · {name}"
 
+#: src/views/projects/ManuscriptSpeakersWarning.tsx
+msgid "Speaker changes are being analyzed"
+msgstr "Talarbyten analyseras"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "SRT, for editing software and platforms that do not read WebVTT."
+msgstr "SRT, för redigeringsprogram och plattformar som inte läser WebVTT."
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "standalone"
 msgstr "fristående"
@@ -2026,6 +2221,7 @@ msgid "Started by"
 msgstr "Startat av"
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/ManuscriptSpeakersWarning.tsx
 #: src/views/projects/RecordingDownload.tsx
 msgid "Starting…"
 msgstr "Startar…"
@@ -2059,6 +2255,10 @@ msgstr "Byt sändning"
 #: src/views/projects/OndemandView.tsx
 msgid "Switch broadcast…"
 msgstr "Byt sändning…"
+
+#: src/views/projects/ManuscriptSpeakersWarning.tsx
+msgid "Take out without speakers"
+msgstr "Ta ut utan talare"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Tear down {teardownLabel}? The ingest server and stream key stop working. Recordings in the video archive are not affected."
@@ -2108,6 +2308,10 @@ msgstr "Text för inspelningen (Ondemand)"
 #: src/views/projects/layoutInherit.ts
 msgid "Text placement"
 msgstr "Textens placering"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Text to paste into the video's description on YouTube."
+msgstr "Text att klistra in i videons beskrivning på YouTube."
 
 #: src/views/projects/UploadPanel.tsx
 msgid "That does not seem to be a video file."
@@ -2181,6 +2385,10 @@ msgstr "Undertextutkastet för {name} är klart och väntar på granskning."
 msgid "The captions are machine-generated and not reviewed."
 msgstr "Undertexterna är maskingenererade och inte granskade."
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "The captions could not be fetched."
+msgstr "Undertexterna kunde inte hämtas."
+
 #: src/app/Shell.tsx
 msgid "The captions for {name} failed."
 msgstr "Undertexterna för {name} misslyckades."
@@ -2201,6 +2409,14 @@ msgstr "Ändringarna i kapitel och undertexter släpps till tittarna."
 msgid "The channel limit is reached ({limit}). Tear down an idle resource first."
 msgstr "Kanaltaket är nått ({limit}). Riv en vilande resurs först."
 
+#: src/views/projects/exportImportLogic.ts
+msgid "The chapters can be exported when the broadcast has ended."
+msgstr "Kapitlen går att exportera när sändningen är avslutad."
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "The chapters could not be read."
+msgstr "Kapitlen kunde inte läsas."
+
 #: src/views/projects/OndemandView.tsx
 msgid "The chapters' anchoring to the video is not confirmed. Confirm it in the editor."
 msgstr "Kapitlens förankring mot videon är inte bekräftad. Bekräfta den i redigeraren."
@@ -2212,6 +2428,10 @@ msgstr "Den valda sändningen är väldigt kort ({duration}) — kontrollera att
 #: src/views/projects/UploadPanel.tsx
 msgid "The current recording is replaced only when you have approved the new video."
 msgstr "Nuvarande inspelning ersätts först när du har godkänt den nya videon."
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "The document could not be created."
+msgstr "Dokumentet kunde inte skapas."
 
 #: src/views/users/UsersView.tsx
 msgid "The domain has no users."
@@ -2249,6 +2469,14 @@ msgstr "Nedladdningen förbereds. Du får en avisering när den är klar."
 msgid "The download of {name} is ready."
 msgstr "Nedladdningen av {name} är klar."
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "The draft could not be fetched."
+msgstr "Utkastet kunde inte hämtas."
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "The draft was downloaded as a .vtt file."
+msgstr "Utkastet laddades ner som en .vtt-fil."
+
 #: src/views/users/UsersView.tsx
 msgid "The end date must be after the start date."
 msgstr "Slutdatum måste vara efter startdatum."
@@ -2256,6 +2484,18 @@ msgstr "Slutdatum måste vara efter startdatum."
 #: src/views/projects/forkLogic.ts
 msgid "The end must be after the start."
 msgstr "Slutet måste ligga efter början."
+
+#: src/views/projects/VttImportDialog.tsx
+msgid "The file becomes a draft in the editor and replaces the current working version (it remains in the version history). Viewers see it only when you publish."
+msgstr "Filen blir ett utkast i redigeraren och ersätter nuvarande arbetsversion (den finns kvar i versionshistoriken). Tittarna ser den först när du publicerar."
+
+#: src/views/projects/VttImportDialog.tsx
+msgid "The file becomes a draft in the editor. Viewers see it only when you publish."
+msgstr "Filen blir ett utkast i redigeraren. Tittarna ser den först när du publicerar."
+
+#: src/views/projects/VttImportDialog.tsx
+msgid "The file's times are counted from"
+msgstr "Filens tider räknas från"
 
 #: src/views/projects/projectMode.ts
 msgid "The history from the broadcast/test is kept for the archive, but the After review ends and the audience sees the Before message."
@@ -2319,6 +2559,7 @@ msgid "The log could not be loaded."
 msgstr "Loggen kunde inte hämtas."
 
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/ExportImportDialog.tsx
 msgid "The manuscript could not be created."
 msgstr "Manuset kunde inte skapas."
 
@@ -2350,9 +2591,17 @@ msgstr "Projektet går inte att radera just nu"
 msgid "The project could not be created."
 msgstr "Projektet kunde inte skapas."
 
+#: src/views/projects/exportImportLogic.ts
+msgid "The project has no video yet."
+msgstr "Projektet har ingen video än."
+
 #: src/views/projects/OndemandView.tsx
 msgid "The project is published. Withdraw the publication if you want to change the video."
 msgstr "Projektet är publicerat. Ta tillbaka publiceringen om du vill byta video."
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "The published captions are in the published video's time."
+msgstr "De publicerade undertexterna är i den publicerade videons tid."
 
 #: src/app/Shell.tsx
 msgid "the recording"
@@ -2410,9 +2659,41 @@ msgstr "Delningen kunde inte återkallas."
 msgid "The speaker change analysis for {name} failed."
 msgstr "Analysen av talarbyten för {name} misslyckades."
 
+#: src/views/projects/ManuscriptSpeakersWarning.tsx
+msgid "The speaker changes are being analyzed now. The job is under Jobs, where you download the Word manuscript with speakers when it is done."
+msgstr "Talarbytena analyseras nu. Jobbet finns under Jobb, där du laddar ner Word-manuset med talare när det är klart."
+
+#: src/views/projects/ManuscriptSpeakersWarning.tsx
+msgid "The speaker changes are not analyzed. The manuscript will be without speakers, but you can analyze them. It takes a while."
+msgstr "Talarbytena är inte analyserade. Manuset blir utan talare, men du kan analysera dem. Det tar en stund."
+
+#: src/views/projects/ManuscriptSpeakersWarning.tsx
+msgid "The speaker changes are not ready yet ({progress} %). If you take out the manuscript now, it will be without speakers. When the job is done, you download the manuscript with speakers under Jobs."
+msgstr "Talarbytena är inte klara än ({progress} %). Tar du ut manuset nu blir det utan talare. När jobbet är klart laddar du ner manuset med talare under Jobb."
+
+#: src/views/projects/ManuscriptSpeakersWarning.tsx
+msgid "The speaker changes are not ready yet. If you take out the manuscript now, it will be without speakers. When the job is done, you download the manuscript with speakers under Jobs."
+msgstr "Talarbytena är inte klara än. Tar du ut manuset nu blir det utan talare. När jobbet är klart laddar du ner manuset med talare under Jobb."
+
+#: src/views/projects/ManuscriptSpeakersWarning.tsx
+msgid "The speaker changes could not be analyzed last time. The manuscript will be without speakers, but you can try to analyze them again. It takes a while."
+msgstr "Talarbytena kunde inte analyseras förra gången. Manuset blir utan talare, men du kan försöka analysera dem igen. Det tar en stund."
+
+#: src/views/projects/ManuscriptSpeakersWarning.tsx
+msgid "The speaker changes could not be started."
+msgstr "Talarbytena kunde inte startas."
+
 #: src/app/Shell.tsx
 msgid "The speaker changes for {name} are analysed. The Word transcript can be downloaded with speakers."
 msgstr "Talarbytena för {name} är analyserade. Word-manuset kan laddas ner med talare."
+
+#: src/views/projects/VttImportDialog.tsx
+msgid "The start of the original recording"
+msgstr "Originalinspelningens start"
+
+#: src/views/projects/VttImportDialog.tsx
+msgid "The start of the published video ({start} in the original)"
+msgstr "Den publicerade videons start ({start} i originalet)"
 
 #: src/views/projects/publishOutcome.ts
 msgid "The step “{stepLabel}” failed. The error message was shown as a notification. On demand has not been updated, so you can try again."
@@ -2421,6 +2702,10 @@ msgstr "Steget ”{stepLabel}” misslyckades. Felmeddelandet visades som en not
 #: src/views/projects/forkLogic.ts
 msgid "The time is outside what can be chosen ({first}–{last})."
 msgstr "Tiden ligger utanför det som finns att välja ({first}–{last})."
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "The times are counted from the start of the published video."
+msgstr "Tiderna räknas från den publicerade videons start."
 
 #: src/app/Shell.tsx
 msgid "The transcript could not be created."
@@ -2442,9 +2727,21 @@ msgstr "Uppladdningen kunde inte avbrytas."
 msgid "The upload failed."
 msgstr "Uppladdningen misslyckades."
 
+#: src/views/projects/exportImportLogic.ts
+msgid "The video can be downloaded when it is published as on demand."
+msgstr "Videon går att ladda ner när den är publicerad som ondemand."
+
+#: src/views/projects/exportImportLogic.ts
+msgid "The video can be downloaded when the broadcast has ended and been published."
+msgstr "Videon går att ladda ner när sändningen är avslutad och publicerad."
+
 #: src/app/Shell.tsx
 msgid "The video for {name} is processed and waiting for review."
 msgstr "Videon för {name} är bearbetad och väntar på granskning."
+
+#: src/views/projects/exportImportLogic.ts
+msgid "The video is at an external address and cannot be downloaded as MP4 until it has been copied to ungap."
+msgstr "Videon ligger på en extern adress och kan inte laddas ned som MP4 förrän den kopierats till ungap."
 
 #: src/views/projects/OndemandView.tsx
 msgid "The video is being converted for playback, which can take a few minutes depending on its length. You can leave the page — processing continues."
@@ -2455,17 +2752,46 @@ msgstr "Videon konverteras för uppspelning, vilket kan ta några minuter beroen
 msgid "The video is being processed"
 msgstr "Videon bearbetas"
 
+#: src/views/projects/exportImportLogic.ts
+msgid "The video is not ready yet."
+msgstr "Videon är inte klar än."
+
 #: src/views/projects/OndemandView.tsx
 msgid "The video is trimmed in the After mode."
 msgstr "Videon trimmas i läget After."
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "The whole draft, with any unpublished changes, in the original recording's time."
+msgstr "Hela utkastet, med eventuella ändringar som inte är publicerade, i originalinspelningens tid."
+
+#: src/views/projects/ExportImportDialog.tsx
 #: src/views/projects/OndemandView.tsx
 msgid "The whole recording"
 msgstr "Hela inspelningen"
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "The whole transcription as running text under agenda items and speakers, without timestamps. The document says whether the text is an unreviewed draft or approved."
+msgstr "Hela transkriberingen som löpande text under dagordningspunkter och talare, utan tidsstämplar. Dokumentet säger om texten är ett ogranskat utkast eller godkänd."
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "There are no chapters to export."
+msgstr "Det finns inga kapitel att exportera."
+
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "There are no other projects to get a layout from."
 msgstr "Det finns inga andra projekt att hämta layout från."
+
+#: src/views/projects/exportImportLogic.ts
+msgid "There are no published captions. Create and approve them under Video and captions."
+msgstr "Det finns inga publicerade undertexter. Skapa och godkänn dem under Video och undertexter."
+
+#: src/views/projects/exportImportLogic.ts
+msgid "There is no caption draft."
+msgstr "Det finns inget undertextutkast."
+
+#: src/views/projects/exportImportLogic.ts
+msgid "There is no video to download."
+msgstr "Det finns ingen video att ladda ner."
 
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "This is replaced:"
@@ -2544,6 +2870,10 @@ msgstr "Försök igen"
 msgid "Type"
 msgstr "Typ"
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "ungap Chapters (.json)"
+msgstr "ungap Chapters (.json)"
+
 #: src/app/jobActions.ts
 msgid "unknown recording"
 msgstr "okänd inspelning"
@@ -2596,6 +2926,10 @@ msgstr "Ladda upp"
 msgid "Upload · {name}"
 msgstr "Uppladdning · {name}"
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Upload a file or enter an HLS address."
+msgstr "Ladda upp en fil eller ange en HLS-adress."
+
 #: src/views/projects/UploadPanel.tsx
 msgid "Upload a finished video to {projectName}"
 msgstr "Ladda upp en färdig video till {projectName}"
@@ -2645,9 +2979,14 @@ msgstr "Användarens detaljer"
 msgid "Users"
 msgstr "Användare"
 
+#: src/views/projects/ExportImportDialog.tsx
 #: src/views/projects/OndemandView.tsx
 msgid "Video"
 msgstr "Video"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Video (MP4)"
+msgstr "Video (MP4)"
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Video archive"
@@ -2677,13 +3016,29 @@ msgstr "Inspelningen syns nu för tittarna."
 msgid "Visibility"
 msgstr "Synlighet"
 
+#: src/views/projects/ManuscriptSpeakersWarning.tsx
+msgid "Wait"
+msgstr "Vänta"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Wait until the recording is done before you trim and publish on demand."
 msgstr "Vänta tills inspelningen är klar innan du trimmar och publicerar ondemand."
 
+#: src/views/projects/ExportImportDialog.tsx
+msgid "Wait until the transfer is done"
+msgstr "Vänta tills överföringen är klar"
+
 #: src/views/projects/PublishProgressDialog.tsx
 msgid "Waiting"
 msgstr "Väntar"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "WebVTT chapters (.vtt)"
+msgstr "WebVTT-kapitel (.vtt)"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "WebVTT, which the player and most video platforms read."
+msgstr "WebVTT, som spelaren och de flesta videoplattformar läser."
 
 #: src/app/CredentialLinkView.tsx
 msgid "Welcome, {name}!"
@@ -2696,6 +3051,14 @@ msgstr "Välkommen att logga in"
 #: src/app/CredentialLinkView.tsx
 msgid "Welcome!"
 msgstr "Välkommen!"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "What do you want to export"
+msgstr "Vad vill du exportera"
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "What do you want to import"
+msgstr "Vad vill du läsa in"
 
 #: src/views/users/UsersView.tsx
 msgid "Works operationally within their domain."
@@ -2724,3 +3087,7 @@ msgstr "Din personliga PIN-kod:"
 #: src/app/App.tsx
 msgid "Your session has expired. Log in again and you will continue where you were."
 msgstr "Din session har gått ut. Logga in igen så fortsätter du där du var."
+
+#: src/views/projects/ExportImportDialog.tsx
+msgid "YouTube chapters"
+msgstr "YouTube-kapitel"

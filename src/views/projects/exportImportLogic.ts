@@ -1,3 +1,4 @@
+import { plural, t } from '@lingui/core/macro'
 import type { Project } from '../../data/types'
 import { canExportChapters } from './chapterExport.ts'
 import { isExternalSource } from './recordingSource.ts'
@@ -18,37 +19,37 @@ const OK: Availability = { enabled: true }
 
 export function chaptersExportAvailability(project: Facts): Availability {
   if (canExportChapters(project)) return OK
-  if (!project.recording) return { enabled: false, reason: 'Projektet har ingen video än.' }
-  if (project.recording.state === 'awaitingApproval') return { enabled: false, reason: 'Godkänn eller ignorera den uppladdade videon först.' }
-  if (project.publicMode === 'before' || project.publicMode === 'live') return { enabled: false, reason: 'Kapitlen går att exportera när sändningen är avslutad.' }
-  return { enabled: false, reason: 'Videon är inte klar än.' }
+  if (!project.recording) return { enabled: false, reason: t`The project has no video yet.` }
+  if (project.recording.state === 'awaitingApproval') return { enabled: false, reason: t`Approve or ignore the uploaded video first.` }
+  if (project.publicMode === 'before' || project.publicMode === 'live') return { enabled: false, reason: t`The chapters can be exported when the broadcast has ended.` }
+  return { enabled: false, reason: t`The video is not ready yet.` }
 }
 
 /** MP4-nedladdning: samma regler som när den låg som flik under videon (UNG-132). */
 export function videoDownloadAvailability(project: Facts): Availability {
   const recording = project.recording
-  if (!recording) return { enabled: false, reason: 'Det finns ingen video att ladda ner.' }
-  if (recording.state === 'awaitingApproval') return { enabled: false, reason: 'Godkänn eller ignorera den uppladdade videon först.' }
+  if (!recording) return { enabled: false, reason: t`There is no video to download.` }
+  if (recording.state === 'awaitingApproval') return { enabled: false, reason: t`Approve or ignore the uploaded video first.` }
   if (isExternalSource(recording.source)) {
-    return { enabled: false, reason: 'Videon ligger på en extern adress och kan inte laddas ned som MP4 förrän den kopierats till ungap.' }
+    return { enabled: false, reason: t`The video is at an external address and cannot be downloaded as MP4 until it has been copied to ungap.` }
   }
-  if (project.publicMode === 'after') return { enabled: false, reason: 'Videon går att ladda ner när den är publicerad som ondemand.' }
-  if (project.publicMode !== 'ondemand') return { enabled: false, reason: 'Videon går att ladda ner när sändningen är avslutad och publicerad.' }
+  if (project.publicMode === 'after') return { enabled: false, reason: t`The video can be downloaded when it is published as on demand.` }
+  if (project.publicMode !== 'ondemand') return { enabled: false, reason: t`The video can be downloaded when the broadcast has ended and been published.` }
   const ready = recording.state === 'recorded' || recording.state === 'trimmed' || recording.state === 'published'
-  return ready ? OK : { enabled: false, reason: 'Videon är inte klar än.' }
+  return ready ? OK : { enabled: false, reason: t`The video is not ready yet.` }
 }
 
 /** De publicerade undertexterna (VTT och SRT) finns när videon har en publicerad undertext. */
 export function publishedCaptionsAvailability(project: CaptionFacts): Availability {
   return project.recording?.captions
     ? OK
-    : { enabled: false, reason: 'Det finns inga publicerade undertexter. Skapa och godkänn dem under Video och undertexter.' }
+    : { enabled: false, reason: t`There are no published captions. Create and approve them under Video and captions.` }
 }
 
 /** Utkastet (hela mastern i originalets tid) finns när undertexter skapats, även om de inte publicerats. */
 export function captionDraftAvailability(project: CaptionFacts): Availability {
   const state = project.captionStatus?.state
-  return state === 'draft' || state === 'published' ? OK : { enabled: false, reason: 'Det finns inget undertextutkast.' }
+  return state === 'draft' || state === 'published' ? OK : { enabled: false, reason: t`There is no caption draft.` }
 }
 
 export interface ImportHandlers {
@@ -61,7 +62,7 @@ export interface ImportHandlers {
 
 /** Import görs inne i projektet (kapitel, undertexter, video); från projektlistan visas en väg dit i stället. */
 export function importAvailability(handlers: ImportHandlers): { chapters: Availability; captions: Availability; upload: Availability } {
-  const inProject = (has: boolean): Availability => (has ? OK : { enabled: false, reason: 'Görs inne i projektet.' })
+  const inProject = (has: boolean): Availability => (has ? OK : { enabled: false, reason: t`Done inside the project.` })
   return {
     chapters: inProject(Boolean(handlers.onImportChapters)),
     captions: inProject(Boolean(handlers.onOpenCaptions)),
@@ -70,9 +71,9 @@ export function importAvailability(handlers: ImportHandlers): { chapters: Availa
 }
 
 export function copiedMessage(count: number): string {
-  return `${count} kapitel kopierades. Klistra in dem i videons beskrivning på YouTube.`
+  return plural(count, { one: '# chapter was copied. Paste it into the video description on YouTube.', other: '# chapters were copied. Paste them into the video description on YouTube.' })
 }
 
 export function savedMessage(fileName: string): string {
-  return `Sparad som "${fileName}". Filen ligger bland dina hämtade filer.`
+  return t`Saved as "${fileName}". The file is among your downloaded files.`
 }
