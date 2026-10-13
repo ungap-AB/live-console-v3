@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { TimelineEvent } from '../../data/types.ts'
-import { clockValue, forkFromOptions, forkSource, forkWarningText, timeInWindow } from './forkLogic.ts'
+import { clockValue, forkFromOptions, forkRangeError, forkSource, forkToOptions, forkWarningText, timeInWindow } from './forkLogic.ts'
 
 const rec = (state: string, source?: string) => ({ id: 'r1', state: state as never, source })
 
@@ -66,4 +66,31 @@ test('ett klockslag precis utanför kanten räknas som kanten, längre utanför 
   assert.ok('error' in timeInWindow('25:00', window))
   assert.ok('error' in timeInWindow('abc', window))
   assert.equal(clockValue(local(9, 9, 5)), '09:05')
+})
+
+test('UNG-276: slut till nu eller inspelningens slut, före senaste pausen och vid slutet av förra punkten', () => {
+  assert.deepEqual(forkToOptions([], 'live').map((o) => [o.key, o.label, o.toUtc]), [['end', 'Till nu', null]])
+  assert.equal(forkToOptions([], 'recording')[0].label, 'Till inspelningens slut')
+  const timeline = [
+    event('a1', 'agendaItem', '§ 1', '2026-10-12T08:00:00Z'),
+    event('p1', 'pauseIn', 'Kaffe', '2026-10-12T08:30:00Z'),
+    event('p2', 'pauseOut', '', '2026-10-12T08:45:00Z'),
+    event('a2', 'agendaItem', '§ 2', '2026-10-12T09:00:00Z'),
+  ]
+  const options = forkToOptions(timeline, 'live')
+  assert.deepEqual(options.map((o) => [o.key, o.toUtc]), [['end', null], ['pause', '2026-10-12T08:30:00Z'], ['agenda', '2026-10-12T09:00:00Z']])
+  assert.match(options[2].label, /^Till slutet av punkten: § 1 \(/)
+  // En rensad punkt har inget slut att föreslå; en rensning avslutar däremot punkten före.
+  assert.equal(forkToOptions([event('a1', 'agendaItem', 'Rensat', '2026-10-12T08:00:00Z', null), event('a2', 'agendaItem', '§ 2', '2026-10-12T09:00:00Z')], 'live').length, 1)
+  assert.equal(forkToOptions([event('a1', 'agendaItem', '§ 1', '2026-10-12T08:00:00Z'), event('c', 'agendaItem', 'Rensat', '2026-10-12T08:20:00Z', null)], 'live')[1].toUtc, '2026-10-12T08:20:00Z')
+})
+
+test('UNG-276: slutet måste ligga efter början, med fönstrets kanter för saknade tider', () => {
+  const window = { startUtc: '2026-10-12T08:00:00Z', endUtc: '2026-10-12T10:00:00Z' }
+  assert.equal(forkRangeError(undefined, undefined, window), '')
+  assert.equal(forkRangeError('2026-10-12T09:00:00Z', '2026-10-12T09:30:00Z', window), '')
+  assert.equal(forkRangeError('2026-10-12T09:00:00Z', '2026-10-12T09:00:00Z', window), 'Slutet måste ligga efter början.')
+  assert.equal(forkRangeError(undefined, '2026-10-12T07:00:00Z', window), 'Slutet måste ligga efter början.')
+  assert.equal(forkRangeError('2026-10-12T10:30:00Z', undefined, window), 'Slutet måste ligga efter början.')
+  assert.equal(forkRangeError('2026-10-12T09:00:00Z', undefined, null), '')
 })

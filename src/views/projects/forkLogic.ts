@@ -34,6 +34,39 @@ export function forkFromOptions(timeline: readonly TimelineEvent[]): ForkFromOpt
   return options
 }
 
+export interface ForkToOption {
+  key: string
+  label: string
+  /** ISO-tid att skicka som toUtc, eller null för "till nu"/"till inspelningens slut". */
+  toUtc: string | null
+}
+
+/**
+ * UNG-276: var forken slutar. "Till nu" (live) eller "till inspelningens slut", och två förslag ur tidslinjen: före senaste pausen och vid
+ * slutet av förra dagordningspunkten (när nästa punkt började eller punkten rensades).
+ */
+export function forkToOptions(timeline: readonly TimelineEvent[], source: ForkSource): ForkToOption[] {
+  const options: ForkToOption[] = [{ key: 'end', label: source === 'live' ? 'Till nu' : 'Till inspelningens slut', toUtc: null }]
+  const byTime = [...timeline].sort((a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime())
+  const pauseIn = [...byTime].reverse().find((event) => event.kind === 'pauseIn')
+  if (pauseIn) options.push({ key: 'pause', label: `Före senaste pausen (${clock(pauseIn.occurredAt)})`, toUtc: pauseIn.occurredAt })
+  const agendaEvents = byTime.filter((event) => event.kind === 'agendaItem')
+  const last = agendaEvents.length - 1
+  const ended = last >= 1 ? agendaEvents[last - 1] : undefined
+  if (ended && ended.refId !== null && ended.label !== 'Rensat') {
+    options.push({ key: 'agenda', label: `Till slutet av punkten: ${ended.label} (${clock(agendaEvents[last].occurredAt)})`, toUtc: agendaEvents[last].occurredAt })
+  }
+  return options
+}
+
+/** UNG-276: slutet måste ligga efter början. Saknade tider är fönstrets kanter ("från början", "till nu"). */
+export function forkRangeError(fromUtc: string | null | undefined, toUtc: string | null | undefined, window: { startUtc: string; endUtc: string } | null): string {
+  const from = fromUtc ?? window?.startUtc
+  const to = toUtc ?? window?.endUtc
+  if (!from || !to) return ''
+  return new Date(to).getTime() <= new Date(from).getTime() ? 'Slutet måste ligga efter början.' : ''
+}
+
 const pad = (value: number) => String(value).padStart(2, '0')
 
 /** Klockslaget (hh:mm, lokal tid) som en tidväljare visar för en ISO-tid. */
