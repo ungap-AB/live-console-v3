@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { conflictDescription, headerActions, isConflictCode, overwriteLabel, publishChangesNotice, trimChanged, trimDraftPayload } from './draftActions.ts'
+import { conflictDescription, headerActions, isConflictCode, overviewTrim, overwriteLabel, publishChangesNotice, trimChanged, trimDraftPayload } from './draftActions.ts'
 
 test('trimmen räknas som ändrad först när något skiljer sig från det sparade', () => {
   assert.equal(trimChanged(undefined), false)
@@ -19,6 +19,21 @@ test('trimutkastet bär intervallet och kapitellistan i serverns ordning', () =>
     endOffsetSeconds: 100,
     chapters: [{ index: 0, label: '§ 1', offsetSeconds: 20 }, { index: 1, label: 'Anna', offsetSeconds: 55 }],
   })
+})
+
+test('UNG-290: sparat trimutkast vinner över inspelningen, även när inspelningen kommer efter utkastet', () => {
+  const draft = { startOffsetSeconds: 120, endOffsetSeconds: 3000 }
+  const recording = { durationSeconds: 3600, trimRange: null }
+  // Ommontering: projektet (med utkast) finns direkt, inspelningen hämtas efteråt.
+  assert.deepEqual(overviewTrim(draft, null), { start: 120, end: 3000 })
+  assert.deepEqual(overviewTrim(draft, recording), { start: 120, end: 3000 })
+  assert.deepEqual(overviewTrim(draft, { durationSeconds: 3600, trimRange: { startOffsetSeconds: 10, endOffsetSeconds: 20 } }), { start: 120, end: 3000 })
+})
+
+test('utan utkast gäller inspelningens trimning, annars hela inspelningen; utan båda ändras inget', () => {
+  assert.deepEqual(overviewTrim(null, { durationSeconds: 3600, trimRange: { startOffsetSeconds: 10, endOffsetSeconds: 20 } }), { start: 10, end: 20 })
+  assert.deepEqual(overviewTrim(null, { durationSeconds: 3600 }), { start: 0, end: 3600 })
+  assert.equal(overviewTrim(null, null), null)
 })
 
 const base = { published: false, serverChanges: false, localDirty: false, busy: false, readOnly: false }

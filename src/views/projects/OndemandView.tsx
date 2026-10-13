@@ -23,7 +23,7 @@ import type { PublishStep, PublishStepKey } from './publishProgress'
 import { UploadPanel } from './UploadPanel'
 import { isExternalSource, isOperatorSupplied } from './recordingSource'
 import type { TrimRange } from '../../components/trimBarLogic'
-import { trimDraftPayload } from './draftActions'
+import { overviewTrim, trimDraftPayload } from './draftActions'
 import { Modal } from '../../components/Modal'
 import type { ProjectActions } from './actions'
 import { ProjectHeader } from './ProjectHeader'
@@ -104,18 +104,13 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     wasUploadProcessing.current = processing
   }, [p.recording?.id, p.recording?.state])
 
+  // UNG-290: en enda effekt, så att inspelningen som hämtas efter ommontering inte skriver över det sparade trimutkastet.
   useEffect(() => {
-    const active = recording
-    if (!active) return
-    setTrimStart(active.trimRange?.startOffsetSeconds ?? 0)
-    setTrimEnd(active.trimRange?.endOffsetSeconds ?? active.durationSeconds)
-  }, [recording?.id, recording?.durationSeconds, recording?.trimRange?.startOffsetSeconds, recording?.trimRange?.endOffsetSeconds, p.publicMode, recordingId])
-
-  useEffect(() => {
-    if (!p.trimDraft) return
-    setTrimStart(p.trimDraft.startOffsetSeconds)
-    setTrimEnd(p.trimDraft.endOffsetSeconds)
-  }, [p.trimDraft])
+    const next = overviewTrim(p.trimDraft, recording)
+    if (!next) return
+    setTrimStart(next.start)
+    setTrimEnd(next.end)
+  }, [p.trimDraft, recording?.id, recording?.durationSeconds, recording?.trimRange?.startOffsetSeconds, recording?.trimRange?.endOffsetSeconds, p.publicMode, recordingId])
 
   useEffect(() => {
     let cancelled = false

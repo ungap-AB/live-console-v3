@@ -29,6 +29,27 @@ export function trimDraftPayload(start: number, end: number, serverChapters: rea
   }
 }
 
+interface TrimSource {
+  startOffsetSeconds: number
+  endOffsetSeconds: number
+}
+
+/**
+ * UNG-290: trimningen som översikten utgår från. Ett sparat trimutkast vinner alltid över inspelningens trimning (annars hela
+ * inspelningen), oavsett i vilken ordning projektet och inspelningen kommer. Null = inget att utgå från än (behåll det som visas).
+ */
+export function overviewTrim(
+  draft: TrimSource | null | undefined,
+  recording: { durationSeconds: number; trimRange?: TrimSource | null } | null | undefined,
+): { start: number; end: number } | null {
+  if (draft) return { start: draft.startOffsetSeconds, end: draft.endOffsetSeconds }
+  if (!recording) return null
+  return {
+    start: recording.trimRange?.startOffsetSeconds ?? 0,
+    end: recording.trimRange?.endOffsetSeconds ?? recording.durationSeconds,
+  }
+}
+
 export interface HeaderInput {
   /** Projektet har publicerats (status från servern). */
   published: boolean
