@@ -45,13 +45,41 @@ export function latestUnusedAgenda<T extends AgendaLike>(agendas: readonly T[]):
   return unused[0] ?? null
 }
 
-export function agendaOptions(input: { agendas: readonly AgendaLike[]; meeting: boolean }): ListOption[] {
+export function agendaOptions(input: { agendas: readonly AgendaLike[]; meeting: boolean; picked?: string }): ListOption[] {
   const options: ListOption[] = []
   if (input.meeting) options.push({ id: MEETING, label: 'Koppla till Meeting' })
   const latest = latestUnusedAgenda(input.agendas)
   if (latest) options.push({ id: latest.id, label: `Senast skapade oanvända dagordning: ${latest.name}` })
+  pushPicked(options, input.agendas, input.picked)
   options.push({ id: NONE, label: 'Ingen dagordning, jag kopplar senare' })
   return options
+}
+
+// UNG-287: en lista som valts i väljardialogen ("Välj annan…") blir ett eget alternativ, om den inte redan är ett.
+function pushPicked(options: ListOption[], lists: readonly { id: string; name: string }[], picked: string | undefined) {
+  if (!picked || options.some((option) => option.id === picked)) return
+  const list = lists.find((candidate) => candidate.id === picked)
+  if (list) options.push({ id: list.id, label: `Vald: ${list.name}` })
+}
+
+export type ListUsageFilter = 'all' | 'unused' | 'used'
+
+export interface PickableList {
+  id: string
+  name: string
+  usedInProjects: number
+  changedAt: string
+  isTemplate?: boolean
+}
+
+/** UNG-287: väljardialogens lista: sökning i namnet (skiftlägesokänslig), filter på använd/oanvänd, senast ändrade först. Mallar visas inte. */
+export function filterLists<T extends PickableList>(lists: readonly T[], query: string, usage: ListUsageFilter): T[] {
+  const needle = query.trim().toLocaleLowerCase('sv')
+  return lists
+    .filter((list) => !list.isTemplate)
+    .filter((list) => !needle || list.name.toLocaleLowerCase('sv').includes(needle))
+    .filter((list) => usage === 'all' || (usage === 'unused' ? list.usedInProjects === 0 : list.usedInProjects > 0))
+    .sort((left, right) => Date.parse(right.changedAt) - Date.parse(left.changedAt))
 }
 
 /** Namnlistan som föregående projekt (det projekt layouten utgår från) har, om den finns kvar. */
@@ -59,11 +87,12 @@ export function previousNameList(source: ProjectLike | undefined, nameLists: rea
   return source?.namelistId ? nameLists.find((list) => list.id === source.namelistId) ?? null : null
 }
 
-export function nameListOptions(input: { source: ProjectLike | undefined; nameLists: readonly NameListLike[]; meeting: boolean }): ListOption[] {
+export function nameListOptions(input: { source: ProjectLike | undefined; nameLists: readonly NameListLike[]; meeting: boolean; picked?: string }): ListOption[] {
   const options: ListOption[] = []
   if (input.meeting) options.push({ id: MEETING, label: 'Koppla till Meeting' })
   const previous = previousNameList(input.source, input.nameLists)
   if (previous && input.source) options.push({ id: previous.id, label: `Samma lista som ${input.source.name}: ${previous.name}` })
+  pushPicked(options, input.nameLists, input.picked)
   options.push({ id: NONE, label: 'Ingen namnlista, jag kopplar senare' })
   return options
 }

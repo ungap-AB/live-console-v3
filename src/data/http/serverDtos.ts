@@ -137,6 +137,7 @@ export interface ServerProject {
   dvrEnabled?: boolean
   exclamationsAsSpeakers?: boolean
   liveOnly?: boolean
+  isLayoutTemplate?: boolean
   forkedFromProjectId?: string | null
   forkedFromName?: string | null
   forkedAtUtc?: string | null

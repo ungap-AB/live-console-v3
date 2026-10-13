@@ -326,7 +326,8 @@
   margin-top: 16px;
 }
 
-.liveonly-chip {
+.liveonly-chip,
+.template-chip {
   display: inline-block;
   margin-left: 6px;
   font-size: 11.5px;
@@ -392,4 +393,11 @@
 
 .project-filter button.is-active .project-filter-count {
   color: var(--ink-2);
+}
+
+/* UNG-287: mallmarkering, neutral (ingen varning). */
+.template-chip {
+  color: var(--ink-2);
+  background: var(--panel);
+  border-color: var(--line);
 }

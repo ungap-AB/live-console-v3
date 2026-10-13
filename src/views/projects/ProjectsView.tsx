@@ -300,6 +300,16 @@ export function ProjectsView({
     if (failed.length > 0) setToast(`Projektet skapades, men ${failed.join(' och ')} kunde inte kopplas. Koppla ${failed.length > 1 ? 'dem' : 'den'} i projektet.`)
   }
 
+  // UNG-287: mallar erbjuds som "Utgå från layout" i Nytt projekt.
+  async function toggleLayoutTemplate(project: Project) {
+    try {
+      const updated = await client.projects.rename(project.id, project.name, { isLayoutTemplate: !project.isLayoutTemplate })
+      setProjects((prev) => prev.map((p) => (p.id === updated.id ? { ...p, isLayoutTemplate: updated.isLayoutTemplate } : p)))
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : 'Något gick fel.')
+    }
+  }
+
   async function deleteProject(project: Project) {
     await client.projects.trash(project.id)
     setProjects((prev) => prev.filter((p) => p.id !== project.id))
@@ -652,6 +662,7 @@ export function ProjectsView({
                       <span class="col-mode">
                         <span class={`mode-chip mode-${MODE_TONE[p.publicMode]}`}>{MODE_LABEL[p.publicMode]}</span>
                         {p.liveOnly && <span class="liveonly-chip" title="Markerat som endast live">Endast live</span>}
+                        {p.isLayoutTemplate && <span class="template-chip" title="Erbjuds som layout när ett nytt projekt skapas">Mall</span>}
                       </span>
                       <span class="col-date">{formatShortDate(p.createdAt)}</span>
                       <span class="col-duration">{recordingDurationLabel(p.recording)}</span>
@@ -682,6 +693,11 @@ export function ProjectsView({
                         <OverflowMenu
                           label={`Fler åtgärder för ${p.name}`}
                           items={[
+                            {
+                              label: p.isLayoutTemplate ? 'Sluta använda som mall' : 'Använd som mall',
+                              title: 'Mallar erbjuds under "Utgå från layout" när ett nytt projekt skapas.',
+                              onClick: () => void toggleLayoutTemplate(p),
+                            },
                             {
                               label: 'Flytta till papperskorgen',
                               danger: true,

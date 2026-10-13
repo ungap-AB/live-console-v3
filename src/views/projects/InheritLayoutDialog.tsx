@@ -20,7 +20,7 @@ interface InheritLayoutDialogProps {
 export function InheritLayoutDialog({ project, actions, onCancel, onDone }: InheritLayoutDialogProps) {
   const resource = useResource(() => client.projects.list(), [])
   const all = resource.data ?? []
-  const options = layoutSourceOptions(all, project.id)
+  const options = layoutSourceOptions(all, project.id, true)
   const [chosen, setChosen] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const sourceId = chosen ?? defaultLayoutSource(options)
@@ -57,8 +57,8 @@ export function InheritLayoutDialog({ project, actions, onCancel, onDone }: Inhe
         <label class="cp-field">
           <span>Projekt</span>
           <select value={sourceId ?? ''} onChange={(event) => setChosen(event.currentTarget.value)}>
-            {options.map((option, index) => (
-              <option key={option.id} value={option.id}>{index === 0 ? `Senaste projektet: ${option.name}` : option.name}</option>
+            {options.map((option) => (
+              <option key={option.id} value={option.id}>{option.label}</option>
             ))}
           </select>
         </label>

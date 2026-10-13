@@ -190,6 +190,8 @@ export interface Project {
   exclamationsAsSpeakers: boolean
   /** UNG-198: markören "endast live" (ändrar inget beteende, visas som etikett). */
   liveOnly: boolean
+  /** UNG-287: projektet är en layoutmall (erbjuds under "Utgå från layout" när ett projekt skapas). */
+  isLayoutTemplate?: boolean
   /** UNG-198: projektet är forkat ur ett annat projekts sändning eller inspelning. */
   forkedFrom?: { projectId: string; name?: string; atUtc?: string }
   /** UNG-241: utkastets versionsnummer. Skickas som villkor vid skrivningar, så att två redigerare inte skriver över varandra tyst. */

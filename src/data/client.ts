@@ -203,7 +203,7 @@ export interface Client {
     /** UNG-198: skapar ett nytt projekt (läget After, stängt) ur projektets pågående sändning eller avslutade inspelning. Källan och strömmen rörs inte. */
     forkWindow(id: string): Promise<import('./types').ForkWindow>
     forkProject(id: string, input: { name?: string; fromUtc?: string }): Promise<import('./types').ForkResult>
-    rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText' | 'textPlacement' | 'muxEnabled' | 'muxRespectDoNotTrack' | 'dvrEnabled' | 'exclamationsAsSpeakers' | 'liveOnly'>>): Promise<Project>
+    rename(id: string, name: string, texts?: Partial<Pick<Project, 'beforeText' | 'liveText' | 'afterText' | 'ondemandText' | 'textPlacement' | 'muxEnabled' | 'muxRespectDoNotTrack' | 'dvrEnabled' | 'exclamationsAsSpeakers' | 'liveOnly' | 'isLayoutTemplate'>>): Promise<Project>
     trash(id: string): Promise<void>
     /** Laddar upp spelarens poster (JPG/PNG/WebP, högst 5 MB). Ersätter en tidigare poster. */
     /**

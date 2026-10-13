@@ -11,12 +11,30 @@ test('källorna är senast skapade först, och projektet som ska få layouten ut
     { id: 'c', name: 'Nyast', createdAt: '2026-03-01T00:00:00Z' },
     { id: 'b', name: 'Mitten', createdAt: '2026-02-01T00:00:00Z' },
   ]
-  assert.deepEqual(layoutSourceOptions(projects).map((o) => o.id), ['c', 'b', 'a'])
-  assert.deepEqual(layoutSourceOptions(projects, 'c').map((o) => o.id), ['b', 'a'])
+  assert.deepEqual(layoutSourceOptions(projects, undefined, true).map((o) => o.id), ['c', 'b', 'a'])
+  assert.deepEqual(layoutSourceOptions(projects, 'c', true).map((o) => o.id), ['b', 'a'])
+})
+
+test('UNG-287: i Nytt projekt bara det senaste projektet och mallarna (i namnordning), inte alla projekt', () => {
+  const projects = [
+    { id: 'a', name: 'Äldst', createdAt: '2026-01-01T00:00:00Z' },
+    { id: 'm2', name: 'Mall Öst', createdAt: '2026-01-05T00:00:00Z', isLayoutTemplate: true },
+    { id: 'm1', name: 'Mall Bengtsfors', createdAt: '2026-01-04T00:00:00Z', isLayoutTemplate: true },
+    { id: 'c', name: 'Nyast', createdAt: '2026-03-01T00:00:00Z' },
+  ]
+  assert.deepEqual(layoutSourceOptions(projects).map((o) => [o.id, o.label]), [
+    ['c', 'Senaste projektet: Nyast'], ['m1', 'Mall: Mall Bengtsfors'], ['m2', 'Mall: Mall Öst'],
+  ])
+  // Är det senaste projektet en mall står det bara en gång.
+  assert.deepEqual(layoutSourceOptions([...projects, { id: 'n', name: 'Ny mall', createdAt: '2026-04-01T00:00:00Z', isLayoutTemplate: true }]).map((o) => [o.id, o.label]), [
+    ['n', 'Senaste projektet: Ny mall (mall)'], ['m1', 'Mall: Mall Bengtsfors'], ['m2', 'Mall: Mall Öst'],
+  ])
+  // Hämta layout: mallarna först efter det senaste, sedan övriga projekt.
+  assert.deepEqual(layoutSourceOptions(projects, undefined, true).map((o) => o.id), ['c', 'm1', 'm2', 'a'])
 })
 
 test('förvalet är det senast skapade projektet, och ingen källa finns i den första domänen', () => {
-  assert.equal(defaultLayoutSource([{ id: 'c', name: 'Nyast' }, { id: 'a', name: 'Äldst' }]), 'c')
+  assert.equal(defaultLayoutSource([{ id: 'c', name: 'Nyast', label: 'Nyast' }, { id: 'a', name: 'Äldst', label: 'Äldst' }]), 'c')
   assert.equal(defaultLayoutSource([]), null)
 })
 

@@ -35,14 +35,29 @@ export function layoutOf(project: LayoutFields): LayoutFields {
 export interface LayoutSourceOption {
   id: string
   name: string
+  label: string
 }
 
-/** Projekten man kan utgå från, senast skapade först. Det projekt som själv ska få layouten (om det finns) utelämnas. */
-export function layoutSourceOptions(projects: readonly Pick<Project, 'id' | 'name' | 'createdAt'>[], excludeId?: string): LayoutSourceOption[] {
-  return projects
-    .filter((project) => project.id !== excludeId)
-    .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
-    .map((project) => ({ id: project.id, name: project.name }))
+/**
+ * Projekten man kan utgå från (UNG-287): det senast skapade projektet först, sedan mallarna i namnordning. Övriga projekt erbjuds bara med
+ * allProjects (Hämta layout i ett befintligt projekt), så att listan i Nytt projekt inte växer med antalet projekt. Det projekt som själv ska
+ * få layouten (om det finns) utelämnas.
+ */
+export function layoutSourceOptions(
+  projects: readonly Pick<Project, 'id' | 'name' | 'createdAt' | 'isLayoutTemplate'>[],
+  excludeId?: string,
+  allProjects = false,
+): LayoutSourceOption[] {
+  const candidates = [...projects.filter((project) => project.id !== excludeId)].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
+  const latest = candidates[0]
+  const templates = candidates
+    .filter((project) => project.isLayoutTemplate && project.id !== latest?.id)
+    .sort((left, right) => left.name.localeCompare(right.name, 'sv'))
+  return [
+    ...(latest ? [{ id: latest.id, name: latest.name, label: `Senaste projektet: ${latest.name}${latest.isLayoutTemplate ? ' (mall)' : ''}` }] : []),
+    ...templates.map((project) => ({ id: project.id, name: project.name, label: `Mall: ${project.name}` })),
+    ...(allProjects ? candidates.filter((project) => project.id !== latest?.id && !project.isLayoutTemplate).map((project) => ({ id: project.id, name: project.name, label: project.name })) : []),
+  ]
 }
 
 /** Förvalt: det senast skapade projektet. Finns inget projekt att utgå från är svaret null. */

@@ -355,6 +355,7 @@ function toProjectLite(dto: ServerProject): Project {
     dvrEnabled: dto.dvrEnabled ?? false,
     exclamationsAsSpeakers: dto.exclamationsAsSpeakers ?? false,
     liveOnly: dto.liveOnly ?? false,
+    isLayoutTemplate: dto.isLayoutTemplate ?? false,
     forkedFrom: dto.forkedFromProjectId ? { projectId: dto.forkedFromProjectId, name: dto.forkedFromName ?? undefined, atUtc: dto.forkedAtUtc ?? undefined } : undefined,
     draftRevision: dto.draftRevision,
     captionStatus: toCaptionStatus(dto.captionStatus),

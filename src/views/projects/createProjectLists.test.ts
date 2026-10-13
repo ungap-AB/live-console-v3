@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { agendaOptions, attachPlan, chooseList, defaultChoice, isMeetingCustomer, latestUnusedAgenda, MEETING, nameListOptions, NONE, previousNameList } from './createProjectLists.ts'
+import { agendaOptions, attachPlan, chooseList, defaultChoice, filterLists, isMeetingCustomer, latestUnusedAgenda, MEETING, nameListOptions, NONE, previousNameList } from './createProjectLists.ts'
 
 const agenda = (id: string, usedInProjects: number, changedAt: string, isTemplate = false) => ({ id, name: `Dagordning ${id}`, usedInProjects, changedAt, isTemplate })
 
@@ -51,4 +51,29 @@ test('efter skapandet: befintlig lista kopplas, Ingen kopplar inget, och Meeting
   assert.deepEqual(attachPlan({ agenda: NONE, namelist: NONE }), { agendaId: null, namelistId: null, openMeeting: false })
   assert.deepEqual(attachPlan({ agenda: NONE, namelist: 'n1' }), { agendaId: null, namelistId: 'n1', openMeeting: false })
   assert.deepEqual(attachPlan({ agenda: MEETING, namelist: MEETING }), { agendaId: null, namelistId: null, openMeeting: true })
+})
+
+test('UNG-287: en lista vald i väljardialogen blir ett eget alternativ före Ingen, om den inte redan är förslaget', () => {
+  const agendas = [
+    { id: 'a1', name: 'Dagordning a', usedInProjects: 2, changedAt: '2026-01-01T00:00:00Z' },
+    { id: 'a2', name: 'Dagordning b', usedInProjects: 0, changedAt: '2026-02-01T00:00:00Z' },
+  ]
+  assert.deepEqual(agendaOptions({ agendas, meeting: false, picked: 'a1' }).map((o) => [o.id, o.label]), [
+    ['a2', 'Senast skapade oanvända dagordning: Dagordning b'], ['a1', 'Vald: Dagordning a'], ['none', 'Ingen dagordning, jag kopplar senare'],
+  ])
+  assert.equal(agendaOptions({ agendas, meeting: false, picked: 'a2' }).length, 2)
+  assert.deepEqual(nameListOptions({ source: undefined, nameLists: [{ id: 'n1', name: 'Ledamöter' }], meeting: false, picked: 'n1' }).map((o) => o.id), ['n1', 'none'])
+})
+
+test('UNG-287: väljardialogen söker i namnet, filtrerar på använd/oanvänd, visar senast ändrade först och inga mallar', () => {
+  const lists = [
+    { id: '1', name: 'KF januari', usedInProjects: 1, changedAt: '2026-01-10T00:00:00Z' },
+    { id: '2', name: 'KS februari', usedInProjects: 0, changedAt: '2026-02-10T00:00:00Z' },
+    { id: '3', name: 'KF mars', usedInProjects: 0, changedAt: '2026-03-10T00:00:00Z' },
+    { id: 't', name: 'KF mall', usedInProjects: 0, changedAt: '2026-04-10T00:00:00Z', isTemplate: true },
+  ]
+  assert.deepEqual(filterLists(lists, '', 'all').map((l) => l.id), ['3', '2', '1'])
+  assert.deepEqual(filterLists(lists, ' kf ', 'all').map((l) => l.id), ['3', '1'])
+  assert.deepEqual(filterLists(lists, 'kf', 'unused').map((l) => l.id), ['3'])
+  assert.deepEqual(filterLists(lists, '', 'used').map((l) => l.id), ['1'])
 })
