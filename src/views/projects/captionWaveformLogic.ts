@@ -19,12 +19,17 @@ export interface TimeWindow {
  * Tiden vid en (bråk)radposition: radens start vid heltal, linjärt mellan två raders starttider. Utanför listan fortsätter
  * den med närmaste replikens längd, så att fönstret följer med även när listan scrollas förbi ändarna.
  */
-export function timeAtRow(cues: readonly CueSpan[], row: number): number {
+export function timeAtRow(cues: readonly CueSpan[], row: number, origin = 0): number {
   const count = cues.length
   if (count === 0) return 0
-  // Före första repliken räknas tiden mot ljudets början: en rad över första repliken motsvarar tid 0, så att ljudet som ligger före
-  // första repliken (t.ex. när de första replikerna tagits bort) syns när listan står överst.
-  if (row <= 0) return Math.max(0, cues[0].start) * (1 + Math.max(-1, row))
+  // Före första repliken räknas tiden mot ljudets början: en rad över första repliken motsvarar ljudets början (origin), så att ljudet
+  // som ligger före första repliken (t.ex. när de första replikerna tagits bort) syns när listan står överst. UNG-297: täcker
+  // undertexterna bara en del av inspelningen börjar ljudet där, inte vid 0 (annars spänns bandet över tid utan ljud).
+  if (row <= 0) {
+    const first = Math.max(0, cues[0].start)
+    const start = Math.min(first, Math.max(0, origin))
+    return start + (first - start) * (1 + Math.max(-1, row))
+  }
   if (row >= count - 1) {
     const last = cues[count - 1]
     return last.start + (row - (count - 1)) * Math.max(0.5, last.end - last.start)
@@ -48,12 +53,12 @@ export function viewWindow(cues: readonly CueSpan[], scrollTop: number, viewport
  * interpoleras mellan radernas ankartider i radrum, så en rad är lika "lång" i tid oavsett hur hög den är. Med enbart lika höga
  * replikrader är resultatet detsamma som viewWindow.
  */
-export function viewWindowForLayout(layout: RowLayout, scrollTop: number, viewportHeight: number, minSeconds = 8): TimeWindow {
+export function viewWindowForLayout(layout: RowLayout, scrollTop: number, viewportHeight: number, minSeconds = 8, origin = 0): TimeWindow {
   if (layout.count === 0) return { t0: 0, t1: minSeconds }
-  // Överst i listan går bandet en rad längre upp (ljudet före första repliken); övergången är mjuk och försvinner efter en rads scroll.
+  // Överst i listan går bandet en rad längre upp (ljudet före första repliken, från origin); övergången är mjuk och försvinner efter en rads scroll.
   const row = rowPosition(layout, scrollTop)
-  let t0 = timeAtRow(layout.spans, row < 1 ? 2 * row - 1 : row)
-  let t1 = timeAtRow(layout.spans, rowPosition(layout, scrollTop + viewportHeight))
+  let t0 = timeAtRow(layout.spans, row < 1 ? 2 * row - 1 : row, origin)
+  let t1 = timeAtRow(layout.spans, rowPosition(layout, scrollTop + viewportHeight), origin)
   if (t1 - t0 < minSeconds) {
     const middle = (t0 + t1) / 2
     t0 = middle - minSeconds / 2

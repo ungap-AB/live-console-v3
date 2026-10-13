@@ -2103,6 +2103,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                 playing={playing}
                 publishedStart={publishedStart}
                 publishedEnd={publishedEnd}
+                audioStart={coveredStart ?? 0}
                 editable={!readOnly}
                 anchor={anchor}
                 onSeek={(time, kind) => {

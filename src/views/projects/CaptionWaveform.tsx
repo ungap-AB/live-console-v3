@@ -43,6 +43,8 @@ interface CaptionWaveformProps {
   playing: boolean
   publishedStart?: number
   publishedEnd?: number
+  /** UNG-297: var ljudet börjar (originalets tid), när undertexterna bara täcker en del av inspelningen. Standard 0. */
+  audioStart?: number
   /** Om gränserna får dras. */
   editable: boolean
   /** 'place' = ett klick i vågformen (sätter en placering, UNG-184); 'boundary' = ett grepp om en gräns (hoppar dit utan att byta placering). */
@@ -81,8 +83,8 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
   const draggingChapter = useRef<{ index: number; id: string } | null>(null)
 
   const currentWindow = () => {
-    const { scrollTop, height, layout } = latest.current
-    return frozen.current ?? viewWindowForLayout(layout, scrollTop, height)
+    const { scrollTop, height, layout, audioStart } = latest.current
+    return frozen.current ?? viewWindowForLayout(layout, scrollTop, height, undefined, audioStart ?? 0)
   }
 
   // Ett fel i ritningen ska aldrig stoppa resten av redigeraren: det loggas och bandet ritas om vid nästa rendering.

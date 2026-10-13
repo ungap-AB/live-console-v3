@@ -32,6 +32,12 @@ test('tid vid radposition: radens start vid heltal, linjärt däremellan och fö
   assert.equal(timeAtRow(cues, -9), 0) // aldrig före 0
   assert.equal(timeAtRow([], 3), 0)
   assert.equal(timeAtRow([{ start: 2, end: 2 }], 1), 2.5) // minsta längd 0,5 s
+  // UNG-297: ljudet börjar vid täckningens start, inte vid 0
+  const late = [{ start: 550, end: 554 }, { start: 554, end: 558 }]
+  assert.equal(timeAtRow(late, -1, 540), 540)
+  assert.equal(timeAtRow(late, -0.5, 540), 545)
+  assert.equal(timeAtRow(late, 0, 540), 550)
+  assert.equal(timeAtRow(late, -1, 600), 550) // aldrig efter första repliken
 })
 
 test('fönstret följer listans scroll mjukt och rymmer varje synlig rads start', () => {
