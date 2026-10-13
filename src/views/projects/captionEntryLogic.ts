@@ -9,6 +9,8 @@ export type EntryKind = 'create' | 'progress' | 'edit'
 export interface CaptionEntry {
   kind: EntryKind
   label: string
+  /** Kort läge (som i projektlistan), t.ex. "Genererar 42 %". */
+  status?: string
   /** Satt när knappen inte går att använda, med förklaring. */
   disabledReason?: string
 }
@@ -62,7 +64,10 @@ export function captionStateView(state: CaptionState, progress?: number | null):
 export function captionEntry(generation: CaptionGeneration | null): CaptionEntry | null {
   if (!generation) return null
   const phase = autoCaptionsPhase(generation)
-  if (phase === 'running') return { kind: 'progress', label: captionStateView('generating', generation.job?.progress).entryLabel }
+  if (phase === 'running') {
+    const view = captionStateView('generating', generation.job?.progress)
+    return { kind: 'progress', label: view.entryLabel, status: view.listLabel }
+  }
   if (phase === 'draft') {
     // Publicerade bara om den senast sparade versionen är den publicerade; allt annat (även ändringar efter en publicering) är ett utkast.
     const published = generation.draft?.unpublishedChanges === false

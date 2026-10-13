@@ -208,6 +208,9 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
 
   // Undertexternas arbetsversion (utkastet), så att sammanfattningen visar även inlästa och opublicerade undertexter.
   const [captionDraft, setCaptionDraft] = useState<CaptionDraft | null>(null)
+  // UNG-278: undertextläget enligt CaptionEntry (som pollar jobbet); när ett jobb blir klart hämtas utkastet om.
+  const [captionKind, setCaptionKind] = useState<CaptionEntryState['kind'] | null>(null)
+  const captionsGenerating = captionKind === 'progress'
   useEffect(() => {
     if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return
     let cancelled = false
@@ -216,7 +219,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
       () => { if (!cancelled) setCaptionDraft(null) },
     )
     return () => { cancelled = true }
-  }, [draftStatusKey, p.recording?.captions?.cueCount])
+  }, [draftStatusKey, p.recording?.captions?.cueCount, captionsGenerating])
 
   if (p.publicMode !== 'after' && p.publicMode !== 'ondemand') return null
 
@@ -244,8 +247,9 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   // En uppladdning som väntar på bearbetning eller godkännande spärrar allt annat.
   const uploadPending = awaitingApproval || (recordingProcessing && isOperatorSupplied(p.recording?.source))
   const canUpload = !published && !broadcastInProgress && !recordingProcessing && !awaitingApproval
-  // Finns ingen inspelning är uppladdningspanelen öppen från början; annars nås den via "…".
-  const showUploadCard = canUpload && !source
+  // Finns ingen inspelning är uppladdningspanelen öppen från början; annars nås den via Exportera & importera.
+  // UNG-292: avgörs på projektets inspelning (finns direkt), inte på source som hämtas efteråt — annars blinkar panelen vid öppning.
+  const showUploadCard = canUpload && !p.recording
   const uploadedRecording = isOperatorSupplied(p.recording?.source)
   // UNG-102: en extern HLS-adress kopieras inte — den kan inte trimmas och inte laddas ned som MP4.
   const externalVideo = isExternalSource(p.recording?.source)
@@ -499,6 +503,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
               projectId={p.id}
               projectName={p.name}
               label="Redigera projekt"
+              onEntryKindChange={setCaptionKind}
             renderTrigger={renderTrigger}
               videoDurationSeconds={recording?.durationSeconds}
               posterUrl={p.posterUrl}
@@ -549,8 +554,9 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
         <GuideStep
           n={3}
           label={entry?.kind === 'edit' ? 'Redigera undertexter' : 'Skapa undertexter'}
-          status={!entry ? '' : entry.kind === 'progress' ? entry.label : entry.kind === 'edit' ? (p.recording?.captions?.label ?? 'Finns') : 'Inga'}
+          status={!entry ? '' : entry.kind === 'progress' ? (entry.status ?? entry.label) : entry.kind === 'edit' ? (p.recording?.captions?.label ?? 'Finns') : 'Inga'}
           done={entry?.kind === 'edit'}
+          busy={entry?.kind === 'progress'}
           disabled={!open || Boolean(entry?.disabledReason)}
           title={entry?.disabledReason}
           onClick={() => open?.('captions')}
@@ -762,7 +768,9 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
                 </dd>
                 <dt>Undertexter</dt>
                 <dd>
-                  {captionDraft && !captionDraft.stale
+                  {captionsGenerating
+                    ? <span class="od-summary-busy">Genereras…</span>
+                    : captionDraft && !captionDraft.stale
                     ? <>
                         {captionDraft.cueCount.toLocaleString('sv-SE')} repliker
                         {captionDraft.unpublishedChanges && <span class="od-summary-sub">{published ? 'Inte publicerade än.' : 'Publiceras med projektet.'}</span>}
@@ -830,9 +838,9 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
               />
             )}
 
-            {/* Längst ner, som i Before och Live. */}
+            {/* Direkt efter innehållet, som i Before och Live (UNG-293). */}
             {live.channel && (
-              <div class="ovs-bottom od-bottom">
+              <div class="ovs-secondary od-bottom">
                 <div class="od-secondary-actions">
                   <button class="btn" type="button" onClick={() => setPlayerSettings('ingest')}>
                     <Icon name="info" size={18} /> Ingest info
@@ -850,17 +858,19 @@ interface GuideStepProps {
   /** Kort läge till höger (t.ex. "3 kapitel"). */
   status: string
   done?: boolean
+  /** UNG-278: något pågår (undertexter genereras): snurra i stället för numret, läget i accentfärg och inte avkortat. */
+  busy?: boolean
   disabled?: boolean
   title?: string
   onClick: () => void
 }
 
 // Ett av de guidade stegen i After: en rad med nummer (bock när något är gjort), stegets namn, läget och en pil till momentet.
-function GuideStep({ n, label, status, done = false, disabled = false, title, onClick }: GuideStepProps) {
+function GuideStep({ n, label, status, done = false, busy = false, disabled = false, title, onClick }: GuideStepProps) {
   return (
-    <li class={done ? 'is-done' : undefined}>
+    <li class={busy ? 'is-busy' : done ? 'is-done' : undefined}>
       <button class="od-flow-step" type="button" disabled={disabled} title={title} onClick={onClick}>
-        <span class="od-flow-num" aria-hidden="true">{done ? <Icon name="check" size={16} /> : n}</span>
+        <span class="od-flow-num" aria-hidden="true">{busy ? <span class="od-flow-spinner" /> : done ? <Icon name="check" size={16} /> : n}</span>
         <span class="od-flow-label">{label}</span>
         <span class="od-flow-status">{status}</span>
         <Icon name="chevron_right" size={18} />

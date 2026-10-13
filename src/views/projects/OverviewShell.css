@@ -47,9 +47,8 @@
   }
 }
 
-/* Knapparna längst ner i vänsterspalten (Before och Live). */
-.ovs-overview > .ovs-bottom {
-  margin-top: auto;
+/* Sekundära knappar (Ingest info, Fork…) direkt efter innehållet i vänsterspalten. UNG-293: inte nedtryckta mot botten, där missas de. */
+.ovs-overview > .ovs-secondary {
   padding-top: 12px;
 }
 

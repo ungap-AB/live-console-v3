@@ -161,7 +161,7 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
         )}
       </section>}
 
-      <div class="ovs-bottom lw-bottom">
+      <div class="ovs-secondary lw-bottom">
         <div class="lw-actions">
           <button class="btn" type="button" disabled={!channel} onClick={() => setPlayerSettings('ingest')}>
             <Icon name="info" size={18} /> Ingest info

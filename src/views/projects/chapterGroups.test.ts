@@ -34,6 +34,10 @@ test('ett valt, förankrat eller redigerat kapitel fäller ut sin grupp', () => 
   assert.deepEqual(visibleChapters(list, new Set(['a2']), [null, undefined]), [true, true, true, true, true, false, true])
 })
 
+test('UNG-273: en vald rubrik håller inte sin grupp öppen, så gruppen går att fälla ihop', () => {
+  assert.deepEqual(visibleChapters(list, new Set(['a1']), ['a1']), [true, true, false, false, true, true, true])
+})
+
 test('en pausmarkör står för sig, visas alltid och bryter inte punktens grupp', () => {
   const withPause = [
     { chapterId: 'a1', kind: 'agendaItem' },

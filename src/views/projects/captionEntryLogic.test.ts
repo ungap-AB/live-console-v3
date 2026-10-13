@@ -16,7 +16,7 @@ test('knappen: Redigera när inga undertexter finns, även när de inte går att
 })
 
 test('knappen: framsteg i procent medan jobbet pågår, och redigera när ett utkast finns', () => {
-  assert.deepEqual(captionEntry({ canGenerate: false, job: job('processing', 40) }), { kind: 'progress', label: 'Genererar undertexter… 40 %' })
+  assert.deepEqual(captionEntry({ canGenerate: false, job: job('processing', 40) }), { kind: 'progress', label: 'Genererar undertexter… 40 %', status: 'Genererar 40 %' })
   assert.equal(captionEntry({ canGenerate: false, job: job('processing', 0) })?.label, 'Genererar undertexter…')
   assert.deepEqual(captionEntry({ canGenerate: true, draft }), { kind: 'edit', label: 'Redigera utkast' })
 })

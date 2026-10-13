@@ -44,7 +44,8 @@ export function visibleChapters(chapters: GroupableChapter[], collapsed: Readonl
   const forced = new Set<string>()
   chapters.forEach((chapter, index) => {
     const groupId = info[index].groupId
-    if (groupId && keepOpen.includes(chapter.chapterId)) forced.add(groupId)
+    // UNG-273: rubriken syns alltid, så en vald rubrik behöver inte hålla gruppen öppen (då gick den inte att fälla ihop).
+    if (groupId && !info[index].isHeader && keepOpen.includes(chapter.chapterId)) forced.add(groupId)
   })
   return info.map((entry) => entry.isHeader || entry.groupId === null || !collapsed.has(entry.groupId) || forced.has(entry.groupId))
 }

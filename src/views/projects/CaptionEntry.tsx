@@ -31,13 +31,15 @@ interface CaptionEntryProps {
    * redigeraren, med det moment som ska stå i fokus.
    */
   renderTrigger?: (open: (focus?: EditorFocus) => void, entry: CaptionEntryState) => ComponentChildren
+  /** UNG-278: anropas när undertextläget byter sort (skapa / genereras / redigera), så att vyn kan visa det utanför stegen. */
+  onEntryKindChange?: (kind: CaptionEntryState['kind'] | null) => void
   /** UNG-272: öppna redigeraren utifrån (t.ex. Undertexter i Exportera & importera). En ny seq öppnar den med fokus. */
   openRequest?: { focus?: EditorFocus; seq: number }
 }
 
 // UNG-165: knappen ovanför videofönstret som leder direkt till att skapa eller redigera undertexter. Etiketten följer serverns läge
 // (skapa, genererar n %, redigera). Knappen äger också studion (redigeraren med skapandet som overlay) och dess öppna/stängda läge.
-export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged, trim, trimLock, chapterTools, label, onOpenChange, renderTrigger, openRequest }: CaptionEntryProps) {
+export function CaptionEntry({ projectId, projectName, videoDurationSeconds, posterUrl, onChanged, onChaptersChanged, trim, trimLock, chapterTools, label, onOpenChange, renderTrigger, openRequest, onEntryKindChange }: CaptionEntryProps) {
   const captions = useCaptionGeneration(projectId)
   // Öppnas direkt när man kommit hit via knappen i projektlistan, eller (UNG-250) när adressen är editorns (omladdning, delad länk).
   const [open, setOpen] = useState(() => consumeCaptionStudio(projectId) || parseEditorLink(window.location.hash) === projectId)
@@ -107,6 +109,10 @@ export function CaptionEntry({ projectId, projectName, videoDurationSeconds, pos
 
   // Med egna knappar visas de (spärrade) även innan läget hämtats, så att stegen inte hoppar fram.
   const entry = captionEntry(captions.generation) ?? (renderTrigger ? { kind: 'create' as const, label: 'Redigera', disabledReason: 'Hämtar…' } : null)
+  const loadedKind = captions.generation ? entry?.kind ?? null : null
+  useEffect(() => {
+    onEntryKindChange?.(loadedKind)
+  }, [loadedKind])
   if (!entry) return null
 
   function openWith(nextFocus?: EditorFocus) {

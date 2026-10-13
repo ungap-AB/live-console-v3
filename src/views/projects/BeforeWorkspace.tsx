@@ -203,7 +203,7 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
       </button>
 
 
-      <div class="bw-actions ovs-bottom">
+      <div class="bw-actions ovs-secondary">
         {onForked && <ForkButton project={p} livePhase={health?.livePhase} onForked={onForked} />}
       </div>
     </OverviewShell>
