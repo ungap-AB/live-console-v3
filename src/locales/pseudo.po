@@ -1241,6 +1241,7 @@ msgstr ""
 msgid "Close, continue in the background"
 msgstr ""
 
+#: src/data/http/httpClient.ts
 #: src/views/projects/ProjectsView.tsx
 msgid "Closed"
 msgstr ""
@@ -2280,6 +2281,10 @@ msgstr ""
 msgid "In progress"
 msgstr ""
 
+#: src/data/http/httpClient.ts
+msgid "In review"
+msgstr ""
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "In the editor: import your own VTT file (the ⋯ menu) or create captions automatically. Published with Publish changes."
 msgstr ""
@@ -3047,6 +3052,11 @@ msgstr ""
 msgid "Not published"
 msgstr ""
 
+#: src/data/http/httpClient.ts
+msgctxt "recording project"
+msgid "Not published"
+msgstr ""
+
 #: src/views/projects/OndemandView.tsx
 msgid "Not published yet."
 msgstr ""
@@ -3190,6 +3200,10 @@ msgstr ""
 #: src/views/projects/ExportImportDialog.tsx
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Open the project"
+msgstr ""
+
+#: src/data/http/httpClient.ts
+msgid "Open to the public"
 msgstr ""
 
 #: src/views/projects/PublishOutcomeDialog.tsx
@@ -3542,6 +3556,7 @@ msgstr ""
 msgid "Publish the changes?"
 msgstr ""
 
+#: src/data/http/httpClient.ts
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/projects/PlayerPreview.tsx
 msgid "Published"
@@ -3960,6 +3975,11 @@ msgstr ""
 #: src/app/LoginView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Sending…"
+msgstr ""
+
+#. placeholder {0}: response.status
+#: src/data/http/fetchJson.ts
+msgid "Server error ({0})."
 msgstr ""
 
 #. placeholder {0}: chapter.label
@@ -5010,6 +5030,10 @@ msgstr ""
 msgid "The processing for {name} failed."
 msgstr ""
 
+#: src/data/http/httpClient.ts
+msgid "The project already has a live resource."
+msgstr ""
+
 #: src/views/projects/ProjectsView.tsx
 msgid "The project cannot be deleted right now"
 msgstr ""
@@ -5072,6 +5096,10 @@ msgstr ""
 
 #: src/views/projects/projectMode.ts
 msgid "The recording is removed from the player. The audience sees the After message below until you publish again."
+msgstr ""
+
+#: src/data/http/httpClient.ts
+msgid "The recording must be finished before it can be trimmed."
 msgstr ""
 
 #: src/views/resources/LiveResourcesView.tsx
@@ -5190,6 +5218,10 @@ msgstr ""
 msgid "The trimming could not be saved."
 msgstr ""
 
+#: src/data/http/httpClient.ts
+msgid "The trimming failed."
+msgstr ""
+
 #: src/views/projects/CaptionEditor.tsx
 msgid "The trimming is locked when the project is published. Unpublish to change it."
 msgstr ""
@@ -5198,8 +5230,17 @@ msgstr ""
 msgid "The upload could not be canceled."
 msgstr ""
 
+#. placeholder {0}: xhr.status
+#: src/data/http/httpClient.ts
+msgid "The upload failed ({0})."
+msgstr ""
+
 #: src/views/projects/UploadPanel.tsx
 msgid "The upload failed."
+msgstr ""
+
+#: src/data/http/httpClient.ts
+msgid "The upload was interrupted — check the network connection."
 msgstr ""
 
 #: src/views/projects/WordImportDialog.tsx
@@ -5771,6 +5812,10 @@ msgstr ""
 
 #: src/app/App.tsx
 msgid "Your session has expired. Log in again and you will continue where you were."
+msgstr ""
+
+#: src/data/http/fetchJson.ts
+msgid "Your session has expired. Log in again."
 msgstr ""
 
 #: src/views/projects/CaptionEditor.tsx

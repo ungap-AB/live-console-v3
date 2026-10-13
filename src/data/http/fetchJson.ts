@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 // Liten fetch-wrapper mot live-server-v3. Se API-ENDPOINTS.md för
 // grundkonventioner: bas /api/v1, JSON, felformat { error: { code, message } }.
 
@@ -50,9 +51,9 @@ function failFrom(response: Response, payload: unknown, sentToken: boolean): Api
   if (isSessionLost(response.status, code, sentToken)) {
     authToken = null
     for (const listener of [...sessionLostListeners]) listener()
-    return new ApiError(code, 'Din session har gått ut. Logga in igen.', response.status)
+    return new ApiError(code, t`Your session has expired. Log in again.`, response.status)
   }
-  return new ApiError(code, error?.message ?? `Serverfel (${response.status}).`, response.status)
+  return new ApiError(code, error?.message ?? t`Server error (${response.status}).`, response.status)
 }
 
 interface RequestOptions {

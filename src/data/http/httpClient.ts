@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { Client } from '../client'
 import type {
   Agenda,
@@ -104,7 +105,7 @@ async function pollTrimJob(jobId: string): Promise<ServerTrimJob> {
       continue
     }
     if (job.state === 'failed') {
-      throw new Error(job.error?.message ?? 'Trimningen misslyckades.')
+      throw new Error(job.error?.message ?? t`The trimming failed.`)
     }
     return job
   }
@@ -120,8 +121,8 @@ function putFile(url: string, file: File, onProgress?: (fraction: number) => voi
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) onProgress?.(event.loaded / event.total)
     }
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Uppladdningen misslyckades (${xhr.status}).`)))
-    xhr.onerror = () => reject(new Error('Uppladdningen avbröts — kontrollera nätverksanslutningen.'))
+    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(t`The upload failed (${xhr.status}).`)))
+    xhr.onerror = () => reject(new Error(t`The upload was interrupted — check the network connection.`))
     xhr.send(file)
   })
 }
@@ -168,13 +169,13 @@ function toNameList(dto: ServerNameList): NameList {
 // ---- Live-resurser & inspelningar: projekt-referens ----
 
 function publicationLabel(state: string): string {
-  if (state === 'published') return 'Publicerad'
-  if (state === 'review') return 'Under granskning'
-  return 'Ej publicerad'
+  if (state === 'published') return t`Published`
+  if (state === 'review') return t`In review`
+  return t({ message: 'Not published', context: 'recording project' })
 }
 
 function visibilityLabel(state: string): string {
-  return state === 'open' ? 'Öppen för publik' : 'Stängd'
+  return state === 'open' ? t`Open to the public` : t`Closed`
 }
 
 // UNG-109: en inspelnings eller kanals projekt (namn och läge) slås upp ur projektlistan. Varje uppslagning hämtade förut hela listan
@@ -972,7 +973,7 @@ export const httpClient: Client = {
     },
     async createChannel(id) {
       const project = await api<ServerProject>(`/projects/${id}`)
-      if (project.channel) throw new Error('Projektet har redan en live-resurs.')
+      if (project.channel) throw new Error(t`The project already has a live resource.`)
       const channel = await api<ServerChannel>('/channels', {
         method: 'POST',
         body: { name: project.name, projectId: id, type: 'STANDARD', latencyMode: 'LOW', recording: true },
@@ -1002,7 +1003,7 @@ export const httpClient: Client = {
     async trim(id, range) {
       const project = await api<ServerProject>(`/projects/${id}`)
       if (!project.recording || !['recorded', 'trimmed', 'published'].includes(project.recording.state)) {
-        throw new Error('Inspelningen måste vara klar innan den kan trimmas.')
+        throw new Error(t`The recording must be finished before it can be trimmed.`)
       }
       const recording = await api<ServerRecording>(`/recordings/${project.recording.id}`)
       const original =
