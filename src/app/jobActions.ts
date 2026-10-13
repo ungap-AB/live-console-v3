@@ -1,5 +1,7 @@
 import { client } from '../data'
 import type { MediaJob } from '../data/types'
+import { exportFileName } from '../views/projects/chapterExport'
+import { saveFile } from '../views/projects/ExportImportDialog'
 
 // Hämtar en färsk länk och låter webbläsaren spara filen (Content-Disposition styr filnamnet). Kastar ett
 // läsbart fel om filen gått ut — då får operatören förbereda en ny nedladdning själv.
@@ -23,4 +25,11 @@ export function startBrowserDownload(url: string): void {
 export function jobTitle(job: MediaJob): string {
   const what = job.kind === 'download' ? 'Nedladdning' : job.kind === 'captions' ? 'Undertexter' : job.kind === 'speakers' ? 'Talarbyten' : 'Uppladdning'
   return `${what} · ${job.projectName ?? job.recordingName ?? 'okänd inspelning'}`
+}
+
+// UNG-296: ett klart talarbytesjobb ger Word-manuset med talare (publicerad del om projektet är trimmat, annars hela inspelningen).
+export async function downloadManuscriptFile(job: MediaJob): Promise<void> {
+  if (!job.projectId) return
+  const blob = await client.projects.exportManuscriptDocx(job.projectId, 'published')
+  saveFile(exportFileName(job.projectName ?? 'manus', 'manus', 'docx'), blob, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
 }

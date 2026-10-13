@@ -6,7 +6,7 @@ import { Modal } from '../components/Modal'
 import { Icon } from '../components/Icon'
 import { JobStatusBlock } from '../components/JobStatusBlock'
 import { Toast } from '../components/Toast'
-import { downloadJobFile } from './jobActions'
+import { downloadJobFile, downloadManuscriptFile } from './jobActions'
 import { JobsContext } from './jobsContext'
 import { countNewFinished, readJobsSeenAt, storeJobsSeenAt } from './jobsSeen'
 import { useJobs } from './useJobs'
@@ -260,9 +260,11 @@ function describeFinishedJob(
   }
   if (job.kind === 'speakers') {
     return {
-      message: `Talarbytena för ${name} är analyserade.`,
-      actionLabel: job.projectId ? 'Öppna projektet' : undefined,
-      onAction: job.projectId ? () => onOpenProject(job.projectId!) : undefined,
+      message: `Talarbytena för ${name} är analyserade. Word-manuset kan laddas ner med talare.`,
+      actionLabel: job.projectId ? 'Ladda ner Word-manus' : undefined,
+      onAction: job.projectId
+        ? () => { downloadManuscriptFile(job).catch((error) => showMessage(error instanceof Error ? error.message : 'Manuset kunde inte skapas.')) }
+        : undefined,
     }
   }
   if (job.kind === 'download') {

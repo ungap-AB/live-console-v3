@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { MediaJob, Share } from '../../data/types'
-import { downloadJobFile, jobTitle } from '../../app/jobActions'
+import { downloadJobFile, downloadManuscriptFile, jobTitle } from '../../app/jobActions'
 import { daysUntilPurge, purgeText } from '../../app/jobRetention'
 import { notifyJobsChanged } from '../../app/jobsBus'
 import { JobsContext } from '../../app/jobsContext'
@@ -43,6 +43,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
   const [details, setDetails] = useState<Record<string, Share>>({})
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState('')
+  const [manuscriptBusy, setManuscriptBusy] = useState<string | null>(null)
 
   const active = jobs.filter((job) => job.state === 'processing')
   const finished = jobs.filter((job) => job.state !== 'processing')
@@ -107,6 +108,18 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
     }
   }
 
+  async function downloadManuscript(job: MediaJob) {
+    setRowError(job.id, '')
+    setManuscriptBusy(job.id)
+    try {
+      await downloadManuscriptFile(job)
+    } catch (error) {
+      setRowError(job.id, error instanceof Error ? error.message : 'Manuset kunde inte skapas.')
+    } finally {
+      setManuscriptBusy(null)
+    }
+  }
+
   async function revoke(share: Share) {
     setRevokeTarget(null)
     setMessage('')
@@ -143,7 +156,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
           ) : (
             <span class="jobs-check-space" aria-hidden="true" />
           )}
-          <Icon name={job.kind === 'download' ? 'download' : job.kind === 'captions' ? 'subtitles' : 'upload'} size={18} />
+          <Icon name={job.kind === 'download' ? 'download' : job.kind === 'captions' ? 'subtitles' : job.kind === 'speakers' ? 'record_voice_over' : 'upload'} size={18} />
           <div class="jobs-text">
             <div class="jobs-title">{jobTitle(job)}</div>
             <div class="jobs-meta">
@@ -172,6 +185,11 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
                 <button class="btn btn-sm" type="button" onClick={() => void download(job)}>Ladda ner</button>
                 <button class="btn btn-sm" type="button" onClick={() => setShareDialog([job.recordingId])}>Dela…</button>
               </>
+            )}
+            {job.kind === 'speakers' && job.state === 'done' && job.projectId && (
+              <button class="btn btn-sm" type="button" disabled={manuscriptBusy === job.id} onClick={() => void downloadManuscript(job)}>
+                {manuscriptBusy === job.id ? 'Skapar…' : 'Ladda ner Word-manus'}
+              </button>
             )}
             {(job.kind === 'upload' || job.kind === 'captions') && job.state === 'done' && job.projectId && (
               <button class="btn btn-sm" type="button" onClick={() => onOpenProject(job.projectId!)}>Öppna projektet</button>

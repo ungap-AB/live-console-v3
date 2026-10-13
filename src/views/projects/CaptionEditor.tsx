@@ -35,6 +35,7 @@ import {
 } from './chapterRows'
 import { timeAtRow, type GrabRole } from './captionWaveformLogic'
 import { showUnmute, unmuted } from './videoSoundLogic'
+import { ManuscriptSpeakersWarning, speakersGap, type SpeakersGap } from './ManuscriptSpeakersWarning'
 import { WordImportDialog } from './WordImportDialog'
 import { ChapterImportDialog } from './ChapterImportDialog'
 import { AnchorGuide } from './ChapterSyncTools'
@@ -216,6 +217,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   const [review, setReview] = useState<WordReview | null>(null)
   const [fromWord, setFromWord] = useState(false)
   const [exportChoice, setExportChoice] = useState(false)
+  const [speakersWarning, setSpeakersWarning] = useState<{ scope: 'published' | 'whole'; gap: SpeakersGap } | null>(null)
   const [exporting, setExporting] = useState(false)
   const [wordDialog, setWordDialog] = useState<{ baseChoice: boolean } | null>(null)
   const [dragBoundary, setDragBoundary] = useState<{ index: number; role: GrabRole; baseBefore: number; baseAfter: number } | null>(null)
@@ -831,7 +833,21 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   }
 
   // Manus (Word) ur den sparade versionen. Är projektet trimmat får operatören välja publicerad del eller hela inspelningen.
+  // UNG-296: saknas talarbytena (eller analyseras de) får operatören välja: ta ut manuset utan talare nu, och/eller analysera dem.
+  async function requestWord(scope: 'published' | 'whole') {
+    setExportChoice(false)
+    setExporting(true)
+    const gap = await speakersGap(projectId)
+    if (gap) {
+      setExporting(false)
+      setSpeakersWarning({ scope, gap })
+      return
+    }
+    await exportWord(scope)
+  }
+
   async function exportWord(scope: 'published' | 'whole') {
+    setSpeakersWarning(null)
     setExportChoice(false)
     setExporting(true)
     try {
@@ -2257,10 +2273,19 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
           <p>Vilken del av videon ska manuset gälla? Du kan läsa in det rättade manuset här igen oavsett val.</p>
           <div class="modal-actions">
             <button class="btn btn-sm" type="button" onClick={() => setExportChoice(false)}>Avbryt</button>
-            <button class="btn btn-sm" type="button" onClick={() => void exportWord('whole')}>Hela inspelningen</button>
-            <button class="btn btn-sm btn-primary" type="button" onClick={() => void exportWord('published')}>Publicerad del</button>
+            <button class="btn btn-sm" type="button" onClick={() => void requestWord('whole')}>Hela inspelningen</button>
+            <button class="btn btn-sm btn-primary" type="button" onClick={() => void requestWord('published')}>Publicerad del</button>
           </div>
         </Modal>
+      )}
+
+      {speakersWarning && (
+        <ManuscriptSpeakersWarning
+          projectId={projectId}
+          gap={speakersWarning.gap}
+          onClose={() => setSpeakersWarning(null)}
+          onExport={() => void exportWord(speakersWarning.scope)}
+        />
       )}
 
       {wordDialog && (
@@ -2343,7 +2368,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                 description: 'Undertexterna som ett manus i Word, att rätta och sedan läsa in här. Görs av den sparade versionen.',
                 action: exporting ? 'Skapar…' : 'Exportera',
                 disabled: !master || readOnly || exporting,
-                onClick: () => (master?.publishedStartSeconds !== undefined ? setExportChoice(true) : void exportWord('whole')),
+                onClick: () => (master?.publishedStartSeconds !== undefined ? setExportChoice(true) : void requestWord('whole')),
               },
               {
                 title: 'Läs in från Word',

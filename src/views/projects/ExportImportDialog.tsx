@@ -11,6 +11,7 @@ import {
   captionDraftAvailability, chaptersExportAvailability, copiedMessage, importAvailability, publishedCaptionsAvailability, savedMessage, videoDownloadAvailability, type Availability, type ImportHandlers,
 } from './exportImportLogic'
 import { DownloadButton } from './RecordingDownload'
+import { ManuscriptSpeakersWarning, speakersGap, type SpeakersGap } from './ManuscriptSpeakersWarning'
 import { UploadPanel } from './UploadPanel'
 import { useRecordingDownloads } from './useRecordingDownloads'
 import './ExportImportDialog.css'
@@ -190,7 +191,21 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
   }
 
   // UNG-141: manus ur arbetskopian av undertexterna (senast sparade version), ordnat efter punkter och talare, utan tidsstämplar.
+  // UNG-296: saknas talarbytena (eller analyseras de) får operatören välja: ta ut manuset utan talare nu, och/eller analysera dem.
+  const [speakersWarning, setSpeakersWarning] = useState<{ scope: 'published' | 'whole'; gap: SpeakersGap } | null>(null)
+  const requestManuscript = async (scope: 'published' | 'whole') => {
+    setCaptionBusy(`manuscript-${scope}`)
+    const gap = await speakersGap(project.id)
+    if (gap) {
+      setCaptionBusy(null)
+      setSpeakersWarning({ scope, gap })
+      return
+    }
+    await saveManuscript(scope)
+  }
+
   const saveManuscript = async (scope: 'published' | 'whole') => {
+    setSpeakersWarning(null)
     setCaptionBusy(`manuscript-${scope}`)
     try {
       const blob = await client.projects.exportManuscriptDocx(project.id, scope)
@@ -298,8 +313,8 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
                   <button class="btn btn-sm" type="button" disabled={captionBusy !== null} onClick={() => void saveCaptions('srt')}>{captionBusy === 'srt' ? 'Hämtar…' : 'Ladda ner'}</button>
                 </Row>
                 <Row title="Manus (Word)" description="Hela transkriberingen som löpande text under dagordningspunkter och talare, utan tidsstämplar. Dokumentet säger om texten är ett ogranskat utkast eller godkänd." availability={draftCaptions} status={statuses['captions-manuscript']}>
-                  <button class="btn btn-sm" type="button" disabled={captionBusy !== null} onClick={() => void saveManuscript('published')}>{captionBusy === 'manuscript-published' ? 'Skapar…' : 'Publicerad del'}</button>
-                  <button class="btn btn-sm" type="button" disabled={captionBusy !== null} onClick={() => void saveManuscript('whole')}>{captionBusy === 'manuscript-whole' ? 'Skapar…' : 'Hela inspelningen'}</button>
+                  <button class="btn btn-sm" type="button" disabled={captionBusy !== null} onClick={() => void requestManuscript('published')}>{captionBusy === 'manuscript-published' ? 'Skapar…' : 'Publicerad del'}</button>
+                  <button class="btn btn-sm" type="button" disabled={captionBusy !== null} onClick={() => void requestManuscript('whole')}>{captionBusy === 'manuscript-whole' ? 'Skapar…' : 'Hela inspelningen'}</button>
                 </Row>
                 <Row title="Utkast för redigering (.vtt)" description="Hela utkastet, med eventuella ändringar som inte är publicerade, i originalinspelningens tid." availability={draftCaptions} status={statuses['captions-draft']}>
                   <button class="btn btn-sm" type="button" disabled={captionBusy !== null} onClick={() => void saveCaptionDraft()}>{captionBusy === 'draft' ? 'Hämtar…' : 'Ladda ner'}</button>
@@ -385,6 +400,14 @@ export function ExportImportDialog({ project, onClose, onOpenProject, onImportCh
         )}
       </div>
       {shareRecordingId && <ShareDialog initialRecordingIds={[shareRecordingId]} onClose={() => setShareRecordingId(null)} />}
+      {speakersWarning && (
+        <ManuscriptSpeakersWarning
+          projectId={project.id}
+          gap={speakersWarning.gap}
+          onClose={() => setSpeakersWarning(null)}
+          onExport={() => void saveManuscript(speakersWarning.scope)}
+        />
+      )}
     </Modal>
   )
 }

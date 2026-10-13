@@ -1,0 +1,12 @@
+.msw-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.msw-error {
+  margin: 10px 0 0;
+  color: var(--danger, #a33a3a);
+  font-size: 13px;
+}

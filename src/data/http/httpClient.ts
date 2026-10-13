@@ -872,8 +872,8 @@ export const httpClient: Client = {
         query: { notifyByEmail: notifyByEmail ? 'true' : undefined, includeSpeakers: includeSpeakers ? 'true' : undefined },
       })
     },
-    analyzeSpeakers(id) {
-      return api<CaptionGeneration>(`/projects/${id}/captions/speakers/analyze`, { method: 'POST' })
+    analyzeSpeakers(id, notifyByEmail = false) {
+      return api<CaptionGeneration>(`/projects/${id}/captions/speakers/analyze`, { method: 'POST', query: { notifyByEmail: notifyByEmail ? 'true' : undefined } })
     },
     getCaptionMaster(id) {
       return api<CaptionMaster>(`/projects/${id}/captions/master`)
