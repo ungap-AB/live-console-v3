@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { i18n } from '@lingui/core'
 import type { Project, TimelineEvent } from '../../data/types'
 import { isOperatorSupplied } from './recordingSource.ts'
 
@@ -21,16 +23,32 @@ export interface ForkFromOption {
   fromUtc: string | null
 }
 
-const clock = (iso: string) => new Date(iso).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
+const clock = (iso: string) => new Date(iso).toLocaleTimeString(i18n.locales, { hour: '2-digit', minute: '2-digit' })
+
+function afterPauseLabel(time: string): string {
+  return t`After the latest break (${time})`
+}
+
+function fromItemLabel(item: string, time: string): string {
+  return t`From the latest item: ${item} (${time})`
+}
+
+function beforePauseLabel(time: string): string {
+  return t`Before the latest break (${time})`
+}
+
+function untilItemEndLabel(item: string, time: string): string {
+  return t`Until the end of the item: ${item} (${time})`
+}
 
 /** "Från början" och två förslag ur tidslinjen: efter senaste pausen och från senaste dagordningspunkten. */
 export function forkFromOptions(timeline: readonly TimelineEvent[]): ForkFromOption[] {
-  const options: ForkFromOption[] = [{ key: 'start', label: 'Från början av sändningen', fromUtc: null }]
+  const options: ForkFromOption[] = [{ key: 'start', label: t`From the start of the broadcast`, fromUtc: null }]
   const byTime = [...timeline].sort((a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime())
   const pauseOut = [...byTime].reverse().find((event) => event.kind === 'pauseOut')
-  if (pauseOut) options.push({ key: 'pause', label: `Efter senaste pausen (${clock(pauseOut.occurredAt)})`, fromUtc: pauseOut.occurredAt })
+  if (pauseOut) options.push({ key: 'pause', label: afterPauseLabel(clock(pauseOut.occurredAt)), fromUtc: pauseOut.occurredAt })
   const agenda = [...byTime].reverse().find((event) => event.kind === 'agendaItem' && event.refId !== null && event.label !== 'Rensat')
-  if (agenda) options.push({ key: 'agenda', label: `Från senaste punkten: ${agenda.label} (${clock(agenda.occurredAt)})`, fromUtc: agenda.occurredAt })
+  if (agenda) options.push({ key: 'agenda', label: fromItemLabel(agenda.label, clock(agenda.occurredAt)), fromUtc: agenda.occurredAt })
   return options
 }
 
@@ -46,15 +64,15 @@ export interface ForkToOption {
  * slutet av förra dagordningspunkten (när nästa punkt började eller punkten rensades).
  */
 export function forkToOptions(timeline: readonly TimelineEvent[], source: ForkSource): ForkToOption[] {
-  const options: ForkToOption[] = [{ key: 'end', label: source === 'live' ? 'Till nu' : 'Till inspelningens slut', toUtc: null }]
+  const options: ForkToOption[] = [{ key: 'end', label: source === 'live' ? t`Until now` : t`Until the end of the recording`, toUtc: null }]
   const byTime = [...timeline].sort((a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime())
   const pauseIn = [...byTime].reverse().find((event) => event.kind === 'pauseIn')
-  if (pauseIn) options.push({ key: 'pause', label: `Före senaste pausen (${clock(pauseIn.occurredAt)})`, toUtc: pauseIn.occurredAt })
+  if (pauseIn) options.push({ key: 'pause', label: beforePauseLabel(clock(pauseIn.occurredAt)), toUtc: pauseIn.occurredAt })
   const agendaEvents = byTime.filter((event) => event.kind === 'agendaItem')
   const last = agendaEvents.length - 1
   const ended = last >= 1 ? agendaEvents[last - 1] : undefined
   if (ended && ended.refId !== null && ended.label !== 'Rensat') {
-    options.push({ key: 'agenda', label: `Till slutet av punkten: ${ended.label} (${clock(agendaEvents[last].occurredAt)})`, toUtc: agendaEvents[last].occurredAt })
+    options.push({ key: 'agenda', label: untilItemEndLabel(ended.label, clock(agendaEvents[last].occurredAt)), toUtc: agendaEvents[last].occurredAt })
   }
   return options
 }
@@ -64,7 +82,7 @@ export function forkRangeError(fromUtc: string | null | undefined, toUtc: string
   const from = fromUtc ?? window?.startUtc
   const to = toUtc ?? window?.endUtc
   if (!from || !to) return ''
-  return new Date(to).getTime() <= new Date(from).getTime() ? 'Slutet måste ligga efter början.' : ''
+  return new Date(to).getTime() <= new Date(from).getTime() ? t`The end must be after the start.` : ''
 }
 
 const pad = (value: number) => String(value).padStart(2, '0')
@@ -83,7 +101,7 @@ export function timeInWindow(hhmm: string, window: { startUtc: string; endUtc: s
   const match = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim())
   const hours = match ? Number(match[1]) : NaN
   const minutes = match ? Number(match[2]) : NaN
-  if (!match || hours > 23 || minutes > 59) return { error: 'Ange en tid som hh:mm.' }
+  if (!match || hours > 23 || minutes > 59) return { error: t`Enter a time as hh:mm.` }
   const start = new Date(window.startUtc)
   const end = new Date(window.endUtc)
   for (let day = 0; day <= 31; day++) {
@@ -94,7 +112,9 @@ export function timeInWindow(hhmm: string, window: { startUtc: string; endUtc: s
       return { iso: clamped.toISOString() }
     }
   }
-  return { error: `Tiden ligger utanför det som finns att välja (${clockValue(window.startUtc)}–${clockValue(window.endUtc)}).` }
+  const first = clockValue(window.startUtc)
+  const last = clockValue(window.endUtc)
+  return { error: t`The time is outside what can be chosen (${first}–${last}).` }
 }
 
 export function forkWarningText(warnings: readonly { code: string; message: string }[]): string {

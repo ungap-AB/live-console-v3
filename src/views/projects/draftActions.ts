@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 // UNG-245: ren logik för utkastet i redigeraren: vad som är osparat, vilka knappar som visas och vad som skickas vid Spara. Testas utan DOM.
 
 export interface TrimValues {
@@ -86,7 +87,7 @@ export function headerActions(input: HeaderInput): HeaderActions {
 
 /** Texten efter Publicera ändringar. */
 export function publishChangesNotice(result: { captionsPublished: boolean }): string {
-  return result.captionsPublished ? 'Kapitel och undertexter är publicerade.' : 'Ändringarna är publicerade.'
+  return result.captionsPublished ? t`Chapters and captions are published.` : t`The changes are published.`
 }
 
 // ---- UNG-246: konflikt i utkastet ----
@@ -111,16 +112,16 @@ export interface ConflictInfo {
 export function conflictDescription(info: ConflictInfo): string {
   if (info.captionsChanged) {
     const who = info.captionsChangedBy?.trim()
-    return `${who || 'Någon annan'} har sparat undertexterna sedan du öppnade redigeraren.`
+    return who ? t`${who} has saved the captions since you opened the editor.` : t`Someone else has saved the captions since you opened the editor.`
   }
-  return 'Någon annan har ändrat kapitel eller trimning sedan du öppnade redigeraren.'
+  return t`Someone else has changed chapters or trimming since you opened the editor.`
 }
 
 /** Knappen som gör om det som stoppades, med dina ändringar ovanpå det som nu finns på servern. */
 export function overwriteLabel(action: DraftAction): string {
   switch (action) {
-    case 'publish': return 'Skriv över och publicera'
-    case 'discard': return 'Förkasta ändå'
-    default: return 'Skriv över'
+    case 'publish': return t`Overwrite and publish`
+    case 'discard': return t`Discard anyway`
+    default: return t`Overwrite`
   }
 }

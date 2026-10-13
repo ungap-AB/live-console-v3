@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import { readNotifyByEmail } from '../../app/notifyPreference'
@@ -27,6 +28,10 @@ function withoutExtension(fileName: string): string {
 // HLS-transkodningen. Inspelningar hör alltid till ett projekt (Anders,
 // 2026-10-01) — därför finns uppladdningen bara här, inte som fristående bibliotek.
 // UNG-102: alternativt en egen HLS-adress. Då kopieras ingenting; servern läser bara metadata ur spellistan.
+function uploadProgressText(percent: number): string {
+  return t`${percent} % — do not leave the page until the upload is done`
+}
+
 export function UploadPanel({ projectId, projectName, replacing, failed, onUploaded, onCancel, onBusyChange }: UploadPanelProps) {
   const [file, setFile] = useState<File | null>(null)
   const [name, setName] = useState('')
@@ -56,7 +61,7 @@ export function UploadPanel({ projectId, projectName, replacing, failed, onUploa
 
   function choose(next: File | null) {
     if (next && !next.type.startsWith('video/')) {
-      setError('Det där verkar inte vara en videofil.')
+      setError(t`That does not seem to be a video file.`)
       setStatus('error')
       return
     }
@@ -79,7 +84,7 @@ export function UploadPanel({ projectId, projectName, replacing, failed, onUploa
       onUploaded()
     } catch (err) {
       setStatus('error')
-      setError(err instanceof Error ? err.message : 'Uppladdningen misslyckades.')
+      setError(err instanceof Error ? err.message : t`The upload failed.`)
     }
   }
 
@@ -96,19 +101,19 @@ export function UploadPanel({ projectId, projectName, replacing, failed, onUploa
       setHlsUrl('')
       onUploaded()
     } catch (err) {
-      setHlsError(err instanceof Error ? err.message : 'Adressen kunde inte kopplas.')
+      setHlsError(err instanceof Error ? err.message : t`The address could not be linked.`)
     } finally {
       setConnecting(false)
     }
   }
 
   return (
-    <div class="od-upload" aria-label="Ladda upp video">
+    <div class="od-upload" aria-label={t`Upload video`}>
       <p class="od-upload-title">
-        {replacing ? 'Ladda upp en annan video i stället' : `Ladda upp en färdig video till ${projectName}`}
+        {replacing ? t`Upload another video instead` : t`Upload a finished video to ${projectName}`}
       </p>
-      {replacing && <p class="od-empty">Nuvarande inspelning ersätts först när du har godkänt den nya videon.</p>}
-      {failed && <p class="od-download-error">Bearbetningen av den uppladdade videon misslyckades. Försök igen, eller prova en annan fil.</p>}
+      {replacing && <p class="od-empty">{t`The current recording is replaced only when you have approved the new video.`}</p>}
+      {failed && <p class="od-download-error">{t`Processing the uploaded video failed. Try again, or try another file.`}</p>}
       <label
         class={`od-dropzone${dragging ? ' is-dragging' : ''}${file ? ' has-file' : ''}${busy ? ' is-disabled' : ''}`}
         onDragOver={(event) => { event.preventDefault(); if (!busy) setDragging(true) }}
@@ -122,7 +127,7 @@ export function UploadPanel({ projectId, projectName, replacing, failed, onUploa
         <input
           type="file"
           accept="video/*"
-          aria-label="Välj videofil"
+          aria-label={t`Choose video file`}
           disabled={busy}
           onChange={(event) => choose(event.currentTarget.files?.[0] ?? null)}
         />
@@ -130,21 +135,21 @@ export function UploadPanel({ projectId, projectName, replacing, failed, onUploa
         {file ? (
           <span><strong>{file.name}</strong> · {formatBytes(file.size)}</span>
         ) : (
-          <span>Dra hit en videofil, eller klicka för att välja</span>
+          <span>{t`Drag a video file here, or click to choose`}</span>
         )}
       </label>
       {file && (
         <div class="od-upload-panel">
           <input
             type="text"
-            placeholder="Namn på inspelningen"
-            aria-label="Namn på inspelningen"
+            placeholder={t`Name of the recording`}
+            aria-label={t`Name of the recording`}
             value={name}
             disabled={busy}
             onInput={(event) => setName(event.currentTarget.value)}
           />
           <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={() => void upload()}>
-            {uploading ? 'Laddar upp…' : 'Ladda upp'}
+            {uploading ? t`Uploading…` : t`Upload`}
           </button>
           <NotifyCheckbox disabled={busy} />
         </div>
@@ -152,16 +157,15 @@ export function UploadPanel({ projectId, projectName, replacing, failed, onUploa
       {uploading && (
         <div class="od-upload-progress" role="status">
           <progress value={progress} max={1} />
-          <span>{Math.round(progress * 100)} % — lämna inte sidan förrän uppladdningen är klar</span>
+          <span>{uploadProgressText(Math.round(progress * 100))}</span>
         </div>
       )}
       {status === 'error' && <span class="od-download-error">{error}</span>}
 
-      <div class="od-hls" role="group" aria-label="Egen HLS-URL">
-        <p class="od-upload-title">Eller ange en egen HLS-URL</p>
+      <div class="od-hls" role="group" aria-label={t`Own HLS URL`}>
+        <p class="od-upload-title">{t`Or enter your own HLS URL`}</p>
         <p class="od-empty">
-          Om videon redan ligger på en egen adress behöver den inte laddas upp. Spellistan (.m3u8) används som den är och
-          videon ligger kvar där den är. En sådan video kan inte trimmas och inte laddas ned som MP4.
+          {t`If the video is already at an address of its own, it does not need to be uploaded. The playlist (.m3u8) is used as it is and the video stays where it is. Such a video cannot be trimmed or downloaded as MP4.`}
         </p>
         <div class="od-upload-panel">
           <input
@@ -174,7 +178,7 @@ export function UploadPanel({ projectId, projectName, replacing, failed, onUploa
             onKeyDown={(event) => { if (event.key === 'Enter') void connect() }}
           />
           <button class="btn btn-sm btn-primary" type="button" disabled={busy || !hlsUrl.trim()} onClick={() => void connect()}>
-            {connecting ? 'Kontrollerar…' : 'Koppla adress'}
+            {connecting ? t`Checking…` : t`Link address`}
           </button>
         </div>
         {hlsError && <span class="od-download-error" role="alert">{hlsError}</span>}
@@ -182,7 +186,7 @@ export function UploadPanel({ projectId, projectName, replacing, failed, onUploa
 
       {onCancel && !busy && (
         <div class="od-upload-panel">
-          <button class="btn btn-sm" type="button" onClick={onCancel}>Avbryt</button>
+          <button class="btn btn-sm" type="button" onClick={onCancel}>{t`Cancel`}</button>
         </div>
       )}
     </div>

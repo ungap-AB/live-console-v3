@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useState } from 'preact/hooks'
 import { client } from '../../data'
 import { notifyJobsChanged } from '../../app/jobsBus'
@@ -23,7 +24,7 @@ export function useRecordingDownloads() {
     } catch (error) {
       setDownloads((prev) => ({
         ...prev,
-        [recordingId]: { status: 'error', message: error instanceof Error ? error.message : 'Nedladdningen kunde inte förberedas.' },
+        [recordingId]: { status: 'error', message: error instanceof Error ? error.message : t`The download could not be prepared.` },
       }))
     }
   }

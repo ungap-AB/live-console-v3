@@ -60,8 +60,21 @@ msgstr ""
 msgid "{activeShares, plural, one {Shared · # active} other {Shared · # active}}"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "{breaks, plural, one {{chapterText} · # break} other {{chapterText} · # breaks}}"
+msgstr ""
+
 #: src/views/projects/publishOutcome.ts
 msgid "{chapterCount, plural, =0 {No chapters} one {# chapter} other {# chapters}}"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+#: src/views/projects/VideoStatusRow.tsx
+msgid "{count, plural, one {{cues} line} other {{cues} lines}}"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "{count, plural, one {# chapter} other {# chapters}}"
 msgstr ""
 
 #: src/views/agendas/AgendasView.tsx
@@ -120,6 +133,14 @@ msgstr ""
 msgid "{organization} removed."
 msgstr ""
 
+#: src/views/projects/UploadPanel.tsx
+msgid "{percent} % — do not leave the page until the upload is done"
+msgstr ""
+
+#: src/views/projects/ForkDialog.tsx
+msgid "{projectName} (start–end, hh:mm)"
+msgstr ""
+
 #: src/views/trash/TrashView.tsx
 msgid "{rounded, plural, one {# day} other {# days}}"
 msgstr ""
@@ -145,6 +166,10 @@ msgstr ""
 msgid "{type} · {latencyMode} latency"
 msgstr ""
 
+#: src/views/projects/draftActions.ts
+msgid "{who} has saved the captions since you opened the editor."
+msgstr ""
+
 #: src/views/agendas/AgendasView.tsx
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/namelists/NameListsView.tsx
@@ -161,12 +186,32 @@ msgstr ""
 msgid "A broadcast is in progress. Rotating the stream key breaks the encoder's connection. Continue?"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "A broadcast is in progress. Wait until it has ended."
+msgstr ""
+
 #: src/views/users/UsersView.tsx
 msgid "A new invitation replaces the previous one: the old link and PIN stop working."
 msgstr ""
 
+#: src/views/projects/ForkDialog.tsx
+msgid "A new project is created from the broadcast so far."
+msgstr ""
+
+#: src/views/projects/ForkDialog.tsx
+msgid "A new project is created from the recording. This project is not affected. In the new project you trim, create captions and publish as a separate on-demand broadcast."
+msgstr ""
+
+#: src/views/projects/VideoStatusRow.tsx
+msgid "A new video is waiting for your approval"
+msgstr ""
+
 #: src/views/users/UsersView.tsx
 msgid "A reset email has been sent to {email}. The link is valid for one hour."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "A video is being processed or waiting for your approval. Finish that first."
 msgstr ""
 
 #: src/views/users/UsersView.tsx
@@ -179,6 +224,10 @@ msgstr ""
 
 #: src/app/Shell.tsx
 msgid "Account settings"
+msgstr ""
+
+#: src/views/projects/VideoStatusRow.tsx
+msgid "Actions for the video"
 msgstr ""
 
 #: src/views/resources/LiveResourcesView.tsx
@@ -207,6 +256,10 @@ msgstr ""
 msgid "Administration"
 msgstr ""
 
+#: src/views/projects/forkLogic.ts
+msgid "After the latest break ({time})"
+msgstr ""
+
 #: src/views/projects/CreateProjectDialog.tsx
 #: src/views/trash/TrashView.tsx
 msgid "Agenda"
@@ -228,6 +281,10 @@ msgstr ""
 msgid "All"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "An external video cannot be trimmed."
+msgstr ""
+
 #: src/app/jobPhase.ts
 msgid "Analysing speaker changes"
 msgstr ""
@@ -240,8 +297,20 @@ msgstr ""
 msgid "Appearance"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Approve or ignore the uploaded file first."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Approve uploaded video"
+msgstr ""
+
 #: src/app/SharedDownloadsView.tsx
 msgid "Ask the sender to share the files again."
+msgstr ""
+
+#: src/views/projects/ForkDialog.tsx
+msgid "At the time"
 msgstr ""
 
 #: src/app/Shell.tsx
@@ -254,6 +323,10 @@ msgstr ""
 
 #: src/app/LoginView.tsx
 msgid "Back to login"
+msgstr ""
+
+#: src/views/projects/forkLogic.ts
+msgid "Before the latest break ({time})"
 msgstr ""
 
 #: src/views/resources/LiveResourcesView.tsx
@@ -273,7 +346,12 @@ msgid "Break ends"
 msgstr ""
 
 #: src/app/Shell.tsx
+#: src/views/projects/OndemandView.tsx
 msgid "Broadcast"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Broadcast in progress"
 msgstr ""
 
 #: src/views/resources/LiveResourcesView.tsx
@@ -292,9 +370,16 @@ msgstr ""
 msgid "Broadcasts made"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Can be edited when the recording is done"
+msgstr ""
+
 #: src/views/jobs/JobsView.tsx
 #: src/views/projects/CreateProjectDialog.tsx
+#: src/views/projects/ForkDialog.tsx
 #: src/views/projects/InheritLayoutDialog.tsx
+#: src/views/projects/OndemandView.tsx
+#: src/views/projects/UploadPanel.tsx
 #: src/views/users/UsersView.tsx
 msgid "Cancel"
 msgstr ""
@@ -311,6 +396,10 @@ msgstr ""
 msgid "Cancel the job?"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Cancel the upload"
+msgstr ""
+
 #: src/views/jobs/JobsView.tsx
 msgid "Canceled"
 msgstr ""
@@ -323,12 +412,25 @@ msgstr ""
 msgid "Cannot be torn down while a signal is being received"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
 #: src/views/projects/ProjectsView.tsx
 msgid "Captions"
 msgstr ""
 
 #: src/app/jobActions.ts
 msgid "Captions · {name}"
+msgstr ""
+
+#: src/views/projects/VideoStatusRow.tsx
+msgid "Captions and upload video"
+msgstr ""
+
+#: src/views/projects/VideoStatusRow.tsx
+msgid "Captions:"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Captions: {value}"
 msgstr ""
 
 #: src/views/agendas/AgendasView.tsx
@@ -342,11 +444,24 @@ msgid "Changes take effect in projects that have not been published yet. Publish
 msgstr ""
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/OndemandView.tsx
 msgid "Chapters"
 msgstr ""
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Chapters (offset counted from trim start)"
+msgstr ""
+
+#: src/views/projects/draftActions.ts
+msgid "Chapters and captions are published."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Chapters: {value}"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Check in the preview above. You cannot continue with chapters, trimming or publishing until you have chosen."
 msgstr ""
 
 #: src/app/SharedDownloadsView.tsx
@@ -355,6 +470,10 @@ msgstr ""
 
 #: src/app/CredentialLinkView.tsx
 msgid "Checking the link…"
+msgstr ""
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Checking…"
 msgstr ""
 
 #: src/views/projects/CreateProjectDialog.tsx
@@ -367,6 +486,14 @@ msgstr ""
 
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "Choose name list"
+msgstr ""
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Choose video file"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Choose which broadcast to use"
 msgstr ""
 
 #: src/views/projects/createProjectLists.ts
@@ -492,6 +619,22 @@ msgstr ""
 msgid "Create"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Create captions"
+msgstr ""
+
+#: src/views/projects/ForkDialog.tsx
+msgid "Create on-demand project"
+msgstr ""
+
+#: src/views/projects/ForkButton.tsx
+msgid "Create on-demand project: creates a new project from the broadcast (or the recording) to trim and publish as on demand"
+msgstr ""
+
+#: src/views/projects/ForkDialog.tsx
+msgid "Create project"
+msgstr ""
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Created {created}"
 msgstr ""
@@ -506,6 +649,7 @@ msgstr ""
 
 #: src/app/CredentialLinkView.tsx
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/ForkDialog.tsx
 msgid "Creating…"
 msgstr ""
 
@@ -578,6 +722,10 @@ msgstr ""
 msgid "Disappears"
 msgstr ""
 
+#: src/views/projects/draftActions.ts
+msgid "Discard anyway"
+msgstr ""
+
 #: src/views/users/UsersView.tsx
 msgid "Domain"
 msgstr ""
@@ -594,6 +742,10 @@ msgstr ""
 msgid "Domains"
 msgstr ""
 
+#: src/views/projects/PublishProgressDialog.tsx
+msgid "Done"
+msgstr ""
+
 #: src/app/SharedDownloadsView.tsx
 #: src/app/Shell.tsx
 #: src/views/archive/VideoArchiveView.tsx
@@ -606,6 +758,7 @@ msgid "Download · {name}"
 msgstr ""
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/RecordingDownload.tsx
 msgid "Download {fileName}"
 msgstr ""
 
@@ -620,6 +773,10 @@ msgstr ""
 #: src/views/agendas/AgendasView.tsx
 #: src/views/namelists/NameListsView.tsx
 msgid "Draft"
+msgstr ""
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Drag a video file here, or click to choose"
 msgstr ""
 
 #: src/views/namelists/NameListsView.tsx
@@ -639,6 +796,18 @@ msgstr ""
 msgid "e.g. example.com"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Edit captions"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Edit chapters"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Edit project"
+msgstr ""
+
 #: src/views/users/UsersView.tsx
 msgid "email"
 msgstr ""
@@ -653,8 +822,20 @@ msgstr ""
 msgid "Enable account"
 msgstr ""
 
+#: src/views/projects/ForkDialog.tsx
+msgid "End"
+msgstr ""
+
 #: src/views/projects/projectMode.ts
 msgid "End the live broadcast?"
+msgstr ""
+
+#: src/views/projects/ForkDialog.tsx
+msgid "End time for the new project"
+msgstr ""
+
+#: src/views/projects/forkLogic.ts
+msgid "Enter a time as hh:mm."
 msgstr ""
 
 #: src/views/users/UsersView.tsx
@@ -663,6 +844,10 @@ msgstr ""
 
 #: src/app/LoginView.tsx
 msgid "Enter a valid email address."
+msgstr ""
+
+#: src/views/projects/recordingSource.ts
+msgid "Enter the address of an HLS playlist."
 msgstr ""
 
 #: src/views/users/UsersView.tsx
@@ -677,12 +862,37 @@ msgstr ""
 msgid "Expired"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Export & import…"
+msgstr ""
+
+#: src/views/projects/VideoStatusRow.tsx
+msgid "Export and import"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "external address"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "External address · cannot be trimmed"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "External video"
+msgstr ""
+
 #: src/app/SharedDownloadsView.tsx
 msgid "Fetching downloads…"
 msgstr ""
 
 #: src/app/jobPhase.ts
 msgid "Fetching the audio"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+#: src/views/projects/publishProgress.ts
+msgid "Fetching the chapters"
 msgstr ""
 
 #: src/views/projects/InheritLayoutDialog.tsx
@@ -692,6 +902,7 @@ msgstr ""
 #: src/app/SharedDownloadsView.tsx
 #: src/views/projects/InheritLayoutDialog.tsx
 #: src/views/projects/ListPickerDialog.tsx
+#: src/views/projects/OndemandView.tsx
 msgid "Fetching…"
 msgstr ""
 
@@ -719,6 +930,30 @@ msgstr ""
 msgid "Forgot your PIN?"
 msgstr ""
 
+#: src/views/projects/ForkDialog.tsx
+msgid "Fork is not made for tight clips: start and end are placed on the nearest segment and can be up to 10 seconds wider. You choose the exact start and end when you trim in the new project."
+msgstr ""
+
+#: src/views/projects/ForkButton.tsx
+msgid "Fork…"
+msgstr ""
+
+#: src/views/projects/forkLogic.ts
+msgid "From the latest item: {item} ({time})"
+msgstr ""
+
+#: src/views/projects/forkLogic.ts
+msgid "From the start of the broadcast"
+msgstr ""
+
+#: src/views/projects/ForkDialog.tsx
+msgid "From the time"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Generating…"
+msgstr ""
+
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "Get anyway"
 msgstr ""
@@ -729,6 +964,10 @@ msgstr ""
 
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "Get layout from project"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Get ready for on demand"
 msgstr ""
 
 #: src/views/projects/projectMode.ts
@@ -775,8 +1014,28 @@ msgstr ""
 msgid "Idle resources cost nothing but count against the account's channel limit."
 msgstr ""
 
+#: src/views/projects/ForkDialog.tsx
+msgid "If the name is left empty, it becomes the project's name with start and end time."
+msgstr ""
+
+#: src/views/projects/UploadPanel.tsx
+msgid "If the video is already at an address of its own, it does not need to be uploaded. The playlist (.m3u8) is used as it is and the video stays where it is. Such a video cannot be trimmed or downloaded as MP4."
+msgstr ""
+
 #: src/app/LoginView.tsx
 msgid "If we have the address, we have sent an email with a link. The link is valid for one hour. Check your spam folder too."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "If you use the file, the project's earlier recordings (and any trimmed versions) are deleted and can be restored by an administrator from the Trash within {retentionDays} days:"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "If you use the file, the project's earlier recordings (and any trimmed versions) are deleted:"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Ignore the file"
 msgstr ""
 
 #: src/views/projects/layoutInherit.ts
@@ -794,7 +1053,12 @@ msgid "in {days} days"
 msgstr ""
 
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/PublishProgressDialog.tsx
 msgid "In progress"
+msgstr ""
+
+#: src/views/projects/ForkDialog.tsx
+msgid "in this project and the stream is not interrupted. In the new project you trim, create captions and publish as a separate on-demand broadcast with its own link. The very latest seconds are not included."
 msgstr ""
 
 #: src/views/users/UsersView.tsx
@@ -830,6 +1094,14 @@ msgstr ""
 msgid "Invited – has not signed in"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Is this the right file?"
+msgstr ""
+
+#: src/views/projects/PublishProgressDialog.tsx
+msgid "It can take a few minutes for long broadcasts. Leave this box open until publishing is done."
+msgstr ""
+
 #: src/views/trash/TrashView.tsx
 msgid "Items are purged automatically {period} after they were deleted. After that they cannot be restored."
 msgstr ""
@@ -845,6 +1117,14 @@ msgstr ""
 
 #: src/app/time.ts
 msgid "just now"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Keep the earlier one — ignore the file"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Last {when} by {actor}"
 msgstr ""
 
 #: src/views/users/UsersView.tsx
@@ -873,6 +1153,10 @@ msgstr ""
 
 #: src/app/Shell.tsx
 msgid "Light"
+msgstr ""
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Link address"
 msgstr ""
 
 #: src/views/projects/createProjectLists.ts
@@ -927,6 +1211,10 @@ msgstr ""
 msgid "Logging in…"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Machine-generated, not reviewed."
+msgstr ""
+
 #: src/views/agendas/AgendasView.tsx
 msgid "Make template"
 msgstr ""
@@ -979,6 +1267,10 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
+#: src/views/projects/ForkDialog.tsx
+msgid "Name (optional)"
+msgstr ""
+
 #: src/views/projects/CreateProjectDialog.tsx
 #: src/views/trash/TrashView.tsx
 msgid "Name list"
@@ -988,6 +1280,10 @@ msgstr ""
 #: src/views/namelists/NameListsView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Name lists"
+msgstr ""
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Name of the recording"
 msgstr ""
 
 #: src/views/users/UsersView.tsx
@@ -1051,7 +1347,16 @@ msgid "No agenda, I will link one later"
 msgstr ""
 
 #: src/views/projects/publishOutcome.ts
+#: src/views/projects/VideoStatusRow.tsx
 msgid "No captions"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "No changes"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "No chapters"
 msgstr ""
 
 #: src/views/jobs/JobsView.tsx
@@ -1106,6 +1411,14 @@ msgstr ""
 msgid "No signal. The resource is allocated and waiting for an encoder."
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "none"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "None"
+msgstr ""
+
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "None (empty texts and default values)"
 msgstr ""
@@ -1113,6 +1426,22 @@ msgstr ""
 #: src/app/Shell.tsx
 #: src/views/users/UsersView.tsx
 msgid "Not invited"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Not published"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Not published yet."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "not trimmed"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Not trimmed"
 msgstr ""
 
 #: src/views/agendas/AgendasView.tsx
@@ -1155,6 +1484,10 @@ msgstr ""
 msgid "On demand updated"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Only in After"
+msgstr ""
+
 #: src/views/projects/ProjectsView.tsx
 msgid "Open"
 msgstr ""
@@ -1185,6 +1518,10 @@ msgstr ""
 msgid "Operator"
 msgstr ""
 
+#: src/views/projects/UploadPanel.tsx
+msgid "Or enter your own HLS URL"
+msgstr ""
+
 #: src/app/Shell.tsx
 msgid "Organisation"
 msgstr ""
@@ -1193,8 +1530,24 @@ msgstr ""
 msgid "Organization name"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Other choices are locked until the video is done or the upload is canceled."
+msgstr ""
+
 #: src/views/archive/VideoArchiveView.tsx
 msgid "outside the clip"
+msgstr ""
+
+#: src/views/projects/draftActions.ts
+msgid "Overwrite"
+msgstr ""
+
+#: src/views/projects/draftActions.ts
+msgid "Overwrite and publish"
+msgstr ""
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Own HLS URL"
 msgstr ""
 
 #: src/views/agendas/AgendasView.tsx
@@ -1230,10 +1583,12 @@ msgid "Poster image"
 msgstr ""
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/RecordingDownload.tsx
 msgid "Prepare again"
 msgstr ""
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/RecordingDownload.tsx
 msgid "Prepares a downloadable file (can take a few minutes). The file is kept for 7 days."
 msgstr ""
 
@@ -1249,12 +1604,28 @@ msgstr ""
 msgid "Preparing the transcription"
 msgstr ""
 
+#: src/views/projects/publishProgress.ts
+msgid "Preparing the trimmed video"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Present"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Preview (ondemand)"
+msgstr ""
+
 #: src/app/jobPhase.ts
 msgid "Processing"
 msgstr ""
 
 #: src/views/jobs/JobsView.tsx
 msgid "Processing failed."
+msgstr ""
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Processing the uploaded video failed. Try again, or try another file."
 msgstr ""
 
 #: src/views/jobs/JobsView.tsx
@@ -1273,12 +1644,57 @@ msgstr ""
 msgid "Projects"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Publish"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Publish changes"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Publish on demand"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Publish on demand?"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Publish the changes?"
+msgstr ""
+
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Published"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgctxt "project state"
+msgid "Published"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Published with the project."
+msgstr ""
+
 #: src/views/projects/publishOutcome.ts
 msgid "Publishing"
+msgstr ""
+
+#: src/views/projects/publishProgress.ts
+msgid "Publishing and updating the player"
+msgstr ""
+
+#: src/views/projects/PublishProgressDialog.tsx
+msgid "Publishing on demand"
+msgstr ""
+
+#: src/views/projects/PublishProgressDialog.tsx
+msgid "Publishing steps"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Publishing the changes and updating the player"
 msgstr ""
 
 #: src/views/projects/publishOutcome.ts
@@ -1425,11 +1841,16 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
+#: src/views/projects/publishProgress.ts
+msgid "Saving chapters and times"
+msgstr ""
+
 #: src/app/jobPhase.ts
 msgid "Saving the result"
 msgstr ""
 
 #: src/app/Shell.tsx
+#: src/views/projects/OndemandView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Saving…"
 msgstr ""
@@ -1504,6 +1925,7 @@ msgid "Share selected ({selectedCount})"
 msgstr ""
 
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/RecordingDownload.tsx
 msgid "Share…"
 msgstr ""
 
@@ -1524,6 +1946,7 @@ msgid "Show all"
 msgstr ""
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/RecordingDownload.tsx
 msgid "Show jobs"
 msgstr ""
 
@@ -1547,7 +1970,16 @@ msgstr ""
 msgid "Someone"
 msgstr ""
 
+#: src/views/projects/draftActions.ts
+msgid "Someone else has changed chapters or trimming since you opened the editor."
+msgstr ""
+
+#: src/views/projects/draftActions.ts
+msgid "Someone else has saved the captions since you opened the editor."
+msgstr ""
+
 #: src/app/optimistic.ts
+#: src/views/projects/OndemandView.tsx
 #: src/views/projects/ProjectsView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Something went wrong."
@@ -1577,8 +2009,16 @@ msgstr ""
 msgid "Standalone"
 msgstr ""
 
+#: src/views/projects/ForkDialog.tsx
+msgid "Start"
+msgstr ""
+
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "Start from layout"
+msgstr ""
+
+#: src/views/projects/ForkDialog.tsx
+msgid "Start time for the new project"
 msgstr ""
 
 #: src/views/jobs/JobsView.tsx
@@ -1586,16 +2026,38 @@ msgid "Started by"
 msgstr ""
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/RecordingDownload.tsx
 msgid "Starting…"
 msgstr ""
 
 #: src/app/Shell.tsx
+#: src/views/projects/OndemandView.tsx
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Status"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Stop the encoder to publish on demand."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Stop the encoder to trim and publish on demand. Or go back to Before if this was only a test."
+msgstr ""
+
 #: src/views/projects/ProjectsView.tsx
 msgid "Stop using as template"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Summary"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Switch broadcast"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Switch broadcast…"
 msgstr ""
 
 #: src/views/resources/LiveResourcesView.tsx
@@ -1647,8 +2109,36 @@ msgstr ""
 msgid "Text placement"
 msgstr ""
 
+#: src/views/projects/UploadPanel.tsx
+msgid "That does not seem to be a video file."
+msgstr ""
+
+#: src/views/projects/recordingSource.ts
+msgid "That is not a valid address."
+msgstr ""
+
+#: src/views/projects/UploadPanel.tsx
+msgid "The address could not be linked."
+msgstr ""
+
+#: src/views/projects/recordingSource.ts
+msgid "The address must not contain a user name or password."
+msgstr ""
+
+#: src/views/projects/recordingSource.ts
+msgid "The address must point to a .m3u8 file."
+msgstr ""
+
+#: src/views/projects/recordingSource.ts
+msgid "The address must start with https://."
+msgstr ""
+
 #: src/views/projects/projectMode.ts
 msgid "The After message"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The anchoring to the video is not confirmed."
 msgstr ""
 
 #: src/views/projects/projectMode.ts
@@ -1671,16 +2161,56 @@ msgstr ""
 msgid "The Before message"
 msgstr ""
 
+#: src/views/projects/ForkDialog.tsx
+msgid "The broadcast has been running since {start}."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The broadcast has ended"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The broadcast is set to Ondemand mode and everything below becomes visible to the viewers."
+msgstr ""
+
 #: src/app/Shell.tsx
 msgid "The caption draft for {name} is ready and waiting for review."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The captions are machine-generated and not reviewed."
 msgstr ""
 
 #: src/app/Shell.tsx
 msgid "The captions for {name} failed."
 msgstr ""
 
+#: src/views/projects/draftActions.ts
+msgid "The changes are published."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The changes could not be published."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The changes to chapters and captions are released to the viewers."
+msgstr ""
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "The channel limit is reached ({limit}). Tear down an idle resource first."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The chapters' anchoring to the video is not confirmed. Confirm it in the editor."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The chosen broadcast is very short ({duration}) — check that it was not a test before you switch."
+msgstr ""
+
+#: src/views/projects/UploadPanel.tsx
+msgid "The current recording is replaced only when you have approved the new video."
 msgstr ""
 
 #: src/views/users/UsersView.tsx
@@ -1696,6 +2226,7 @@ msgid "The domain still has users and cannot be removed."
 msgstr ""
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/useRecordingDownloads.ts
 msgid "The download could not be prepared."
 msgstr ""
 
@@ -1710,6 +2241,7 @@ msgid "The download for {name} failed."
 msgstr ""
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/RecordingDownload.tsx
 msgid "The download is being prepared. You will be notified when it is ready."
 msgstr ""
 
@@ -1719,6 +2251,10 @@ msgstr ""
 
 #: src/views/users/UsersView.tsx
 msgid "The end date must be after the start date."
+msgstr ""
+
+#: src/views/projects/forkLogic.ts
+msgid "The end must be after the start."
 msgstr ""
 
 #: src/views/projects/projectMode.ts
@@ -1774,6 +2310,10 @@ msgstr ""
 msgid "The live broadcast"
 msgstr ""
 
+#: src/views/projects/ForkDialog.tsx
+msgid "The live broadcast continues unchanged"
+msgstr ""
+
 #: src/views/jobs/JobsView.tsx
 msgid "The log could not be loaded."
 msgstr ""
@@ -1806,12 +2346,32 @@ msgstr ""
 msgid "The project cannot be deleted right now"
 msgstr ""
 
+#: src/views/projects/ForkDialog.tsx
+msgid "The project could not be created."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The project is published. Withdraw the publication if you want to change the video."
+msgstr ""
+
 #: src/app/Shell.tsx
 msgid "the recording"
 msgstr ""
 
 #: src/views/projects/projectMode.ts
 msgid "The recording"
+msgstr ""
+
+#: src/views/projects/ForkDialog.tsx
+msgid "The recording covers {start}–{end}."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The recording is being processed"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The recording is being processed. Publishing is possible when it is done."
 msgstr ""
 
 #: src/views/projects/publishOutcome.ts
@@ -1858,6 +2418,10 @@ msgstr ""
 msgid "The step “{stepLabel}” failed. The error message was shown as a notification. On demand has not been updated, so you can try again."
 msgstr ""
 
+#: src/views/projects/forkLogic.ts
+msgid "The time is outside what can be chosen ({first}–{last})."
+msgstr ""
+
 #: src/app/Shell.tsx
 msgid "The transcript could not be created."
 msgstr ""
@@ -1866,8 +2430,37 @@ msgstr ""
 msgid "The trash is empty."
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "The trim is applied when you publish."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The upload could not be canceled."
+msgstr ""
+
+#: src/views/projects/UploadPanel.tsx
+msgid "The upload failed."
+msgstr ""
+
 #: src/app/Shell.tsx
 msgid "The video for {name} is processed and waiting for review."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The video is being converted for playback, which can take a few minutes depending on its length. You can leave the page — processing continues."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+#: src/views/projects/VideoStatusRow.tsx
+msgid "The video is being processed"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The video is trimmed in the After mode."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "The whole recording"
 msgstr ""
 
 #: src/views/projects/InheritLayoutDialog.tsx
@@ -1876,6 +2469,14 @@ msgstr ""
 
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "This is replaced:"
+msgstr ""
+
+#: src/views/projects/PublishProgressDialog.tsx
+msgid "This is taking longer than usual, but the work is in progress. Leave this box open until publishing is done."
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "This is taking unusually long — the broadcast may have been too short for AWS to save a recording."
 msgstr ""
 
 #: src/views/archive/VideoArchiveView.tsx
@@ -1914,8 +2515,21 @@ msgstr ""
 msgid "Trash"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Trim video"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "trimmed"
+msgstr ""
+
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/OndemandView.tsx
 msgid "Trimmed"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Trimmed · {duration}"
 msgstr ""
 
 #: src/views/archive/VideoArchiveView.tsx
@@ -1942,8 +2556,24 @@ msgstr ""
 msgid "Unpublish the recording?"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Unpublished changes"
+msgstr ""
+
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "Unsaved changes in the player settings are lost."
+msgstr ""
+
+#: src/views/projects/forkLogic.ts
+msgid "Until now"
+msgstr ""
+
+#: src/views/projects/forkLogic.ts
+msgid "Until the end of the item: {item} ({time})"
+msgstr ""
+
+#: src/views/projects/forkLogic.ts
+msgid "Until the end of the recording"
 msgstr ""
 
 #: src/views/projects/ListPickerDialog.tsx
@@ -1958,12 +2588,40 @@ msgstr ""
 msgid "Unused lists"
 msgstr ""
 
+#: src/views/projects/UploadPanel.tsx
+msgid "Upload"
+msgstr ""
+
 #: src/app/jobActions.ts
 msgid "Upload · {name}"
 msgstr ""
 
+#: src/views/projects/UploadPanel.tsx
+msgid "Upload a finished video to {projectName}"
+msgstr ""
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Upload another video instead"
+msgstr ""
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Upload video"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Uploaded video"
+msgstr ""
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Uploading…"
+msgstr ""
+
 #: src/views/projects/ProjectsView.tsx
 msgid "Use as template"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Use this file"
 msgstr ""
 
 #: src/views/agendas/AgendasView.tsx
@@ -1987,8 +2645,20 @@ msgstr ""
 msgid "Users"
 msgstr ""
 
+#: src/views/projects/OndemandView.tsx
+msgid "Video"
+msgstr ""
+
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Video archive"
+msgstr ""
+
+#: src/views/projects/VideoStatusRow.tsx
+msgid "Video status"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Video: {value}"
 msgstr ""
 
 #: src/views/resources/LiveResourcesView.tsx
@@ -2005,6 +2675,14 @@ msgstr ""
 
 #: src/views/projects/ProjectsView.tsx
 msgid "Visibility"
+msgstr ""
+
+#: src/views/projects/OndemandView.tsx
+msgid "Wait until the recording is done before you trim and publish on demand."
+msgstr ""
+
+#: src/views/projects/PublishProgressDialog.tsx
+msgid "Waiting"
 msgstr ""
 
 #: src/app/CredentialLinkView.tsx

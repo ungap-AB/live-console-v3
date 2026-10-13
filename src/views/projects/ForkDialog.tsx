@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { ForkResult, ForkWindow, Project } from '../../data/types'
@@ -12,6 +13,14 @@ interface ForkDialogProps {
 }
 
 // UNG-198: skapa ett ondemand-projekt ur sändningen (eller ur en färdig inspelning). Källan, och strömmen, påverkas inte.
+function namePlaceholder(projectName: string): string {
+  return t`${projectName} (start–end, hh:mm)`
+}
+
+function windowHelp(source: string, start: string, end: string): string {
+  return source === 'live' ? t`The broadcast has been running since ${start}.` : t`The recording covers ${start}–${end}.`
+}
+
 export function ForkDialog({ project, source, onClose, onForked }: ForkDialogProps) {
   const [name, setName] = useState('')
   const [options, setOptions] = useState<ForkFromOption[]>(() => forkFromOptions([]))
@@ -63,7 +72,7 @@ export function ForkDialog({ project, source, onClose, onForked }: ForkDialogPro
     try {
       onForked(await client.projects.forkProject(project.id, { name: name.trim() || undefined, fromUtc, toUtc }))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Projektet kunde inte skapas.')
+      setError(err instanceof Error ? err.message : t`The project could not be created.`)
     } finally {
       setBusy(false)
     }
@@ -71,34 +80,32 @@ export function ForkDialog({ project, source, onClose, onForked }: ForkDialogPro
 
   return (
     <Modal
-      title="Skapa ondemand-projekt"
+      title={t`Create on-demand project`}
       onClose={onClose}
       closeDisabled={busy}
       footer={(
         <>
-          <button class="btn btn-sm" type="button" disabled={busy} onClick={onClose}>Avbryt</button>
+          <button class="btn btn-sm" type="button" disabled={busy} onClick={onClose}>{t`Cancel`}</button>
           <button class="btn btn-sm btn-primary" type="button" disabled={busy || Boolean(customError)} onClick={() => void create()}>
-            {busy ? 'Skapar…' : 'Skapa projekt'}
+            {busy ? t`Creating…` : t`Create project`}
           </button>
         </>
       )}
     >
       {source === 'live' ? (
         <p>
-          Ett nytt projekt skapas av sändningen hittills. <strong>Livesändningen fortsätter oförändrad</strong> i det här projektet och strömmen bryts inte.
-          I det nya projektet trimmar du, skapar undertexter och publicerar som en egen ondemand-sändning med egen länk. De allra senaste sekunderna
-          tas inte med.
+          {t`A new project is created from the broadcast so far.`} <strong>{t`The live broadcast continues unchanged`}</strong> {t`in this project and the stream is not interrupted. In the new project you trim, create captions and publish as a separate on-demand broadcast with its own link. The very latest seconds are not included.`}
         </p>
       ) : (
-        <p>Ett nytt projekt skapas av inspelningen. Det här projektet påverkas inte. I det nya projektet trimmar du, skapar undertexter och publicerar som en egen ondemand-sändning.</p>
+        <p>{t`A new project is created from the recording. This project is not affected. In the new project you trim, create captions and publish as a separate on-demand broadcast.`}</p>
       )}
       <label class="fk-field">
-        <span>Namn (valfritt)</span>
-        <input type="text" value={name} placeholder={`${project.name} (start–slut, hh:mm)`} onInput={(event) => setName(event.currentTarget.value)} />
-        <span class="fk-help">Lämnas namnet tomt blir det projektets namn med start- och sluttid.</span>
+        <span>{t`Name (optional)`}</span>
+        <input type="text" value={name} placeholder={namePlaceholder(project.name)} onInput={(event) => setName(event.currentTarget.value)} />
+        <span class="fk-help">{t`If the name is left empty, it becomes the project's name with start and end time.`}</span>
       </label>
       <fieldset class="fk-from">
-        <legend>Börja</legend>
+        <legend>{t`Start`}</legend>
         {options.map((option) => (
           <label key={option.key} class="fk-option">
             <input type="radio" name="fork-from" checked={choice === option.key} onChange={() => setChoice(option.key)} />
@@ -108,22 +115,22 @@ export function ForkDialog({ project, source, onClose, onForked }: ForkDialogPro
         {window_ && (
           <label class="fk-option">
             <input type="radio" name="fork-from" checked={choice === 'time'} onChange={() => setChoice('time')} />
-            <span>Från klockan</span>
+            <span>{t`From the time`}</span>
             <input
               class="fk-time"
               type="time"
               step={60}
               value={time}
-              aria-label="Starttid för det nya projektet"
+              aria-label={t`Start time for the new project`}
               onFocus={() => setChoice('time')}
               onInput={(event) => { setTime(event.currentTarget.value); setChoice('time') }}
             />
-            <span class="fk-help">{window_.source === 'live' ? `Sändningen har pågått sedan ${clockValue(window_.startUtc)}.` : `Inspelningen gäller ${clockValue(window_.startUtc)}–${clockValue(window_.endUtc)}.`}</span>
+            <span class="fk-help">{windowHelp(window_.source, clockValue(window_.startUtc), clockValue(window_.endUtc))}</span>
           </label>
         )}
       </fieldset>
       <fieldset class="fk-from">
-        <legend>Sluta</legend>
+        <legend>{t`End`}</legend>
         {toOptions.map((option) => (
           <label key={option.key} class="fk-option">
             <input type="radio" name="fork-to" checked={toChoice === option.key} onChange={() => setToChoice(option.key)} />
@@ -133,20 +140,20 @@ export function ForkDialog({ project, source, onClose, onForked }: ForkDialogPro
         {window_ && (
           <label class="fk-option">
             <input type="radio" name="fork-to" checked={toChoice === 'time'} onChange={() => setToChoice('time')} />
-            <span>Vid klockan</span>
+            <span>{t`At the time`}</span>
             <input
               class="fk-time"
               type="time"
               step={60}
               value={toTime}
-              aria-label="Sluttid för det nya projektet"
+              aria-label={t`End time for the new project`}
               onFocus={() => setToChoice('time')}
               onInput={(event) => { setToTime(event.currentTarget.value); setToChoice('time') }}
             />
           </label>
         )}
         {customError && <span class="ce-error-text" role="alert">{customError}</span>}
-        <span class="fk-help">Fork är inte gjord för tajta klipp: start och slut läggs på närmaste segment och kan bli upp till 10 sekunder vidare. Du väljer exakt början och slut när du trimmar i det nya projektet.</span>
+        <span class="fk-help">{t`Fork is not made for tight clips: start and end are placed on the nearest segment and can be up to 10 seconds wider. You choose the exact start and end when you trim in the new project.`}</span>
       </fieldset>
       {error && <p class="ce-error-text" role="alert">{error}</p>}
     </Modal>

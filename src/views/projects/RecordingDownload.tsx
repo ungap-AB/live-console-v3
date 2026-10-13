@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { openJobsView } from '../../app/jobsBus'
 import { NotifyCheckbox } from '../../components/NotifyCheckbox'
 
@@ -17,17 +18,22 @@ export interface DownloadButtonProps {
   onShare?: () => void
 }
 
-// UNG-58: samma "Förbereder… → riktig länk"-mönster som Videoarkivets nedladdningsknapp.
+// UNG-58: the same "Preparing… → real link" pattern as the Video archive's download button.
+function downloadFileText(name: string): string {
+  const fileName = `${name}.mp4`
+  return t`Download ${fileName}`
+}
+
 export function DownloadButton({ label, fileName, download, onDownload, onShare }: DownloadButtonProps) {
   if (download?.status === 'starting') {
-    return <button class="btn btn-sm" type="button" disabled>Startar…</button>
+    return <button class="btn btn-sm" type="button" disabled>{t`Starting…`}</button>
   }
   if (download?.status === 'queued') {
     return (
       <span class="od-download-ready">
-        <span>Nedladdningen förbereds. Du får en avisering när den är klar.</span>
+        <span>{t`The download is being prepared. You will be notified when it is ready.`}</span>
         <button class="btn btn-sm" type="button" onClick={openJobsView}>
-          Visa jobb
+          {t`Show jobs`}
         </button>
       </span>
     )
@@ -36,14 +42,14 @@ export function DownloadButton({ label, fileName, download, onDownload, onShare 
     return (
       <span class="od-download-ready">
         <a class="btn btn-sm" href={download.url} download>
-          Ladda ner {fileName}.mp4
+          {downloadFileText(fileName)}
         </a>
         <button class="btn btn-sm" type="button" onClick={onDownload}>
-          Förbered på nytt
+          {t`Prepare again`}
         </button>
         {onShare && (
           <button class="btn btn-sm" type="button" onClick={onShare}>
-            Dela…
+            {t`Share…`}
           </button>
         )}
       </span>
@@ -55,7 +61,7 @@ export function DownloadButton({ label, fileName, download, onDownload, onShare 
         class="btn btn-sm"
         type="button"
         onClick={onDownload}
-        title="Förbereder en nedladdningsbar fil (kan ta några minuter). Filen sparas i 7 dagar."
+        title={t`Prepares a downloadable file (can take a few minutes). The file is kept for 7 days.`}
       >
         {label}
       </button>

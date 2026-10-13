@@ -1,8 +1,10 @@
+import { plural, t } from '@lingui/core/macro'
 import type { ComponentChildren } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { CaptionDraft, Chapter, DraftStatus, ForkResult, Project, ProjectRecording, Recording } from '../../data/types'
 import { formatBytes, formatDateTime, formatHms } from '../../app/time'
+import { formatNumber } from '../../i18n'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
 import wasmWorker from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.js?url'
@@ -258,10 +260,10 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   const recordingReady = p.recording?.state === 'recorded' || p.recording?.state === 'trimmed' || p.recording?.state === 'published'
   const editorAvailable = recordingReady && !uploadPending
   const uploadBlockedReason = published
-    ? 'Projektet är publicerat. Ta tillbaka publiceringen om du vill byta video.'
+    ? t`The project is published. Withdraw the publication if you want to change the video.`
     : broadcastInProgress
-      ? 'En sändning pågår. Vänta tills den är avslutad.'
-      : 'En video bearbetas eller väntar på ditt godkännande. Slutför det först.'
+      ? t`A broadcast is in progress. Wait until it has ended.`
+      : t`A video is being processed or waiting for your approval. Finish that first.`
 
   // Sändningens datum (lokalt), som klockslag utan datum tolkas mot vid import till en inspelad sändning.
   const activeStartedAt = projectRecordings.find((item) => item.isActive)?.startedAt
@@ -280,7 +282,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
       await client.recordings.rejectUpload(p.recording.id)
       await actions.refreshProject()
     } catch (error) {
-      setUploadNote(error instanceof Error ? error.message : 'Uppladdningen kunde inte avbrytas.')
+      setUploadNote(error instanceof Error ? error.message : t`The upload could not be canceled.`)
     }
   }
 
@@ -384,8 +386,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
     setConfirmOndemand(false)
     setActionNote('')
     setPublishSteps([
-      { key: 'publish', label: 'Publicerar ändringarna och uppdaterar spelaren' },
-      { key: 'chapters', label: 'Hämtar kapitlen' },
+      { key: 'publish', label: t`Publishing the changes and updating the player` },
+      { key: 'chapters', label: t`Fetching the chapters` },
     ])
     setPublishStep('publish')
     setPublishOutcome(null)
@@ -403,7 +405,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
       setActionNote('')
     } catch (error) {
       failed = true
-      setActionNote(error instanceof Error ? error.message : 'Ändringarna kunde inte publiceras.')
+      setActionNote(error instanceof Error ? error.message : t`The changes could not be published.`)
     } finally {
       setPublishing(false)
       if (failed) {
@@ -490,13 +492,13 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
 
   // Varför publicering inte går just nu (visas vid knapparna).
   const publishHint = chaptersReadOnly
-    ? 'Inspelningen bearbetas. Publicering går när den är klar.'
+    ? t`The recording is being processed. Publishing is possible when it is done.`
     : broadcastInProgress
-      ? 'Stoppa enkodern för att publicera ondemand.'
+      ? t`Stop the encoder to publish on demand.`
       : uploadPending
-        ? 'Godkänn eller ignorera den uppladdade filen först.'
+        ? t`Approve or ignore the uploaded file first.`
         : syncState === 'pending'
-          ? 'Kapitlens förankring mot videon är inte bekräftad. Bekräfta den i redigeraren.'
+          ? t`The chapters' anchoring to the video is not confirmed. Confirm it in the editor.`
           : ''
 
   // Redigeraren (CaptionEntry äger den och dess adress). I After visas den som de guidade stegen, annars som knappen Redigera.
@@ -504,7 +506,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
             <CaptionEntry
               projectId={p.id}
               projectName={p.name}
-              label="Redigera projekt"
+              label={t`Edit project`}
               onEntryKindChange={setCaptionKind}
             renderTrigger={renderTrigger}
               videoDurationSeconds={recording?.durationSeconds}
@@ -535,30 +537,30 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   const trimOnlyInAfter = !isAfter && !externalVideo
   const guideSteps = (open: ((focus?: EditorFocus) => void) | null, entry: CaptionEntryState | null) => (
     <div class="od-flow">
-      <ol class="od-flow-steps" aria-label="Gör klart för ondemand">
+      <ol class="od-flow-steps" aria-label={t`Get ready for on demand`}>
         <FlowStep
           n={1}
-          label="Trimma video"
-          status={externalVideo ? 'Extern video' : isTrimmed ? `Trimmad · ${formatHms(trimEnd - trimStart)}` : 'Hela inspelningen'}
+          label={t`Trim video`}
+          status={externalVideo ? t`External video` : isTrimmed ? trimmedStatus(trimEnd - trimStart) : t`The whole recording`}
           done={isTrimmed}
           disabled={!open || !showTrim || externalVideo}
           locked={trimOnlyInAfter}
-          note={trimOnlyInAfter ? 'Bara i After' : undefined}
-          title={externalVideo ? 'En extern video kan inte trimmas.' : trimOnlyInAfter ? 'Videon trimmas i läget After.' : undefined}
+          note={trimOnlyInAfter ? t`Only in After` : undefined}
+          title={externalVideo ? t`An external video cannot be trimmed.` : trimOnlyInAfter ? t`The video is trimmed in the After mode.` : undefined}
           onClick={() => open?.('trim')}
         />
         <FlowStep
           n={2}
-          label="Redigera kapitel"
-          status={chapterCount === 0 ? 'Inga kapitel' : `${chapterCount} kapitel`}
+          label={t`Edit chapters`}
+          status={chapterCount === 0 ? t`No chapters` : chaptersText(chapterCount)}
           done={chapterCount > 0}
           disabled={!open}
           onClick={() => open?.('chapters')}
         />
         <FlowStep
           n={3}
-          label={entry?.kind === 'edit' ? 'Redigera undertexter' : 'Skapa undertexter'}
-          status={!entry ? '' : entry.kind === 'progress' ? (entry.status ?? entry.label) : entry.kind === 'edit' ? (p.recording?.captions?.label ?? 'Finns') : 'Inga'}
+          label={entry?.kind === 'edit' ? t`Edit captions` : t`Create captions`}
+          status={!entry ? '' : entry.kind === 'progress' ? (entry.status ?? entry.label) : entry.kind === 'edit' ? (p.recording?.captions?.label ?? t`Present`) : t`None`}
           done={entry?.kind === 'edit'}
           busy={entry?.kind === 'progress'}
           disabled={!open || Boolean(entry?.disabledReason)}
@@ -568,8 +570,8 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
         {published ? (
           <FlowStep
             n={4}
-            label="Publicera ändringar"
-            status={anyUnpublished ? 'Opublicerade ändringar' : 'Inga ändringar'}
+            label={t`Publish changes`}
+            status={anyUnpublished ? t`Unpublished changes` : t`No changes`}
             publish
             disabled={!anyUnpublished || publishing || publishBlocked}
             onClick={() => void publishChangesOnly()}
@@ -577,7 +579,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
         ) : (
           <FlowStep
             n={4}
-            label="Publicera ondemand"
+            label={t`Publish on demand`}
             status=""
             publish
             disabled={!canPublish}
@@ -603,30 +605,30 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
       />}
       modes={<ModeSelector project={p} actions={actions} onModeSelect={handleModeSelect} />}
       player={p.playerUrl && !awaitingApproval
-        ? { url: p.playerUrl, version: previewVersion, preview: isAfter && recording ? { label: 'Preview (ondemand)', variant: 'draft', mode: 'ondemand' } : undefined,
+        ? { url: p.playerUrl, version: previewVersion, preview: isAfter && recording ? { label: t`Preview (ondemand)`, variant: 'draft', mode: 'ondemand' } : undefined,
             footer: <PlayerFooter project={p} actions={actions} onSettings={() => setPlayerSettings('link')} /> }
         : null}
       workOpen={editorOpen}
       overlays={<>
         {dialog}
         {confirmOndemand && (
-          <Modal title={published ? 'Publicera ändringarna?' : 'Publicera ondemand?'} onClose={() => setConfirmOndemand(false)}>
-            <p>{published ? 'Ändringarna i kapitel och undertexter släpps till tittarna.' : 'Sändningen sätts i Ondemand-läge och allt nedan blir synligt för tittarna.'}</p>
+          <Modal title={published ? t`Publish the changes?` : t`Publish on demand?`} onClose={() => setConfirmOndemand(false)}>
+            <p>{published ? t`The changes to chapters and captions are released to the viewers.` : t`The broadcast is set to Ondemand mode and everything below becomes visible to the viewers.`}</p>
             {/* Allt i arbetsversionen publiceras i ett steg: video, kapitel och undertexter (ingen separat godkännande för undertexterna). */}
             <ul class="od-publish-contents">
-              <li>Video: {externalVideo ? 'extern adress' : isTrimmed ? 'trimmad' : 'ej trimmad'}</li>
-              <li>Kapitel: {chapterCount === 0 ? 'inga' : chapterCount}</li>
-              <li>Undertexter: {captionDraft && !captionDraft.stale ? `${captionDraft.cueCount.toLocaleString('sv-SE')} repliker` : p.recording?.captions ? `${p.recording.captions.cueCount.toLocaleString('sv-SE')} repliker` : 'inga'}</li>
+              <li>{videoLine(externalVideo ? t`external address` : isTrimmed ? t`trimmed` : t`not trimmed`)}</li>
+              <li>{chaptersLine(chapterCount === 0 ? t`none` : String(chapterCount))}</li>
+              <li>{captionsLine(captionDraft && !captionDraft.stale ? cuesText(captionDraft.cueCount) : p.recording?.captions ? cuesText(p.recording.captions.cueCount) : t`none`)}</li>
             </ul>
-            {captionDraft?.unreviewed && <p class="od-publish-warning">Undertexterna är maskingenererade och inte granskade.</p>}
+            {captionDraft?.unreviewed && <p class="od-publish-warning">{t`The captions are machine-generated and not reviewed.`}</p>}
             <div class="modal-actions">
-              <button class="btn" type="button" onClick={() => setConfirmOndemand(false)}>Avbryt</button>
-              <button class="btn btn-primary" type="button" onClick={() => void publishWithTrim()}>{published ? 'Publicera' : 'Publicera ondemand'}</button>
+              <button class="btn" type="button" onClick={() => setConfirmOndemand(false)}>{t`Cancel`}</button>
+              <button class="btn btn-primary" type="button" onClick={() => void publishWithTrim()}>{published ? t`Publish` : t`Publish on demand`}</button>
             </div>
           </Modal>
         )}
         {showRecordingPicker && (
-          <Modal title="Välj vilken sändning som ska användas" onClose={() => setShowRecordingPicker(false)}>
+          <Modal title={t`Choose which broadcast to use`} onClose={() => setShowRecordingPicker(false)}>
             <ul class="od-recording-picker-list">
               {projectRecordings.map((item) => (
                 <li key={item.id}>
@@ -645,13 +647,13 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
             {(() => {
               const selected = projectRecordings.find((item) => item.id === pendingRecordingId)
               return selected && selected.durationSeconds < VERY_SHORT_RECORDING_SECONDS ? (
-                <p class="note warn">Den valda sändningen är väldigt kort ({formatHms(selected.durationSeconds)}) — kontrollera att det inte var ett test innan du byter.</p>
+                <p class="note warn">{veryShortText(formatHms(selected.durationSeconds))}</p>
               ) : null
             })()}
             <div class="modal-actions">
-              <button class="btn" type="button" onClick={() => setShowRecordingPicker(false)}>Avbryt</button>
+              <button class="btn" type="button" onClick={() => setShowRecordingPicker(false)}>{t`Cancel`}</button>
               <button class="btn btn-primary" type="button" disabled={!pendingRecordingId || switchingRecording} onClick={() => void confirmRecordingSwitch()}>
-                Byt sändning
+                {t`Switch broadcast`}
               </button>
             </div>
           </Modal>
@@ -679,27 +681,27 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
             {uploadPending && <VideoStatusRow recording={p.recording} />}
             {broadcastInProgress ? (
               <div class="od-broadcast-warning" role="status">
-                <strong>{isAfter ? 'Sändningen avslutad' : 'Sändning pågår'}</strong>
-                <span>Stoppa enkodern för att trimma och publicera ondemand. Eller gå tillbaka till Before om detta bara var en test.</span>
+                <strong>{isAfter ? t`The broadcast has ended` : t`Broadcast in progress`}</strong>
+                <span>{t`Stop the encoder to trim and publish on demand. Or go back to Before if this was only a test.`}</span>
               </div>
             ) : recordingProcessing && (
               <div class="od-broadcast-warning" role="status">
-                <strong>{p.recording?.source === 'upload' ? 'Videon bearbetas' : 'Inspelningen bearbetas'}</strong>
+                <strong>{p.recording?.source === 'upload' ? t`The video is being processed` : t`The recording is being processed`}</strong>
                 {p.recording?.source === 'upload' ? (
                   <>
-                    <span>Videon konverteras för uppspelning, vilket kan ta några minuter beroende på längd. Du kan lämna sidan — bearbetningen fortsätter.</span>
-                    <span>Övriga val är spärrade tills videon är klar eller uppladdningen avbryts.</span>
-                    <button class="btn btn-sm" type="button" onClick={() => void cancelPendingUpload()}>Avbryt uppladdningen</button>
+                    <span>{t`The video is being converted for playback, which can take a few minutes depending on its length. You can leave the page — processing continues.`}</span>
+                    <span>{t`Other choices are locked until the video is done or the upload is canceled.`}</span>
+                    <button class="btn btn-sm" type="button" onClick={() => void cancelPendingUpload()}>{t`Cancel the upload`}</button>
                     {uploadNote && <span class="od-download-error">{uploadNote}</span>}
                   </>
                 ) : (
-                  <span>Vänta tills inspelningen är klar innan du trimmar och publicerar ondemand.</span>
+                  <span>{t`Wait until the recording is done before you trim and publish on demand.`}</span>
                 )}
                 {processingStuck && p.recording?.source !== 'upload' && (
                   <>
-                    <span>Det här tar ovanligt lång tid — sändningen kan ha varit för kort för att AWS skulle spara en inspelning.</span>
+                    <span>{t`This is taking unusually long — the broadcast may have been too short for AWS to save a recording.`}</span>
                     {isAfter && projectRecordings.length > 1 && (
-                      <button class="btn btn-sm" type="button" onClick={openRecordingPicker}>Byt sändning…</button>
+                      <button class="btn btn-sm" type="button" onClick={openRecordingPicker}>{t`Switch broadcast…`}</button>
                     )}
                   </>
                 )}
@@ -708,7 +710,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
             {awaitingApproval && (
               <>
                 <div class="od-trim-preview">
-                  <video ref={approvalVideoRef} controls playsInline preload="metadata" aria-label="Uppladdad video" />
+                  <video ref={approvalVideoRef} controls playsInline preload="metadata" aria-label={t`Uploaded video`} />
                 </div>
                 <UploadApproval
                   recording={recording}
@@ -735,70 +737,70 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
             )}
 
             {(source || published) && !awaitingApproval && (
-              <dl class="od-summary" aria-label="Sammanfattning">
-                <dt>Status</dt>
+              <dl class="od-summary" aria-label={t`Summary`}>
+                <dt>{t`Status`}</dt>
                 <dd>
-                  {published ? <strong class="od-state is-published">Publicerat</strong> : <strong class="od-state">Inte publicerat</strong>}
+                  {published ? <strong class="od-state is-published">{t({ message: 'Published', context: 'project state' })}</strong> : <strong class="od-state">{t`Not published`}</strong>}
                   {published && lastPublish && (
-                    <span class="od-summary-sub">Senast {formatDateTime(lastPublish.occurredAt)} av {lastPublish.actorName}</span>
+                    <span class="od-summary-sub">{lastPublishText(formatDateTime(lastPublish.occurredAt), lastPublish.actorName)}</span>
                   )}
                   {published && anyUnpublished && (
                     <span class="od-unpublished-row">
-                      <span class="od-unpublished">Opublicerade ändringar</span>
+                      <span class="od-unpublished">{t`Unpublished changes`}</span>
                     </span>
                   )}
                 </dd>
                 {source && (
                   <>
-                    <dt>Video</dt>
+                    <dt>{t`Video`}</dt>
                     <dd>
                       {externalVideo
-                        ? <>Extern adress · kan inte trimmas</>
+                        ? t`External address · cannot be trimmed`
                         : isTrimmed
-                          ? 'Trimmad'
-                          : 'Ej trimmad'}
-                      {trimDirty && <span class="od-summary-sub">Trimningen tillämpas när du publicerar.</span>}
+                          ? t`Trimmed`
+                          : t`Not trimmed`}
+                      {trimDirty && <span class="od-summary-sub">{t`The trim is applied when you publish.`}</span>}
                     </dd>
                   </>
                 )}
                 {isAfter && projectRecordings.length > 1 && !uploadPending && (
                   <>
-                    <dt>Sändning</dt>
+                    <dt>{t`Broadcast`}</dt>
                     <dd class="od-recording-select">
                       <span class="od-recording-current">
                         {formatDateTime(projectRecordings.find((item) => item.isActive)?.startedAt ?? '')} ·{' '}
                         {formatHms(projectRecordings.find((item) => item.isActive)?.durationSeconds ?? 0)}
                       </span>
                       <button class="btn btn-sm" type="button" disabled={switchingRecording} onClick={openRecordingPicker}>
-                        Byt sändning…
+                        {t`Switch broadcast…`}
                       </button>
                     </dd>
                   </>
                 )}
-                <dt>Kapitel</dt>
+                <dt>{t`Chapters`}</dt>
                 <dd>
                   {!projectChaptersLoaded
-                    ? 'Hämtar…'
+                    ? t`Fetching…`
                     : chaptersReadOnly
-                      ? 'Kan redigeras när inspelningen är klar'
+                      ? t`Can be edited when the recording is done`
                       : chapterCount === 0
-                        ? 'Inga kapitel'
-                        : `${chapterCount} kapitel${pauseCount > 0 ? ` · ${pauseCount} ${pauseCount === 1 ? 'paus' : 'pauser'}` : ''}`}
-                  {syncState === 'pending' && <span class="od-summary-sub is-warn">Förankringen mot videon är inte bekräftad.</span>}
+                        ? t`No chapters`
+                        : pauseCount > 0 ? chaptersAndBreaksText(chapterCount, pauseCount) : chaptersText(chapterCount)}
+                  {syncState === 'pending' && <span class="od-summary-sub is-warn">{t`The anchoring to the video is not confirmed.`}</span>}
                 </dd>
-                <dt>Undertexter</dt>
+                <dt>{t`Captions`}</dt>
                 <dd>
                   {captionsGenerating
-                    ? <span class="od-summary-busy">Genereras…</span>
+                    ? <span class="od-summary-busy">{t`Generating…`}</span>
                     : captionDraft && !captionDraft.stale
                     ? <>
-                        {captionDraft.cueCount.toLocaleString('sv-SE')} repliker
-                        {captionDraft.unpublishedChanges && <span class="od-summary-sub">{published ? 'Inte publicerade än.' : 'Publiceras med projektet.'}</span>}
-                        {captionDraft.unreviewed && <span class="od-summary-sub is-warn">Maskingenererade, inte granskade.</span>}
+                        {cuesText(captionDraft.cueCount)}
+                        {captionDraft.unpublishedChanges && <span class="od-summary-sub">{published ? t`Not published yet.` : t`Published with the project.`}</span>}
+                        {captionDraft.unreviewed && <span class="od-summary-sub is-warn">{t`Machine-generated, not reviewed.`}</span>}
                       </>
                     : p.recording?.captions
-                      ? <>{p.recording.captions.cueCount.toLocaleString('sv-SE')} repliker</>
-                      : 'Inga'}
+                      ? cuesText(p.recording.captions.cueCount)
+                      : t`None`}
                 </dd>
               </dl>
             )}
@@ -806,7 +808,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
             {(source || published) && !awaitingApproval && (
               <div class="od-secondary-actions">
                 <button class="btn btn-sm" type="button" onClick={() => setShowExportDialog(true)}>
-                  <Icon name="ios_share" size={18} /> Exportera & importera…
+                  <Icon name="ios_share" size={18} /> {t`Export & import…`}
                 </button>
                 {onForked && <ForkButton project={p} livePhase={live.health?.livePhase} onForked={onForked} />}
               </div>
@@ -846,6 +848,51 @@ interface UploadApprovalProps {
   onDone: () => void
 }
 
+function trimmedStatus(seconds: number): string {
+  const duration = formatHms(seconds)
+  return t`Trimmed · ${duration}`
+}
+
+function chaptersText(count: number): string {
+  return plural(count, { one: '# chapter', other: '# chapters' })
+}
+
+function chaptersAndBreaksText(chapters: number, breaks: number): string {
+  const chapterText = chaptersText(chapters)
+  return plural(breaks, { one: `${chapterText} · # break`, other: `${chapterText} · # breaks` })
+}
+
+function cuesText(count: number): string {
+  const cues = formatNumber(count)
+  return plural(count, { one: `${cues} line`, other: `${cues} lines` })
+}
+
+function videoLine(value: string): string {
+  return t`Video: ${value}`
+}
+
+function chaptersLine(value: string): string {
+  return t`Chapters: ${value}`
+}
+
+function captionsLine(value: string): string {
+  return t`Captions: ${value}`
+}
+
+function veryShortText(duration: string): string {
+  return t`The chosen broadcast is very short (${duration}) — check that it was not a test before you switch.`
+}
+
+function lastPublishText(when: string, actor: string): string {
+  return t`Last ${when} by ${actor}`
+}
+
+function replaceWarningText(retentionDays: number | null): string {
+  return retentionDays
+    ? t`If you use the file, the project's earlier recordings (and any trimmed versions) are deleted and can be restored by an administrator from the Trash within ${retentionDays} days:`
+    : t`If you use the file, the project's earlier recordings (and any trimmed versions) are deleted:`
+}
+
 function UploadApproval({ recording, previous, onDone }: UploadApprovalProps) {
   const previousCount = previous.length
   const [busy, setBusy] = useState<'accept' | 'reject' | null>(null)
@@ -864,26 +911,25 @@ function UploadApproval({ recording, previous, onDone }: UploadApprovalProps) {
       else await client.recordings.rejectUpload(recording!.id)
       onDone()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Något gick fel.')
+      setError(err instanceof Error ? err.message : t`Something went wrong.`)
       setBusy(null)
     }
   }
 
-  const grace = retentionDays ? ` och kan återställas av en administratör från Papperskorgen inom ${retentionDays} dagar` : ''
   return (
-    <div class="od-upload" aria-label="Godkänn uppladdad video">
-      <p class="od-upload-title">Är det här rätt fil?</p>
+    <div class="od-upload" aria-label={t`Approve uploaded video`}>
+      <p class="od-upload-title">{t`Is this the right file?`}</p>
       {recording && (
         <p class="od-empty">
           <strong>{recording.name}</strong> · {formatHms(recording.durationSeconds)} · {recording.resolution}{recording.sizeBytes > 0 ? ` · ${formatBytes(recording.sizeBytes)}` : ''}
         </p>
       )}
       <p class="od-empty">
-        Kontrollera i förhandsvisningen ovan. Du kan inte gå vidare med kapitel, trimning eller publicering förrän du valt.
+        {t`Check in the preview above. You cannot continue with chapters, trimming or publishing until you have chosen.`}
       </p>
       {previousCount > 0 && (
         <div class="od-empty">
-          <p class="od-empty">Om du använder filen raderas projektets tidigare inspelningar (och eventuella trimmade versioner){grace}:</p>
+          <p class="od-empty">{replaceWarningText(retentionDays)}</p>
           <ul>
             {previous.map((item) => (
               <li key={item.id}>{item.name} — {formatDateTime(item.startedAt)} · {formatHms(item.durationSeconds)}</li>
@@ -893,10 +939,10 @@ function UploadApproval({ recording, previous, onDone }: UploadApprovalProps) {
       )}
       <div class="od-upload-panel">
         <button class="btn btn-sm btn-primary" type="button" disabled={busy !== null || !recording} onClick={() => void decide('accept')}>
-          {busy === 'accept' ? 'Sparar…' : 'Använd den här filen'}
+          {busy === 'accept' ? t`Saving…` : t`Use this file`}
         </button>
         <button class="btn btn-sm" type="button" disabled={busy !== null || !recording} onClick={() => void decide('reject')}>
-          {previousCount > 0 ? 'Behåll tidigare — ignorera filen' : 'Ignorera filen'}
+          {previousCount > 0 ? t`Keep the earlier one — ignore the file` : t`Ignore the file`}
         </button>
       </div>
       {error && <span class="od-download-error">{error}</span>}

@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
 import type { ForkResult, Project } from '../../data/types'
@@ -18,8 +19,8 @@ export function ForkButton({ project: p, livePhase, onForked }: ForkButtonProps)
   if (!source) return null
   return (
     <>
-      <button class="btn" type="button" title="Skapa ondemand-projekt: skapar ett nytt projekt av sändningen (eller inspelningen) att trimma och publicera som ondemand" onClick={() => setOpen(true)}>
-        <Icon name="call_split" size={18} /> Fork…
+      <button class="btn" type="button" title={t`Create on-demand project: creates a new project from the broadcast (or the recording) to trim and publish as on demand`} onClick={() => setOpen(true)}>
+        <Icon name="call_split" size={18} /> {t`Fork…`}
       </button>
       {open && <ForkDialog project={p} source={source} onClose={() => setOpen(false)} onForked={(result) => { setOpen(false); onForked(result) }} />}
     </>

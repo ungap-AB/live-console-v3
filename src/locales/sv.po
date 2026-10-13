@@ -60,9 +60,22 @@ msgstr "{activeJobs} pågår"
 msgid "{activeShares, plural, one {Shared · # active} other {Shared · # active}}"
 msgstr "{activeShares, plural, one {Delad · # aktiv} other {Delad · # aktiva}}"
 
+#: src/views/projects/OndemandView.tsx
+msgid "{breaks, plural, one {{chapterText} · # break} other {{chapterText} · # breaks}}"
+msgstr "{breaks, plural, one {{chapterText} · # paus} other {{chapterText} · # pauser}}"
+
 #: src/views/projects/publishOutcome.ts
 msgid "{chapterCount, plural, =0 {No chapters} one {# chapter} other {# chapters}}"
 msgstr "{chapterCount, plural, =0 {Inga kapitel} one {# kapitel} other {# kapitel}}"
+
+#: src/views/projects/OndemandView.tsx
+#: src/views/projects/VideoStatusRow.tsx
+msgid "{count, plural, one {{cues} line} other {{cues} lines}}"
+msgstr "{count, plural, one {{cues} repliker} other {{cues} repliker}}"
+
+#: src/views/projects/OndemandView.tsx
+msgid "{count, plural, one {# chapter} other {# chapters}}"
+msgstr "{count, plural, one {# kapitel} other {# kapitel}}"
 
 #: src/views/agendas/AgendasView.tsx
 msgid "{count, plural, one {# item · changed {changed}} other {# items · changed {changed}}}"
@@ -120,6 +133,14 @@ msgstr "{newFinished} klara"
 msgid "{organization} removed."
 msgstr "{organization} borttagen."
 
+#: src/views/projects/UploadPanel.tsx
+msgid "{percent} % — do not leave the page until the upload is done"
+msgstr "{percent} % — lämna inte sidan förrän uppladdningen är klar"
+
+#: src/views/projects/ForkDialog.tsx
+msgid "{projectName} (start–end, hh:mm)"
+msgstr "{projectName} (start–slut, hh:mm)"
+
 #: src/views/trash/TrashView.tsx
 msgid "{rounded, plural, one {# day} other {# days}}"
 msgstr "{rounded, plural, one {# dag} other {# dagar}}"
@@ -145,6 +166,10 @@ msgstr "{trashUsedIn, plural, one {{trashName} används i # projekt. Flytta till
 msgid "{type} · {latencyMode} latency"
 msgstr "{type} · {latencyMode} latency"
 
+#: src/views/projects/draftActions.ts
+msgid "{who} has saved the captions since you opened the editor."
+msgstr "{who} har sparat undertexterna sedan du öppnade redigeraren."
+
 #: src/views/agendas/AgendasView.tsx
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/namelists/NameListsView.tsx
@@ -161,13 +186,33 @@ msgstr "+ Nytt"
 msgid "A broadcast is in progress. Rotating the stream key breaks the encoder's connection. Continue?"
 msgstr "Sändning pågår. Att rotera stream key bryter enkoderns anslutning. Fortsätt?"
 
+#: src/views/projects/OndemandView.tsx
+msgid "A broadcast is in progress. Wait until it has ended."
+msgstr "En sändning pågår. Vänta tills den är avslutad."
+
 #: src/views/users/UsersView.tsx
 msgid "A new invitation replaces the previous one: the old link and PIN stop working."
 msgstr "En ny inbjudan ersätter den tidigare: den gamla länken och PIN-koden slutar gälla."
 
+#: src/views/projects/ForkDialog.tsx
+msgid "A new project is created from the broadcast so far."
+msgstr "Ett nytt projekt skapas av sändningen hittills."
+
+#: src/views/projects/ForkDialog.tsx
+msgid "A new project is created from the recording. This project is not affected. In the new project you trim, create captions and publish as a separate on-demand broadcast."
+msgstr "Ett nytt projekt skapas av inspelningen. Det här projektet påverkas inte. I det nya projektet trimmar du, skapar undertexter och publicerar som en egen ondemand-sändning."
+
+#: src/views/projects/VideoStatusRow.tsx
+msgid "A new video is waiting for your approval"
+msgstr "Ny video väntar på ditt godkännande"
+
 #: src/views/users/UsersView.tsx
 msgid "A reset email has been sent to {email}. The link is valid for one hour."
 msgstr "Ett återställningsmejl har skickats till {email}. Länken gäller i en timme."
+
+#: src/views/projects/OndemandView.tsx
+msgid "A video is being processed or waiting for your approval. Finish that first."
+msgstr "En video bearbetas eller väntar på ditt godkännande. Slutför det först."
 
 #: src/views/users/UsersView.tsx
 msgid "A welcome email with a one-time link is sent to {email}. The link is valid for 7 days. When the recipient clicks it, a personal PIN is created that is shown only once."
@@ -180,6 +225,10 @@ msgstr "Konto skapat"
 #: src/app/Shell.tsx
 msgid "Account settings"
 msgstr "Kontoinställningar"
+
+#: src/views/projects/VideoStatusRow.tsx
+msgid "Actions for the video"
+msgstr "Åtgärder för videon"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "active"
@@ -207,6 +256,10 @@ msgstr "Manuellt tillagd"
 msgid "Administration"
 msgstr "Administration"
 
+#: src/views/projects/forkLogic.ts
+msgid "After the latest break ({time})"
+msgstr "Efter senaste pausen ({time})"
+
 #: src/views/projects/CreateProjectDialog.tsx
 #: src/views/trash/TrashView.tsx
 msgid "Agenda"
@@ -228,6 +281,10 @@ msgstr "Dagordningar"
 msgid "All"
 msgstr "Alla"
 
+#: src/views/projects/OndemandView.tsx
+msgid "An external video cannot be trimmed."
+msgstr "En extern video kan inte trimmas."
+
 #: src/app/jobPhase.ts
 msgid "Analysing speaker changes"
 msgstr "Analyserar talarbyten"
@@ -240,9 +297,21 @@ msgstr "Utrop"
 msgid "Appearance"
 msgstr "Utseende"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Approve or ignore the uploaded file first."
+msgstr "Godkänn eller ignorera den uppladdade filen först."
+
+#: src/views/projects/OndemandView.tsx
+msgid "Approve uploaded video"
+msgstr "Godkänn uppladdad video"
+
 #: src/app/SharedDownloadsView.tsx
 msgid "Ask the sender to share the files again."
 msgstr "Be avsändaren att dela filerna på nytt."
+
+#: src/views/projects/ForkDialog.tsx
+msgid "At the time"
+msgstr "Vid klockan"
 
 #: src/app/Shell.tsx
 msgid "Auto"
@@ -255,6 +324,10 @@ msgstr "Tillbaka"
 #: src/app/LoginView.tsx
 msgid "Back to login"
 msgstr "Tillbaka till inloggningen"
+
+#: src/views/projects/forkLogic.ts
+msgid "Before the latest break ({time})"
+msgstr "Före senaste pausen ({time})"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Bitrate"
@@ -273,8 +346,13 @@ msgid "Break ends"
 msgstr "Paus slut"
 
 #: src/app/Shell.tsx
+#: src/views/projects/OndemandView.tsx
 msgid "Broadcast"
 msgstr "Sändning"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Broadcast in progress"
+msgstr "Sändning pågår"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Broadcasting"
@@ -292,9 +370,16 @@ msgstr "Sänder sedan"
 msgid "Broadcasts made"
 msgstr "Gjorda sändningar"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Can be edited when the recording is done"
+msgstr "Kan redigeras när inspelningen är klar"
+
 #: src/views/jobs/JobsView.tsx
 #: src/views/projects/CreateProjectDialog.tsx
+#: src/views/projects/ForkDialog.tsx
 #: src/views/projects/InheritLayoutDialog.tsx
+#: src/views/projects/OndemandView.tsx
+#: src/views/projects/UploadPanel.tsx
 #: src/views/users/UsersView.tsx
 msgid "Cancel"
 msgstr "Avbryt"
@@ -311,6 +396,10 @@ msgstr "Avbryt jobbet"
 msgid "Cancel the job?"
 msgstr "Avbryta jobbet?"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Cancel the upload"
+msgstr "Avbryt uppladdningen"
+
 #: src/views/jobs/JobsView.tsx
 msgid "Canceled"
 msgstr "Avbrutet"
@@ -323,6 +412,7 @@ msgstr "Går inte att radera medan signal tas emot"
 msgid "Cannot be torn down while a signal is being received"
 msgstr "Går inte att riva medan signal tas emot"
 
+#: src/views/projects/OndemandView.tsx
 #: src/views/projects/ProjectsView.tsx
 msgid "Captions"
 msgstr "Undertexter"
@@ -330,6 +420,18 @@ msgstr "Undertexter"
 #: src/app/jobActions.ts
 msgid "Captions · {name}"
 msgstr "Undertexter · {name}"
+
+#: src/views/projects/VideoStatusRow.tsx
+msgid "Captions and upload video"
+msgstr "Undertexter och ladda upp video"
+
+#: src/views/projects/VideoStatusRow.tsx
+msgid "Captions:"
+msgstr "Undertexter:"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Captions: {value}"
+msgstr "Undertexter: {value}"
 
 #: src/views/agendas/AgendasView.tsx
 #: src/views/namelists/NameListsView.tsx
@@ -342,12 +444,25 @@ msgid "Changes take effect in projects that have not been published yet. Publish
 msgstr "Ändringar slår igenom i projekt som ännu inte publicerats. Publicerade sändningar har en fryst kopia och påverkas inte."
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/OndemandView.tsx
 msgid "Chapters"
 msgstr "Kapitel"
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Chapters (offset counted from trim start)"
 msgstr "Kapitel (offset räknat från trimstart)"
+
+#: src/views/projects/draftActions.ts
+msgid "Chapters and captions are published."
+msgstr "Kapitel och undertexter är publicerade."
+
+#: src/views/projects/OndemandView.tsx
+msgid "Chapters: {value}"
+msgstr "Kapitel: {value}"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Check in the preview above. You cannot continue with chapters, trimming or publishing until you have chosen."
+msgstr "Kontrollera i förhandsvisningen ovan. Du kan inte gå vidare med kapitel, trimning eller publicering förrän du valt."
 
 #: src/app/SharedDownloadsView.tsx
 msgid "Check that you copied the whole link. Otherwise ask the sender to share the files again."
@@ -356,6 +471,10 @@ msgstr "Kontrollera att du har kopierat hela länken. Be annars avsändaren att 
 #: src/app/CredentialLinkView.tsx
 msgid "Checking the link…"
 msgstr "Kontrollerar länken…"
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Checking…"
+msgstr "Kontrollerar…"
 
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "Choose agenda"
@@ -368,6 +487,14 @@ msgstr "Välj annan…"
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "Choose name list"
 msgstr "Välj namnlista"
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Choose video file"
+msgstr "Välj videofil"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Choose which broadcast to use"
+msgstr "Välj vilken sändning som ska användas"
 
 #: src/views/projects/createProjectLists.ts
 msgid "Chosen: {name}"
@@ -492,6 +619,22 @@ msgstr "Kunde inte riva resursen."
 msgid "Create"
 msgstr "Skapa"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Create captions"
+msgstr "Skapa undertexter"
+
+#: src/views/projects/ForkDialog.tsx
+msgid "Create on-demand project"
+msgstr "Skapa ondemand-projekt"
+
+#: src/views/projects/ForkButton.tsx
+msgid "Create on-demand project: creates a new project from the broadcast (or the recording) to trim and publish as on demand"
+msgstr "Skapa ondemand-projekt: skapar ett nytt projekt av sändningen (eller inspelningen) att trimma och publicera som ondemand"
+
+#: src/views/projects/ForkDialog.tsx
+msgid "Create project"
+msgstr "Skapa projekt"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Created {created}"
 msgstr "Skapad {created}"
@@ -506,6 +649,7 @@ msgstr "Skapandet av undertexter stoppas och inget utkast sparas. Du kan starta 
 
 #: src/app/CredentialLinkView.tsx
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/ForkDialog.tsx
 msgid "Creating…"
 msgstr "Skapar…"
 
@@ -578,6 +722,10 @@ msgstr "Inaktiverade konton kan inte logga in men behålls i historiken — tidi
 msgid "Disappears"
 msgstr "Försvinner"
 
+#: src/views/projects/draftActions.ts
+msgid "Discard anyway"
+msgstr "Förkasta ändå"
+
 #: src/views/users/UsersView.tsx
 msgid "Domain"
 msgstr "Domän"
@@ -594,6 +742,10 @@ msgstr "Domän uppdaterad."
 msgid "Domains"
 msgstr "Domäner"
 
+#: src/views/projects/PublishProgressDialog.tsx
+msgid "Done"
+msgstr "Klart"
+
 #: src/app/SharedDownloadsView.tsx
 #: src/app/Shell.tsx
 #: src/views/archive/VideoArchiveView.tsx
@@ -606,6 +758,7 @@ msgid "Download · {name}"
 msgstr "Nedladdning · {name}"
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/RecordingDownload.tsx
 msgid "Download {fileName}"
 msgstr "Ladda ner {fileName}"
 
@@ -621,6 +774,10 @@ msgstr "Ladda ner Word-manus"
 #: src/views/namelists/NameListsView.tsx
 msgid "Draft"
 msgstr "Utkast"
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Drag a video file here, or click to choose"
+msgstr "Dra hit en videofil, eller klicka för att välja"
 
 #: src/views/namelists/NameListsView.tsx
 msgid "Duplicate"
@@ -639,6 +796,18 @@ msgstr "t.ex. Exempel kommun"
 msgid "e.g. example.com"
 msgstr "t.ex. exempel.se"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Edit captions"
+msgstr "Redigera undertexter"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Edit chapters"
+msgstr "Redigera kapitel"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Edit project"
+msgstr "Redigera projekt"
+
 #: src/views/users/UsersView.tsx
 msgid "email"
 msgstr "e-post"
@@ -653,9 +822,21 @@ msgstr "E-post"
 msgid "Enable account"
 msgstr "Aktivera konto"
 
+#: src/views/projects/ForkDialog.tsx
+msgid "End"
+msgstr "Sluta"
+
 #: src/views/projects/projectMode.ts
 msgid "End the live broadcast?"
 msgstr "Avsluta livesändningen?"
+
+#: src/views/projects/ForkDialog.tsx
+msgid "End time for the new project"
+msgstr "Sluttid för det nya projektet"
+
+#: src/views/projects/forkLogic.ts
+msgid "Enter a time as hh:mm."
+msgstr "Ange en tid som hh:mm."
 
 #: src/views/users/UsersView.tsx
 msgid "Enter a valid domain name, for example example.com."
@@ -664,6 +845,10 @@ msgstr "Ange ett giltigt domännamn, till exempel exempel.se."
 #: src/app/LoginView.tsx
 msgid "Enter a valid email address."
 msgstr "Ange en giltig e-postadress."
+
+#: src/views/projects/recordingSource.ts
+msgid "Enter the address of an HLS playlist."
+msgstr "Ange adressen till en HLS-spellista."
 
 #: src/views/users/UsersView.tsx
 msgid "Enter the organization name."
@@ -677,6 +862,26 @@ msgstr "Ange din e-postadress så skickar vi en länk där du får en ny PIN-kod
 msgid "Expired"
 msgstr "Utgången"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Export & import…"
+msgstr "Exportera & importera…"
+
+#: src/views/projects/VideoStatusRow.tsx
+msgid "Export and import"
+msgstr "Exportera och importera"
+
+#: src/views/projects/OndemandView.tsx
+msgid "external address"
+msgstr "extern adress"
+
+#: src/views/projects/OndemandView.tsx
+msgid "External address · cannot be trimmed"
+msgstr "Extern adress · kan inte trimmas"
+
+#: src/views/projects/OndemandView.tsx
+msgid "External video"
+msgstr "Extern video"
+
 #: src/app/SharedDownloadsView.tsx
 msgid "Fetching downloads…"
 msgstr "Hämtar nedladdningar…"
@@ -685,6 +890,11 @@ msgstr "Hämtar nedladdningar…"
 msgid "Fetching the audio"
 msgstr "Hämtar ljudet"
 
+#: src/views/projects/OndemandView.tsx
+#: src/views/projects/publishProgress.ts
+msgid "Fetching the chapters"
+msgstr "Hämtar kapitlen"
+
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "Fetching the projects…"
 msgstr "Hämtar projekten…"
@@ -692,6 +902,7 @@ msgstr "Hämtar projekten…"
 #: src/app/SharedDownloadsView.tsx
 #: src/views/projects/InheritLayoutDialog.tsx
 #: src/views/projects/ListPickerDialog.tsx
+#: src/views/projects/OndemandView.tsx
 msgid "Fetching…"
 msgstr "Hämtar…"
 
@@ -719,6 +930,30 @@ msgstr "Glömt PIN-kod?"
 msgid "Forgot your PIN?"
 msgstr "Glömt din PIN-kod?"
 
+#: src/views/projects/ForkDialog.tsx
+msgid "Fork is not made for tight clips: start and end are placed on the nearest segment and can be up to 10 seconds wider. You choose the exact start and end when you trim in the new project."
+msgstr "Fork är inte gjord för tajta klipp: start och slut läggs på närmaste segment och kan bli upp till 10 sekunder vidare. Du väljer exakt början och slut när du trimmar i det nya projektet."
+
+#: src/views/projects/ForkButton.tsx
+msgid "Fork…"
+msgstr "Fork…"
+
+#: src/views/projects/forkLogic.ts
+msgid "From the latest item: {item} ({time})"
+msgstr "Från senaste punkten: {item} ({time})"
+
+#: src/views/projects/forkLogic.ts
+msgid "From the start of the broadcast"
+msgstr "Från början av sändningen"
+
+#: src/views/projects/ForkDialog.tsx
+msgid "From the time"
+msgstr "Från klockan"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Generating…"
+msgstr "Genereras…"
+
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "Get anyway"
 msgstr "Hämta ändå"
@@ -730,6 +965,10 @@ msgstr "Hämta layout"
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "Get layout from project"
 msgstr "Hämta layout från projekt"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Get ready for on demand"
+msgstr "Gör klart för ondemand"
 
 #: src/views/projects/projectMode.ts
 msgid "Go back to Before?"
@@ -775,9 +1014,29 @@ msgstr "Vilande i {days} dygn. Kandidat för städning — en allokerad kanal up
 msgid "Idle resources cost nothing but count against the account's channel limit."
 msgstr "Vilande resurser kostar inget men räknas mot kontots kanaltak."
 
+#: src/views/projects/ForkDialog.tsx
+msgid "If the name is left empty, it becomes the project's name with start and end time."
+msgstr "Lämnas namnet tomt blir det projektets namn med start- och sluttid."
+
+#: src/views/projects/UploadPanel.tsx
+msgid "If the video is already at an address of its own, it does not need to be uploaded. The playlist (.m3u8) is used as it is and the video stays where it is. Such a video cannot be trimmed or downloaded as MP4."
+msgstr "Om videon redan ligger på en egen adress behöver den inte laddas upp. Spellistan (.m3u8) används som den är och videon ligger kvar där den är. En sådan video kan inte trimmas och inte laddas ned som MP4."
+
 #: src/app/LoginView.tsx
 msgid "If we have the address, we have sent an email with a link. The link is valid for one hour. Check your spam folder too."
 msgstr "Om adressen finns hos oss har vi skickat ett mejl med en länk. Länken gäller i en timme. Kontrollera även skräpposten."
+
+#: src/views/projects/OndemandView.tsx
+msgid "If you use the file, the project's earlier recordings (and any trimmed versions) are deleted and can be restored by an administrator from the Trash within {retentionDays} days:"
+msgstr "Om du använder filen raderas projektets tidigare inspelningar (och eventuella trimmade versioner) och kan återställas av en administratör från Papperskorgen inom {retentionDays} dagar:"
+
+#: src/views/projects/OndemandView.tsx
+msgid "If you use the file, the project's earlier recordings (and any trimmed versions) are deleted:"
+msgstr "Om du använder filen raderas projektets tidigare inspelningar (och eventuella trimmade versioner):"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Ignore the file"
+msgstr "Ignorera filen"
 
 #: src/views/projects/layoutInherit.ts
 msgid "Image"
@@ -794,8 +1053,13 @@ msgid "in {days} days"
 msgstr "om {days} dagar"
 
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/PublishProgressDialog.tsx
 msgid "In progress"
 msgstr "Pågår"
+
+#: src/views/projects/ForkDialog.tsx
+msgid "in this project and the stream is not interrupted. In the new project you trim, create captions and publish as a separate on-demand broadcast with its own link. The very latest seconds are not included."
+msgstr "i det här projektet och strömmen bryts inte. I det nya projektet trimmar du, skapar undertexter och publicerar som en egen ondemand-sändning med egen länk. De allra senaste sekunderna tas inte med."
 
 #: src/views/users/UsersView.tsx
 msgid "Inactive"
@@ -830,6 +1094,14 @@ msgstr "Inbjuden"
 msgid "Invited – has not signed in"
 msgstr "Inbjuden – har inte loggat in"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Is this the right file?"
+msgstr "Är det här rätt fil?"
+
+#: src/views/projects/PublishProgressDialog.tsx
+msgid "It can take a few minutes for long broadcasts. Leave this box open until publishing is done."
+msgstr "Det kan ta några minuter för långa sändningar. Lämna den här rutan öppen tills publiceringen är klar."
+
 #: src/views/trash/TrashView.tsx
 msgid "Items are purged automatically {period} after they were deleted. After that they cannot be restored."
 msgstr "Poster rensas automatiskt {period} efter att de tagits bort. Efter det går de inte att återställa."
@@ -846,6 +1118,14 @@ msgstr "Jobb försvinner av sig själva efter 7 dagar. Klara nedladdningar går 
 #: src/app/time.ts
 msgid "just now"
 msgstr "nyss"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Keep the earlier one — ignore the file"
+msgstr "Behåll tidigare — ignorera filen"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Last {when} by {actor}"
+msgstr "Senast {when} av {actor}"
 
 #: src/views/users/UsersView.tsx
 msgid "Last sign-in"
@@ -874,6 +1154,10 @@ msgstr "Lämna tomt för ungaps standardnyckel"
 #: src/app/Shell.tsx
 msgid "Light"
 msgstr "Ljust"
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Link address"
+msgstr "Koppla adress"
 
 #: src/views/projects/createProjectLists.ts
 msgid "Link to Meeting"
@@ -927,6 +1211,10 @@ msgstr "Logga ut"
 msgid "Logging in…"
 msgstr "Loggar in…"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Machine-generated, not reviewed."
+msgstr "Maskingenererade, inte granskade."
+
 #: src/views/agendas/AgendasView.tsx
 msgid "Make template"
 msgstr "Gör till mall"
@@ -979,6 +1267,10 @@ msgstr "Mitt konto"
 msgid "Name"
 msgstr "Namn"
 
+#: src/views/projects/ForkDialog.tsx
+msgid "Name (optional)"
+msgstr "Namn (valfritt)"
+
 #: src/views/projects/CreateProjectDialog.tsx
 #: src/views/trash/TrashView.tsx
 msgid "Name list"
@@ -989,6 +1281,10 @@ msgstr "Namnlista"
 #: src/views/users/UsersView.tsx
 msgid "Name lists"
 msgstr "Namnlistor"
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Name of the recording"
+msgstr "Namn på inspelningen"
 
 #: src/views/users/UsersView.tsx
 msgid "name@example.com"
@@ -1051,8 +1347,17 @@ msgid "No agenda, I will link one later"
 msgstr "Ingen dagordning, jag kopplar senare"
 
 #: src/views/projects/publishOutcome.ts
+#: src/views/projects/VideoStatusRow.tsx
 msgid "No captions"
 msgstr "Inga undertexter"
+
+#: src/views/projects/OndemandView.tsx
+msgid "No changes"
+msgstr "Inga ändringar"
+
+#: src/views/projects/OndemandView.tsx
+msgid "No chapters"
+msgstr "Inga kapitel"
 
 #: src/views/jobs/JobsView.tsx
 msgid "No finished jobs."
@@ -1106,6 +1411,14 @@ msgstr "Ingen resurs ännu."
 msgid "No signal. The resource is allocated and waiting for an encoder."
 msgstr "Ingen signal. Resursen är allokerad och väntar på enkoder."
 
+#: src/views/projects/OndemandView.tsx
+msgid "none"
+msgstr "inga"
+
+#: src/views/projects/OndemandView.tsx
+msgid "None"
+msgstr "Inga"
+
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "None (empty texts and default values)"
 msgstr "Ingen (tomma texter och standardvärden)"
@@ -1114,6 +1427,22 @@ msgstr "Ingen (tomma texter och standardvärden)"
 #: src/views/users/UsersView.tsx
 msgid "Not invited"
 msgstr "Ej inbjuden"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Not published"
+msgstr "Inte publicerat"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Not published yet."
+msgstr "Inte publicerade än."
+
+#: src/views/projects/OndemandView.tsx
+msgid "not trimmed"
+msgstr "ej trimmad"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Not trimmed"
+msgstr "Ej trimmad"
 
 #: src/views/agendas/AgendasView.tsx
 msgid "Not used"
@@ -1155,6 +1484,10 @@ msgstr "Ondemand publicerad"
 msgid "On demand updated"
 msgstr "Ondemand uppdaterad"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Only in After"
+msgstr "Bara i After"
+
 #: src/views/projects/ProjectsView.tsx
 msgid "Open"
 msgstr "Öppen"
@@ -1185,6 +1518,10 @@ msgstr "Öppnar projektet: {name}"
 msgid "Operator"
 msgstr "Operatör"
 
+#: src/views/projects/UploadPanel.tsx
+msgid "Or enter your own HLS URL"
+msgstr "Eller ange en egen HLS-URL"
+
 #: src/app/Shell.tsx
 msgid "Organisation"
 msgstr "Domän"
@@ -1193,9 +1530,25 @@ msgstr "Domän"
 msgid "Organization name"
 msgstr "Organisationens namn"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Other choices are locked until the video is done or the upload is canceled."
+msgstr "Övriga val är spärrade tills videon är klar eller uppladdningen avbryts."
+
 #: src/views/archive/VideoArchiveView.tsx
 msgid "outside the clip"
 msgstr "utanför klippet"
+
+#: src/views/projects/draftActions.ts
+msgid "Overwrite"
+msgstr "Skriv över"
+
+#: src/views/projects/draftActions.ts
+msgid "Overwrite and publish"
+msgstr "Skriv över och publicera"
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Own HLS URL"
+msgstr "Egen HLS-URL"
 
 #: src/views/agendas/AgendasView.tsx
 msgid "PDF documents"
@@ -1230,10 +1583,12 @@ msgid "Poster image"
 msgstr "Posterbild"
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/RecordingDownload.tsx
 msgid "Prepare again"
 msgstr "Förbered på nytt"
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/RecordingDownload.tsx
 msgid "Prepares a downloadable file (can take a few minutes). The file is kept for 7 days."
 msgstr "Förbereder en nedladdningsbar fil (kan ta några minuter). Filen sparas i 7 dagar."
 
@@ -1249,6 +1604,18 @@ msgstr "Förberedelsen av nedladdningen stoppas. Du kan starta en ny när som he
 msgid "Preparing the transcription"
 msgstr "Förbereder transkriberingen"
 
+#: src/views/projects/publishProgress.ts
+msgid "Preparing the trimmed video"
+msgstr "Förbereder den trimmade videon"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Present"
+msgstr "Finns"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Preview (ondemand)"
+msgstr "Preview (ondemand)"
+
 #: src/app/jobPhase.ts
 msgid "Processing"
 msgstr "Bearbetas"
@@ -1256,6 +1623,10 @@ msgstr "Bearbetas"
 #: src/views/jobs/JobsView.tsx
 msgid "Processing failed."
 msgstr "Bearbetningen misslyckades."
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Processing the uploaded video failed. Try again, or try another file."
+msgstr "Bearbetningen av den uppladdade videon misslyckades. Försök igen, eller prova en annan fil."
 
 #: src/views/jobs/JobsView.tsx
 msgid "Processing the video is stopped and the uploaded file is removed from the project. You can upload it again."
@@ -1273,13 +1644,58 @@ msgstr "Projekt"
 msgid "Projects"
 msgstr "Projekt"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Publish"
+msgstr "Publicera"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Publish changes"
+msgstr "Publicera ändringar"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Publish on demand"
+msgstr "Publicera ondemand"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Publish on demand?"
+msgstr "Publicera ondemand?"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Publish the changes?"
+msgstr "Publicera ändringarna?"
+
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Published"
 msgstr "Publicerad"
 
+#: src/views/projects/OndemandView.tsx
+msgctxt "project state"
+msgid "Published"
+msgstr "Publicerat"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Published with the project."
+msgstr "Publiceras med projektet."
+
 #: src/views/projects/publishOutcome.ts
 msgid "Publishing"
 msgstr "Publicerar"
+
+#: src/views/projects/publishProgress.ts
+msgid "Publishing and updating the player"
+msgstr "Publicerar och uppdaterar spelaren"
+
+#: src/views/projects/PublishProgressDialog.tsx
+msgid "Publishing on demand"
+msgstr "Publicerar ondemand"
+
+#: src/views/projects/PublishProgressDialog.tsx
+msgid "Publishing steps"
+msgstr "Steg i publiceringen"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Publishing the changes and updating the player"
+msgstr "Publicerar ändringarna och uppdaterar spelaren"
 
 #: src/views/projects/publishOutcome.ts
 msgid "Publishing was stopped"
@@ -1425,11 +1841,16 @@ msgstr "Samma lista som {project}: {list}"
 msgid "Save"
 msgstr "Spara"
 
+#: src/views/projects/publishProgress.ts
+msgid "Saving chapters and times"
+msgstr "Sparar kapitel och tider"
+
 #: src/app/jobPhase.ts
 msgid "Saving the result"
 msgstr "Sparar resultatet"
 
 #: src/app/Shell.tsx
+#: src/views/projects/OndemandView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Saving…"
 msgstr "Sparar…"
@@ -1504,6 +1925,7 @@ msgid "Share selected ({selectedCount})"
 msgstr "Dela valda ({selectedCount})"
 
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/RecordingDownload.tsx
 msgid "Share…"
 msgstr "Dela…"
 
@@ -1524,6 +1946,7 @@ msgid "Show all"
 msgstr "Visa alla"
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/RecordingDownload.tsx
 msgid "Show jobs"
 msgstr "Visa jobb"
 
@@ -1547,7 +1970,16 @@ msgstr "Storlek"
 msgid "Someone"
 msgstr "Någon"
 
+#: src/views/projects/draftActions.ts
+msgid "Someone else has changed chapters or trimming since you opened the editor."
+msgstr "Någon annan har ändrat kapitel eller trimning sedan du öppnade redigeraren."
+
+#: src/views/projects/draftActions.ts
+msgid "Someone else has saved the captions since you opened the editor."
+msgstr "Någon annan har sparat undertexterna sedan du öppnade redigeraren."
+
 #: src/app/optimistic.ts
+#: src/views/projects/OndemandView.tsx
 #: src/views/projects/ProjectsView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Something went wrong."
@@ -1577,26 +2009,56 @@ msgstr "fristående"
 msgid "Standalone"
 msgstr "Fristående"
 
+#: src/views/projects/ForkDialog.tsx
+msgid "Start"
+msgstr "Börja"
+
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "Start from layout"
 msgstr "Utgå från layout"
+
+#: src/views/projects/ForkDialog.tsx
+msgid "Start time for the new project"
+msgstr "Starttid för det nya projektet"
 
 #: src/views/jobs/JobsView.tsx
 msgid "Started by"
 msgstr "Startat av"
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/RecordingDownload.tsx
 msgid "Starting…"
 msgstr "Startar…"
 
 #: src/app/Shell.tsx
+#: src/views/projects/OndemandView.tsx
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Status"
 msgstr "Status"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Stop the encoder to publish on demand."
+msgstr "Stoppa enkodern för att publicera ondemand."
+
+#: src/views/projects/OndemandView.tsx
+msgid "Stop the encoder to trim and publish on demand. Or go back to Before if this was only a test."
+msgstr "Stoppa enkodern för att trimma och publicera ondemand. Eller gå tillbaka till Before om detta bara var en test."
+
 #: src/views/projects/ProjectsView.tsx
 msgid "Stop using as template"
 msgstr "Sluta använda som mall"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Summary"
+msgstr "Sammanfattning"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Switch broadcast"
+msgstr "Byt sändning"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Switch broadcast…"
+msgstr "Byt sändning…"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Tear down {teardownLabel}? The ingest server and stream key stop working. Recordings in the video archive are not affected."
@@ -1647,9 +2109,37 @@ msgstr "Text för inspelningen (Ondemand)"
 msgid "Text placement"
 msgstr "Textens placering"
 
+#: src/views/projects/UploadPanel.tsx
+msgid "That does not seem to be a video file."
+msgstr "Det där verkar inte vara en videofil."
+
+#: src/views/projects/recordingSource.ts
+msgid "That is not a valid address."
+msgstr "Det där är ingen giltig adress."
+
+#: src/views/projects/UploadPanel.tsx
+msgid "The address could not be linked."
+msgstr "Adressen kunde inte kopplas."
+
+#: src/views/projects/recordingSource.ts
+msgid "The address must not contain a user name or password."
+msgstr "Adressen får inte innehålla användarnamn eller lösenord."
+
+#: src/views/projects/recordingSource.ts
+msgid "The address must point to a .m3u8 file."
+msgstr "Adressen ska peka på en .m3u8-fil."
+
+#: src/views/projects/recordingSource.ts
+msgid "The address must start with https://."
+msgstr "Adressen måste börja med https://."
+
 #: src/views/projects/projectMode.ts
 msgid "The After message"
 msgstr "After-meddelandet"
+
+#: src/views/projects/OndemandView.tsx
+msgid "The anchoring to the video is not confirmed."
+msgstr "Förankringen mot videon är inte bekräftad."
 
 #: src/views/projects/projectMode.ts
 msgid "The audience sees the live broadcast again instead of the After message."
@@ -1671,17 +2161,57 @@ msgstr "Backend bekräftade inte den klickade punkten."
 msgid "The Before message"
 msgstr "Before-meddelandet"
 
+#: src/views/projects/ForkDialog.tsx
+msgid "The broadcast has been running since {start}."
+msgstr "Sändningen har pågått sedan {start}."
+
+#: src/views/projects/OndemandView.tsx
+msgid "The broadcast has ended"
+msgstr "Sändningen avslutad"
+
+#: src/views/projects/OndemandView.tsx
+msgid "The broadcast is set to Ondemand mode and everything below becomes visible to the viewers."
+msgstr "Sändningen sätts i Ondemand-läge och allt nedan blir synligt för tittarna."
+
 #: src/app/Shell.tsx
 msgid "The caption draft for {name} is ready and waiting for review."
 msgstr "Undertextutkastet för {name} är klart och väntar på granskning."
+
+#: src/views/projects/OndemandView.tsx
+msgid "The captions are machine-generated and not reviewed."
+msgstr "Undertexterna är maskingenererade och inte granskade."
 
 #: src/app/Shell.tsx
 msgid "The captions for {name} failed."
 msgstr "Undertexterna för {name} misslyckades."
 
+#: src/views/projects/draftActions.ts
+msgid "The changes are published."
+msgstr "Ändringarna är publicerade."
+
+#: src/views/projects/OndemandView.tsx
+msgid "The changes could not be published."
+msgstr "Ändringarna kunde inte publiceras."
+
+#: src/views/projects/OndemandView.tsx
+msgid "The changes to chapters and captions are released to the viewers."
+msgstr "Ändringarna i kapitel och undertexter släpps till tittarna."
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "The channel limit is reached ({limit}). Tear down an idle resource first."
 msgstr "Kanaltaket är nått ({limit}). Riv en vilande resurs först."
+
+#: src/views/projects/OndemandView.tsx
+msgid "The chapters' anchoring to the video is not confirmed. Confirm it in the editor."
+msgstr "Kapitlens förankring mot videon är inte bekräftad. Bekräfta den i redigeraren."
+
+#: src/views/projects/OndemandView.tsx
+msgid "The chosen broadcast is very short ({duration}) — check that it was not a test before you switch."
+msgstr "Den valda sändningen är väldigt kort ({duration}) — kontrollera att det inte var ett test innan du byter."
+
+#: src/views/projects/UploadPanel.tsx
+msgid "The current recording is replaced only when you have approved the new video."
+msgstr "Nuvarande inspelning ersätts först när du har godkänt den nya videon."
 
 #: src/views/users/UsersView.tsx
 msgid "The domain has no users."
@@ -1696,6 +2226,7 @@ msgid "The domain still has users and cannot be removed."
 msgstr "Domänen har användare kvar och kan inte tas bort."
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/useRecordingDownloads.ts
 msgid "The download could not be prepared."
 msgstr "Nedladdningen kunde inte förberedas."
 
@@ -1710,6 +2241,7 @@ msgid "The download for {name} failed."
 msgstr "Nedladdningen för {name} misslyckades."
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/RecordingDownload.tsx
 msgid "The download is being prepared. You will be notified when it is ready."
 msgstr "Nedladdningen förbereds. Du får en avisering när den är klar."
 
@@ -1720,6 +2252,10 @@ msgstr "Nedladdningen av {name} är klar."
 #: src/views/users/UsersView.tsx
 msgid "The end date must be after the start date."
 msgstr "Slutdatum måste vara efter startdatum."
+
+#: src/views/projects/forkLogic.ts
+msgid "The end must be after the start."
+msgstr "Slutet måste ligga efter början."
 
 #: src/views/projects/projectMode.ts
 msgid "The history from the broadcast/test is kept for the archive, but the After review ends and the audience sees the Before message."
@@ -1774,6 +2310,10 @@ msgstr "Länken slutar fungera direkt för alla mottagare. En nedladdning som re
 msgid "The live broadcast"
 msgstr "Livesändningen"
 
+#: src/views/projects/ForkDialog.tsx
+msgid "The live broadcast continues unchanged"
+msgstr "Livesändningen fortsätter oförändrad"
+
 #: src/views/jobs/JobsView.tsx
 msgid "The log could not be loaded."
 msgstr "Loggen kunde inte hämtas."
@@ -1806,6 +2346,14 @@ msgstr "Bearbetningen för {name} misslyckades."
 msgid "The project cannot be deleted right now"
 msgstr "Projektet går inte att radera just nu"
 
+#: src/views/projects/ForkDialog.tsx
+msgid "The project could not be created."
+msgstr "Projektet kunde inte skapas."
+
+#: src/views/projects/OndemandView.tsx
+msgid "The project is published. Withdraw the publication if you want to change the video."
+msgstr "Projektet är publicerat. Ta tillbaka publiceringen om du vill byta video."
+
 #: src/app/Shell.tsx
 msgid "the recording"
 msgstr "inspelningen"
@@ -1813,6 +2361,18 @@ msgstr "inspelningen"
 #: src/views/projects/projectMode.ts
 msgid "The recording"
 msgstr "Inspelningen"
+
+#: src/views/projects/ForkDialog.tsx
+msgid "The recording covers {start}–{end}."
+msgstr "Inspelningen gäller {start}–{end}."
+
+#: src/views/projects/OndemandView.tsx
+msgid "The recording is being processed"
+msgstr "Inspelningen bearbetas"
+
+#: src/views/projects/OndemandView.tsx
+msgid "The recording is being processed. Publishing is possible when it is done."
+msgstr "Inspelningen bearbetas. Publicering går när den är klar."
 
 #: src/views/projects/publishOutcome.ts
 msgid "The recording is published, but the project is closed, so viewers cannot see it yet."
@@ -1858,6 +2418,10 @@ msgstr "Talarbytena för {name} är analyserade. Word-manuset kan laddas ner med
 msgid "The step “{stepLabel}” failed. The error message was shown as a notification. On demand has not been updated, so you can try again."
 msgstr "Steget ”{stepLabel}” misslyckades. Felmeddelandet visades som en notis. Ondemand är inte uppdaterat, så du kan försöka igen."
 
+#: src/views/projects/forkLogic.ts
+msgid "The time is outside what can be chosen ({first}–{last})."
+msgstr "Tiden ligger utanför det som finns att välja ({first}–{last})."
+
 #: src/app/Shell.tsx
 msgid "The transcript could not be created."
 msgstr "Manuset kunde inte skapas."
@@ -1866,9 +2430,38 @@ msgstr "Manuset kunde inte skapas."
 msgid "The trash is empty."
 msgstr "Papperskorgen är tom."
 
+#: src/views/projects/OndemandView.tsx
+msgid "The trim is applied when you publish."
+msgstr "Trimningen tillämpas när du publicerar."
+
+#: src/views/projects/OndemandView.tsx
+msgid "The upload could not be canceled."
+msgstr "Uppladdningen kunde inte avbrytas."
+
+#: src/views/projects/UploadPanel.tsx
+msgid "The upload failed."
+msgstr "Uppladdningen misslyckades."
+
 #: src/app/Shell.tsx
 msgid "The video for {name} is processed and waiting for review."
 msgstr "Videon för {name} är bearbetad och väntar på granskning."
+
+#: src/views/projects/OndemandView.tsx
+msgid "The video is being converted for playback, which can take a few minutes depending on its length. You can leave the page — processing continues."
+msgstr "Videon konverteras för uppspelning, vilket kan ta några minuter beroende på längd. Du kan lämna sidan — bearbetningen fortsätter."
+
+#: src/views/projects/OndemandView.tsx
+#: src/views/projects/VideoStatusRow.tsx
+msgid "The video is being processed"
+msgstr "Videon bearbetas"
+
+#: src/views/projects/OndemandView.tsx
+msgid "The video is trimmed in the After mode."
+msgstr "Videon trimmas i läget After."
+
+#: src/views/projects/OndemandView.tsx
+msgid "The whole recording"
+msgstr "Hela inspelningen"
 
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "There are no other projects to get a layout from."
@@ -1877,6 +2470,14 @@ msgstr "Det finns inga andra projekt att hämta layout från."
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "This is replaced:"
 msgstr "Det här ersätts:"
+
+#: src/views/projects/PublishProgressDialog.tsx
+msgid "This is taking longer than usual, but the work is in progress. Leave this box open until publishing is done."
+msgstr "Det här tar längre tid än vanligt, men arbetet pågår. Lämna den här rutan öppen tills publiceringen är klar."
+
+#: src/views/projects/OndemandView.tsx
+msgid "This is taking unusually long — the broadcast may have been too short for AWS to save a recording."
+msgstr "Det här tar ovanligt lång tid — sändningen kan ha varit för kort för att AWS skulle spara en inspelning."
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "This version is published. The chapter list is frozen and no longer follows the project's agenda."
@@ -1914,9 +2515,22 @@ msgstr "Transkriberar"
 msgid "Trash"
 msgstr "Papperskorg"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Trim video"
+msgstr "Trimma video"
+
+#: src/views/projects/OndemandView.tsx
+msgid "trimmed"
+msgstr "trimmad"
+
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/OndemandView.tsx
 msgid "Trimmed"
 msgstr "Trimmad"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Trimmed · {duration}"
+msgstr "Trimmad · {duration}"
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Trimmed but not published. Publishing happens in the project's on-demand tab."
@@ -1942,9 +2556,25 @@ msgstr "Avpublicera"
 msgid "Unpublish the recording?"
 msgstr "Avpublicera inspelningen?"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Unpublished changes"
+msgstr "Opublicerade ändringar"
+
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "Unsaved changes in the player settings are lost."
 msgstr "Osparade ändringar i spelarinställningarna går förlorade."
+
+#: src/views/projects/forkLogic.ts
+msgid "Until now"
+msgstr "Till nu"
+
+#: src/views/projects/forkLogic.ts
+msgid "Until the end of the item: {item} ({time})"
+msgstr "Till slutet av punkten: {item} ({time})"
+
+#: src/views/projects/forkLogic.ts
+msgid "Until the end of the recording"
+msgstr "Till inspelningens slut"
 
 #: src/views/projects/ListPickerDialog.tsx
 msgid "Unused"
@@ -1958,13 +2588,41 @@ msgstr "oanvänd {days} d"
 msgid "Unused lists"
 msgstr "Oanvända"
 
+#: src/views/projects/UploadPanel.tsx
+msgid "Upload"
+msgstr "Ladda upp"
+
 #: src/app/jobActions.ts
 msgid "Upload · {name}"
 msgstr "Uppladdning · {name}"
 
+#: src/views/projects/UploadPanel.tsx
+msgid "Upload a finished video to {projectName}"
+msgstr "Ladda upp en färdig video till {projectName}"
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Upload another video instead"
+msgstr "Ladda upp en annan video i stället"
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Upload video"
+msgstr "Ladda upp video"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Uploaded video"
+msgstr "Uppladdad video"
+
+#: src/views/projects/UploadPanel.tsx
+msgid "Uploading…"
+msgstr "Laddar upp…"
+
 #: src/views/projects/ProjectsView.tsx
 msgid "Use as template"
 msgstr "Använd som mall"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Use this file"
+msgstr "Använd den här filen"
 
 #: src/views/agendas/AgendasView.tsx
 msgid "Used in"
@@ -1987,9 +2645,21 @@ msgstr "Användarens detaljer"
 msgid "Users"
 msgstr "Användare"
 
+#: src/views/projects/OndemandView.tsx
+msgid "Video"
+msgstr "Video"
+
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Video archive"
 msgstr "Videoarkiv"
+
+#: src/views/projects/VideoStatusRow.tsx
+msgid "Video status"
+msgstr "Videons status"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Video: {value}"
+msgstr "Video: {value}"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Viewers"
@@ -2006,6 +2676,14 @@ msgstr "Inspelningen syns nu för tittarna."
 #: src/views/projects/ProjectsView.tsx
 msgid "Visibility"
 msgstr "Synlighet"
+
+#: src/views/projects/OndemandView.tsx
+msgid "Wait until the recording is done before you trim and publish on demand."
+msgstr "Vänta tills inspelningen är klar innan du trimmar och publicerar ondemand."
+
+#: src/views/projects/PublishProgressDialog.tsx
+msgid "Waiting"
+msgstr "Väntar"
 
 #: src/app/CredentialLinkView.tsx
 msgid "Welcome, {name}!"
