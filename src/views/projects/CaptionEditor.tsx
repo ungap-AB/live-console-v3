@@ -73,6 +73,8 @@ interface CaptionEditorProps {
   trim?: EditorTrim
   /** UNG-247: projektet är publicerat: trimningen visas låst, med en väg till Avpublicera (redigeraren stängs först). */
   trimLock?: { onUnpublish: () => void }
+  /** UNG-274: redigeraren ligger bara som bakgrund bakom dialogen "Undertexterna skapas": går inte att nå, och lyssnar inte på tangenter. */
+  background?: boolean
   /** UNG-248: förra försöket att skapa undertexter misslyckades (felet), när projektet ännu saknar undertexter. */
   createFailed?: string
   /** UNG-249: det kapitelverktygen (import och förankring) behöver veta om projektet. Saknas det finns bara Tid här och Synk. */
@@ -146,7 +148,7 @@ function blurAfterMouse(event: MouseEvent) {
 // UNG-140/143: redigerare för undertexterna (mastern, original-tidslinje). Video med aktuell replik över bilden och en virtualiserad
 // radlista där texten rättas på plats. Rutor kan slås ihop (exakt tid), delas, orden kan flyttas mellan grannar, tider justeras,
 // rader läggs till och tas bort, och allt går att ångra tills man sparar. Sparas som en version (versionskontroll mot servern).
-export function CaptionEditor({ projectId, projectName, onClose, closeSignal, onSaved, onRegenerated, onChaptersSaved, trim, trimLock, createFailed, chapterTools, focus }: CaptionEditorProps) {
+export function CaptionEditor({ projectId, projectName, onClose, closeSignal, onSaved, onRegenerated, onChaptersSaved, trim, trimLock, createFailed, chapterTools, focus, background }: CaptionEditorProps) {
   const [master, setMaster] = useState<CaptionMaster | null>(null)
   // UNG-248: projektet har undertexter. Utan dem är redigeraren bara-kapitel-läget, med video och trimbalk, och Skapa undertexter i huvudet.
   const [hasCaptions, setHasCaptions] = useState(true)
@@ -199,7 +201,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   // Öppnad med Skapa undertexter (After) i ett projekt utan undertexter: frågan om att skapa dem visas direkt, en gång.
   const askedToCreate = useRef(false)
   useEffect(() => {
-    if (focus !== 'captions' || hasCaptions || !master || !canRegenerate || askedToCreate.current) return
+    if (background || focus !== 'captions' || hasCaptions || !master || !canRegenerate || askedToCreate.current) return
     askedToCreate.current = true
     setConfirmRegenerate(true)
   }, [focus, hasCaptions, master, canRegenerate])
@@ -1416,6 +1418,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   }, [closeSignal])
 
   useEffect(() => {
+    if (background) return
     function onKeyDown(event: KeyboardEvent) {
       const modifier = event.metaKey || event.ctrlKey
       if (modifier && (event.key === 'z' || event.key === 'Z')) {
@@ -1635,7 +1638,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   const pendingInfo = pendingMerge === null ? null : mergeInfo(cues, pendingMerge)
 
   return (
-    <div class="ce-scrim" role="dialog" aria-modal="true" aria-label="Redigera projekt">
+    <div class="ce-scrim" role={background ? undefined : 'dialog'} aria-modal={background ? undefined : 'true'} aria-label="Redigera projekt" aria-hidden={background ? 'true' : undefined} inert={background}>
       <header class="ce-head">
         <div class="ce-title">
           <h2>Redigera projekt</h2>

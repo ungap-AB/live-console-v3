@@ -506,7 +506,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
               onEntryKindChange={setCaptionKind}
             renderTrigger={renderTrigger}
               videoDurationSeconds={recording?.durationSeconds}
-              posterUrl={p.posterUrl}
               onChanged={() => {
                 setPreviewVersion((version) => version + 1)
                 void actions.refreshProject()
