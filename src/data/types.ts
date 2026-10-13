@@ -450,6 +450,9 @@ export interface CaptionMaster {
   legacy: boolean
   /** UNG-245: utkastets versionsnummer efter den här läsningen/sparningen. */
   draftRevision?: number
+  /** UNG-275: den del av originalet som undertexterna transkriberades för. Båda saknas = hela; slut saknas = till slutet. */
+  coveredStartSeconds?: number | null
+  coveredEndSeconds?: number | null
 }
 
 /** UNG-248: det redigeraren behöver även utan undertexter (originalets video och längd, trimmen, utkastets version). */

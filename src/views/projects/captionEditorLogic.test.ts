@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  MAX_LINE_LENGTH, activeCueIndex, canInsertLineBreak, changedIndexes, formatCueTime, hasLineWarning, lineInfo, rangeStatus, savePayload, scrollToReveal, windowRange,
+  MAX_LINE_LENGTH, activeCueIndex, canInsertLineBreak, changedIndexes, formatCueTime, hasLineWarning, lineInfo, rangeStatus, savePayload, scrollToReveal, uncoveredNotice, windowRange,
 } from './captionEditorLogic.ts'
 
 const cues = [
@@ -85,4 +85,13 @@ test('det som sparas är bara tid och text, i ordning', () => {
     { start: 1, end: 2, text: 'a' },
     { start: 3, end: 4, text: 'b' },
   ])
+})
+
+test('UNG-275: meddelandet om saknade undertexter visas bara när trimmen går utanför det transkriberade', () => {
+  assert.equal(uncoveredNotice(600, 3600, null, null), null)
+  assert.equal(uncoveredNotice(600, 3600, 570, 3630), null)
+  assert.equal(uncoveredNotice(600, 3600, 600.5, 3599.5), null) // en sekunds tolerans
+  assert.match(uncoveredNotice(300, 3600, 570, 3630) ?? '', /skapade för 00:09:30–01:00:30/)
+  assert.match(uncoveredNotice(300, 7200, 570, null) ?? '', /^Undertexterna är skapade från 00:09:30/)
+  assert.equal(uncoveredNotice(600, 7200, 570, undefined), null)
 })

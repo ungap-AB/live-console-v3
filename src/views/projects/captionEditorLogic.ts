@@ -76,6 +76,19 @@ export function rangeStatus(cue: Pick<CaptionCue, 'start' | 'end'>, publishedSta
   return 'inside'
 }
 
+/**
+ * UNG-275: undertexterna skapas bara för trimmen (± marginal). Går delen som publiceras (start–end, originalets tid) utanför det som
+ * transkriberats saknas undertexter där: då ett meddelande om det, annars null. Utan täckt intervall täcker undertexterna hela inspelningen.
+ */
+export function uncoveredNotice(start: number, end: number, coveredStart?: number | null, coveredEnd?: number | null): string | null {
+  if (coveredStart == null && coveredEnd == null) return null
+  const from = coveredStart ?? 0
+  const to = coveredEnd ?? Number.POSITIVE_INFINITY
+  if (start >= from - 1 && end <= to + 1) return null
+  const range = coveredEnd == null ? `från ${formatCueTime(from)}` : `för ${formatCueTime(from)}–${formatCueTime(to)}`
+  return `Undertexterna är skapade ${range}. Trimmen går utanför, och där saknas undertexter. Välj Skapa på nytt för att täcka hela trimmen.`
+}
+
 /** Tid som hh:mm:ss (hel sekund, avrundad nedåt), för listans kolumner. Interna tider behåller millisekunder. */
 export function formatCueTime(seconds: number): string {
   const total = Math.max(0, Math.floor(seconds + 1e-9))

@@ -12,7 +12,7 @@ import { ConfirmModal } from '../../components/ConfirmModal'
 import { Icon } from '../../components/Icon'
 import { formatHms } from '../../app/time'
 import {
-  activeCueIndex, formatCueTime, rangeStatus, savePayload,
+  activeCueIndex, formatCueTime, rangeStatus, savePayload, uncoveredNotice,
 } from './captionEditorLogic'
 import { rowPosition, scrollToRevealRow, uniformCueLayout, windowRows } from './rowLayout'
 import { chapterGroupInfo, collapsibleGroupIds, visibleChapters } from './chapterGroups'
@@ -1629,6 +1629,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   const publishedStart = trim ? trim.start : master?.publishedStartSeconds
   const publishedEnd = trim ? trim.end : master?.publishedEndSeconds
   const trimDuration = master?.originalDurationSeconds ?? 0
+  const uncovered = hasCaptions && master ? uncoveredNotice(publishedStart ?? 0, publishedEnd ?? trimDuration, master.coveredStartSeconds, master.coveredEndSeconds) : null
   const showTrim = Boolean(trim) && trimDuration > 0
   // UNG-247: i ett publicerat projekt visas den publicerade trimningen, låst.
   const lockedRange = !trim && trimLock && master?.publishedStartSeconds != null && master?.publishedEndSeconds != null
@@ -1705,6 +1706,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       {createFailed && !hasCaptions && (
         <div key="create-failed" class="ce-banner ce-error" role="alert">Undertexterna kunde inte skapas: {createFailed} Försök igen med Skapa undertexter.</div>
       )}
+      {uncovered && <div key="uncovered" class="ce-banner ce-warn" role="status">{uncovered}</div>}
       {notice && (
         <div key="notice" class="ce-banner ce-warn ce-notice" role="status">
           {notice}
