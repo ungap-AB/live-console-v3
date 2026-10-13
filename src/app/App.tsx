@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../data'
 import { onSessionLost } from '../data/http/fetchJson'
@@ -54,7 +55,7 @@ export function App() {
         setAuth((current) => {
           if (current.status !== 'authed') return current
           setLoginEmail(current.user.email)
-          setSessionNotice('Din session har gått ut. Logga in igen så fortsätter du där du var.')
+          setSessionNotice(t`Your session has expired. Log in again and you will continue where you were.`)
           return { status: 'anon' }
         })
       }),
@@ -187,7 +188,7 @@ export function App() {
       />
     )
   }
-  if (auth.status === 'loading') return <div class="login-screen">Laddar…</div>
+  if (auth.status === 'loading') return <div class="login-screen">{t`Loading…`}</div>
   if (auth.status === 'anon') return <LoginView onLogin={login} initialEmail={loginEmail ?? ''} notice={sessionNotice} />
 
   // UNG-186: projektraden i menyn har bara "+ Nytt", och den syns alltid. Från en annan sida går den först till Projekt-vyn och öppnar

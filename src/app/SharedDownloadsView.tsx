@@ -1,3 +1,4 @@
+import { plural, t } from '@lingui/core/macro'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../data'
 import type { PublicShare, PublicShareItem } from '../data/types'
@@ -45,7 +46,7 @@ export function SharedDownloadsView({ token }: SharedDownloadsViewProps) {
       if (code === 'file_unavailable') setGone((prev) => [...prev, item.id])
       // Delningen hann återkallas eller gå ut medan sidan var öppen: visa rätt besked i stället för ett fel.
       if (code === 'share_invalid') setAttempt((value) => value + 1)
-      setErrors((prev) => ({ ...prev, [item.id]: err instanceof Error ? err.message : 'Nedladdningen misslyckades.' }))
+      setErrors((prev) => ({ ...prev, [item.id]: err instanceof Error ? err.message : t`The download failed.` }))
     } finally {
       setBusyId(null)
     }
@@ -56,12 +57,12 @@ export function SharedDownloadsView({ token }: SharedDownloadsViewProps) {
       <div class="login-card shared-card">
         <img class="login-logo theme-light-only" src={logoLightUrl} alt="ungap" />
         <img class="login-logo theme-dark-only" src={logoDarkUrl} alt="ungap" />
-        {loaded.state === 'loading' && <p class="login-sub" role="status">Hämtar nedladdningar…</p>}
+        {loaded.state === 'loading' && <p class="login-sub" role="status">{t`Fetching downloads…`}</p>}
         {loaded.state === 'failed' && (
           <>
-            <p class="login-sub">Länken kunde inte kontrolleras</p>
-            <p class="login-note">Något gick fel. Försök igen om en stund.</p>
-            <button class="btn login-submit" type="button" onClick={() => setAttempt((value) => value + 1)}>Försök igen</button>
+            <p class="login-sub">{t`The link could not be checked`}</p>
+            <p class="login-note">{t`Something went wrong. Try again in a while.`}</p>
+            <button class="btn login-submit" type="button" onClick={() => setAttempt((value) => value + 1)}>{t`Try again`}</button>
           </>
         )}
         {loaded.state === 'ready' && <ShareBody share={loaded.share} busyId={busyId} errors={errors} gone={gone} onDownload={(item) => void download(item)} />}
@@ -82,33 +83,35 @@ function ShareBody({ share, busyId, errors, gone, onDownload }: ShareBodyProps) 
   if (share.status === 'unknown') {
     return (
       <>
-        <p class="shared-title">Länken fungerar inte</p>
-        <p class="login-note">Kontrollera att du har kopierat hela länken. Be annars avsändaren att dela filerna på nytt.</p>
+        <p class="shared-title">{t`The link does not work`}</p>
+        <p class="login-note">{t`Check that you copied the whole link. Otherwise ask the sender to share the files again.`}</p>
       </>
     )
   }
   if (share.status === 'expired') {
     return (
       <>
-        <p class="shared-title">Länken har gått ut</p>
-        <p class="login-note">Be avsändaren att dela filerna på nytt.</p>
+        <p class="shared-title">{t`The link has expired`}</p>
+        <p class="login-note">{t`Ask the sender to share the files again.`}</p>
       </>
     )
   }
   if (share.status === 'revoked') {
     return (
       <>
-        <p class="shared-title">Länken är återkallad</p>
-        <p class="login-note">Avsändaren har dragit tillbaka delningen. Kontakta avsändaren om du behöver filerna.</p>
+        <p class="shared-title">{t`The link has been revoked`}</p>
+        <p class="login-note">{t`The sender has withdrawn the share. Contact the sender if you need the files.`}</p>
       </>
     )
   }
 
   const items = share.items ?? []
+  const sender = share.senderName ?? t`Someone`
+  const fileCount = items.length
   return (
     <>
       <p class="shared-title">
-        {share.senderName ?? 'Någon'} har delat {items.length === 1 ? 'en fil' : `${items.length} filer`} med dig
+        {plural(fileCount, { one: `${sender} has shared one file with you`, other: `${sender} has shared # files with you` })}
       </p>
       {share.message && <p class="shared-message">{share.message}</p>}
       <ul class="shared-list">
@@ -122,10 +125,10 @@ function ShareBody({ share, busyId, errors, gone, onDownload }: ShareBodyProps) 
                 {item.sizeBytes ? <span class="shared-size"> · {formatBytes(item.sizeBytes)}</span> : null}
               </span>
               {unavailable ? (
-                <span class="shared-size">Inte längre tillgänglig</span>
+                <span class="shared-size">{t`No longer available`}</span>
               ) : (
                 <button class="btn btn-sm btn-primary" type="button" disabled={busyId === item.id} onClick={() => onDownload(item)}>
-                  {busyId === item.id ? 'Hämtar…' : 'Ladda ner'}
+                  {busyId === item.id ? t`Fetching…` : t`Download`}
                 </button>
               )}
               {errors[item.id] && <span class="shared-error" role="alert">{errors[item.id]}</span>}
@@ -133,7 +136,7 @@ function ShareBody({ share, busyId, errors, gone, onDownload }: ShareBodyProps) 
           )
         })}
       </ul>
-      {share.expiresAtUtc && <p class="shared-note">Länken gäller till {formatDateTime(share.expiresAtUtc)}.</p>}
+      {share.expiresAtUtc && <p class="shared-note">{t`The link is valid until ${{ date: formatDateTime(share.expiresAtUtc) }}.`}</p>}
     </>
   )
 }

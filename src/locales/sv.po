@@ -7,6 +7,10 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: sv\n"
 
+#: src/app/Shell.tsx
+msgid "{activeJobs} in progress"
+msgstr "{activeJobs} pågår"
+
 #: src/views/projects/publishOutcome.ts
 msgid "{chapterCount, plural, =0 {No chapters} one {# chapter} other {# chapters}}"
 msgstr "{chapterCount, plural, =0 {Inga kapitel} one {# kapitel} other {# kapitel}}"
@@ -15,13 +19,229 @@ msgstr "{chapterCount, plural, =0 {Inga kapitel} one {# kapitel} other {# kapite
 msgid "{cueCount, plural, one {Captions: {label} ({cues} line)} other {Captions: {label} ({cues} lines)}}"
 msgstr "{cueCount, plural, one {Undertexter: {label} ({cues} repliker)} other {Undertexter: {label} ({cues} repliker)}}"
 
+#: src/app/SharedDownloadsView.tsx
+msgid "{fileCount, plural, one {{sender} has shared one file with you} other {{sender} has shared # files with you}}"
+msgstr "{fileCount, plural, one {{sender} har delat en fil med dig} other {{sender} har delat # filer med dig}}"
+
+#: src/app/time.ts
+msgid "{hours} h ago"
+msgstr "{hours} tim sedan"
+
+#: src/app/time.ts
+msgid "{minutes} min ago"
+msgstr "{minutes} min sedan"
+
+#: src/app/Shell.tsx
+msgid "{newFinished} done"
+msgstr "{newFinished} klara"
+
+#: src/app/Shell.tsx
+msgid "Account settings"
+msgstr "Kontoinställningar"
+
+#: src/app/Shell.tsx
+msgid "Active"
+msgstr "Aktiv"
+
+#: src/app/Shell.tsx
+msgid "Administration"
+msgstr "Administration"
+
+#: src/app/Shell.tsx
+msgid "Agendas"
+msgstr "Dagordningar"
+
+#: src/app/jobPhase.ts
+msgid "Analysing speaker changes"
+msgstr "Analyserar talarbyten"
+
+#: src/app/Shell.tsx
+msgid "Appearance"
+msgstr "Utseende"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "Ask the sender to share the files again."
+msgstr "Be avsändaren att dela filerna på nytt."
+
+#: src/app/Shell.tsx
+msgid "Auto"
+msgstr "Auto"
+
+#: src/app/LoginView.tsx
+msgid "Back to login"
+msgstr "Tillbaka till inloggningen"
+
+#: src/app/Shell.tsx
+msgid "Broadcast"
+msgstr "Sändning"
+
+#: src/app/jobActions.ts
+msgid "Captions · {name}"
+msgstr "Undertexter · {name}"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "Check that you copied the whole link. Otherwise ask the sender to share the files again."
+msgstr "Kontrollera att du har kopierat hela länken. Be annars avsändaren att dela filerna på nytt."
+
+#: src/app/CredentialLinkView.tsx
+msgid "Checking the link…"
+msgstr "Kontrollerar länken…"
+
+#: src/app/CredentialLinkView.tsx
+msgid "Click the button to activate your account. You will then get your personal PIN."
+msgstr "Klicka på knappen för att aktivera ditt konto. Du får då din personliga PIN-kod."
+
+#: src/app/CredentialLinkView.tsx
+msgid "Click the button to get a new PIN. Your old PIN then stops working."
+msgstr "Klicka på knappen för att få en ny PIN-kod. Din gamla PIN-kod slutar då gälla."
+
+#: src/app/Shell.tsx
 #: src/views/projects/PublishOutcomeDialog.tsx
 msgid "Close"
 msgstr "Stäng"
 
+#: src/app/Shell.tsx
+msgid "Content"
+msgstr "Innehåll"
+
+#: src/app/Shell.tsx
+msgid "Contract period"
+msgstr "Avtalsperiod"
+
+#: src/app/jobPhase.ts
+msgid "Converting"
+msgstr "Konverterar"
+
+#: src/app/jobPhase.ts
+msgid "Correcting and building captions"
+msgstr "Rättar och bygger undertexter"
+
+#: src/app/LoginView.tsx
+msgid "Could not log in."
+msgstr "Kunde inte logga in."
+
+#: src/app/CredentialLinkView.tsx
+msgid "Creating…"
+msgstr "Skapar…"
+
+#: src/app/Shell.tsx
+msgid "Dark"
+msgstr "Mörkt"
+
+#: src/app/Shell.tsx
+msgid "Disabled"
+msgstr "Inaktiverad"
+
+#: src/app/SharedDownloadsView.tsx
+#: src/app/Shell.tsx
+msgid "Download"
+msgstr "Ladda ner"
+
+#: src/app/jobActions.ts
+msgid "Download · {name}"
+msgstr "Nedladdning · {name}"
+
+#: src/app/Shell.tsx
+msgid "Download Word transcript"
+msgstr "Ladda ner Word-manus"
+
+#: src/app/LoginView.tsx
+#: src/app/Shell.tsx
+msgid "Email"
+msgstr "E-post"
+
+#: src/app/LoginView.tsx
+msgid "Enter a valid email address."
+msgstr "Ange en giltig e-postadress."
+
+#: src/app/LoginView.tsx
+msgid "Enter your email address and we will send you a link where you get a new PIN."
+msgstr "Ange din e-postadress så skickar vi en länk där du får en ny PIN-kod."
+
+#: src/app/SharedDownloadsView.tsx
+msgid "Fetching downloads…"
+msgstr "Hämtar nedladdningar…"
+
+#: src/app/jobPhase.ts
+msgid "Fetching the audio"
+msgstr "Hämtar ljudet"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "Fetching…"
+msgstr "Hämtar…"
+
+#: src/app/LoginView.tsx
+msgid "Forgot PIN?"
+msgstr "Glömt PIN-kod?"
+
+#: src/app/LoginView.tsx
+msgid "Forgot your PIN?"
+msgstr "Glömt din PIN-kod?"
+
+#: src/app/LoginView.tsx
+msgid "If we have the address, we have sent an email with a link. The link is valid for one hour. Check your spam folder too."
+msgstr "Om adressen finns hos oss har vi skickat ett mejl med en länk. Länken gäller i en timme. Kontrollera även skräpposten."
+
+#: src/app/Shell.tsx
+msgid "Invited"
+msgstr "Inbjuden"
+
+#: src/app/Shell.tsx
+msgid "Jobs"
+msgstr "Jobb"
+
+#: src/app/time.ts
+msgid "just now"
+msgstr "nyss"
+
+#: src/app/Shell.tsx
+msgid "Light"
+msgstr "Ljust"
+
+#: src/app/Shell.tsx
+msgctxt "navigation"
+msgid "Live"
+msgstr "Live"
+
+#: src/app/App.tsx
+msgid "Loading…"
+msgstr "Laddar…"
+
+#: src/app/LoginView.tsx
+msgid "Log in"
+msgstr "Logga in"
+
+#: src/app/Shell.tsx
+msgid "Log out"
+msgstr "Logga ut"
+
+#: src/app/LoginView.tsx
+msgid "Logging in…"
+msgstr "Loggar in…"
+
+#: src/app/Shell.tsx
+msgid "My account"
+msgstr "Mitt konto"
+
+#: src/app/Shell.tsx
+msgid "Name"
+msgstr "Namn"
+
+#: src/app/Shell.tsx
+msgid "Name lists"
+msgstr "Namnlistor"
+
 #: src/views/projects/publishOutcome.ts
 msgid "No captions"
 msgstr "Inga undertexter"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "No longer available"
+msgstr "Inte längre tillgänglig"
+
+#: src/app/Shell.tsx
+msgid "Not invited"
+msgstr "Ej inbjuden"
 
 #: src/views/projects/publishOutcome.ts
 msgid "On demand published"
@@ -31,9 +251,41 @@ msgstr "Ondemand publicerad"
 msgid "On demand updated"
 msgstr "Ondemand uppdaterad"
 
+#: src/app/Shell.tsx
+msgid "Open menu"
+msgstr "Öppna meny"
+
+#: src/app/Shell.tsx
+msgid "Open the project"
+msgstr "Öppna projektet"
+
 #: src/views/projects/PublishOutcomeDialog.tsx
 msgid "Open to viewers"
 msgstr "Öppna för tittare"
+
+#: src/app/Shell.tsx
+msgid "Organisation"
+msgstr "Domän"
+
+#: src/app/LoginView.tsx
+msgid "PIN"
+msgstr "PIN-kod"
+
+#: src/app/jobPhase.ts
+msgid "Preparing the audio"
+msgstr "Förbereder ljudet"
+
+#: src/app/jobPhase.ts
+msgid "Preparing the transcription"
+msgstr "Förbereder transkriberingen"
+
+#: src/app/jobPhase.ts
+msgid "Processing"
+msgstr "Bearbetas"
+
+#: src/app/Shell.tsx
+msgid "Projects"
+msgstr "Projekt"
 
 #: src/views/projects/publishOutcome.ts
 msgid "Publishing"
@@ -43,13 +295,183 @@ msgstr "Publicerar"
 msgid "Publishing was stopped"
 msgstr "Publiceringen avbröts"
 
+#: src/app/jobPhase.ts
+msgid "Queued"
+msgstr "Köad"
+
+#: src/app/jobPhase.ts
+msgid "Reading the file"
+msgstr "Läser filen"
+
+#: src/app/CredentialLinkView.tsx
+msgid "Reset your PIN"
+msgstr "Återställ din PIN-kod"
+
+#: src/app/Shell.tsx
+msgid "Save"
+msgstr "Spara"
+
+#: src/app/jobPhase.ts
+msgid "Saving the result"
+msgstr "Sparar resultatet"
+
+#: src/app/Shell.tsx
+msgid "Saving…"
+msgstr "Sparar…"
+
+#: src/app/LoginView.tsx
+msgid "Send reset link"
+msgstr "Skicka återställningslänk"
+
+#: src/app/LoginView.tsx
+msgid "Sending…"
+msgstr "Skickar…"
+
+#: src/app/CredentialLinkView.tsx
+msgid "Show my PIN"
+msgstr "Visa min PIN-kod"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "Someone"
+msgstr "Någon"
+
+#: src/app/optimistic.ts
+msgid "Something went wrong."
+msgstr "Något gick fel."
+
+#: src/app/SharedDownloadsView.tsx
+msgid "Something went wrong. Try again in a while."
+msgstr "Något gick fel. Försök igen om en stund."
+
+#: src/app/jobActions.ts
+msgid "Speaker changes · {name}"
+msgstr "Talarbyten · {name}"
+
+#: src/app/Shell.tsx
+msgid "Status"
+msgstr "Status"
+
+#: src/app/Shell.tsx
+msgid "The caption draft for {name} is ready and waiting for review."
+msgstr "Undertextutkastet för {name} är klart och väntar på granskning."
+
+#: src/app/Shell.tsx
+msgid "The captions for {name} failed."
+msgstr "Undertexterna för {name} misslyckades."
+
+#: src/app/SharedDownloadsView.tsx
+#: src/app/Shell.tsx
+msgid "The download failed."
+msgstr "Nedladdningen misslyckades."
+
+#: src/app/Shell.tsx
+msgid "The download for {name} failed."
+msgstr "Nedladdningen för {name} misslyckades."
+
+#: src/app/Shell.tsx
+msgid "The download of {name} is ready."
+msgstr "Nedladdningen av {name} är klar."
+
+#: src/app/SharedDownloadsView.tsx
+msgid "The link could not be checked"
+msgstr "Länken kunde inte kontrolleras"
+
+#: src/app/CredentialLinkView.tsx
+msgid "The link could not be used."
+msgstr "Länken kunde inte användas."
+
+#: src/app/CredentialLinkView.tsx
+#: src/app/SharedDownloadsView.tsx
+msgid "The link does not work"
+msgstr "Länken fungerar inte"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "The link has been revoked"
+msgstr "Länken är återkallad"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "The link has expired"
+msgstr "Länken har gått ut"
+
+#: src/app/CredentialLinkView.tsx
+msgid "The link has expired or has already been used. Ask for a new invitation."
+msgstr "Länken har gått ut eller har redan använts. Be om en ny inbjudan."
+
+#: src/app/CredentialLinkView.tsx
+msgid "The link has expired or has already been used. Ask for a new reset."
+msgstr "Länken har gått ut eller har redan använts. Be om en ny återställning."
+
+#: src/app/SharedDownloadsView.tsx
+msgid "The link is valid until {date}."
+msgstr "Länken gäller till {date}."
+
+#: src/app/Shell.tsx
+msgid "The processing for {name} failed."
+msgstr "Bearbetningen för {name} misslyckades."
+
+#: src/app/Shell.tsx
+msgid "the recording"
+msgstr "inspelningen"
+
 #: src/views/projects/publishOutcome.ts
 msgid "The recording is published, but the project is closed, so viewers cannot see it yet."
 msgstr "Inspelningen är publicerad, men projektet är stängt så tittarna ser den inte än."
 
+#: src/app/SharedDownloadsView.tsx
+msgid "The sender has withdrawn the share. Contact the sender if you need the files."
+msgstr "Avsändaren har dragit tillbaka delningen. Kontakta avsändaren om du behöver filerna."
+
+#: src/app/Shell.tsx
+msgid "The speaker change analysis for {name} failed."
+msgstr "Analysen av talarbyten för {name} misslyckades."
+
+#: src/app/Shell.tsx
+msgid "The speaker changes for {name} are analysed. The Word transcript can be downloaded with speakers."
+msgstr "Talarbytena för {name} är analyserade. Word-manuset kan laddas ner med talare."
+
 #: src/views/projects/publishOutcome.ts
 msgid "The step “{stepLabel}” failed. The error message was shown as a notification. On demand has not been updated, so you can try again."
 msgstr "Steget ”{stepLabel}” misslyckades. Felmeddelandet visades som en notis. Ondemand är inte uppdaterat, så du kan försöka igen."
+
+#: src/app/Shell.tsx
+msgid "The transcript could not be created."
+msgstr "Manuset kunde inte skapas."
+
+#: src/app/Shell.tsx
+msgid "The video for {name} is processed and waiting for review."
+msgstr "Videon för {name} är bearbetad och väntar på granskning."
+
+#: src/app/CredentialLinkView.tsx
+msgid "To login"
+msgstr "Till inloggningen"
+
+#: src/app/time.ts
+msgid "today"
+msgstr "idag"
+
+#: src/app/jobPhase.ts
+msgid "Transcribing"
+msgstr "Transkriberar"
+
+#: src/app/Shell.tsx
+msgid "Trash"
+msgstr "Papperskorg"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "Try again"
+msgstr "Försök igen"
+
+#: src/app/jobActions.ts
+msgid "unknown recording"
+msgstr "okänd inspelning"
+
+#: src/app/jobActions.ts
+msgid "Upload · {name}"
+msgstr "Uppladdning · {name}"
+
+#: src/app/Shell.tsx
+msgid "Users"
+msgstr "Användare"
 
 #: src/views/projects/publishOutcome.ts
 msgid "Viewers can now see the changes."
@@ -58,3 +480,35 @@ msgstr "Ändringarna syns nu för tittarna."
 #: src/views/projects/publishOutcome.ts
 msgid "Viewers can now see the recording."
 msgstr "Inspelningen syns nu för tittarna."
+
+#: src/app/CredentialLinkView.tsx
+msgid "Welcome, {name}!"
+msgstr "Välkommen, {name}!"
+
+#: src/app/LoginView.tsx
+msgid "Welcome, please log in"
+msgstr "Välkommen att logga in"
+
+#: src/app/CredentialLinkView.tsx
+msgid "Welcome!"
+msgstr "Välkommen!"
+
+#: src/app/CredentialLinkView.tsx
+msgid "Write it down now — it is only shown once. You log in with {email} and this PIN."
+msgstr "Anteckna den nu — den visas bara en gång. Du loggar in med {email} och den här PIN-koden."
+
+#: src/app/CredentialLinkView.tsx
+msgid "Your account is activated"
+msgstr "Ditt konto är aktiverat"
+
+#: src/app/CredentialLinkView.tsx
+msgid "Your new PIN"
+msgstr "Din nya PIN-kod"
+
+#: src/app/CredentialLinkView.tsx
+msgid "Your personal PIN:"
+msgstr "Din personliga PIN-kod:"
+
+#: src/app/App.tsx
+msgid "Your session has expired. Log in again and you will continue where you were."
+msgstr "Din session har gått ut. Logga in igen så fortsätter du där du var."

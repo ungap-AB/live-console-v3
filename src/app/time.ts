@@ -1,3 +1,5 @@
+import { i18n } from '@lingui/core'
+import { t } from '@lingui/core/macro'
 export function formatHms(totalSeconds: number): string {
   const s = Math.max(0, Math.round(totalSeconds))
   const h = Math.floor(s / 3600)
@@ -32,7 +34,7 @@ export function formatBytes(bytes: number): string {
 }
 
 export function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('sv-SE', {
+  return new Date(iso).toLocaleString(i18n.locales, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -42,7 +44,7 @@ export function formatDateTime(iso: string): string {
 }
 
 export function formatLocalTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('sv-SE', {
+  return new Date(iso).toLocaleTimeString(i18n.locales, {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
@@ -51,23 +53,23 @@ export function formatLocalTime(iso: string): string {
 
 export function formatDate(iso: string | undefined): string {
   if (!iso) return '–'
-  return new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(i18n.locales, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 // Kompakt datum för listrader ("idag"/"17 sep") — se Live Console Dark Mode
 // - take 2 (Projekt-listans nya datumkolumn).
 export function formatShortDate(iso: string): string {
   const d = new Date(iso)
-  if (d.toDateString() === new Date().toDateString()) return 'idag'
-  return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' })
+  if (d.toDateString() === new Date().toDateString()) return t`today`
+  return d.toLocaleDateString(i18n.locales, { day: 'numeric', month: 'short' })
 }
 
 // "nyss", "5 min sedan", "2 tim sedan", annars datum — för jobbfältet.
 export function formatAgo(iso: string): string {
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000)
-  if (minutes < 1) return 'nyss'
-  if (minutes < 60) return `${minutes} min sedan`
+  if (minutes < 1) return t`just now`
+  if (minutes < 60) return t`${minutes} min ago`
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} tim sedan`
+  if (hours < 24) return t`${hours} h ago`
   return formatShortDate(iso)
 }

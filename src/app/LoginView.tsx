@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useState } from 'preact/hooks'
 import { client } from '../data'
 import type { CurrentUser } from '../data/types'
@@ -25,7 +26,7 @@ export function LoginView({ onLogin, initialEmail = '', notice }: LoginViewProps
     e.preventDefault()
     setError(null)
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError('Ange en giltig e-postadress.')
+      setError(t`Enter a valid email address.`)
       return
     }
     setLoading(true)
@@ -38,7 +39,7 @@ export function LoginView({ onLogin, initialEmail = '', notice }: LoginViewProps
       const user = await client.auth.login(email, pin)
       onLogin(user)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Kunde inte logga in.')
+      setError(err instanceof Error ? err.message : t`Could not log in.`)
     } finally {
       setLoading(false)
     }
@@ -49,14 +50,14 @@ export function LoginView({ onLogin, initialEmail = '', notice }: LoginViewProps
       <form class="login-card" onSubmit={submit}>
         <img class="login-logo theme-light-only" src={logoLightUrl} alt="ungap" />
         <img class="login-logo theme-dark-only" src={logoDarkUrl} alt="ungap" />
-        <p class="login-sub">{resetting ? 'Glömt din PIN-kod?' : 'Välkommen att logga in'}</p>
+        <p class="login-sub">{resetting ? t`Forgot your PIN?` : t`Welcome, please log in`}</p>
         {notice && !resetting && (
           <p class="login-note" role="status">
             {notice}
           </p>
         )}
         <label class="login-field">
-          E-post
+          {t`Email`}
           <input
             type="email"
             required
@@ -68,21 +69,21 @@ export function LoginView({ onLogin, initialEmail = '', notice }: LoginViewProps
         {resetting ? (
           resetSent ? (
             <p class="login-note" role="status">
-              Om adressen finns hos oss har vi skickat ett mejl med en länk. Länken gäller i en timme. Kontrollera även skräpposten.
+              {t`If we have the address, we have sent an email with a link. The link is valid for one hour. Check your spam folder too.`}
             </p>
           ) : (
             <>
-              <p class="login-note">Ange din e-postadress så skickar vi en länk där du får en ny PIN-kod.</p>
+              <p class="login-note">{t`Enter your email address and we will send you a link where you get a new PIN.`}</p>
               {error && <div class="login-error">{error}</div>}
               <button class="btn btn-primary login-submit" type="submit" disabled={loading || !email}>
-                {loading ? 'Skickar…' : 'Skicka återställningslänk'}
+                {loading ? t`Sending…` : t`Send reset link`}
               </button>
             </>
           )
         ) : (
           <>
             <label class="login-field">
-              PIN-kod
+              {t`PIN`}
               <input
                 class="login-pin"
                 type="password"
@@ -95,7 +96,7 @@ export function LoginView({ onLogin, initialEmail = '', notice }: LoginViewProps
             </label>
             {error && <div class="login-error">{error}</div>}
             <button class="btn btn-primary login-submit" type="submit" disabled={loading || !email || !pin}>
-              {loading ? 'Loggar in…' : 'Logga in'}
+              {loading ? t`Logging in…` : t`Log in`}
             </button>
           </>
         )}
@@ -108,7 +109,7 @@ export function LoginView({ onLogin, initialEmail = '', notice }: LoginViewProps
             setError(null)
           }}
         >
-          {resetting ? 'Tillbaka till inloggningen' : 'Glömt PIN-kod?'}
+          {resetting ? t`Back to login` : t`Forgot PIN?`}
         </button>
       </form>
     </div>

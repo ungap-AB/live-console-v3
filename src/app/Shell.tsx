@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { ComponentChildren } from 'preact'
 import { useCallback, useEffect, useState } from 'preact/hooks'
 import { client } from '../data'
@@ -28,33 +29,35 @@ interface NavGroup {
   items: NavItem[]
 }
 
-const NAV_GROUPS: NavGroup[] = [
+function navGroups(): NavGroup[] {
+  return [
   {
-    label: 'Innehåll',
+    label: t`Content`,
     items: [
-      { route: 'projects', label: 'Projekt', icon: 'folder_open' },
-      { route: 'agendas', label: 'Dagordningar', icon: 'event_note' },
-      { route: 'namelists', label: 'Namnlistor', icon: 'group' },
-      { route: 'jobs', label: 'Jobb', icon: 'task_alt' },
+      { route: 'projects', label: t`Projects`, icon: 'folder_open' },
+      { route: 'agendas', label: t`Agendas`, icon: 'event_note' },
+      { route: 'namelists', label: t`Name lists`, icon: 'group' },
+      { route: 'jobs', label: t`Jobs`, icon: 'task_alt' },
     ],
   },
   {
-    label: 'Sändning',
+    label: t`Broadcast`,
     items: [
-      { route: 'live', label: 'Live', icon: 'podcasts' },
+      { route: 'live', label: t({ message: 'Live', context: 'navigation' }), icon: 'podcasts' },
       // Videoarkivet gömt tillsvidare (Anders, 2026-10-01) — inspelningar
       // ska alltid höra till ett projekt, inget fristående videobibliotek.
       // Routen/vyn finns kvar orörd, bara navigationsgenvägen bort.
     ],
   },
   {
-    label: 'Administration',
+    label: t`Administration`,
     items: [
-      { route: 'trash', label: 'Papperskorg', icon: 'delete' },
-      { route: 'users', label: 'Användare', icon: 'manage_accounts' },
+      { route: 'trash', label: t`Trash`, icon: 'delete' },
+      { route: 'users', label: t`Users`, icon: 'manage_accounts' },
     ],
   },
-]
+  ]
+}
 
 interface ShellProps {
   active: RouteKey
@@ -109,7 +112,7 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
   const activeJobs = jobs.filter((job) => job.state === 'processing').length
   const newFinished = active === 'jobs' ? 0 : countNewFinished(jobs, seenAt)
   const isRootAdmin = currentUserRoles.includes('rootAdmin')
-  const visibleGroups = NAV_GROUPS
+  const visibleGroups = navGroups()
     .map((group) => ({
       ...group,
       items: group.items.filter((item) => isRootAdmin || ['projects', 'agendas', 'namelists', 'jobs', 'trash'].includes(item.route)),
@@ -134,7 +137,7 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
     <div class="shell">
       <button
         class="nav-toggle"
-        aria-label="Öppna meny"
+        aria-label={t`Open menu`}
         aria-expanded={navOpen}
         onClick={() => setNavOpen((v) => !v)}
       >
@@ -165,8 +168,8 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
                   >
                     <Icon name={item.icon} size={18} />
                     {item.label}
-                    {item.route === 'jobs' && activeJobs > 0 && <span class="nav-badge nav-badge-active" title={`${activeJobs} pågår`}>{activeJobs}</span>}
-                    {item.route === 'jobs' && activeJobs === 0 && newFinished > 0 && <span class="nav-badge nav-badge-new" title={`${newFinished} klara`}>{newFinished}</span>}
+                    {item.route === 'jobs' && activeJobs > 0 && <span class="nav-badge nav-badge-active" title={t`${activeJobs} in progress`}>{activeJobs}</span>}
+                    {item.route === 'jobs' && activeJobs === 0 && newFinished > 0 && <span class="nav-badge nav-badge-new" title={t`${newFinished} done`}>{newFinished}</span>}
                   </a>
                   {item.route === 'projects' && projectsNavAction && (
                     <button
@@ -197,8 +200,8 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
                 <button
                   class="ib nav-user-settings"
                   type="button"
-                  title="Kontoinställningar"
-                  aria-label="Kontoinställningar"
+                  title={t`Account settings`}
+                  aria-label={t`Account settings`}
                   onClick={() => setShowAccount(true)}
                 >
                   <Icon name="settings" size={17} />
@@ -209,7 +212,7 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
           </div>
           <div class="nav-user-row">
             <button class="btn btn-sm" type="button" onClick={onLogout}>
-              Logga ut
+              {t`Log out`}
             </button>
           </div>
         </div>
@@ -246,39 +249,41 @@ function describeFinishedJob(
   onOpenProject: (projectId: string) => void,
   showMessage: (message: string) => void,
 ): ShellToast {
-  const name = job.projectName ?? job.recordingName ?? 'inspelningen'
+  const name = job.projectName ?? job.recordingName ?? t`the recording`
   if (job.state === 'error') {
-    const what = job.kind === 'download' ? 'Nedladdningen' : job.kind === 'captions' ? 'Undertexterna' : job.kind === 'speakers' ? 'Analysen av talarbyten' : 'Bearbetningen'
-    return { message: `${what} för ${name} misslyckades.` }
+    if (job.kind === 'download') return { message: t`The download for ${name} failed.` }
+    if (job.kind === 'captions') return { message: t`The captions for ${name} failed.` }
+    if (job.kind === 'speakers') return { message: t`The speaker change analysis for ${name} failed.` }
+    return { message: t`The processing for ${name} failed.` }
   }
   if (job.kind === 'captions') {
     return {
-      message: `Undertextutkastet för ${name} är klart och väntar på granskning.`,
-      actionLabel: job.projectId ? 'Öppna projektet' : undefined,
+      message: t`The caption draft for ${name} is ready and waiting for review.`,
+      actionLabel: job.projectId ? t`Open the project` : undefined,
       onAction: job.projectId ? () => onOpenProject(job.projectId!) : undefined,
     }
   }
   if (job.kind === 'speakers') {
     return {
-      message: `Talarbytena för ${name} är analyserade. Word-manuset kan laddas ner med talare.`,
-      actionLabel: job.projectId ? 'Ladda ner Word-manus' : undefined,
+      message: t`The speaker changes for ${name} are analysed. The Word transcript can be downloaded with speakers.`,
+      actionLabel: job.projectId ? t`Download Word transcript` : undefined,
       onAction: job.projectId
-        ? () => { downloadManuscriptFile(job).catch((error) => showMessage(error instanceof Error ? error.message : 'Manuset kunde inte skapas.')) }
+        ? () => { downloadManuscriptFile(job).catch((error) => showMessage(error instanceof Error ? error.message : t`The transcript could not be created.`)) }
         : undefined,
     }
   }
   if (job.kind === 'download') {
     return {
-      message: `Nedladdningen av ${name} är klar.`,
-      actionLabel: 'Ladda ner',
+      message: t`The download of ${name} is ready.`,
+      actionLabel: t`Download`,
       onAction: () => {
-        downloadJobFile(job).catch((error) => showMessage(error instanceof Error ? error.message : 'Nedladdningen misslyckades.'))
+        downloadJobFile(job).catch((error) => showMessage(error instanceof Error ? error.message : t`The download failed.`))
       },
     }
   }
   return {
-    message: `Videon för ${name} är bearbetad och väntar på granskning.`,
-    actionLabel: job.projectId ? 'Öppna projektet' : undefined,
+    message: t`The video for ${name} is processed and waiting for review.`,
+    actionLabel: job.projectId ? t`Open the project` : undefined,
     onAction: job.projectId ? () => onOpenProject(job.projectId!) : undefined,
   }
 }
@@ -290,18 +295,22 @@ interface MyAccountDialogProps {
   onSaved: (user: UserAccount) => void
 }
 
-const STATUS_LABEL: Record<UserAccount['status'], string> = {
-  notinvited: 'Ej inbjuden',
-  active: 'Aktiv',
-  invited: 'Inbjuden',
-  disabled: 'Inaktiverad',
+function statusLabels(): Record<UserAccount['status'], string> {
+  return {
+    notinvited: t`Not invited`,
+    active: t`Active`,
+    invited: t`Invited`,
+    disabled: t`Disabled`,
+  }
 }
 
-const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
-  { value: 'light', label: 'Ljust' },
-  { value: 'dark', label: 'Mörkt' },
-  { value: 'auto', label: 'Auto' },
-]
+function themeOptions(): { value: ThemePreference; label: string }[] {
+  return [
+    { value: 'light', label: t`Light` },
+    { value: 'dark', label: t`Dark` },
+    { value: 'auto', label: t`Auto` },
+  ]
+}
 
 function MyAccountDialog({ user, domain, onClose, onSaved }: MyAccountDialogProps) {
   const [name, setName] = useState(user.name)
@@ -327,47 +336,47 @@ function MyAccountDialog({ user, domain, onClose, onSaved }: MyAccountDialogProp
 
   return (
     <Modal
-      title="Mitt konto"
+      title={t`My account`}
       onClose={onClose}
       footer={
         <>
           <button class="btn btn-sm" type="button" onClick={onClose}>
-            Stäng
+            {t`Close`}
           </button>
           <button class="btn btn-sm btn-primary" type="button" disabled={!dirty || saving} onClick={save}>
-            {saving ? 'Sparar…' : 'Spara'}
+            {saving ? t`Saving…` : t`Save`}
           </button>
         </>
       }
     >
       <label class="account-name-field">
-        Namn
+        {t`Name`}
         <input class="rename-input" value={name} autoFocus onInput={(e) => setName(e.currentTarget.value)} />
       </label>
       <div class="grid">
         <div>
-          <div class="k">E-post</div>
+          <div class="k">{t`Email`}</div>
           <div class="v">{user.email}</div>
         </div>
         <div>
-          <div class="k">Status</div>
-          <div class="v">{STATUS_LABEL[user.status]}</div>
+          <div class="k">{t`Status`}</div>
+          <div class="v">{statusLabels()[user.status]}</div>
         </div>
         <div>
-          <div class="k">Domän</div>
+          <div class="k">{t`Organisation`}</div>
           <div class="v">{domain?.host ?? '–'}</div>
         </div>
       </div>
       <div class="block">
-        <h3>Avtalsperiod</h3>
+        <h3>{t`Contract period`}</h3>
         <div class="v">
           {formatDate(domain?.contractStart)} – {formatDate(domain?.contractEnd)}
         </div>
       </div>
       <div class="block">
-        <h3>Utseende</h3>
+        <h3>{t`Appearance`}</h3>
         <div class="theme-seg">
-          {THEME_OPTIONS.map((option) => (
+          {themeOptions().map((option) => (
             <button
               key={option.value}
               type="button"

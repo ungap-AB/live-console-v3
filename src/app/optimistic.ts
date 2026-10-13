@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 // UNG-105: optimistiska uppdateringar. Ändringen visas direkt; anropet körs efteråt. Går det bra ersätter serverns svar den
 // optimistiska kopian, går det fel återställs det gamla värdet och felet visas.
 //
@@ -39,6 +40,6 @@ export async function runOptimistic<R>(options: OptimisticOptions<R>): Promise<b
   }
 }
 
-export function errorMessage(error: unknown, fallback = 'Något gick fel.'): string {
+export function errorMessage(error: unknown, fallback = t`Something went wrong.`): string {
   return error instanceof Error && error.message ? error.message : fallback
 }

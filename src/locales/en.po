@@ -7,6 +7,10 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: en\n"
 
+#: src/app/Shell.tsx
+msgid "{activeJobs} in progress"
+msgstr "{activeJobs} in progress"
+
 #: src/views/projects/publishOutcome.ts
 msgid "{chapterCount, plural, =0 {No chapters} one {# chapter} other {# chapters}}"
 msgstr "{chapterCount, plural, =0 {No chapters} one {# chapter} other {# chapters}}"
@@ -15,13 +19,229 @@ msgstr "{chapterCount, plural, =0 {No chapters} one {# chapter} other {# chapter
 msgid "{cueCount, plural, one {Captions: {label} ({cues} line)} other {Captions: {label} ({cues} lines)}}"
 msgstr "{cueCount, plural, one {Captions: {label} ({cues} line)} other {Captions: {label} ({cues} lines)}}"
 
+#: src/app/SharedDownloadsView.tsx
+msgid "{fileCount, plural, one {{sender} has shared one file with you} other {{sender} has shared # files with you}}"
+msgstr "{fileCount, plural, one {{sender} has shared one file with you} other {{sender} has shared # files with you}}"
+
+#: src/app/time.ts
+msgid "{hours} h ago"
+msgstr "{hours} h ago"
+
+#: src/app/time.ts
+msgid "{minutes} min ago"
+msgstr "{minutes} min ago"
+
+#: src/app/Shell.tsx
+msgid "{newFinished} done"
+msgstr "{newFinished} done"
+
+#: src/app/Shell.tsx
+msgid "Account settings"
+msgstr "Account settings"
+
+#: src/app/Shell.tsx
+msgid "Active"
+msgstr "Active"
+
+#: src/app/Shell.tsx
+msgid "Administration"
+msgstr "Administration"
+
+#: src/app/Shell.tsx
+msgid "Agendas"
+msgstr "Agendas"
+
+#: src/app/jobPhase.ts
+msgid "Analysing speaker changes"
+msgstr "Analysing speaker changes"
+
+#: src/app/Shell.tsx
+msgid "Appearance"
+msgstr "Appearance"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "Ask the sender to share the files again."
+msgstr "Ask the sender to share the files again."
+
+#: src/app/Shell.tsx
+msgid "Auto"
+msgstr "Auto"
+
+#: src/app/LoginView.tsx
+msgid "Back to login"
+msgstr "Back to login"
+
+#: src/app/Shell.tsx
+msgid "Broadcast"
+msgstr "Broadcast"
+
+#: src/app/jobActions.ts
+msgid "Captions · {name}"
+msgstr "Captions · {name}"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "Check that you copied the whole link. Otherwise ask the sender to share the files again."
+msgstr "Check that you copied the whole link. Otherwise ask the sender to share the files again."
+
+#: src/app/CredentialLinkView.tsx
+msgid "Checking the link…"
+msgstr "Checking the link…"
+
+#: src/app/CredentialLinkView.tsx
+msgid "Click the button to activate your account. You will then get your personal PIN."
+msgstr "Click the button to activate your account. You will then get your personal PIN."
+
+#: src/app/CredentialLinkView.tsx
+msgid "Click the button to get a new PIN. Your old PIN then stops working."
+msgstr "Click the button to get a new PIN. Your old PIN then stops working."
+
+#: src/app/Shell.tsx
 #: src/views/projects/PublishOutcomeDialog.tsx
 msgid "Close"
 msgstr "Close"
 
+#: src/app/Shell.tsx
+msgid "Content"
+msgstr "Content"
+
+#: src/app/Shell.tsx
+msgid "Contract period"
+msgstr "Contract period"
+
+#: src/app/jobPhase.ts
+msgid "Converting"
+msgstr "Converting"
+
+#: src/app/jobPhase.ts
+msgid "Correcting and building captions"
+msgstr "Correcting and building captions"
+
+#: src/app/LoginView.tsx
+msgid "Could not log in."
+msgstr "Could not log in."
+
+#: src/app/CredentialLinkView.tsx
+msgid "Creating…"
+msgstr "Creating…"
+
+#: src/app/Shell.tsx
+msgid "Dark"
+msgstr "Dark"
+
+#: src/app/Shell.tsx
+msgid "Disabled"
+msgstr "Disabled"
+
+#: src/app/SharedDownloadsView.tsx
+#: src/app/Shell.tsx
+msgid "Download"
+msgstr "Download"
+
+#: src/app/jobActions.ts
+msgid "Download · {name}"
+msgstr "Download · {name}"
+
+#: src/app/Shell.tsx
+msgid "Download Word transcript"
+msgstr "Download Word transcript"
+
+#: src/app/LoginView.tsx
+#: src/app/Shell.tsx
+msgid "Email"
+msgstr "Email"
+
+#: src/app/LoginView.tsx
+msgid "Enter a valid email address."
+msgstr "Enter a valid email address."
+
+#: src/app/LoginView.tsx
+msgid "Enter your email address and we will send you a link where you get a new PIN."
+msgstr "Enter your email address and we will send you a link where you get a new PIN."
+
+#: src/app/SharedDownloadsView.tsx
+msgid "Fetching downloads…"
+msgstr "Fetching downloads…"
+
+#: src/app/jobPhase.ts
+msgid "Fetching the audio"
+msgstr "Fetching the audio"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "Fetching…"
+msgstr "Fetching…"
+
+#: src/app/LoginView.tsx
+msgid "Forgot PIN?"
+msgstr "Forgot PIN?"
+
+#: src/app/LoginView.tsx
+msgid "Forgot your PIN?"
+msgstr "Forgot your PIN?"
+
+#: src/app/LoginView.tsx
+msgid "If we have the address, we have sent an email with a link. The link is valid for one hour. Check your spam folder too."
+msgstr "If we have the address, we have sent an email with a link. The link is valid for one hour. Check your spam folder too."
+
+#: src/app/Shell.tsx
+msgid "Invited"
+msgstr "Invited"
+
+#: src/app/Shell.tsx
+msgid "Jobs"
+msgstr "Jobs"
+
+#: src/app/time.ts
+msgid "just now"
+msgstr "just now"
+
+#: src/app/Shell.tsx
+msgid "Light"
+msgstr "Light"
+
+#: src/app/Shell.tsx
+msgctxt "navigation"
+msgid "Live"
+msgstr "Live"
+
+#: src/app/App.tsx
+msgid "Loading…"
+msgstr "Loading…"
+
+#: src/app/LoginView.tsx
+msgid "Log in"
+msgstr "Log in"
+
+#: src/app/Shell.tsx
+msgid "Log out"
+msgstr "Log out"
+
+#: src/app/LoginView.tsx
+msgid "Logging in…"
+msgstr "Logging in…"
+
+#: src/app/Shell.tsx
+msgid "My account"
+msgstr "My account"
+
+#: src/app/Shell.tsx
+msgid "Name"
+msgstr "Name"
+
+#: src/app/Shell.tsx
+msgid "Name lists"
+msgstr "Name lists"
+
 #: src/views/projects/publishOutcome.ts
 msgid "No captions"
 msgstr "No captions"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "No longer available"
+msgstr "No longer available"
+
+#: src/app/Shell.tsx
+msgid "Not invited"
+msgstr "Not invited"
 
 #: src/views/projects/publishOutcome.ts
 msgid "On demand published"
@@ -31,9 +251,41 @@ msgstr "On demand published"
 msgid "On demand updated"
 msgstr "On demand updated"
 
+#: src/app/Shell.tsx
+msgid "Open menu"
+msgstr "Open menu"
+
+#: src/app/Shell.tsx
+msgid "Open the project"
+msgstr "Open the project"
+
 #: src/views/projects/PublishOutcomeDialog.tsx
 msgid "Open to viewers"
 msgstr "Open to viewers"
+
+#: src/app/Shell.tsx
+msgid "Organisation"
+msgstr "Organisation"
+
+#: src/app/LoginView.tsx
+msgid "PIN"
+msgstr "PIN"
+
+#: src/app/jobPhase.ts
+msgid "Preparing the audio"
+msgstr "Preparing the audio"
+
+#: src/app/jobPhase.ts
+msgid "Preparing the transcription"
+msgstr "Preparing the transcription"
+
+#: src/app/jobPhase.ts
+msgid "Processing"
+msgstr "Processing"
+
+#: src/app/Shell.tsx
+msgid "Projects"
+msgstr "Projects"
 
 #: src/views/projects/publishOutcome.ts
 msgid "Publishing"
@@ -43,13 +295,183 @@ msgstr "Publishing"
 msgid "Publishing was stopped"
 msgstr "Publishing was stopped"
 
+#: src/app/jobPhase.ts
+msgid "Queued"
+msgstr "Queued"
+
+#: src/app/jobPhase.ts
+msgid "Reading the file"
+msgstr "Reading the file"
+
+#: src/app/CredentialLinkView.tsx
+msgid "Reset your PIN"
+msgstr "Reset your PIN"
+
+#: src/app/Shell.tsx
+msgid "Save"
+msgstr "Save"
+
+#: src/app/jobPhase.ts
+msgid "Saving the result"
+msgstr "Saving the result"
+
+#: src/app/Shell.tsx
+msgid "Saving…"
+msgstr "Saving…"
+
+#: src/app/LoginView.tsx
+msgid "Send reset link"
+msgstr "Send reset link"
+
+#: src/app/LoginView.tsx
+msgid "Sending…"
+msgstr "Sending…"
+
+#: src/app/CredentialLinkView.tsx
+msgid "Show my PIN"
+msgstr "Show my PIN"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "Someone"
+msgstr "Someone"
+
+#: src/app/optimistic.ts
+msgid "Something went wrong."
+msgstr "Something went wrong."
+
+#: src/app/SharedDownloadsView.tsx
+msgid "Something went wrong. Try again in a while."
+msgstr "Something went wrong. Try again in a while."
+
+#: src/app/jobActions.ts
+msgid "Speaker changes · {name}"
+msgstr "Speaker changes · {name}"
+
+#: src/app/Shell.tsx
+msgid "Status"
+msgstr "Status"
+
+#: src/app/Shell.tsx
+msgid "The caption draft for {name} is ready and waiting for review."
+msgstr "The caption draft for {name} is ready and waiting for review."
+
+#: src/app/Shell.tsx
+msgid "The captions for {name} failed."
+msgstr "The captions for {name} failed."
+
+#: src/app/SharedDownloadsView.tsx
+#: src/app/Shell.tsx
+msgid "The download failed."
+msgstr "The download failed."
+
+#: src/app/Shell.tsx
+msgid "The download for {name} failed."
+msgstr "The download for {name} failed."
+
+#: src/app/Shell.tsx
+msgid "The download of {name} is ready."
+msgstr "The download of {name} is ready."
+
+#: src/app/SharedDownloadsView.tsx
+msgid "The link could not be checked"
+msgstr "The link could not be checked"
+
+#: src/app/CredentialLinkView.tsx
+msgid "The link could not be used."
+msgstr "The link could not be used."
+
+#: src/app/CredentialLinkView.tsx
+#: src/app/SharedDownloadsView.tsx
+msgid "The link does not work"
+msgstr "The link does not work"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "The link has been revoked"
+msgstr "The link has been revoked"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "The link has expired"
+msgstr "The link has expired"
+
+#: src/app/CredentialLinkView.tsx
+msgid "The link has expired or has already been used. Ask for a new invitation."
+msgstr "The link has expired or has already been used. Ask for a new invitation."
+
+#: src/app/CredentialLinkView.tsx
+msgid "The link has expired or has already been used. Ask for a new reset."
+msgstr "The link has expired or has already been used. Ask for a new reset."
+
+#: src/app/SharedDownloadsView.tsx
+msgid "The link is valid until {date}."
+msgstr "The link is valid until {date}."
+
+#: src/app/Shell.tsx
+msgid "The processing for {name} failed."
+msgstr "The processing for {name} failed."
+
+#: src/app/Shell.tsx
+msgid "the recording"
+msgstr "the recording"
+
 #: src/views/projects/publishOutcome.ts
 msgid "The recording is published, but the project is closed, so viewers cannot see it yet."
 msgstr "The recording is published, but the project is closed, so viewers cannot see it yet."
 
+#: src/app/SharedDownloadsView.tsx
+msgid "The sender has withdrawn the share. Contact the sender if you need the files."
+msgstr "The sender has withdrawn the share. Contact the sender if you need the files."
+
+#: src/app/Shell.tsx
+msgid "The speaker change analysis for {name} failed."
+msgstr "The speaker change analysis for {name} failed."
+
+#: src/app/Shell.tsx
+msgid "The speaker changes for {name} are analysed. The Word transcript can be downloaded with speakers."
+msgstr "The speaker changes for {name} are analysed. The Word transcript can be downloaded with speakers."
+
 #: src/views/projects/publishOutcome.ts
 msgid "The step “{stepLabel}” failed. The error message was shown as a notification. On demand has not been updated, so you can try again."
 msgstr "The step “{stepLabel}” failed. The error message was shown as a notification. On demand has not been updated, so you can try again."
+
+#: src/app/Shell.tsx
+msgid "The transcript could not be created."
+msgstr "The transcript could not be created."
+
+#: src/app/Shell.tsx
+msgid "The video for {name} is processed and waiting for review."
+msgstr "The video for {name} is processed and waiting for review."
+
+#: src/app/CredentialLinkView.tsx
+msgid "To login"
+msgstr "To login"
+
+#: src/app/time.ts
+msgid "today"
+msgstr "today"
+
+#: src/app/jobPhase.ts
+msgid "Transcribing"
+msgstr "Transcribing"
+
+#: src/app/Shell.tsx
+msgid "Trash"
+msgstr "Trash"
+
+#: src/app/SharedDownloadsView.tsx
+msgid "Try again"
+msgstr "Try again"
+
+#: src/app/jobActions.ts
+msgid "unknown recording"
+msgstr "unknown recording"
+
+#: src/app/jobActions.ts
+msgid "Upload · {name}"
+msgstr "Upload · {name}"
+
+#: src/app/Shell.tsx
+msgid "Users"
+msgstr "Users"
 
 #: src/views/projects/publishOutcome.ts
 msgid "Viewers can now see the changes."
@@ -58,3 +480,35 @@ msgstr "Viewers can now see the changes."
 #: src/views/projects/publishOutcome.ts
 msgid "Viewers can now see the recording."
 msgstr "Viewers can now see the recording."
+
+#: src/app/CredentialLinkView.tsx
+msgid "Welcome, {name}!"
+msgstr "Welcome, {name}!"
+
+#: src/app/LoginView.tsx
+msgid "Welcome, please log in"
+msgstr "Welcome, please log in"
+
+#: src/app/CredentialLinkView.tsx
+msgid "Welcome!"
+msgstr "Welcome!"
+
+#: src/app/CredentialLinkView.tsx
+msgid "Write it down now — it is only shown once. You log in with {email} and this PIN."
+msgstr "Write it down now — it is only shown once. You log in with {email} and this PIN."
+
+#: src/app/CredentialLinkView.tsx
+msgid "Your account is activated"
+msgstr "Your account is activated"
+
+#: src/app/CredentialLinkView.tsx
+msgid "Your new PIN"
+msgstr "Your new PIN"
+
+#: src/app/CredentialLinkView.tsx
+msgid "Your personal PIN:"
+msgstr "Your personal PIN:"
+
+#: src/app/App.tsx
+msgid "Your session has expired. Log in again and you will continue where you were."
+msgstr "Your session has expired. Log in again and you will continue where you were."

@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../data'
 import type { CredentialLinkInfo, CredentialLinkRedeemed } from '../data/types'
@@ -34,7 +35,7 @@ export function CredentialLinkView({ token, onDone }: CredentialLinkViewProps) {
     try {
       setRedeemed(await client.auth.redeemCredentialLink(token))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Länken kunde inte användas.')
+      setError(err instanceof Error ? err.message : t`The link could not be used.`)
     } finally {
       setBusy(false)
     }
@@ -48,35 +49,35 @@ export function CredentialLinkView({ token, onDone }: CredentialLinkViewProps) {
         <img class="login-logo theme-dark-only" src={logoDarkUrl} alt="ungap" />
         {redeemed ? (
           <>
-            <p class="login-sub">{invite ? 'Ditt konto är aktiverat' : 'Din nya PIN-kod'}</p>
-            <p>Din personliga PIN-kod:</p>
+            <p class="login-sub">{invite ? t`Your account is activated` : t`Your new PIN`}</p>
+            <p>{t`Your personal PIN:`}</p>
             <p class="login-pin-reveal" aria-live="polite">{redeemed.pin}</p>
             <p class="login-note">
-              Anteckna den nu — den visas bara en gång. Du loggar in med {redeemed.email} och den här PIN-koden.
+              {t`Write it down now — it is only shown once. You log in with ${{ email: redeemed.email }} and this PIN.`}
             </p>
             <button class="btn btn-primary login-submit" type="button" onClick={() => onDone(redeemed.email)}>
-              Till inloggningen
+              {t`To login`}
             </button>
           </>
         ) : info === null ? (
-          <p class="login-sub">Kontrollerar länken…</p>
+          <p class="login-sub">{t`Checking the link…`}</p>
         ) : !info.valid ? (
           <>
-            <p class="login-sub">Länken fungerar inte</p>
-            <p class="login-note">Länken har gått ut eller har redan använts. Be om en ny{info.kind === 'reset' ? ' återställning' : ' inbjudan'}.</p>
-            <button class="btn login-submit" type="button" onClick={() => onDone(null)}>Till inloggningen</button>
+            <p class="login-sub">{t`The link does not work`}</p>
+            <p class="login-note">{info.kind === 'reset' ? t`The link has expired or has already been used. Ask for a new reset.` : t`The link has expired or has already been used. Ask for a new invitation.`}</p>
+            <button class="btn login-submit" type="button" onClick={() => onDone(null)}>{t`To login`}</button>
           </>
         ) : (
           <>
-            <p class="login-sub">{invite ? `Välkommen${info.name ? `, ${info.name}` : ''}!` : 'Återställ din PIN-kod'}</p>
+            <p class="login-sub">{invite ? (info.name ? t`Welcome, ${{ name: info.name }}!` : t`Welcome!`) : t`Reset your PIN`}</p>
             <p class="login-note">
               {invite
-                ? 'Klicka på knappen för att aktivera ditt konto. Du får då din personliga PIN-kod.'
-                : 'Klicka på knappen för att få en ny PIN-kod. Din gamla PIN-kod slutar då gälla.'}
+                ? t`Click the button to activate your account. You will then get your personal PIN.`
+                : t`Click the button to get a new PIN. Your old PIN then stops working.`}
             </p>
             {error && <div class="login-error">{error}</div>}
             <button class="btn btn-primary login-submit" type="button" disabled={busy} onClick={() => void reveal()}>
-              {busy ? 'Skapar…' : 'Visa min PIN-kod'}
+              {busy ? t`Creating…` : t`Show my PIN`}
             </button>
           </>
         )}

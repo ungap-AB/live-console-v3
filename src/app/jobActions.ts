@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { client } from '../data'
 import type { MediaJob } from '../data/types'
 import { exportFileName } from '../views/projects/chapterExport'
@@ -23,8 +24,11 @@ export function startBrowserDownload(url: string): void {
 }
 
 export function jobTitle(job: MediaJob): string {
-  const what = job.kind === 'download' ? 'Nedladdning' : job.kind === 'captions' ? 'Undertexter' : job.kind === 'speakers' ? 'Talarbyten' : 'Uppladdning'
-  return `${what} · ${job.projectName ?? job.recordingName ?? 'okänd inspelning'}`
+  const name = job.projectName ?? job.recordingName ?? t`unknown recording`
+  if (job.kind === 'download') return t`Download · ${name}`
+  if (job.kind === 'captions') return t`Captions · ${name}`
+  if (job.kind === 'speakers') return t`Speaker changes · ${name}`
+  return t`Upload · ${name}`
 }
 
 // UNG-296: ett klart talarbytesjobb ger Word-manuset med talare (publicerad del om projektet är trimmat, annars hela inspelningen).

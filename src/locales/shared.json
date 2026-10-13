@@ -1,1 +1,7 @@
-{}
+{
+  "Close": "Stäng",
+  "Download": "Ladda ner",
+  "Email": "E-post",
+  "The download failed.": "Nedladdningen misslyckades.",
+  "The link does not work": "Länken fungerar inte"
+}
