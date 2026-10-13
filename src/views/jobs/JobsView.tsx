@@ -1,3 +1,6 @@
+import { msg, plural, t } from '@lingui/core/macro'
+import { i18n } from '@lingui/core'
+import type { MessageDescriptor } from '@lingui/core'
 import { useContext, useEffect, useMemo, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { MediaJob, Share } from '../../data/types'
@@ -15,23 +18,28 @@ import { ShareDialog } from '../../components/ShareDialog'
 import { StatusChip, type ChipTone } from '../../components/StatusChip'
 import './JobsView.css'
 
-const SHARE_STATUS: Record<Share['status'], { label: string; tone: ChipTone }> = {
-  active: { label: 'Aktiv', tone: 'accent' },
-  expired: { label: 'Utgången', tone: 'neutral' },
-  revoked: { label: 'Återkallad', tone: 'danger' },
+const SHARE_STATUS: Record<Share['status'], { label: MessageDescriptor; tone: ChipTone }> = {
+  active: { label: msg`Active`, tone: 'accent' },
+  expired: { label: msg`Expired`, tone: 'neutral' },
+  revoked: { label: msg`Revoked`, tone: 'danger' },
 }
 
 interface JobsViewProps {
   onOpenProject: (projectId: string) => void
 }
 
+function lastDownloadText(iso: string): string {
+  const when = formatDateTime(iso)
+  return t`, last ${when}`
+}
+
 function isShareable(job: MediaJob): boolean {
   return job.kind === 'download' && job.state === 'done'
 }
 
-// UNG-100: Jobb — pågående och klara jobb på ett ställe. Pågående jobb kan avbrytas. Klara nedladdningar kan hämtas eller
-// delas med externa (ett eller flera i taget), och ett delat jobb markeras direkt på raden, där delningen också går att
-// följa upp och återkalla. Jobb försvinner av sig själva efter sju dagar.
+// UNG-100: Jobs — running and finished jobs in one place. Running jobs can be canceled. Finished downloads can be fetched
+// or shared with external recipients (one or several at a time), and a shared job is marked on its row, where the share
+// can also be followed up and revoked. Jobs disappear by themselves after seven days.
 export function JobsView({ onOpenProject }: JobsViewProps) {
   const jobs = useContext(JobsContext)
   const shares = useResource(() => client.shares.list(), [])
@@ -45,6 +53,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
   const [message, setMessage] = useState('')
   const [manuscriptBusy, setManuscriptBusy] = useState<string | null>(null)
 
+  const selectedCount = selected.length
   const active = jobs.filter((job) => job.state === 'processing')
   const finished = jobs.filter((job) => job.state !== 'processing')
 
@@ -60,7 +69,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
     return map
   }, [shares.data])
 
-  // Ett jobb som försvinner ur listan ska inte ligga kvar som valt.
+  // A job that disappears from the list must not stay selected.
   useEffect(() => {
     const shareable = new Set(jobs.filter(isShareable).map((job) => job.recordingId))
     setSelected((prev) => (prev.every((id) => shareable.has(id)) ? prev : prev.filter((id) => shareable.has(id))))
@@ -82,7 +91,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
         const full = await client.shares.get(share.id)
         setDetails((prev) => ({ ...prev, [share.id]: full }))
       } catch (error) {
-        setRowError(job.id, error instanceof Error ? error.message : 'Loggen kunde inte hämtas.')
+        setRowError(job.id, error instanceof Error ? error.message : t`The log could not be loaded.`)
       }
     }
   }
@@ -94,7 +103,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
       await client.jobs.cancel(job.id)
       notifyJobsChanged()
     } catch (error) {
-      setRowError(job.id, error instanceof Error ? error.message : 'Jobbet kunde inte avbrytas.')
+      setRowError(job.id, error instanceof Error ? error.message : t`The job could not be canceled.`)
       notifyJobsChanged()
     }
   }
@@ -104,7 +113,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
     try {
       await downloadJobFile(job)
     } catch (error) {
-      setRowError(job.id, error instanceof Error ? error.message : 'Nedladdningen misslyckades.')
+      setRowError(job.id, error instanceof Error ? error.message : t`The download failed.`)
     }
   }
 
@@ -114,7 +123,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
     try {
       await downloadManuscriptFile(job)
     } catch (error) {
-      setRowError(job.id, error instanceof Error ? error.message : 'Manuset kunde inte skapas.')
+      setRowError(job.id, error instanceof Error ? error.message : t`The manuscript could not be created.`)
     } finally {
       setManuscriptBusy(null)
     }
@@ -128,7 +137,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
       setDetails((prev) => ({ ...prev, [share.id]: updated }))
       shares.reload()
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Delningen kunde inte återkallas.')
+      setMessage(error instanceof Error ? error.message : t`The share could not be revoked.`)
     }
   }
 
@@ -142,6 +151,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
     const activeShares = related.filter((share) => share.status === 'active').length
     const open = openRows.includes(job.id)
     const purge = purgeText(daysUntilPurge(job))
+    const title = jobTitle(job)
     return (
       <li key={job.id} class={`jobs-row ${job.state}`}>
         <div class="dl-row jobs-row-main">
@@ -149,7 +159,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
             <input
               class="jobs-check"
               type="checkbox"
-              aria-label={`Välj ${jobTitle(job)} för delning`}
+              aria-label={t`Select ${title} for sharing`}
               checked={selected.includes(job.recordingId)}
               onChange={() => toggleSelected(job.recordingId)}
             />
@@ -161,8 +171,8 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
             <div class="jobs-text">
               <div class="dl-title">{jobTitle(job)}</div>
               {job.state === 'processing' && <JobProgress progress={job.progress} phase={job.phase} />}
-              {job.state === 'error' && <div class="jobs-error">{job.errorMessage ?? 'Bearbetningen misslyckades.'}</div>}
-              {job.state === 'canceled' && <div class="jobs-note">Avbrutet</div>}
+              {job.state === 'error' && <div class="jobs-error">{job.errorMessage ?? t`Processing failed.`}</div>}
+              {job.state === 'canceled' && <div class="jobs-note">{t`Canceled`}</div>}
               {rowErrors[job.id] && <div class="jobs-error" role="alert">{rowErrors[job.id]}</div>}
             </div>
           </div>
@@ -173,26 +183,26 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
             {related.length > 0 && (
               <button class="jobs-share-chip" type="button" aria-expanded={open} onClick={() => void toggleRow(job)}>
                 <StatusChip tone={activeShares > 0 ? 'accent' : 'neutral'}>
-                  {activeShares > 0 ? `Delad · ${activeShares} aktiv${activeShares === 1 ? '' : 'a'}` : 'Delad (avslutad)'}
+                  {activeShares > 0 ? plural(activeShares, { one: 'Shared · # active', other: 'Shared · # active' }) : t`Shared (ended)`}
                 </StatusChip>
               </button>
             )}
             {job.state === 'processing' && (
-              <button class="btn btn-sm" type="button" onClick={() => setCancelTarget(job)}>Avbryt</button>
+              <button class="btn btn-sm" type="button" onClick={() => setCancelTarget(job)}>{t`Cancel`}</button>
             )}
             {shareable && (
               <>
-                <button class="btn btn-sm" type="button" onClick={() => void download(job)}>Ladda ner</button>
-                <button class="btn btn-sm" type="button" onClick={() => setShareDialog([job.recordingId])}>Dela…</button>
+                <button class="btn btn-sm" type="button" onClick={() => void download(job)}>{t`Download`}</button>
+                <button class="btn btn-sm" type="button" onClick={() => setShareDialog([job.recordingId])}>{t`Share…`}</button>
               </>
             )}
             {job.kind === 'speakers' && job.state === 'done' && job.projectId && (
               <button class="btn btn-sm" type="button" disabled={manuscriptBusy === job.id} onClick={() => void downloadManuscript(job)}>
-                {manuscriptBusy === job.id ? 'Skapar…' : 'Ladda ner Word-manus'}
+                {manuscriptBusy === job.id ? t`Creating…` : t`Download Word manuscript`}
               </button>
             )}
             {(job.kind === 'upload' || job.kind === 'captions') && job.state === 'done' && job.projectId && (
-              <button class="btn btn-sm" type="button" onClick={() => onOpenProject(job.projectId!)}>Öppna projektet</button>
+              <button class="btn btn-sm" type="button" onClick={() => onOpenProject(job.projectId!)}>{t`Open the project`}</button>
             )}
           </div>
         </div>
@@ -200,32 +210,33 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
           <div class="jobs-shares">
             {related.map((share) => {
               const full = details[share.id] ?? share
+              const sharedBy = full.createdByName
+              const sharedAt = formatDateTime(full.createdAtUtc)
+              const validUntil = formatDateTime(full.expiresAtUtc)
               return (
                 <div key={share.id} class="jobs-share">
                   <div class="jobs-share-head">
-                    <StatusChip tone={SHARE_STATUS[full.status].tone}>{SHARE_STATUS[full.status].label}</StatusChip>
-                    <span>
-                      Delad av {full.createdByName} {formatDateTime(full.createdAtUtc)} · gäller till {formatDateTime(full.expiresAtUtc)}
-                    </span>
+                    <StatusChip tone={SHARE_STATUS[full.status].tone}>{i18n._(SHARE_STATUS[full.status].label)}</StatusChip>
+                    <span>{t`Shared by ${sharedBy} ${sharedAt} · valid until ${validUntil}`}</span>
                   </div>
                   {full.message && <p class="jobs-quote">{full.message}</p>}
                   <dl>
-                    <dt>Mottagare</dt>
+                    <dt>{t`Recipients`}</dt>
                     <dd>{full.recipients.join(', ')}</dd>
-                    <dt>Filer</dt>
+                    <dt>{t`Files`}</dt>
                     <dd>
                       <ul>
                         {full.items.map((item) => (
                           <li key={item.id}>
-                            {item.name} — {item.downloadCount} {item.downloadCount === 1 ? 'nedladdning' : 'nedladdningar'}
-                            {item.lastDownloadedAtUtc && `, senast ${formatDateTime(item.lastDownloadedAtUtc)}`}
+                            {item.name} — {plural(item.downloadCount, { one: '# download', other: '# downloads' })}
+                            {item.lastDownloadedAtUtc && lastDownloadText(item.lastDownloadedAtUtc)}
                           </li>
                         ))}
                       </ul>
                     </dd>
                     {full.events && (
                       <>
-                        <dt>Logg</dt>
+                        <dt>{t`Log`}</dt>
                         <dd>
                           <ul>
                             {full.events.map((event, index) => (
@@ -239,7 +250,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
                     )}
                   </dl>
                   {full.status === 'active' && (
-                    <button class="btn btn-sm btn-danger" type="button" onClick={() => setRevokeTarget(full)}>Återkalla</button>
+                    <button class="btn btn-sm btn-danger" type="button" onClick={() => setRevokeTarget(full)}>{t`Revoke`}</button>
                   )}
                 </div>
               )
@@ -254,10 +265,10 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
     <div class="dl jobs-list">
       <div class="dl-head" aria-hidden="true">
       <span class="jobs-check-space" />
-      <span class="dl-name">Jobb</span>
-      <span class="jobs-col-by">Startat av</span>
-      <span class="jobs-col-time">Tid</span>
-      <span class="jobs-col-purge">Försvinner</span>
+      <span class="dl-name">{t`Jobs`}</span>
+      <span class="jobs-col-by">{t`Started by`}</span>
+      <span class="jobs-col-time">{t`Time`}</span>
+      <span class="jobs-col-purge">{t`Disappears`}</span>
       <span class="jobs-col-actions" />
     </div>
       <ul class="dl-rows jobs-rows">{rows.map(renderRow)}</ul>
@@ -268,7 +279,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
     <div class="view">
       <header>
         <div class="header-list-zone">
-          <h1>Jobb</h1>
+          <h1>{t`Jobs`}</h1>
           <span class="spacer" />
           <button
             class="btn btn-sm btn-primary"
@@ -276,7 +287,7 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
             disabled={selected.length === 0}
             onClick={() => setShareDialog(selected)}
           >
-            {selected.length > 0 ? `Dela valda (${selected.length})` : 'Dela valda'}
+            {selected.length > 0 ? t`Share selected (${selectedCount})` : t`Share selected`}
           </button>
         </div>
       </header>
@@ -286,14 +297,14 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
           {message && <p class="jobs-error" role="alert">{message}</p>}
 
           <section class="jobs-section jobs-section-active">
-            <h2>Pågår</h2>
-            {active.length === 0 ? <p class="jobs-empty">Inga jobb pågår.</p> : list(active)}
+            <h2>{t`In progress`}</h2>
+            {active.length === 0 ? <p class="jobs-empty">{t`No jobs in progress.`}</p> : list(active)}
           </section>
 
           <section class="jobs-section jobs-section-done">
-            <h2>Klara</h2>
-            <p class="jobs-help">Jobb försvinner av sig själva efter 7 dagar. Klara nedladdningar går att dela med externa, och en delning följs upp och återkallas på raden.</p>
-            {finished.length === 0 ? <p class="jobs-empty">Inga klara jobb.</p> : list(finished)}
+            <h2>{t`Finished`}</h2>
+            <p class="jobs-help">{t`Jobs disappear by themselves after 7 days. Finished downloads can be shared with external recipients, and a share is followed up and revoked on its row.`}</p>
+            {finished.length === 0 ? <p class="jobs-empty">{t`No finished jobs.`}</p> : list(finished)}
           </section>
         </div>
       </div>
@@ -309,19 +320,19 @@ export function JobsView({ onOpenProject }: JobsViewProps) {
         />
       )}
       {cancelTarget && (
-        <ConfirmModal title="Avbryta jobbet?" confirmLabel="Avbryt jobbet" danger onCancel={() => setCancelTarget(null)} onConfirm={() => void cancel(cancelTarget)}>
+        <ConfirmModal title={t`Cancel the job?`} confirmLabel={t`Cancel the job`} danger onCancel={() => setCancelTarget(null)} onConfirm={() => void cancel(cancelTarget)}>
           <p>
             {cancelTarget.kind === 'download'
-              ? 'Förberedelsen av nedladdningen stoppas. Du kan starta en ny när som helst.'
+              ? t`Preparing the download is stopped. You can start a new one at any time.`
               : cancelTarget.kind === 'captions'
-                ? 'Skapandet av undertexter stoppas och inget utkast sparas. Du kan starta det igen när som helst.'
-                : 'Bearbetningen av videon stoppas och den uppladdade filen tas bort från projektet. Du kan ladda upp den igen.'}
+                ? t`Creating captions is stopped and no draft is saved. You can start it again at any time.`
+                : t`Processing the video is stopped and the uploaded file is removed from the project. You can upload it again.`}
           </p>
         </ConfirmModal>
       )}
       {revokeTarget && (
-        <ConfirmModal title="Återkalla delningen?" confirmLabel="Återkalla" danger onCancel={() => setRevokeTarget(null)} onConfirm={() => void revoke(revokeTarget)}>
-          <p>Länken slutar fungera direkt för alla mottagare. En nedladdning som redan har startat kan fortsätta i upp till 15 minuter.</p>
+        <ConfirmModal title={t`Revoke the share?`} confirmLabel={t`Revoke`} danger onCancel={() => setRevokeTarget(null)} onConfirm={() => void revoke(revokeTarget)}>
+          <p>{t`The link stops working immediately for all recipients. A download that has already started can continue for up to 15 minutes.`}</p>
         </ConfirmModal>
       )}
     </div>

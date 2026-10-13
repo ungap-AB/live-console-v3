@@ -7,9 +7,32 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: en\n"
 
+#: src/views/jobs/JobsView.tsx
+msgid ", last {when}"
+msgstr ", last {when}"
+
+#. placeholder {0}: items.length
+#: src/views/trash/TrashView.tsx
+msgid "{0, plural, one {{shown} of # item} other {{shown} of # items}}"
+msgstr "{0, plural, one {{shown} of # item} other {{shown} of # items}}"
+
+#. placeholder {0}: item.downloadCount
+#: src/views/jobs/JobsView.tsx
+msgid "{0, plural, one {# download} other {# downloads}}"
+msgstr "{0, plural, one {# download} other {# downloads}}"
+
+#. placeholder {0}: items.length
+#: src/views/trash/TrashView.tsx
+msgid "{0, plural, one {# item} other {# items}}"
+msgstr "{0, plural, one {# item} other {# items}}"
+
 #: src/app/Shell.tsx
 msgid "{activeJobs} in progress"
 msgstr "{activeJobs} in progress"
+
+#: src/views/jobs/JobsView.tsx
+msgid "{activeShares, plural, one {Shared · # active} other {Shared · # active}}"
+msgstr "{activeShares, plural, one {Shared · # active} other {Shared · # active}}"
 
 #: src/views/projects/publishOutcome.ts
 msgid "{chapterCount, plural, =0 {No chapters} one {# chapter} other {# chapters}}"
@@ -19,9 +42,17 @@ msgstr "{chapterCount, plural, =0 {No chapters} one {# chapter} other {# chapter
 msgid "{cueCount, plural, one {Captions: {label} ({cues} line)} other {Captions: {label} ({cues} lines)}}"
 msgstr "{cueCount, plural, one {Captions: {label} ({cues} line)} other {Captions: {label} ({cues} lines)}}"
 
+#: src/views/users/UsersView.tsx
+msgid "{deleteOrganization} ({deleteHost}) is removed permanently. It cannot be undone."
+msgstr "{deleteOrganization} ({deleteHost}) is removed permanently. It cannot be undone."
+
 #: src/app/SharedDownloadsView.tsx
 msgid "{fileCount, plural, one {{sender} has shared one file with you} other {{sender} has shared # files with you}}"
 msgstr "{fileCount, plural, one {{sender} has shared one file with you} other {{sender} has shared # files with you}}"
+
+#: src/views/trash/TrashView.tsx
+msgid "{hours, plural, one {# hour} other {# hours}}"
+msgstr "{hours, plural, one {# hour} other {# hours}}"
 
 #: src/app/time.ts
 msgid "{hours} h ago"
@@ -35,11 +66,45 @@ msgstr "{minutes} min ago"
 msgid "{newFinished} done"
 msgstr "{newFinished} done"
 
+#: src/views/users/UsersView.tsx
+msgid "{organization} removed."
+msgstr "{organization} removed."
+
+#: src/views/trash/TrashView.tsx
+msgid "{rounded, plural, one {# day} other {# days}}"
+msgstr "{rounded, plural, one {# day} other {# days}}"
+
+#: src/views/trash/TrashView.tsx
+msgid "{totalMinutes, plural, one {# minute} other {# minutes}}"
+msgstr "{totalMinutes, plural, one {# minute} other {# minutes}}"
+
+#: src/views/users/UsersView.tsx
+msgid "+ New"
+msgstr "+ New"
+
+#: src/views/users/UsersView.tsx
+msgid "A new invitation replaces the previous one: the old link and PIN stop working."
+msgstr "A new invitation replaces the previous one: the old link and PIN stop working."
+
+#: src/views/users/UsersView.tsx
+msgid "A reset email has been sent to {email}. The link is valid for one hour."
+msgstr "A reset email has been sent to {email}. The link is valid for one hour."
+
+#: src/views/users/UsersView.tsx
+msgid "A welcome email with a one-time link is sent to {email}. The link is valid for 7 days. When the recipient clicks it, a personal PIN is created that is shown only once."
+msgstr "A welcome email with a one-time link is sent to {email}. The link is valid for 7 days. When the recipient clicks it, a personal PIN is created that is shown only once."
+
+#: src/views/users/UsersView.tsx
+msgid "Account created"
+msgstr "Account created"
+
 #: src/app/Shell.tsx
 msgid "Account settings"
 msgstr "Account settings"
 
 #: src/app/Shell.tsx
+#: src/views/jobs/JobsView.tsx
+#: src/views/users/UsersView.tsx
 msgid "Active"
 msgstr "Active"
 
@@ -47,9 +112,18 @@ msgstr "Active"
 msgid "Administration"
 msgstr "Administration"
 
+#: src/views/trash/TrashView.tsx
+msgid "Agenda"
+msgstr "Agenda"
+
 #: src/app/Shell.tsx
+#: src/views/users/UsersView.tsx
 msgid "Agendas"
 msgstr "Agendas"
+
+#: src/views/trash/TrashView.tsx
+msgid "All"
+msgstr "All"
 
 #: src/app/jobPhase.ts
 msgid "Analysing speaker changes"
@@ -75,6 +149,27 @@ msgstr "Back to login"
 msgid "Broadcast"
 msgstr "Broadcast"
 
+#: src/views/users/UsersView.tsx
+msgid "Broadcasts made"
+msgstr "Broadcasts made"
+
+#: src/views/jobs/JobsView.tsx
+#: src/views/users/UsersView.tsx
+msgid "Cancel"
+msgstr "Cancel"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Cancel the job"
+msgstr "Cancel the job"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Cancel the job?"
+msgstr "Cancel the job?"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Canceled"
+msgstr "Canceled"
+
 #: src/app/jobActions.ts
 msgid "Captions · {name}"
 msgstr "Captions · {name}"
@@ -97,6 +192,7 @@ msgstr "Click the button to get a new PIN. Your old PIN then stops working."
 
 #: src/app/Shell.tsx
 #: src/views/projects/PublishOutcomeDialog.tsx
+#: src/views/users/UsersView.tsx
 msgid "Close"
 msgstr "Close"
 
@@ -104,9 +200,22 @@ msgstr "Close"
 msgid "Content"
 msgstr "Content"
 
+#: src/views/trash/TrashView.tsx
+msgid "Contents"
+msgstr "Contents"
+
 #: src/app/Shell.tsx
+#: src/views/users/UsersView.tsx
 msgid "Contract period"
 msgstr "Contract period"
+
+#: src/views/users/UsersView.tsx
+msgid "Contract period from"
+msgstr "Contract period from"
+
+#: src/views/users/UsersView.tsx
+msgid "Contract period to"
+msgstr "Contract period to"
 
 #: src/app/jobPhase.ts
 msgid "Converting"
@@ -116,11 +225,36 @@ msgstr "Converting"
 msgid "Correcting and building captions"
 msgstr "Correcting and building captions"
 
+#: src/views/users/UsersView.tsx
+msgid "Could not create the user."
+msgstr "Could not create the user."
+
 #: src/app/LoginView.tsx
 msgid "Could not log in."
 msgstr "Could not log in."
 
+#: src/views/users/UsersView.tsx
+msgid "Could not remove the domain."
+msgstr "Could not remove the domain."
+
+#: src/views/users/UsersView.tsx
+msgid "Could not send the invitation."
+msgstr "Could not send the invitation."
+
+#: src/views/users/UsersView.tsx
+msgid "Create"
+msgstr "Create"
+
+#: src/views/users/UsersView.tsx
+msgid "Creates projects, broadcasts and publishes on demand."
+msgstr "Creates projects, broadcasts and publishes on demand."
+
+#: src/views/jobs/JobsView.tsx
+msgid "Creating captions is stopped and no draft is saved. You can start it again at any time."
+msgstr "Creating captions is stopped and no draft is saved. You can start it again at any time."
+
 #: src/app/CredentialLinkView.tsx
+#: src/views/jobs/JobsView.tsx
 msgid "Creating…"
 msgstr "Creating…"
 
@@ -128,12 +262,78 @@ msgstr "Creating…"
 msgid "Dark"
 msgstr "Dark"
 
+#: src/views/users/UsersView.tsx
+msgid "Delete domain"
+msgstr "Delete domain"
+
+#: src/views/users/UsersView.tsx
+msgid "Delete domain?"
+msgstr "Delete domain?"
+
+#: src/views/trash/TrashView.tsx
+msgid "Deleted"
+msgstr "Deleted"
+
+#: src/views/trash/TrashView.tsx
+msgid "Deleted {deletedOn} by {deletedBy}"
+msgstr "Deleted {deletedOn} by {deletedBy}"
+
+#: src/views/trash/TrashView.tsx
+msgid "Deleted projects, agendas, name lists and recordings end up here."
+msgstr "Deleted projects, agendas, name lists and recordings end up here."
+
+#: src/views/users/UsersView.tsx
+msgid "Details"
+msgstr "Details"
+
+#: src/views/users/UsersView.tsx
+msgid "Disable"
+msgstr "Disable"
+
+#: src/views/users/UsersView.tsx
+msgid "Disable {disableName}? The account cannot sign in but remains in the history."
+msgstr "Disable {disableName}? The account cannot sign in but remains in the history."
+
+#: src/views/users/UsersView.tsx
+msgid "Disable account"
+msgstr "Disable account"
+
+#: src/views/users/UsersView.tsx
+msgid "Disable account?"
+msgstr "Disable account?"
+
 #: src/app/Shell.tsx
+#: src/views/users/UsersView.tsx
 msgid "Disabled"
 msgstr "Disabled"
 
+#: src/views/users/UsersView.tsx
+msgid "Disabled accounts cannot sign in but are kept in the history — earlier broadcasts and changes remain on the user."
+msgstr "Disabled accounts cannot sign in but are kept in the history — earlier broadcasts and changes remain on the user."
+
+#: src/views/jobs/JobsView.tsx
+msgid "Disappears"
+msgstr "Disappears"
+
+#: src/views/users/UsersView.tsx
+msgid "Domain"
+msgstr "Domain"
+
+#: src/views/users/UsersView.tsx
+msgid "Domain administrator"
+msgstr "Domain administrator"
+
+#: src/views/users/UsersView.tsx
+msgid "Domain updated."
+msgstr "Domain updated."
+
+#: src/views/users/UsersView.tsx
+msgid "Domains"
+msgstr "Domains"
+
 #: src/app/SharedDownloadsView.tsx
 #: src/app/Shell.tsx
+#: src/views/jobs/JobsView.tsx
 msgid "Download"
 msgstr "Download"
 
@@ -141,22 +341,55 @@ msgstr "Download"
 msgid "Download · {name}"
 msgstr "Download · {name}"
 
+#: src/views/jobs/JobsView.tsx
+msgid "Download Word manuscript"
+msgstr "Download Word manuscript"
+
 #: src/app/Shell.tsx
 msgid "Download Word transcript"
 msgstr "Download Word transcript"
 
+#: src/views/users/UsersView.tsx
+msgid "e.g. Example Municipality"
+msgstr "e.g. Example Municipality"
+
+#: src/views/users/UsersView.tsx
+msgid "e.g. example.com"
+msgstr "e.g. example.com"
+
+#: src/views/users/UsersView.tsx
+msgid "email"
+msgstr "email"
+
 #: src/app/LoginView.tsx
 #: src/app/Shell.tsx
+#: src/views/users/UsersView.tsx
 msgid "Email"
 msgstr "Email"
+
+#: src/views/users/UsersView.tsx
+msgid "Enable account"
+msgstr "Enable account"
+
+#: src/views/users/UsersView.tsx
+msgid "Enter a valid domain name, for example example.com."
+msgstr "Enter a valid domain name, for example example.com."
 
 #: src/app/LoginView.tsx
 msgid "Enter a valid email address."
 msgstr "Enter a valid email address."
 
+#: src/views/users/UsersView.tsx
+msgid "Enter the organization name."
+msgstr "Enter the organization name."
+
 #: src/app/LoginView.tsx
 msgid "Enter your email address and we will send you a link where you get a new PIN."
 msgstr "Enter your email address and we will send you a link where you get a new PIN."
+
+#: src/views/jobs/JobsView.tsx
+msgid "Expired"
+msgstr "Expired"
 
 #: src/app/SharedDownloadsView.tsx
 msgid "Fetching downloads…"
@@ -170,6 +403,18 @@ msgstr "Fetching the audio"
 msgid "Fetching…"
 msgstr "Fetching…"
 
+#: src/views/jobs/JobsView.tsx
+msgid "Files"
+msgstr "Files"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Finished"
+msgstr "Finished"
+
+#: src/views/users/UsersView.tsx
+msgid "First and last name"
+msgstr "First and last name"
+
 #: src/app/LoginView.tsx
 msgid "Forgot PIN?"
 msgstr "Forgot PIN?"
@@ -182,17 +427,64 @@ msgstr "Forgot your PIN?"
 msgid "If we have the address, we have sent an email with a link. The link is valid for one hour. Check your spam folder too."
 msgstr "If we have the address, we have sent an email with a link. The link is valid for one hour. Check your spam folder too."
 
+#: src/app/jobRetention.ts
+#: src/views/trash/TrashView.tsx
+msgid "in {days} days"
+msgstr "in {days} days"
+
+#: src/views/jobs/JobsView.tsx
+msgid "In progress"
+msgstr "In progress"
+
+#: src/views/users/UsersView.tsx
+msgid "Inactive"
+msgstr "Inactive"
+
+#: src/views/users/UsersView.tsx
+msgid "Invitation sent to {email}. The text is copied."
+msgstr "Invitation sent to {email}. The text is copied."
+
+#: src/views/users/UsersView.tsx
+msgid "Invite"
+msgstr "Invite"
+
+#: src/views/users/UsersView.tsx
+msgid "Invite to {host}"
+msgstr "Invite to {host}"
+
 #: src/app/Shell.tsx
+#: src/views/users/UsersView.tsx
 msgid "Invited"
 msgstr "Invited"
 
+#: src/views/users/UsersView.tsx
+msgid "Invited – has not signed in"
+msgstr "Invited – has not signed in"
+
+#: src/views/trash/TrashView.tsx
+msgid "Items are purged automatically {period} after they were deleted. After that they cannot be restored."
+msgstr "Items are purged automatically {period} after they were deleted. After that they cannot be restored."
+
 #: src/app/Shell.tsx
+#: src/views/jobs/JobsView.tsx
 msgid "Jobs"
 msgstr "Jobs"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Jobs disappear by themselves after 7 days. Finished downloads can be shared with external recipients, and a share is followed up and revoked on its row."
+msgstr "Jobs disappear by themselves after 7 days. Finished downloads can be shared with external recipients, and a share is followed up and revoked on its row."
 
 #: src/app/time.ts
 msgid "just now"
 msgstr "just now"
+
+#: src/views/users/UsersView.tsx
+msgid "Last sign-in"
+msgstr "Last sign-in"
+
+#: src/views/users/UsersView.tsx
+msgid "Leave empty for ungap's default key"
+msgstr "Leave empty for ungap's default key"
 
 #: src/app/Shell.tsx
 msgid "Light"
@@ -204,8 +496,14 @@ msgid "Live"
 msgstr "Live"
 
 #: src/app/App.tsx
+#: src/views/trash/TrashView.tsx
+#: src/views/users/UsersView.tsx
 msgid "Loading…"
 msgstr "Loading…"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Log"
+msgstr "Log"
 
 #: src/app/LoginView.tsx
 msgid "Log in"
@@ -219,27 +517,71 @@ msgstr "Log out"
 msgid "Logging in…"
 msgstr "Logging in…"
 
+#: src/views/users/UsersView.tsx
+msgid "Manages the whole installation and all domains."
+msgstr "Manages the whole installation and all domains."
+
+#: src/views/users/UsersView.tsx
+msgid "Mux env key (the customer's own Mux account)"
+msgstr "Mux env key (the customer's own Mux account)"
+
 #: src/app/Shell.tsx
 msgid "My account"
 msgstr "My account"
 
 #: src/app/Shell.tsx
+#: src/views/trash/TrashView.tsx
+#: src/views/users/UsersView.tsx
 msgid "Name"
 msgstr "Name"
 
+#: src/views/trash/TrashView.tsx
+msgid "Name list"
+msgstr "Name list"
+
 #: src/app/Shell.tsx
+#: src/views/users/UsersView.tsx
 msgid "Name lists"
 msgstr "Name lists"
+
+#: src/views/users/UsersView.tsx
+msgid "name@example.com"
+msgstr "name@example.com"
+
+#: src/views/users/UsersView.tsx
+msgid "never"
+msgstr "never"
+
+#: src/views/users/UsersView.tsx
+msgid "New domain"
+msgstr "New domain"
+
+#: src/views/users/UsersView.tsx
+msgid "New user in {host}"
+msgstr "New user in {host}"
 
 #: src/views/projects/publishOutcome.ts
 msgid "No captions"
 msgstr "No captions"
+
+#: src/views/jobs/JobsView.tsx
+msgid "No finished jobs."
+msgstr "No finished jobs."
+
+#: src/views/trash/TrashView.tsx
+msgid "No item matches the filter."
+msgstr "No item matches the filter."
+
+#: src/views/jobs/JobsView.tsx
+msgid "No jobs in progress."
+msgstr "No jobs in progress."
 
 #: src/app/SharedDownloadsView.tsx
 msgid "No longer available"
 msgstr "No longer available"
 
 #: src/app/Shell.tsx
+#: src/views/users/UsersView.tsx
 msgid "Not invited"
 msgstr "Not invited"
 
@@ -256,6 +598,7 @@ msgid "Open menu"
 msgstr "Open menu"
 
 #: src/app/Shell.tsx
+#: src/views/jobs/JobsView.tsx
 msgid "Open the project"
 msgstr "Open the project"
 
@@ -263,9 +606,25 @@ msgstr "Open the project"
 msgid "Open to viewers"
 msgstr "Open to viewers"
 
+#: src/views/users/UsersView.tsx
+msgid "Operator"
+msgstr "Operator"
+
 #: src/app/Shell.tsx
 msgid "Organisation"
 msgstr "Organisation"
+
+#: src/views/users/UsersView.tsx
+msgid "Organization name"
+msgstr "Organization name"
+
+#: src/views/users/UsersView.tsx
+msgid "Permission"
+msgstr "Permission"
+
+#: src/views/users/UsersView.tsx
+msgid "Permissions"
+msgstr "Permissions"
 
 #: src/app/LoginView.tsx
 msgid "PIN"
@@ -275,6 +634,10 @@ msgstr "PIN"
 msgid "Preparing the audio"
 msgstr "Preparing the audio"
 
+#: src/views/jobs/JobsView.tsx
+msgid "Preparing the download is stopped. You can start a new one at any time."
+msgstr "Preparing the download is stopped. You can start a new one at any time."
+
 #: src/app/jobPhase.ts
 msgid "Preparing the transcription"
 msgstr "Preparing the transcription"
@@ -283,7 +646,20 @@ msgstr "Preparing the transcription"
 msgid "Processing"
 msgstr "Processing"
 
+#: src/views/jobs/JobsView.tsx
+msgid "Processing failed."
+msgstr "Processing failed."
+
+#: src/views/jobs/JobsView.tsx
+msgid "Processing the video is stopped and the uploaded file is removed from the project. You can upload it again."
+msgstr "Processing the video is stopped and the uploaded file is removed from the project. You can upload it again."
+
+#: src/views/trash/TrashView.tsx
+msgid "Project"
+msgstr "Project"
+
 #: src/app/Shell.tsx
+#: src/views/users/UsersView.tsx
 msgid "Projects"
 msgstr "Projects"
 
@@ -295,6 +671,10 @@ msgstr "Publishing"
 msgid "Publishing was stopped"
 msgstr "Publishing was stopped"
 
+#: src/views/trash/TrashView.tsx
+msgid "Purged"
+msgstr "Purged"
+
 #: src/app/jobPhase.ts
 msgid "Queued"
 msgstr "Queued"
@@ -303,11 +683,76 @@ msgstr "Queued"
 msgid "Reading the file"
 msgstr "Reading the file"
 
+#: src/views/users/UsersView.tsx
+msgid "Recent activity"
+msgstr "Recent activity"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Recipients"
+msgstr "Recipients"
+
+#: src/views/trash/TrashView.tsx
+msgid "Recording"
+msgstr "Recording"
+
+#: src/views/users/UsersView.tsx
+msgid "Recordings"
+msgstr "Recordings"
+
+#: src/views/users/UsersView.tsx
+msgid "Remove"
+msgstr "Remove"
+
+#: src/views/users/UsersView.tsx
+msgid "Remove {removeName} completely? From now on the history shows only the name, without an account."
+msgstr "Remove {removeName} completely? From now on the history shows only the name, without an account."
+
+#: src/views/users/UsersView.tsx
+msgid "Remove user?"
+msgstr "Remove user?"
+
+#: src/views/users/UsersView.tsx
+msgid "Rename the user"
+msgstr "Rename the user"
+
+#: src/views/users/UsersView.tsx
+msgid "Resend invitation"
+msgstr "Resend invitation"
+
+#: src/views/users/UsersView.tsx
+msgid "Reset link"
+msgstr "Reset link"
+
 #: src/app/CredentialLinkView.tsx
 msgid "Reset your PIN"
 msgstr "Reset your PIN"
 
+#: src/views/trash/TrashView.tsx
+msgid "Restore"
+msgstr "Restore"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Revoke"
+msgstr "Revoke"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Revoke the share?"
+msgstr "Revoke the share?"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Revoked"
+msgstr "Revoked"
+
+#: src/views/users/UsersView.tsx
+msgid "Root administrator"
+msgstr "Root administrator"
+
+#: src/views/users/UsersView.tsx
+msgid "Root administrator, locked"
+msgstr "Root administrator, locked"
+
 #: src/app/Shell.tsx
+#: src/views/users/UsersView.tsx
 msgid "Save"
 msgstr "Save"
 
@@ -316,26 +761,69 @@ msgid "Saving the result"
 msgstr "Saving the result"
 
 #: src/app/Shell.tsx
+#: src/views/users/UsersView.tsx
 msgid "Saving…"
 msgstr "Saving…"
+
+#: src/views/trash/TrashView.tsx
+msgid "Search the trash"
+msgstr "Search the trash"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Select {title} for sharing"
+msgstr "Select {title} for sharing"
+
+#: src/views/users/UsersView.tsx
+msgid "Select a user in the list."
+msgstr "Select a user in the list."
+
+#: src/views/users/UsersView.tsx
+msgid "Send invitation"
+msgstr "Send invitation"
 
 #: src/app/LoginView.tsx
 msgid "Send reset link"
 msgstr "Send reset link"
 
 #: src/app/LoginView.tsx
+#: src/views/users/UsersView.tsx
 msgid "Sending…"
 msgstr "Sending…"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Share selected"
+msgstr "Share selected"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Share selected ({selectedCount})"
+msgstr "Share selected ({selectedCount})"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Share…"
+msgstr "Share…"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Shared (ended)"
+msgstr "Shared (ended)"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Shared by {sharedBy} {sharedAt} · valid until {validUntil}"
+msgstr "Shared by {sharedBy} {sharedAt} · valid until {validUntil}"
 
 #: src/app/CredentialLinkView.tsx
 msgid "Show my PIN"
 msgstr "Show my PIN"
+
+#: src/views/users/UsersView.tsx
+msgid "Sign-in"
+msgstr "Sign-in"
 
 #: src/app/SharedDownloadsView.tsx
 msgid "Someone"
 msgstr "Someone"
 
 #: src/app/optimistic.ts
+#: src/views/users/UsersView.tsx
 msgid "Something went wrong."
 msgstr "Something went wrong."
 
@@ -346,6 +834,10 @@ msgstr "Something went wrong. Try again in a while."
 #: src/app/jobActions.ts
 msgid "Speaker changes · {name}"
 msgstr "Speaker changes · {name}"
+
+#: src/views/jobs/JobsView.tsx
+msgid "Started by"
+msgstr "Started by"
 
 #: src/app/Shell.tsx
 msgid "Status"
@@ -359,8 +851,21 @@ msgstr "The caption draft for {name} is ready and waiting for review."
 msgid "The captions for {name} failed."
 msgstr "The captions for {name} failed."
 
+#: src/views/users/UsersView.tsx
+msgid "The domain has no users."
+msgstr "The domain has no users."
+
+#: src/views/users/UsersView.tsx
+msgid "The domain must have at least one active administrator"
+msgstr "The domain must have at least one active administrator"
+
+#: src/views/users/UsersView.tsx
+msgid "The domain still has users and cannot be removed."
+msgstr "The domain still has users and cannot be removed."
+
 #: src/app/SharedDownloadsView.tsx
 #: src/app/Shell.tsx
+#: src/views/jobs/JobsView.tsx
 msgid "The download failed."
 msgstr "The download failed."
 
@@ -371,6 +876,14 @@ msgstr "The download for {name} failed."
 #: src/app/Shell.tsx
 msgid "The download of {name} is ready."
 msgstr "The download of {name} is ready."
+
+#: src/views/users/UsersView.tsx
+msgid "The end date must be after the start date."
+msgstr "The end date must be after the start date."
+
+#: src/views/jobs/JobsView.tsx
+msgid "The job could not be canceled."
+msgstr "The job could not be canceled."
 
 #: src/app/SharedDownloadsView.tsx
 msgid "The link could not be checked"
@@ -405,6 +918,26 @@ msgstr "The link has expired or has already been used. Ask for a new reset."
 msgid "The link is valid until {date}."
 msgstr "The link is valid until {date}."
 
+#: src/views/jobs/JobsView.tsx
+msgid "The link stops working immediately for all recipients. A download that has already started can continue for up to 15 minutes."
+msgstr "The link stops working immediately for all recipients. A download that has already started can continue for up to 15 minutes."
+
+#: src/views/jobs/JobsView.tsx
+msgid "The log could not be loaded."
+msgstr "The log could not be loaded."
+
+#: src/views/jobs/JobsView.tsx
+msgid "The manuscript could not be created."
+msgstr "The manuscript could not be created."
+
+#: src/views/users/UsersView.tsx
+msgid "The only active administrator on {adminHost}. Appoint another one before the role is removed."
+msgstr "The only active administrator on {adminHost}. Appoint another one before the role is removed."
+
+#: src/views/users/UsersView.tsx
+msgid "The PIN becomes valid only when the invitation has been sent"
+msgstr "The PIN becomes valid only when the invitation has been sent"
+
 #: src/app/Shell.tsx
 msgid "The processing for {name} failed."
 msgstr "The processing for {name} failed."
@@ -417,9 +950,17 @@ msgstr "the recording"
 msgid "The recording is published, but the project is closed, so viewers cannot see it yet."
 msgstr "The recording is published, but the project is closed, so viewers cannot see it yet."
 
+#: src/views/users/UsersView.tsx
+msgid "The role cannot be changed here."
+msgstr "The role cannot be changed here."
+
 #: src/app/SharedDownloadsView.tsx
 msgid "The sender has withdrawn the share. Contact the sender if you need the files."
 msgstr "The sender has withdrawn the share. Contact the sender if you need the files."
+
+#: src/views/jobs/JobsView.tsx
+msgid "The share could not be revoked."
+msgstr "The share could not be revoked."
 
 #: src/app/Shell.tsx
 msgid "The speaker change analysis for {name} failed."
@@ -437,29 +978,49 @@ msgstr "The step “{stepLabel}” failed. The error message was shown as a noti
 msgid "The transcript could not be created."
 msgstr "The transcript could not be created."
 
+#: src/views/trash/TrashView.tsx
+msgid "The trash is empty."
+msgstr "The trash is empty."
+
 #: src/app/Shell.tsx
 msgid "The video for {name} is processed and waiting for review."
 msgstr "The video for {name} is processed and waiting for review."
+
+#: src/views/jobs/JobsView.tsx
+msgid "Time"
+msgstr "Time"
 
 #: src/app/CredentialLinkView.tsx
 msgid "To login"
 msgstr "To login"
 
+#: src/app/jobRetention.ts
 #: src/app/time.ts
+#: src/views/trash/TrashView.tsx
 msgid "today"
 msgstr "today"
+
+#: src/app/jobRetention.ts
+#: src/views/trash/TrashView.tsx
+msgid "tomorrow"
+msgstr "tomorrow"
 
 #: src/app/jobPhase.ts
 msgid "Transcribing"
 msgstr "Transcribing"
 
 #: src/app/Shell.tsx
+#: src/views/trash/TrashView.tsx
 msgid "Trash"
 msgstr "Trash"
 
 #: src/app/SharedDownloadsView.tsx
 msgid "Try again"
 msgstr "Try again"
+
+#: src/views/trash/TrashView.tsx
+msgid "Type"
+msgstr "Type"
 
 #: src/app/jobActions.ts
 msgid "unknown recording"
@@ -469,7 +1030,12 @@ msgstr "unknown recording"
 msgid "Upload · {name}"
 msgstr "Upload · {name}"
 
+#: src/views/users/UsersView.tsx
+msgid "User details"
+msgstr "User details"
+
 #: src/app/Shell.tsx
+#: src/views/users/UsersView.tsx
 msgid "Users"
 msgstr "Users"
 
@@ -492,6 +1058,10 @@ msgstr "Welcome, please log in"
 #: src/app/CredentialLinkView.tsx
 msgid "Welcome!"
 msgstr "Welcome!"
+
+#: src/views/users/UsersView.tsx
+msgid "Works operationally within their domain."
+msgstr "Works operationally within their domain."
 
 #: src/app/CredentialLinkView.tsx
 msgid "Write it down now — it is only shown once. You log in with {email} and this PIN."

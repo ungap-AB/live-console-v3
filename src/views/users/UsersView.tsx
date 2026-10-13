@@ -1,3 +1,6 @@
+import { i18n } from '@lingui/core'
+import type { MessageDescriptor } from '@lingui/core'
+import { msg, t } from '@lingui/core/macro'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Domain, Role, UserAccount } from '../../data/types'
@@ -13,10 +16,18 @@ import { formatDate, formatDateTime } from '../../app/time'
 import './UsersView.css'
 import { errorMessage, runOptimistic } from '../../app/optimistic'
 
-const ROLES: Record<Role, { label: string; description: string }> = {
-  rootAdmin: { label: 'Root-administratör', description: 'Hanterar hela installationen och alla domäner.' },
-  domainAdmin: { label: 'Domänadministratör', description: 'Arbetar operativt inom sin domän.' },
-  operator: { label: 'Operatör', description: 'Skapar projekt, sänder och publicerar ondemand.' },
+const ROLES: Record<Role, { label: MessageDescriptor; description: MessageDescriptor }> = {
+  rootAdmin: { label: msg`Root administrator`, description: msg`Manages the whole installation and all domains.` },
+  domainAdmin: { label: msg`Domain administrator`, description: msg`Works operationally within their domain.` },
+  operator: { label: msg`Operator`, description: msg`Creates projects, broadcasts and publishes on demand.` },
+}
+
+function roleLabel(role: Role): string {
+  return i18n._(ROLES[role].label)
+}
+
+function roleDescription(role: Role): string {
+  return i18n._(ROLES[role].description)
 }
 
 const ROLE_ORDER: Role[] = ['domainAdmin', 'operator']
@@ -90,8 +101,8 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
     setSelectedUserId(id)
   }
 
-  // Listan är medvetet lätt (ingen aktivitetslogg) — full detalj hämtas
-  // separat när något väljs, se PLAN-live-server-v3.md Steg 2.
+  // The list is deliberately light (no activity log) — full details are fetched
+  // separately when something is selected, see PLAN-live-server-v3.md step 2.
   const userDetailResource = useResource(
     () => (selectedUserId ? client.users.get(selectedUserId) : Promise.resolve(undefined)),
     [selectedUserId],
@@ -117,11 +128,11 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
     try {
       await fn()
     } catch (err) {
-      setToast(err instanceof Error ? err.message : 'Något gick fel.')
+      setToast(err instanceof Error ? err.message : t`Something went wrong.`)
     }
   }
 
-  // UNG-105: det nya namnet visas direkt; vid fel återställs det och en toast visar felet.
+  // UNG-105: the new name shows immediately; on failure it is restored and a toast shows the error.
   function patchUserName(id: string, name: string) {
     setSelectedUserDetail((prev) => (prev && prev.id === id ? { ...prev, name } : prev))
     setDomainUsers((prev) => prev.map((u) => (u.id === id ? { ...u, name } : u)))
@@ -175,13 +186,15 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
 
   async function sendPasswordReset(user: UserAccount) {
     await client.users.sendPasswordReset(user.id)
-    setToast(`Ett återställningsmejl har skickats till ${user.email}. Länken gäller i en timme.`)
+    const email = user.email
+    setToast(t`A reset email has been sent to ${email}. The link is valid for one hour.`)
   }
 
   function onInvited(user: UserAccount) {
     replace(user)
     setInviting(false)
-    setToast(`Inbjudan skickad till ${user.email}. Texten är kopierad.`)
+    const email = user.email
+    setToast(t`Invitation sent to ${email}. The text is copied.`)
   }
 
   function onUserCreated(user: UserAccount) {
@@ -208,7 +221,7 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
     })
     setDomains((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
     setViewingDomain(updated)
-    setToast('Domän uppdaterad.')
+    setToast(t`Domain updated.`)
   }
 
   function requestDeleteDomain() {
@@ -222,34 +235,39 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
       await client.domains.remove(domain.id)
       setDomains((prev) => prev.filter((d) => d.id !== domain.id))
       if (selectedDomainId === domain.id) setSelectedDomainId(null)
-      setToast(`${domain.org} borttagen.`)
+      const organization = domain.org
+      setToast(t`${organization} removed.`)
     } catch (err) {
-      setToast(err instanceof Error ? err.message : 'Kunde inte ta bort domänen.')
+      setToast(err instanceof Error ? err.message : t`Could not remove the domain.`)
     } finally {
       setConfirmDeleteDomain(null)
     }
   }
 
-  const visibleUsers = [...domainUsers].sort((a, b) => a.name.localeCompare(b.name, 'sv'))
+  const visibleUsers = [...domainUsers].sort((a, b) => a.name.localeCompare(b.name, i18n.locales))
 
   const selectedUser = selectedUserDetail
+  const disableName = confirmDisable?.name ?? ''
+  const removeName = confirmRemove?.name ?? ''
+  const deleteOrganization = confirmDeleteDomain?.org ?? ''
+  const deleteHost = confirmDeleteDomain?.host ?? ''
   const selectedDomain = domains.find((d) => d.id === selectedDomainId) ?? null
 
   return (
     <div class="view">
       <header>
         <div>
-          <h1>Användare</h1>
+          <h1>{t`Users`}</h1>
         </div>
       </header>
 
       <div class="content">
         <div class="three">
-          <section class="pane" aria-label="Domäner">
+          <section class="pane" aria-label={t`Domains`}>
             <div class="top">
-              <h2>Domäner</h2>
+              <h2>{t`Domains`}</h2>
               <button class="btn btn-sm" type="button" onClick={() => setCreatingDomain(true)}>
-                + Ny
+                {t`+ New`}
               </button>
             </div>
             <ul>
@@ -265,8 +283,8 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
                   <button
                     class="ib domain-menu-btn"
                     type="button"
-                    title="Detaljer"
-                    aria-label="Detaljer"
+                    title={t`Details`}
+                    aria-label={t`Details`}
                     onClick={(e) => {
                       e.stopPropagation()
                       setViewingDomain(d)
@@ -279,17 +297,17 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
             </ul>
           </section>
 
-          <section class="pane" aria-label="Användare">
+          <section class="pane" aria-label={t`Users`}>
             <div class="top">
-              <h2>Användare</h2>
+              <h2>{t`Users`}</h2>
               <button class="btn btn-sm" type="button" disabled={!selectedDomainId} onClick={() => setCreatingUser(true)}>
-                + Ny
+                {t`+ New`}
               </button>
             </div>
             <ul>
-              {usersResource.loading && domainUsers.length === 0 && <li class="none">Laddar…</li>}
+              {usersResource.loading && domainUsers.length === 0 && <li class="none">{t`Loading…`}</li>}
               {!usersResource.loading && visibleUsers.length === 0 && (
-                <li class="none">Domänen har inga användare.</li>
+                <li class="none">{t`The domain has no users.`}</li>
               )}
               {visibleUsers.map((u) => (
                 <li key={u.id} class={u.id === selectedUserId ? 'sel' : ''}>
@@ -297,22 +315,22 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
                     <span class="avatar">{initials(u.name)}</span>
                     <span class="uinfo">
                       <span class="un">{u.name}</span>
-                      <span class="ue">{u.roles.map((r) => ROLES[r].label).join(', ')}</span>
+                      <span class="ue">{u.roles.map((r) => roleLabel(r)).join(', ')}</span>
                     </span>
-                    {u.status === 'invited' && <StatusChip tone="warn">Inbjuden</StatusChip>}
-                    {u.status === 'notinvited' && <StatusChip tone="neutral">Ej inbjuden</StatusChip>}
-                    {u.status === 'disabled' && <StatusChip tone="neutral">Inaktiv</StatusChip>}
+                    {u.status === 'invited' && <StatusChip tone="warn">{t`Invited`}</StatusChip>}
+                    {u.status === 'notinvited' && <StatusChip tone="neutral">{t`Not invited`}</StatusChip>}
+                    {u.status === 'disabled' && <StatusChip tone="neutral">{t`Inactive`}</StatusChip>}
                   </button>
                 </li>
               ))}
             </ul>
           </section>
 
-          <section class="doc users-doc" aria-label="Användarens detaljer">
+          <section class="doc users-doc" aria-label={t`User details`}>
             {!selectedUserId ? (
-              <div class="docnone">Välj en användare i listan.</div>
+              <div class="docnone">{t`Select a user in the list.`}</div>
             ) : !selectedUser ? (
-              <div class="docnone">Laddar…</div>
+              <div class="docnone">{t`Loading…`}</div>
             ) : (
               <UserDetail
                 user={selectedUser}
@@ -340,7 +358,7 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
 
       {renamingUser && (
         <RenameModal
-          title="Byt namn på användaren"
+          title={t`Rename the user`}
           initialValue={renamingUser.name}
           onCancel={() => setRenamingUser(null)}
           onSave={(name) => renameUser(renamingUser, name)}
@@ -349,27 +367,25 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
 
       {confirmDisable && (
         <ConfirmModal
-          title="Inaktivera konto?"
-          confirmLabel="Inaktivera"
+          title={t`Disable account?`}
+          confirmLabel={t`Disable`}
           danger
           onCancel={() => setConfirmDisable(null)}
           onConfirm={() => disable(confirmDisable)}
         >
-          <p>Inaktivera {confirmDisable.name}? Kontot kan inte logga in men finns kvar i historiken.</p>
+          <p>{t`Disable ${disableName}? The account cannot sign in but remains in the history.`}</p>
         </ConfirmModal>
       )}
 
       {confirmRemove && (
         <ConfirmModal
-          title="Ta bort användare?"
-          confirmLabel="Ta bort"
+          title={t`Remove user?`}
+          confirmLabel={t`Remove`}
           danger
           onCancel={() => setConfirmRemove(null)}
           onConfirm={() => remove(confirmRemove)}
         >
-          <p>
-            Ta bort {confirmRemove.name} helt? Historiken visar hädanefter bara namnet, utan konto.
-          </p>
+          <p>{t`Remove ${removeName} completely? From now on the history shows only the name, without an account.`}</p>
         </ConfirmModal>
       )}
 
@@ -406,16 +422,13 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
 
       {confirmDeleteDomain && (
         <ConfirmModal
-          title="Radera domän?"
-          confirmLabel="Radera domän"
+          title={t`Delete domain?`}
+          confirmLabel={t`Delete domain`}
           danger
           onCancel={() => setConfirmDeleteDomain(null)}
           onConfirm={() => deleteDomain(confirmDeleteDomain)}
         >
-          <p>
-            {confirmDeleteDomain.org} ({confirmDeleteDomain.host}) tas bort permanent. Det går inte att
-            ångra.
-          </p>
+          <p>{t`${deleteOrganization} (${deleteHost}) is removed permanently. It cannot be undone.`}</p>
         </ConfirmModal>
       )}
 
@@ -437,37 +450,37 @@ function CreateDomainModal({ onCancel, onSave }: CreateDomainModalProps) {
   const canSave = domainIsValid && organizationIsValid
 
   return (
-    <Modal title="Ny domän" onClose={onCancel}>
+    <Modal title={t`New domain`} onClose={onCancel}>
       <div class="domain-form">
         <label>
-          Organisationens namn
+          {t`Organization name`}
           <input
             class="rename-input"
             value={org}
-            placeholder="t.ex. Exempel kommun"
+            placeholder={t`e.g. Example Municipality`}
             autoFocus
             onInput={(e) => setOrg(e.currentTarget.value)}
           />
         </label>
         <label>
-          Domän
+          {t`Domain`}
           <input
             class="rename-input"
             value={host}
-            placeholder="t.ex. exempel.se"
+            placeholder={t`e.g. example.com`}
             onInput={(e) => setHost(e.currentTarget.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && canSave) onSave(host.trim(), org.trim())
             }}
           />
         </label>
-        {host.trim().length > 0 && !domainIsValid && <p class="note warn">Ange ett giltigt domännamn, till exempel exempel.se.</p>}
-        {org.length > 0 && !organizationIsValid && <p class="note warn">Ange organisationens namn.</p>}
+        {host.trim().length > 0 && !domainIsValid && <p class="note warn">{t`Enter a valid domain name, for example example.com.`}</p>}
+        {org.length > 0 && !organizationIsValid && <p class="note warn">{t`Enter the organization name.`}</p>}
       </div>
       <div class="modal-actions">
-        <span class="invite-pin-hint">PIN-koden blir giltig först när inbjudan är skickad</span>
+        <span class="invite-pin-hint">{t`The PIN becomes valid only when the invitation has been sent`}</span>
         <button class="btn btn-sm" type="button" onClick={onCancel}>
-          Avbryt
+          {t`Cancel`}
         </button>
         <button
           class="btn btn-sm btn-primary"
@@ -475,7 +488,7 @@ function CreateDomainModal({ onCancel, onSave }: CreateDomainModalProps) {
           disabled={!canSave}
           onClick={() => onSave(host.trim(), org.trim())}
         >
-          Skapa
+          {t`Create`}
         </button>
       </div>
     </Modal>
@@ -495,6 +508,7 @@ function CreateUserDialog({ domain, onCancel, onCreated }: CreateUserDialogProps
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const canSave = isValidEmail(email) && name.trim().length > 0 && !saving
+  const host = domain.host
 
   async function save() {
     if (!canSave) return
@@ -504,40 +518,40 @@ function CreateUserDialog({ domain, onCancel, onCreated }: CreateUserDialogProps
       const user = await client.domains.createUser(domain.id, { email: email.trim(), name: name.trim(), roles: [role] })
       onCreated(user)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Kunde inte skapa användaren.')
+      setError(err instanceof Error ? err.message : t`Could not create the user.`)
       setSaving(false)
     }
   }
 
   return (
-    <Modal title={`Ny användare i ${domain.host}`} onClose={onCancel}>
+    <Modal title={t`New user in ${host}`} onClose={onCancel}>
       <div class="domain-form">
         <label>
-          Namn
+          {t`Name`}
           <input
             class="rename-input"
             value={name}
-            placeholder="För- och efternamn"
+            placeholder={t`First and last name`}
             autoFocus
             onInput={(e) => setName(e.currentTarget.value)}
           />
         </label>
         <label>
-          E-post
+          {t`Email`}
           <input
             class="rename-input"
             type="email"
             value={email}
-            placeholder="namn@exempel.se"
+            placeholder={t`name@example.com`}
             onInput={(e) => setEmail(e.currentTarget.value)}
           />
         </label>
         <label>
-          Behörighet
+          {t`Permission`}
           <select class="rename-input" value={role} onChange={(e) => setRole(e.currentTarget.value as Role)}>
             {ROLE_ORDER.map((r) => (
               <option key={r} value={r}>
-                {ROLES[r].label}
+                {roleLabel(r)}
               </option>
             ))}
           </select>
@@ -546,10 +560,10 @@ function CreateUserDialog({ domain, onCancel, onCreated }: CreateUserDialogProps
       </div>
       <div class="modal-actions">
         <button class="btn btn-sm" type="button" onClick={onCancel}>
-          Avbryt
+          {t`Cancel`}
         </button>
         <button class="btn btn-sm btn-primary" type="button" disabled={!canSave} onClick={save}>
-          {saving ? 'Sparar…' : 'Spara'}
+          {saving ? t`Saving…` : t`Save`}
         </button>
       </div>
     </Modal>
@@ -576,40 +590,43 @@ function InviteDialog({ domain, user, resend, onCancel, onSent }: InviteDialogPr
       const updated = await (resend ? client.users.resendInvite(user.id) : client.users.sendInvitation(user.id))
       onSent(updated)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Kunde inte skicka inbjudan.')
+      setError(err instanceof Error ? err.message : t`Could not send the invitation.`)
       setSending(false)
     }
   }
 
+  const host = domain.host
+  const email = user.email
+
   return (
-    <Modal title={`Bjud in till ${domain.host}`} onClose={onCancel} wide>
+    <Modal title={t`Invite to ${host}`} onClose={onCancel} wide>
       <div class="invite-dialog">
         <div class="invite-fields">
           <label>
-            E-post
+            {t`Email`}
             <input class="rename-input" type="email" readOnly value={user.email} />
           </label>
           <label>
-            Namn
+            {t`Name`}
             <input class="rename-input" readOnly value={user.name} />
           </label>
           <label>
-            Behörighet
-            <input class="rename-input" readOnly value={user.roles.map((r) => ROLES[r].label).join(', ')} />
+            {t`Permission`}
+            <input class="rename-input" readOnly value={user.roles.map((r) => roleLabel(r)).join(', ')} />
           </label>
         </div>
         <p class="note">
-          Ett välkomstmejl med en engångslänk skickas till {user.email}. Länken gäller i 7 dagar. När mottagaren klickar på den skapas en personlig PIN-kod som visas en enda gång.
-          {resend && ' En ny inbjudan ersätter den tidigare: den gamla länken och PIN-koden slutar gälla.'}
+          {t`A welcome email with a one-time link is sent to ${email}. The link is valid for 7 days. When the recipient clicks it, a personal PIN is created that is shown only once.`}
+          {resend && ' ' + t`A new invitation replaces the previous one: the old link and PIN stop working.`}
         </p>
         {error && <p class="note warn">{error}</p>}
       </div>
       <div class="modal-actions">
         <button class="btn btn-sm" type="button" onClick={onCancel}>
-          Avbryt
+          {t`Cancel`}
         </button>
         <button class="btn btn-sm btn-primary" type="button" disabled={sending} onClick={() => void send()}>
-          {sending ? 'Skickar…' : 'Skicka inbjudan'}
+          {sending ? t`Sending…` : t`Send invitation`}
         </button>
       </div>
     </Modal>
@@ -675,73 +692,73 @@ function DomainDetailsDialog({ domain, onClose, onSave, onRequestDelete }: Domai
             class="btn btn-sm btn-danger"
             type="button"
             disabled={domain.userCount > 0}
-            title={domain.userCount > 0 ? 'Domänen har användare kvar och kan inte tas bort.' : undefined}
+            title={domain.userCount > 0 ? t`The domain still has users and cannot be removed.` : undefined}
             onClick={onRequestDelete}
           >
-            Radera domän
+            {t`Delete domain`}
           </button>
           <span class="spacer" />
           <button class="btn btn-sm" type="button" onClick={onClose}>
-            Stäng
+            {t`Close`}
           </button>
           <button class="btn btn-sm btn-primary" type="button" disabled={!dirty || saving} onClick={save}>
-            {saving ? 'Sparar…' : 'Spara'}
+            {saving ? t`Saving…` : t`Save`}
           </button>
         </>
       }
     >
       <label class="domain-org-field">
-        Organisationens namn
+        {t`Organization name`}
         <input class="rename-input" value={org} onInput={(e) => setOrg(e.currentTarget.value)} />
       </label>
       <div class="domain-form">
         <label>
-          Avtalsperiod från
+          {t`Contract period from`}
           <input class="rename-input" type="date" value={contractStart} onInput={(e) => setContractStart(e.currentTarget.value)} />
         </label>
         <label>
-          Avtalsperiod till
+          {t`Contract period to`}
           <input class="rename-input" type="date" value={contractEnd} onInput={(e) => setContractEnd(e.currentTarget.value)} />
         </label>
       </div>
-      {contractStart && contractEnd && contractEnd < contractStart && <p class="note warn">Slutdatum måste vara efter startdatum.</p>}
+      {contractStart && contractEnd && contractEnd < contractStart && <p class="note warn">{t`The end date must be after the start date.`}</p>}
       <label class="domain-org-field">
-        Mux env key (kundens eget Mux-konto)
+        {t`Mux env key (the customer's own Mux account)`}
         <input
           class="rename-input"
           value={muxEnvKey}
-          placeholder="Lämna tomt för ungaps standardnyckel"
+          placeholder={t`Leave empty for ungap's default key`}
           onInput={(e) => setMuxEnvKey(e.currentTarget.value)}
         />
       </label>
       <div class="grid">
         <div>
-          <div class="k">Användare</div>
+          <div class="k">{t`Users`}</div>
           <div class="v">{domain.userCount}</div>
         </div>
         <div>
-          <div class="k">Projekt</div>
+          <div class="k">{t`Projects`}</div>
           <div class="v">{stats ? stats.projects : '…'}</div>
         </div>
         <div>
-          <div class="k">Gjorda sändningar</div>
+          <div class="k">{t`Broadcasts made`}</div>
           <div class="v">{stats ? stats.broadcasts : '…'}</div>
         </div>
         <div>
-          <div class="k">Inspelningar</div>
+          <div class="k">{t`Recordings`}</div>
           <div class="v">{stats ? stats.recordings : '…'}</div>
         </div>
         <div>
-          <div class="k">Dagordningar</div>
+          <div class="k">{t`Agendas`}</div>
           <div class="v">{stats ? stats.agendas : '…'}</div>
         </div>
         <div>
-          <div class="k">Namnlistor</div>
+          <div class="k">{t`Name lists`}</div>
           <div class="v">{stats ? stats.namelists : '…'}</div>
         </div>
       </div>
       <div class="block">
-        <h3>Avtalsperiod</h3>
+        <h3>{t`Contract period`}</h3>
         <div class="v">
           {formatDate(domain.contractStart)} – {formatDate(domain.contractEnd)}
         </div>
@@ -777,6 +794,7 @@ function UserDetail({
   onSendPasswordReset,
   onRename,
 }: UserDetailProps) {
+  const adminHost = domain?.host ?? ''
   return (
     <>
       <div class="head">
@@ -785,7 +803,7 @@ function UserDetail({
           <div>
             <h2>
               {u.name}
-              <button class="ib" type="button" title="Byt namn på användaren" aria-label="Byt namn på användaren" onClick={onRename}>
+              <button class="ib" type="button" title={t`Rename the user`} aria-label={t`Rename the user`} onClick={onRename}>
                 <EditIcon />
               </button>
             </h2>
@@ -795,18 +813,18 @@ function UserDetail({
             <OverflowMenu
               items={[
                 u.status === 'disabled'
-                  ? { label: 'Aktivera konto', onClick: onEnable }
+                  ? { label: t`Enable account`, onClick: onEnable }
                   : {
-                      label: 'Inaktivera konto',
+                      label: t`Disable account`,
                       disabled: lastAdmin,
-                      title: lastAdmin ? 'Domänen måste ha minst en aktiv administratör' : undefined,
+                      title: lastAdmin ? t`The domain must have at least one active administrator` : undefined,
                       onClick: onDisable,
                     },
                 {
-                  label: 'Ta bort',
+                  label: t`Remove`,
                   danger: true,
                   disabled: lastAdmin,
-                  title: lastAdmin ? 'Domänen måste ha minst en aktiv administratör' : undefined,
+                  title: lastAdmin ? t`The domain must have at least one active administrator` : undefined,
                   onClick: onRemove,
                 },
               ]}
@@ -815,32 +833,32 @@ function UserDetail({
         </div>
         <div class="facts">
           <span>
-            {u.status === 'notinvited' && 'Ej inbjuden'}
-            {u.status === 'active' && 'Aktiv'}
-            {u.status === 'invited' && 'Inbjuden – har inte loggat in'}
-            {u.status === 'disabled' && 'Inaktiverad'}
+            {u.status === 'notinvited' && t`Not invited`}
+            {u.status === 'active' && t`Active`}
+            {u.status === 'invited' && t`Invited – has not signed in`}
+            {u.status === 'disabled' && t`Disabled`}
           </span>
           {domain && <span>{domain.org}</span>}
         </div>
         <div class="badges">
           {u.roles.map((r) => (
               <StatusChip key={r} tone={r === 'domainAdmin' ? 'accent' : 'neutral'}>
-              {ROLES[r].label}
+              {roleLabel(r)}
             </StatusChip>
           ))}
         </div>
         <div class="tools">
           {u.status === 'notinvited' ? (
             <button class="btn btn-sm btn-primary" type="button" onClick={onInvite}>
-              Bjud in
+              {t`Invite`}
             </button>
           ) : u.status === 'invited' ? (
             <button class="btn btn-sm" type="button" onClick={onResendInvite}>
-              Skicka om inbjudan
+              {t`Resend invitation`}
             </button>
           ) : (
             <button class="btn btn-sm" type="button" onClick={onSendPasswordReset}>
-              Återställningslänk
+              {t`Reset link`}
             </button>
           )}
         </div>
@@ -849,31 +867,31 @@ function UserDetail({
       <div class="body">
         <div class="grid">
           <div>
-            <div class="k">Senaste inloggning</div>
-            <div class="v">{u.lastLoginAt ? formatDateTime(u.lastLoginAt) : 'aldrig'}</div>
+            <div class="k">{t`Last sign-in`}</div>
+            <div class="v">{u.lastLoginAt ? formatDateTime(u.lastLoginAt) : t`never`}</div>
           </div>
           <div>
-            <div class="k">Konto skapat</div>
+            <div class="k">{t`Account created`}</div>
             <div class="v">{formatDateTime(u.createdAt)}</div>
           </div>
           <div>
-            <div class="k">Inloggning</div>
-            <div class="v">{u.ssoEnabled ? 'SSO' : 'e-post'}</div>
+            <div class="k">{t`Sign-in`}</div>
+            <div class="v">{u.ssoEnabled ? 'SSO' : t`email`}</div>
           </div>
           <div>
-            <div class="k">Domän</div>
+            <div class="k">{t`Domain`}</div>
             <div class="v">{domain?.host}</div>
           </div>
         </div>
 
         <div class="block">
-          <h3>Behörigheter</h3>
+          <h3>{t`Permissions`}</h3>
           <div class="roles">
             {u.roles.includes('rootAdmin') ? (
-              <div class="role on locked" aria-label="Root-administratör, låst">
+              <div class="role on locked" aria-label={t`Root administrator, locked`}>
                 <span class="rt">
-                  <b>{ROLES.rootAdmin.label}</b>
-                  <span>{ROLES.rootAdmin.description} Rollen kan inte ändras här.</span>
+                  <b>{roleLabel('rootAdmin')}</b>
+                  <span>{roleDescription('rootAdmin')} {t`The role cannot be changed here.`}</span>
                 </span>
               </div>
             ) : (
@@ -889,8 +907,8 @@ function UserDetail({
                       onChange={(e) => onToggleRole(role, e.currentTarget.checked)}
                     />
                     <span class="rt">
-                      <b>{ROLES[role].label}</b>
-                      <span>{ROLES[role].description}</span>
+                      <b>{roleLabel(role)}</b>
+                      <span>{roleDescription(role)}</span>
                     </span>
                   </label>
                 )
@@ -899,13 +917,13 @@ function UserDetail({
           </div>
           {lastAdmin && domain && (
             <p class="note warn" style={{ marginTop: '10px' }}>
-              Enda aktiva administratören på {domain.host}. Utse en till innan rollen tas bort.
+              {t`The only active administrator on ${adminHost}. Appoint another one before the role is removed.`}
             </p>
           )}
         </div>
 
         <div class="block">
-          <h3>Senaste aktivitet</h3>
+          <h3>{t`Recent activity`}</h3>
           <ul class="log">
             {u.activity.map((entry) => (
               <li key={entry.occurredAt + entry.description}>
@@ -918,8 +936,7 @@ function UserDetail({
 
         {u.status === 'disabled' ? (
           <p class="note">
-            Inaktiverade konton kan inte logga in men behålls i historiken — tidigare sändningar och
-            ändringar står kvar på användaren.
+            {t`Disabled accounts cannot sign in but are kept in the history — earlier broadcasts and changes remain on the user.`}
           </p>
         ) : null}
       </div>

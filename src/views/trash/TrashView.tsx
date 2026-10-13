@@ -1,3 +1,6 @@
+import { i18n } from '@lingui/core'
+import type { MessageDescriptor } from '@lingui/core'
+import { msg, plural, t } from '@lingui/core/macro'
 import type { JSX } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
@@ -6,11 +9,11 @@ import { useResource } from '../../app/useResource'
 import { AgendaIcon, NameListIcon, ProjectIcon, RecordingIcon, SearchIcon } from '../../components/icons'
 import './TrashView.css'
 
-const TYPE_META: Record<TrashItemType, { label: string; icon: () => JSX.Element }> = {
-  project: { label: 'Projekt', icon: ProjectIcon },
-  agenda: { label: 'Dagordning', icon: AgendaIcon },
-  namelist: { label: 'Namnlista', icon: NameListIcon },
-  recording: { label: 'Inspelning', icon: RecordingIcon },
+const TYPE_META: Record<TrashItemType, { label: MessageDescriptor; icon: () => JSX.Element }> = {
+  project: { label: msg`Project`, icon: ProjectIcon },
+  agenda: { label: msg`Agenda`, icon: AgendaIcon },
+  namelist: { label: msg`Name list`, icon: NameListIcon },
+  recording: { label: msg`Recording`, icon: RecordingIcon },
 }
 
 const TYPE_ORDER: TrashItemType[] = ['project', 'agenda', 'namelist', 'recording']
@@ -20,11 +23,11 @@ function daysLeft(purgeAt: string): number {
   return Math.max(0, Math.ceil(ms / 86_400_000))
 }
 
-// Texten i kolumnen Rensas (rubriken säger redan vad det gäller).
+// The text in the Purged column (the heading already says what it is about).
 function leftText(days: number): string {
-  if (days === 0) return 'idag'
-  if (days === 1) return 'imorgon'
-  return `om ${days} dagar`
+  if (days === 0) return t`today`
+  if (days === 1) return t`tomorrow`
+  return t`in ${days} days`
 }
 
 function urgency(days: number): 'urgent' | 'soon' | '' {
@@ -34,27 +37,27 @@ function urgency(days: number): 'urgent' | 'soon' | '' {
 }
 
 function formatPurgeDate(purgeAt: string): string {
-  return new Date(purgeAt).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(purgeAt).toLocaleDateString(i18n.locales, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function formatDeletedDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(i18n.locales, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-// retentionDays kan vara bråkdelar av en dag i utvecklingsmiljön (kort
-// gallringstid för att testa purge-flödet), så visa i lämplig enhet istället
-// för att alltid anta hela dagar.
+// retentionDays can be fractions of a day in development (a short retention
+// period for testing the purge flow), so show a fitting unit instead of
+// always assuming whole days.
 function formatRetentionPeriod(days: number): string {
   if (days >= 1) {
     const rounded = Math.round(days)
-    return rounded === 1 ? '1 dag' : `${rounded} dagar`
+    return plural(rounded, { one: '# day', other: '# days' })
   }
   const totalMinutes = Math.round(days * 24 * 60)
   if (totalMinutes >= 60) {
     const hours = Math.round(totalMinutes / 60)
-    return hours === 1 ? '1 timme' : `${hours} timmar`
+    return plural(hours, { one: '# hour', other: '# hours' })
   }
-  return totalMinutes === 1 ? '1 minut' : `${totalMinutes} minuter`
+  return plural(totalMinutes, { one: '# minute', other: '# minutes' })
 }
 
 export function TrashView() {
@@ -78,8 +81,11 @@ export function TrashView() {
     .filter((i) => !q || (i.name + ' ' + i.detail).toLowerCase().includes(q))
     .sort((a, b) => new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime())
 
+  const shown = visible.length
   const counts: Record<string, number> = { alla: items.length }
-  for (const t of TYPE_ORDER) counts[t] = items.filter((i) => i.type === t).length
+  for (const type of TYPE_ORDER) counts[type] = items.filter((i) => i.type === type).length
+
+  const period = retentionDays !== null ? formatRetentionPeriod(retentionDays) : '…'
 
   async function restore(item: TrashItem) {
     setItems((prev) => prev.filter((i) => i.id !== item.id))
@@ -94,7 +100,7 @@ export function TrashView() {
     <div class="view">
       <header>
         <div>
-          <h1>Papperskorg</h1>
+          <h1>{t`Trash`}</h1>
         </div>
       </header>
 
@@ -105,52 +111,52 @@ export function TrashView() {
               <SearchIcon />
               <input
                 type="search"
-                placeholder="Sök i papperskorgen"
-                aria-label="Sök i papperskorgen"
+                placeholder={t`Search the trash`}
+                aria-label={t`Search the trash`}
                 value={query}
                 onInput={(e) => setQuery(e.currentTarget.value)}
               />
             </div>
             <div class="chips">
               <button type="button" aria-pressed={filter === 'alla'} onClick={() => setFilter('alla')}>
-                Alla {counts.alla ? counts.alla : ''}
+                {t`All`} {counts.alla ? counts.alla : ''}
               </button>
-              {TYPE_ORDER.map((t) => (
+              {TYPE_ORDER.map((type) => (
                 <button
-                  key={t}
+                  key={type}
                   type="button"
-                  aria-pressed={filter === t}
-                  onClick={() => setFilter(t)}
+                  aria-pressed={filter === type}
+                  onClick={() => setFilter(type)}
                 >
-                  {TYPE_META[t].label}
-                  {counts[t] ? ` ${counts[t]}` : ''}
+                  {i18n._(TYPE_META[type].label)}
+                  {counts[type] ? ` ${counts[type]}` : ''}
                 </button>
               ))}
             </div>
             <span class="count">
               {resource.loading
-                ? 'Laddar…'
+                ? t`Loading…`
                 : visible.length === items.length
-                  ? `${items.length} poster`
-                  : `${visible.length} av ${items.length} poster`}
+                  ? plural(items.length, { one: '# item', other: '# items' })
+                  : plural(items.length, { one: `${shown} of # item`, other: `${shown} of # items` })}
             </span>
           </div>
 
           {!resource.loading && visible.length === 0 ? (
             <div class="empty">
-              <p>{items.length ? 'Ingen post matchar filtret.' : 'Papperskorgen är tom.'}</p>
+              <p>{items.length ? t`No item matches the filter.` : t`The trash is empty.`}</p>
               {items.length === 0 && (
-                <p>Borttagna projekt, dagordningar, namnlistor och inspelningar hamnar här.</p>
+                <p>{t`Deleted projects, agendas, name lists and recordings end up here.`}</p>
               )}
             </div>
           ) : (
             <div class="dl trash-list">
               <div class="dl-head" aria-hidden="true">
-                <span class="dl-name">Namn</span>
-                <span class="trash-col-type">Typ</span>
-                <span class="trash-col-detail">Innehåll</span>
-                <span class="trash-col-deleted">Borttagen</span>
-                <span class="trash-col-purge">Rensas</span>
+                <span class="dl-name">{t`Name`}</span>
+                <span class="trash-col-type">{t`Type`}</span>
+                <span class="trash-col-detail">{t`Contents`}</span>
+                <span class="trash-col-deleted">{t`Deleted`}</span>
+                <span class="trash-col-purge">{t`Purged`}</span>
                 <span class="trash-col-actions" />
               </div>
               <ul class="dl-rows">
@@ -158,21 +164,23 @@ export function TrashView() {
                   const left = daysLeft(i.purgeAt)
                   const u = urgency(left)
                   const Icon = TYPE_META[i.type].icon
+                  const deletedOn = formatDeletedDate(i.deletedAt)
+                  const deletedBy = i.deletedBy.name
                   return (
                     <li key={i.id} class={`dl-row${u === 'urgent' ? ' soon' : ''}`}>
                       <span class="dl-name">
                         <span class="dl-icon"><Icon /></span>
                         <span class="dl-title" title={i.name}>{i.name}</span>
                       </span>
-                      <span class="dl-cell trash-col-type"><span class="type">{TYPE_META[i.type].label}</span></span>
+                      <span class="dl-cell trash-col-type"><span class="type">{i18n._(TYPE_META[i.type].label)}</span></span>
                       <span class="dl-cell dl-muted trash-col-detail" title={i.detail}>{i.detail}</span>
-                      <span class="dl-cell trash-col-deleted" title={`Borttagen ${formatDeletedDate(i.deletedAt)} av ${i.deletedBy.name}`}>
+                      <span class="dl-cell trash-col-deleted" title={t`Deleted ${deletedOn} by ${deletedBy}`}>
                         {formatDeletedDate(i.deletedAt)} <span class="dl-muted">· {i.deletedBy.name}</span>
                       </span>
                       <span class={`dl-cell trash-col-purge purge ${u}`} title={formatPurgeDate(i.purgeAt)}>{leftText(left)}</span>
                       <span class="dl-actions trash-col-actions">
                         <button class="btn btn-sm" type="button" onClick={() => restore(i)}>
-                          Återställ
+                          {t`Restore`}
                         </button>
                       </span>
                     </li>
@@ -183,8 +191,7 @@ export function TrashView() {
           )}
 
           <div class="trash-foot">
-            Poster rensas automatiskt {retentionDays !== null ? formatRetentionPeriod(retentionDays) : '…'} efter att
-            de tagits bort. Efter det går de inte att återställa.
+            {t`Items are purged automatically ${period} after they were deleted. After that they cannot be restored.`}
           </div>
         </section>
       </div>
