@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Channel, ChannelHealth } from '../../data/types'
@@ -12,6 +13,7 @@ import { Toast } from '../../components/Toast'
 import { EditIcon } from '../../components/icons'
 import { formatDateTime } from '../../app/time'
 import { errorMessage, runOptimistic } from '../../app/optimistic'
+import { formatNumber } from '../../i18n'
 
 const STALE_DAYS = 30
 
@@ -25,12 +27,44 @@ function statusTone(c: Channel): 'live' | 'warn' | 'neutral' {
 }
 
 function statusLabel(c: Channel): string {
-  return c.state === 'live' ? 'Sänder' : 'Vilande'
+  return c.state === 'live' ? t`Broadcasting` : t`Idle`
 }
 
 function idleText(c: Channel): string {
-  if (c.state === 'live') return 'aktiv'
-  return c.idleDays === 0 ? 'använd idag' : `oanvänd ${c.idleDays} d`
+  if (c.state === 'live') return t`active`
+  const days = c.idleDays
+  return days === 0 ? t`used today` : t`unused ${days} d`
+}
+
+function openingProjectText(name: string): string {
+  return t`Opening the project: ${name}`
+}
+
+function latencyText(c: Channel): string {
+  const type = c.type
+  const latencyMode = c.latencyMode
+  return t`${type} · ${latencyMode} latency`
+}
+
+function createdText(iso: string): string {
+  const created = formatDateTime(iso)
+  return t`Created ${created}`
+}
+
+function idleDaysText(days: number): string {
+  return t`${days} days`
+}
+
+function secondsAgoText(value: number): string {
+  const seconds = formatNumber(value)
+  return t`${seconds} s ago`
+}
+
+function staleText(c: Channel): string {
+  const days = c.idleDays
+  return c.project
+    ? t`Idle for ${days} days. Candidate for cleanup — an allocated channel takes up a slot even when it costs nothing.`
+    : t`Idle for ${days} days without a linked project. Candidate for cleanup — an allocated channel takes up a slot even when it costs nothing.`
 }
 
 export function LiveResourcesView() {
@@ -76,19 +110,20 @@ export function LiveResourcesView() {
       setCreating(false)
     } catch (err) {
       setCreating(false)
-      setToast(err instanceof Error ? err.message : 'Kunde inte skapa resursen.')
+      setToast(err instanceof Error ? err.message : t`Could not create the resource.`)
     }
   }
 
   function requestNewChannel() {
     if (quota && quota.used >= quota.limit) {
-      setToast(`Kanaltaket är nått (${quota.limit}). Riv en vilande resurs först.`)
+      const limit = quota.limit
+      setToast(t`The channel limit is reached (${limit}). Tear down an idle resource first.`)
       return
     }
     setCreating(true)
   }
 
-  // UNG-105: det nya namnet visas direkt; vid fel återställs det och en toast visar felet.
+  // UNG-105: the new name shows immediately; on failure it is restored and a toast shows the error.
   function patchChannelLabel(id: string, label: string) {
     setChannels((prev) => prev.map((c) => (c.id === id ? { ...c, label } : c)))
   }
@@ -103,14 +138,14 @@ export function LiveResourcesView() {
       },
       request: () => client.channels.rename(channel.id, label),
       onSuccess: (updated) => setChannels((prev) => prev.map((c) => (c.id === updated.id ? updated : c))),
-      onError: (err) => setToast(errorMessage(err, 'Kunde inte byta namn.')),
+      onError: (err) => setToast(errorMessage(err, t`Could not rename.`)),
     })
   }
 
   async function rotateKey(channel: Channel) {
     await client.channels.rotateKey(channel.id)
     setConfirmRotate(null)
-    setToast('Ny stream key genererad. Den gamla slutar gälla omedelbart.')
+    setToast(t`New stream key generated. The old one stops working immediately.`)
   }
 
   async function teardown(channel: Channel) {
@@ -120,33 +155,35 @@ export function LiveResourcesView() {
       setSelectedId(null)
       setQuota((prev) => (prev ? { ...prev, used: prev.used - 1 } : prev))
     } catch (err) {
-      setToast(err instanceof Error ? err.message : 'Kunde inte riva resursen.')
+      setToast(err instanceof Error ? err.message : t`Could not tear down the resource.`)
     } finally {
       setConfirmTeardown(null)
     }
   }
 
+  const teardownLabel = confirmTeardown?.label ?? ''
+
   return (
     <div class="view">
       <header>
         <div class="header-list-zone">
-          <h1>Live-resurser</h1>
+          <h1>{t`Live resources`}</h1>
           <span class="spacer" />
           <button class="btn btn-sm" type="button" onClick={requestNewChannel}>
-            + Ny
+            {t`+ New`}
           </button>
         </div>
       </header>
 
       <div class="content">
         <SplitPane
-          listLabel="Live-resurser"
-          detailLabel="Vald resurs"
+          listLabel={t`Live resources`}
+          detailLabel={t`Selected resource`}
           list={
             <>
               <ul>
-                {resource.loading && channels.length === 0 && <li class="none">Laddar…</li>}
-                {!resource.loading && visible.length === 0 && <li class="none">Ingen resurs ännu.</li>}
+                {resource.loading && channels.length === 0 && <li class="none">{t`Loading…`}</li>}
+                {!resource.loading && visible.length === 0 && <li class="none">{t`No resource yet.`}</li>}
                 {visible.map((c) => (
                   <li key={c.id} class={c.id === selectedId ? 'sel' : ''}>
                     <button class="row" type="button" onClick={() => setSelectedId(c.id)}>
@@ -158,7 +195,7 @@ export function LiveResourcesView() {
                           {statusLabel(c)}
                         </StatusChip>
                         <span class="meta meta-mono">
-                          {c.name} · {c.project ? 'kopplad' : 'fristående'} · {idleText(c)}
+                          {c.name} · {c.project ? t`linked` : t`standalone`} · {idleText(c)}
                         </span>
                       </span>
                     </button>
@@ -169,13 +206,13 @@ export function LiveResourcesView() {
           }
           detail={
             !selected ? (
-              <div class="docnone">Välj en resurs i listan.</div>
+              <div class="docnone">{t`Select a resource in the list.`}</div>
             ) : (
               <ResourceDetail
                 channel={selected}
                 health={healthResource.data ?? null}
                 onRotateKey={() => (selected.state === 'live' ? setConfirmRotate(selected) : rotateKey(selected))}
-                onOpenProject={() => selected.project && setToast(`Öppnar projektet: ${selected.project.name}`)}
+                onOpenProject={() => selected.project && setToast(openingProjectText(selected.project.name))}
                 onTeardown={() => setConfirmTeardown(selected)}
                 onRename={() => setRenaming(selected)}
               />
@@ -186,7 +223,7 @@ export function LiveResourcesView() {
 
       {creating && (
         <RenameModal
-          title="Ny resurs"
+          title={t`New resource`}
           initialValue=""
           onCancel={() => setCreating(false)}
           onSave={createChannel}
@@ -195,7 +232,7 @@ export function LiveResourcesView() {
 
       {renaming && (
         <RenameModal
-          title="Byt namn på resursen"
+          title={t`Rename the resource`}
           initialValue={renaming.label}
           onCancel={() => setRenaming(null)}
           onSave={(label) => renameChannel(renaming, label)}
@@ -204,28 +241,25 @@ export function LiveResourcesView() {
 
       {confirmRotate && (
         <ConfirmModal
-          title="Rotera stream key?"
-          confirmLabel="Rotera ändå"
+          title={t`Rotate stream key?`}
+          confirmLabel={t`Rotate anyway`}
           danger
           onCancel={() => setConfirmRotate(null)}
           onConfirm={() => rotateKey(confirmRotate)}
         >
-          <p>Sändning pågår. Att rotera stream key bryter enkoderns anslutning. Fortsätt?</p>
+          <p>{t`A broadcast is in progress. Rotating the stream key breaks the encoder's connection. Continue?`}</p>
         </ConfirmModal>
       )}
 
       {confirmTeardown && (
         <ConfirmModal
-          title="Riv resurs?"
-          confirmLabel="Riv resurs"
+          title={t`Tear down resource?`}
+          confirmLabel={t`Tear down resource`}
           danger
           onCancel={() => setConfirmTeardown(null)}
           onConfirm={() => teardown(confirmTeardown)}
         >
-          <p>
-            Riv {confirmTeardown.label}? Ingest-server och stream key slutar gälla. Inspelningar i
-            videoarkivet påverkas inte.
-          </p>
+          <p>{t`Tear down ${teardownLabel}? The ingest server and stream key stop working. Recordings in the video archive are not affected.`}</p>
         </ConfirmModal>
       )}
 
@@ -251,25 +285,25 @@ function ResourceDetail({ channel: c, health, onRotateKey, onOpenProject, onTear
       <div class="head">
         <h2>
           {c.label}
-          <button class="ib" type="button" title="Byt namn på resursen" aria-label="Byt namn på resursen" onClick={onRename}>
+          <button class="ib" type="button" title={t`Rename the resource`} aria-label={t`Rename the resource`} onClick={onRename}>
             <EditIcon />
           </button>
           <StatusChip tone={statusTone(c)} dot>
             {statusLabel(c)}
           </StatusChip>
           {c.project ? (
-            <StatusChip tone="accent">Kopplad till projekt</StatusChip>
+            <StatusChip tone="accent">{t`Linked to project`}</StatusChip>
           ) : (
-            <StatusChip tone="neutral">Fristående</StatusChip>
+            <StatusChip tone="neutral">{t`Standalone`}</StatusChip>
           )}
           <span class="head-actions">
             <OverflowMenu
               items={[
                 {
-                  label: 'Riv resurs',
+                  label: t`Tear down resource`,
                   danger: true,
                   disabled: live,
-                  title: live ? 'Går inte att riva medan signal tas emot' : undefined,
+                  title: live ? t`Cannot be torn down while a signal is being received` : undefined,
                   onClick: onTeardown,
                 },
               ]}
@@ -280,18 +314,18 @@ function ResourceDetail({ channel: c, health, onRotateKey, onOpenProject, onTear
           <span>{c.name}</span>
           <span>{c.region}</span>
           <span>
-            {c.type} · {c.latencyMode} latency
+            {latencyText(c)}
           </span>
-          <span>Skapad {formatDateTime(c.createdAt)}</span>
+          <span>{createdText(c.createdAt)}</span>
         </div>
         <div class="tools">
           {c.project && (
             <button class="btn btn-sm" type="button" onClick={onOpenProject}>
-              Öppna projektet
+              {t`Open the project`}
             </button>
           )}
           <button class="btn btn-sm" type="button" onClick={onRotateKey}>
-            Rotera stream key
+            {t`Rotate stream key`}
           </button>
         </div>
       </div>
@@ -299,31 +333,31 @@ function ResourceDetail({ channel: c, health, onRotateKey, onOpenProject, onTear
       <div class="body">
         <div class="grid grid-fixed4">
           <div>
-            <div class="k">Status</div>
+            <div class="k">{t`Status`}</div>
             <div class="v">{live ? 'LIVE' : 'OFFLINE'}</div>
           </div>
           <div>
-            <div class="k">Senast använd</div>
-            <div class="v">{live ? 'sänder nu' : c.lastUsedAt ? formatDateTime(c.lastUsedAt) : 'aldrig använd'}</div>
+            <div class="k">{t`Last used`}</div>
+            <div class="v">{live ? t`broadcasting now` : c.lastUsedAt ? formatDateTime(c.lastUsedAt) : t`never used`}</div>
           </div>
           <div>
-            <div class="k">Inspelning</div>
-            <div class="v">{c.recording ? 'på' : 'av'}</div>
+            <div class="k">{t`Recording`}</div>
+            <div class="v">{c.recording ? t`on` : t`off`}</div>
           </div>
           <div>
-            <div class="k">Vilande</div>
-            <div class="v">{live ? '–' : `${c.idleDays} dygn`}</div>
+            <div class="k">{t`Idle`}</div>
+            <div class="v">{live ? '–' : idleDaysText(c.idleDays)}</div>
           </div>
         </div>
 
         <div class="cols2">
           <div>
             <div class="block">
-              <h3>Anslutning</h3>
+              <h3>{t`Connection`}</h3>
               <div class="field-list">
-                <CopyField label="Ingest-server" value={c.ingestEndpoint} monospace />
+                <CopyField label={t`Ingest server`} value={c.ingestEndpoint} monospace />
                 <CopyField label="Stream key" value={c.streamKeyMasked} monospace />
-                <CopyField label="Playback-URL" value={c.playbackUrl} monospace />
+                <CopyField label={t`Playback URL`} value={c.playbackUrl} monospace />
                 <CopyField label="ARN" value={c.arn} monospace />
               </div>
             </div>
@@ -331,35 +365,34 @@ function ResourceDetail({ channel: c, health, onRotateKey, onOpenProject, onTear
           </div>
 
           <div class="health">
-            <h4>Inkommande signal</h4>
+            <h4>{t`Incoming signal`}</h4>
             {live && health ? (
               <dl>
-                <dt>Bitrate</dt>
-                <dd>{(health.bitrateKbps ?? 0).toLocaleString('sv-SE')} kbps</dd>
-                <dt>Upplösning</dt>
+                <dt>{t`Bitrate`}</dt>
+                <dd>{formatNumber(health.bitrateKbps ?? 0)} kbps</dd>
+                <dt>{t`Resolution`}</dt>
                 <dd>{health.resolution ?? ''}</dd>
-                <dt>Senaste bild</dt>
-                <dd>{(health.lastFrameSecondsAgo ?? 0).toLocaleString('sv-SE')} s sedan</dd>
-                <dt>Tittare</dt>
-                <dd>{typeof health.viewerCount === 'number' ? health.viewerCount.toLocaleString('sv-SE') : '–'}</dd>
-                <dt>Sänder sedan</dt>
+                <dt>{t`Latest frame`}</dt>
+                <dd>{secondsAgoText(health.lastFrameSecondsAgo ?? 0)}</dd>
+                <dt>{t`Viewers`}</dt>
+                <dd>{typeof health.viewerCount === 'number' ? formatNumber(health.viewerCount) : '–'}</dd>
+                <dt>{t`Broadcasting since`}</dt>
                 <dd>{health.streamStartedAt ? formatDateTime(health.streamStartedAt) : ''}</dd>
               </dl>
             ) : (
-              <p>Ingen signal. Resursen är allokerad och väntar på enkoder.</p>
+              <p>{t`No signal. The resource is allocated and waiting for an encoder.`}</p>
             )}
           </div>
         </div>
 
         {live ? (
-          <p class="note">Resursen kan inte rivas medan signal tas emot. Stoppa enkodern först.</p>
+          <p class="note">{t`The resource cannot be torn down while a signal is being received. Stop the encoder first.`}</p>
         ) : isStale(c) ? (
           <p class="note warn">
-            Vilande i {c.idleDays} dygn{c.project ? '' : ' utan kopplat projekt'}. Kandidat för
-            städning — en allokerad kanal upptar en plats även när den inte kostar något.
+            {staleText(c)}
           </p>
         ) : (
-          <p class="note">Vilande resurser kostar inget men räknas mot kontots kanaltak.</p>
+          <p class="note">{t`Idle resources cost nothing but count against the account's channel limit.`}</p>
         )}
       </div>
     </>

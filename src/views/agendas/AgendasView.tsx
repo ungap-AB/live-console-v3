@@ -1,3 +1,4 @@
+import { plural, t } from '@lingui/core/macro'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Agenda, AgendaItem, Project } from '../../data/types'
@@ -16,16 +17,35 @@ import { PdfIcon } from '../../components/icons'
 import { readStoredSelection, storeSelection } from '../../app/selectionStorage'
 import { errorMessage, runOptimistic } from '../../app/optimistic'
 import { Toast } from '../../components/Toast'
+import { formatDate } from '../../app/time'
 import './AgendasView.css'
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short', year: 'numeric' })
+function itemsText(count: number): string {
+  return plural(count, { one: '# item', other: '# items' })
+}
+
+function itemsChangedText(count: number, changedAt: string): string {
+  const changed = formatDate(changedAt)
+  return plural(count, { one: `# item · changed ${changed}`, other: `# items · changed ${changed}` })
+}
+
+function changedText(changedAt: string): string {
+  const changed = formatDate(changedAt)
+  return t`Changed ${changed}`
+}
+
+function pdfTitle(count: number): string {
+  return count ? t`PDF documents (${count})` : t`PDF documents`
+}
+
+function pdfAriaLabel(title: string): string {
+  return t`Open PDF documents for ${title}`
 }
 
 interface AgendasViewProps {
   onOpenProject: (id: string) => void
   selectionScope: string
-  /** Sätts av App.tsx när man kommer hit via "Öppna..." i ProjektDetail — konsumeras en gång vid montering (vyn avmonteras/monteras om varje gång man navigerar hit, se App.tsx). */
+  /** Set by App.tsx when arriving via "Open..." in the project details — consumed once on mount (the view is unmounted/remounted on every navigation here, see App.tsx). */
   initialSelectedId?: string | null
   onInitialSelectionConsumed?: () => void
 }
@@ -63,14 +83,16 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
     storeSelection('agenda', selectedId, selectionScope)
   }, [selectedId, selectionScope])
 
-  // Listan är medvetet lätt (itemCount, inga punkter) — full detalj hämtas
-  // separat när något väljs, se PLAN-live-server-v3.md Steg 2.
+  // The list is deliberately light (itemCount, no items) — full details are fetched
+  // separately when something is selected, see PLAN-live-server-v3.md step 2.
   const detailResource = useResource(
     () => (selectedId ? client.agendas.get(selectedId) : Promise.resolve(undefined)),
     [selectedId],
   )
   const [selected, setSelected] = useState<Agenda | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const trashName = confirmTrash?.name ?? ''
+  const trashUsedIn = confirmTrash?.usedInProjects ?? 0
 
   useEffect(() => {
     setSelected(detailResource.data ?? null)
@@ -103,19 +125,19 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
   }
 
   async function createAgenda(name: string) {
-    const created = await client.agendas.create({ name, description: 'Utkast' })
+    const created = await client.agendas.create({ name, description: t`Draft` })
     setAgendas((prev) => [created, ...prev])
     setSelectedId(created.id)
     setCreating(false)
   }
 
-  // UNG-105: det nya namnet visas direkt; vid fel återställs det och en toast visar felet.
+  // UNG-105: the new name shows immediately; on failure it is restored and a toast shows the error.
   function patchAgendaName(id: string, name: string) {
     setSelected((prev) => (prev && prev.id === id ? { ...prev, name } : prev))
     setAgendas((prev) => prev.map((x) => (x.id === id ? { ...x, name } : x)))
   }
 
-  // Serverns svar ersätter bara om dagordningen fortfarande är den som visas.
+  // The server's response replaces only if the agenda is still the one shown.
   function applyServerAgenda(next: Agenda) {
     setSelected((prev) => (prev && prev.id === next.id ? next : prev))
     setAgendas((prev) =>
@@ -139,7 +161,7 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
       },
       request: () => client.agendas.update(agenda.id, { name }),
       onSuccess: applyServerAgenda,
-      onError: (err) => setToast(errorMessage(err, 'Kunde inte byta namn.')),
+      onError: (err) => setToast(errorMessage(err, t`Could not rename.`)),
     })
   }
 
@@ -165,7 +187,7 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
   }
 
   async function addItem(agenda: Agenda): Promise<string> {
-    const updated = await client.agendas.addItem(agenda.id, { title: 'Ny punkt' })
+    const updated = await client.agendas.addItem(agenda.id, { title: t`New item` })
     replaceSelected(updated)
     return updated.items[updated.items.length - 1].id
   }
@@ -194,24 +216,24 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
     <div class="view">
       <header>
         <div class="header-list-zone">
-          <h1>Dagordningar</h1>
+          <h1>{t`Agendas`}</h1>
           <span class="spacer" />
           <button class="btn btn-sm" type="button" onClick={() => setCreating(true)}>
-            + Ny
+            {t`+ New`}
           </button>
         </div>
       </header>
 
       <div class="content">
         <SplitPane
-          listLabel="Dagordningar"
-          detailLabel="Vald dagordning"
+          listLabel={t`Agendas`}
+          detailLabel={t`Selected agenda`}
           list={
             <>
               <ul class="scroll-list">
-                {agendasResource.loading && agendas.length === 0 && <li class="none">Laddar…</li>}
+                {agendasResource.loading && agendas.length === 0 && <li class="none">{t`Loading…`}</li>}
                 {!agendasResource.loading && visible.length === 0 && templates.length === 0 && (
-                  <li class="none">Ingen dagordning ännu.</li>
+                  <li class="none">{t`No agenda yet.`}</li>
                 )}
                 {visible.map((a) => (
                   <li key={a.id} class={a.id === selectedId ? 'sel' : ''}>
@@ -221,7 +243,7 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
                         {a.name}
                       </span>
                       <span class="meta">
-                        {a.itemCount} punkter · ändrad {formatDate(a.changedAt)}
+                        {itemsChangedText(a.itemCount, a.changedAt)}
                       </span>
                     </button>
                   </li>
@@ -229,19 +251,19 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
               </ul>
               {templates.length > 0 && (
                 <>
-                  <div class="templates-heading">Mallar</div>
+                  <div class="templates-heading">{t`Templates`}</div>
                   <ul class="templates-list">
                     {templates.map((a) => (
                       <li key={a.id} class={a.id === selectedId ? 'sel' : ''}>
                         <button type="button" onClick={() => setSelectedId(a.id)}>
                           <span class="nm">{a.name}</span>
-                          <span class="meta">{a.itemCount} punkter</span>
+                          <span class="meta">{itemsText(a.itemCount)}</span>
                         </button>
                         <button
                           class="ib clone"
                           type="button"
-                          title="Klona till ny dagordning"
-                          aria-label="Klona till ny dagordning"
+                          title={t`Clone to new agenda`}
+                          aria-label={t`Clone to new agenda`}
                           onClick={() => duplicate(a)}
                         >
                           <PlusIcon />
@@ -255,9 +277,9 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
           }
           detail={
             !selectedId ? (
-              <div class="docnone">Välj en dagordning i listan.</div>
+              <div class="docnone">{t`Select an agenda in the list.`}</div>
             ) : !selected ? (
-              <div class="docnone">Laddar…</div>
+              <div class="docnone">{t`Loading…`}</div>
             ) : (
               <>
                 <div class="head">
@@ -266,22 +288,22 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
                     <button
                       class="ib"
                       type="button"
-                      title="Byt namn på dagordningen"
-                      aria-label="Byt namn på dagordningen"
+                      title={t`Rename the agenda`}
+                      aria-label={t`Rename the agenda`}
                       onClick={() => setRenaming(selected)}
                     >
                       <EditIcon />
                     </button>
-                    {selected.isTemplate && <StatusChip tone="neutral">Mall</StatusChip>}
+                    {selected.isTemplate && <StatusChip tone="neutral">{t`Template`}</StatusChip>}
                     <span class="head-actions">
                       <OverflowMenu
                         items={[
                           {
-                            label: selected.isTemplate ? 'Ta bort mallstatus' : 'Gör till mall',
+                            label: selected.isTemplate ? t`Remove template status` : t`Make template`,
                             onClick: () => toggleTemplate(selected),
                           },
                           {
-                            label: 'Flytta till papperskorgen',
+                            label: t`Move to trash`,
                             danger: true,
                             onClick: () =>
                               selected.usedInProjects > 0 ? setConfirmTrash(selected) : trash(selected),
@@ -292,13 +314,13 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
                   </h2>
                   <div class="facts">
                     <span>{selected.description}</span>
-                    <span>{selected.items.length} punkter</span>
-                    <span>Ändrad {formatDate(selected.changedAt)}</span>
+                    <span>{itemsText(selected.items.length)}</span>
+                    <span>{changedText(selected.changedAt)}</span>
                     {selected.usedInProjects === 0 ? (
-                      <StatusChip tone="neutral">Används inte</StatusChip>
+                      <StatusChip tone="neutral">{t`Not used`}</StatusChip>
                     ) : selected.usedInProjects === 1 && usedBy.length === 1 ? (
                       <span>
-                        Används i{' '}
+                        {t`Used in`}{' '}
                         <button class="used-by-link" type="button" onClick={() => onOpenProject(usedBy[0].id)}>
                           {usedBy[0].name}
                         </button>
@@ -306,7 +328,7 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
                     ) : (
                       <span class="used-by" ref={usedByRef}>
                         <button class="used-by-link" type="button" onClick={() => setUsedByOpen((v) => !v)}>
-                          Används i {selected.usedInProjects} projekt
+                          {plural(selected.usedInProjects, { one: 'Used in # project', other: 'Used in # projects' })}
                         </button>
                         {usedByOpen && usedBy.length > 0 && (
                           <div class="used-by-menu">
@@ -327,7 +349,7 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
                     getId={(it) => it.id}
                     getLabel={(it) => it.title}
                     numbered
-                    addLabel="Lägg till punkt"
+                    addLabel={t`Add item`}
                     onReorder={(next) => reorder(selected, next)}
                     onAdd={() => addItem(selected)}
                     onRename={(id, title) => renameItem(selected, id, title)}
@@ -336,8 +358,8 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
                       <button
                         class="ib pdf-row-action"
                         type="button"
-                        title={`PDF-dokument${item.attachments?.length ? ` (${item.attachments.length})` : ''}`}
-                        aria-label={`Öppna PDF-dokument för ${item.title}`}
+                        title={pdfTitle(item.attachments?.length ?? 0)}
+                        aria-label={pdfAriaLabel(item.title)}
                         onClick={() => setPdfItem(item)}
                       >
                         <PdfIcon />
@@ -346,12 +368,12 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
                     )}
                     toolbarExtraAfter={
                       <button class="btn btn-sm btn-primary agenda-import-button" type="button" onClick={() => openImport(selected)}>
-                        Importera...
+                        {t`Import...`}
                       </button>
                     }
                     hint={
                       selected.usedInProjects > 0
-                        ? 'Ändringar slår igenom i projekt som ännu inte publicerats. Publicerade sändningar har en fryst kopia och påverkas inte.'
+                        ? t`Changes take effect in projects that have not been published yet. Published broadcasts have a frozen copy and are not affected.`
                         : undefined
                     }
                   />
@@ -364,7 +386,7 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
 
       {creating && (
         <RenameModal
-          title="Ny dagordning"
+          title={t`New agenda`}
           initialValue=""
           onCancel={() => setCreating(false)}
           onSave={createAgenda}
@@ -381,16 +403,13 @@ export function AgendasView({ onOpenProject, selectionScope, initialSelectedId, 
 
       {confirmTrash && (
         <ConfirmModal
-          title="Flytta till papperskorgen?"
-          confirmLabel="Flytta till papperskorgen"
+          title={t`Move to trash?`}
+          confirmLabel={t`Move to trash`}
           danger
           onCancel={() => setConfirmTrash(null)}
           onConfirm={() => trash(confirmTrash)}
         >
-          <p>
-            {confirmTrash.name} används i {confirmTrash.usedInProjects} projekt. Flytta till
-            papperskorgen ändå?
-          </p>
+          <p>{plural(trashUsedIn, { one: `${trashName} is used in # project. Move to trash anyway?`, other: `${trashName} is used in # projects. Move to trash anyway?` })}</p>
         </ConfirmModal>
       )}
 

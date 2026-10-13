@@ -21,10 +21,30 @@ msgstr "{0, plural, one {{shown} av # poster} other {{shown} av # poster}}"
 msgid "{0, plural, one {# download} other {# downloads}}"
 msgstr "{0, plural, one {# nedladdning} other {# nedladdningar}}"
 
+#. placeholder {0}: r.segments.length - 1
+#: src/views/archive/VideoArchiveView.tsx
+msgid "{0, plural, one {# gap} other {# gaps}}"
+msgstr "{0, plural, one {# glapp} other {# glapp}}"
+
 #. placeholder {0}: items.length
 #: src/views/trash/TrashView.tsx
 msgid "{0, plural, one {# item} other {# items}}"
 msgstr "{0, plural, one {# poster} other {# poster}}"
+
+#. placeholder {0}: selected.people.length
+#: src/views/namelists/NameListsView.tsx
+msgid "{0, plural, one {# name} other {# names}}"
+msgstr "{0, plural, one {# namn} other {# namn}}"
+
+#. placeholder {0}: r.segments.length
+#: src/views/archive/VideoArchiveView.tsx
+msgid "{0, plural, one {The recording consists of # segment — the encoder lost the connection during the broadcast. Check the chapter offsets after trimming.} other {The recording consists of # segments — the encoder lost the connection during the broadcast. Check the chapter offsets after trimming.}}"
+msgstr "{0, plural, one {Inspelningen består av # segment — enkodern tappade anslutningen under sändningen. Kontrollera kapitlens offset efter trimning.} other {Inspelningen består av # segment — enkodern tappade anslutningen under sändningen. Kontrollera kapitlens offset efter trimning.}}"
+
+#. placeholder {0}: selected.usedInProjects
+#: src/views/agendas/AgendasView.tsx
+msgid "{0, plural, one {Used in # project} other {Used in # projects}}"
+msgstr "{0, plural, one {Används i # projekt} other {Används i # projekt}}"
 
 #: src/app/Shell.tsx
 msgid "{activeJobs} in progress"
@@ -38,9 +58,25 @@ msgstr "{activeShares, plural, one {Delad · # aktiv} other {Delad · # aktiva}}
 msgid "{chapterCount, plural, =0 {No chapters} one {# chapter} other {# chapters}}"
 msgstr "{chapterCount, plural, =0 {Inga kapitel} one {# kapitel} other {# kapitel}}"
 
+#: src/views/agendas/AgendasView.tsx
+msgid "{count, plural, one {# item · changed {changed}} other {# items · changed {changed}}}"
+msgstr "{count, plural, one {# punkter · ändrad {changed}} other {# punkter · ändrad {changed}}}"
+
+#: src/views/agendas/AgendasView.tsx
+msgid "{count, plural, one {# item} other {# items}}"
+msgstr "{count, plural, one {# punkter} other {# punkter}}"
+
+#: src/views/namelists/NameListsView.tsx
+msgid "{count, plural, one {# name · changed {changed}} other {# names · changed {changed}}}"
+msgstr "{count, plural, one {# namn · ändrad {changed}} other {# namn · ändrad {changed}}}"
+
 #: src/views/projects/publishOutcome.ts
 msgid "{cueCount, plural, one {Captions: {label} ({cues} line)} other {Captions: {label} ({cues} lines)}}"
 msgstr "{cueCount, plural, one {Undertexter: {label} ({cues} repliker)} other {Undertexter: {label} ({cues} repliker)}}"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "{days} days"
+msgstr "{days} dygn"
 
 #: src/views/users/UsersView.tsx
 msgid "{deleteOrganization} ({deleteHost}) is removed permanently. It cannot be undone."
@@ -74,13 +110,38 @@ msgstr "{organization} borttagen."
 msgid "{rounded, plural, one {# day} other {# days}}"
 msgstr "{rounded, plural, one {# dag} other {# dagar}}"
 
+#: src/views/resources/LiveResourcesView.tsx
+msgid "{seconds} s ago"
+msgstr "{seconds} s sedan"
+
 #: src/views/trash/TrashView.tsx
 msgid "{totalMinutes, plural, one {# minute} other {# minutes}}"
 msgstr "{totalMinutes, plural, one {# minut} other {# minuter}}"
 
+#: src/views/archive/VideoArchiveView.tsx
+msgid "{trashChildren, plural, one {{trashName} has # trimmed version. Move the original and its versions to trash?} other {{trashName} has # trimmed versions. Move the original and its versions to trash?}}"
+msgstr "{trashChildren, plural, one {{trashName} har # trimmad version. Flytta originalet och dess versioner till papperskorgen?} other {{trashName} har # trimmad version. Flytta originalet och dess versioner till papperskorgen?}}"
+
+#: src/views/agendas/AgendasView.tsx
+#: src/views/namelists/NameListsView.tsx
+msgid "{trashUsedIn, plural, one {{trashName} is used in # project. Move to trash anyway?} other {{trashName} is used in # projects. Move to trash anyway?}}"
+msgstr "{trashUsedIn, plural, one {{trashName} används i # projekt. Flytta till papperskorgen ändå?} other {{trashName} används i # projekt. Flytta till papperskorgen ändå?}}"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "{type} · {latencyMode} latency"
+msgstr "{type} · {latencyMode} latency"
+
+#: src/views/agendas/AgendasView.tsx
+#: src/views/archive/VideoArchiveView.tsx
+#: src/views/namelists/NameListsView.tsx
+#: src/views/resources/LiveResourcesView.tsx
 #: src/views/users/UsersView.tsx
 msgid "+ New"
 msgstr "+ Ny"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "A broadcast is in progress. Rotating the stream key breaks the encoder's connection. Continue?"
+msgstr "Sändning pågår. Att rotera stream key bryter enkoderns anslutning. Fortsätt?"
 
 #: src/views/users/UsersView.tsx
 msgid "A new invitation replaces the previous one: the old link and PIN stop working."
@@ -102,11 +163,27 @@ msgstr "Konto skapat"
 msgid "Account settings"
 msgstr "Kontoinställningar"
 
+#: src/views/resources/LiveResourcesView.tsx
+msgid "active"
+msgstr "aktiv"
+
 #: src/app/Shell.tsx
 #: src/views/jobs/JobsView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Active"
 msgstr "Aktiv"
+
+#: src/views/agendas/AgendasView.tsx
+msgid "Add item"
+msgstr "Lägg till punkt"
+
+#: src/views/namelists/NameListsView.tsx
+msgid "Add name"
+msgstr "Lägg till namn"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Added manually"
+msgstr "Manuellt tillagd"
 
 #: src/app/Shell.tsx
 msgid "Administration"
@@ -116,7 +193,12 @@ msgstr "Administration"
 msgid "Agenda"
 msgstr "Dagordning"
 
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Agenda item"
+msgstr "Ärende"
+
 #: src/app/Shell.tsx
+#: src/views/agendas/AgendasView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Agendas"
 msgstr "Dagordningar"
@@ -128,6 +210,10 @@ msgstr "Alla"
 #: src/app/jobPhase.ts
 msgid "Analysing speaker changes"
 msgstr "Analyserar talarbyten"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Announcement"
+msgstr "Utrop"
 
 #: src/app/Shell.tsx
 msgid "Appearance"
@@ -145,9 +231,33 @@ msgstr "Auto"
 msgid "Back to login"
 msgstr "Tillbaka till inloggningen"
 
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Bitrate"
+msgstr "Bitrate"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Break"
+msgstr "Paus"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Break ends"
+msgstr "Paus slut"
+
 #: src/app/Shell.tsx
 msgid "Broadcast"
 msgstr "Sändning"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Broadcasting"
+msgstr "Sänder"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "broadcasting now"
+msgstr "sänder nu"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Broadcasting since"
+msgstr "Sänder sedan"
 
 #: src/views/users/UsersView.tsx
 msgid "Broadcasts made"
@@ -170,9 +280,31 @@ msgstr "Avbryta jobbet?"
 msgid "Canceled"
 msgstr "Avbrutet"
 
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Cannot be torn down while a signal is being received"
+msgstr "Går inte att riva medan signal tas emot"
+
 #: src/app/jobActions.ts
 msgid "Captions · {name}"
 msgstr "Undertexter · {name}"
+
+#: src/views/agendas/AgendasView.tsx
+#: src/views/namelists/NameListsView.tsx
+msgid "Changed {changed}"
+msgstr "Ändrad {changed}"
+
+#: src/views/agendas/AgendasView.tsx
+#: src/views/namelists/NameListsView.tsx
+msgid "Changes take effect in projects that have not been published yet. Published broadcasts have a frozen copy and are not affected."
+msgstr "Ändringar slår igenom i projekt som ännu inte publicerats. Publicerade sändningar har en fryst kopia och påverkas inte."
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Chapters"
+msgstr "Kapitel"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Chapters (offset counted from trim start)"
+msgstr "Kapitel (offset räknat från trimstart)"
 
 #: src/app/SharedDownloadsView.tsx
 msgid "Check that you copied the whole link. Otherwise ask the sender to share the files again."
@@ -190,11 +322,23 @@ msgstr "Klicka på knappen för att aktivera ditt konto. Du får då din personl
 msgid "Click the button to get a new PIN. Your old PIN then stops working."
 msgstr "Klicka på knappen för att få en ny PIN-kod. Din gamla PIN-kod slutar då gälla."
 
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Clipped {start}–{end} from the original"
+msgstr "Klippt {start}–{end} ur originalet"
+
+#: src/views/agendas/AgendasView.tsx
+msgid "Clone to new agenda"
+msgstr "Klona till ny dagordning"
+
 #: src/app/Shell.tsx
 #: src/views/projects/PublishOutcomeDialog.tsx
 #: src/views/users/UsersView.tsx
 msgid "Close"
 msgstr "Stäng"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Connection"
+msgstr "Anslutning"
 
 #: src/app/Shell.tsx
 msgid "Content"
@@ -225,6 +369,10 @@ msgstr "Konverterar"
 msgid "Correcting and building captions"
 msgstr "Rättar och bygger undertexter"
 
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Could not create the resource."
+msgstr "Kunde inte skapa resursen."
+
 #: src/views/users/UsersView.tsx
 msgid "Could not create the user."
 msgstr "Kunde inte skapa användaren."
@@ -237,13 +385,28 @@ msgstr "Kunde inte logga in."
 msgid "Could not remove the domain."
 msgstr "Kunde inte ta bort domänen."
 
+#: src/views/agendas/AgendasView.tsx
+#: src/views/archive/VideoArchiveView.tsx
+#: src/views/namelists/NameListsView.tsx
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Could not rename."
+msgstr "Kunde inte byta namn."
+
 #: src/views/users/UsersView.tsx
 msgid "Could not send the invitation."
 msgstr "Kunde inte skicka inbjudan."
 
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Could not tear down the resource."
+msgstr "Kunde inte riva resursen."
+
 #: src/views/users/UsersView.tsx
 msgid "Create"
 msgstr "Skapa"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Created {created}"
+msgstr "Skapad {created}"
 
 #: src/views/users/UsersView.tsx
 msgid "Creates projects, broadcasts and publishes on demand."
@@ -333,6 +496,7 @@ msgstr "Domäner"
 
 #: src/app/SharedDownloadsView.tsx
 #: src/app/Shell.tsx
+#: src/views/archive/VideoArchiveView.tsx
 #: src/views/jobs/JobsView.tsx
 msgid "Download"
 msgstr "Ladda ner"
@@ -341,6 +505,10 @@ msgstr "Ladda ner"
 msgid "Download · {name}"
 msgstr "Nedladdning · {name}"
 
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Download {fileName}"
+msgstr "Ladda ner {fileName}"
+
 #: src/views/jobs/JobsView.tsx
 msgid "Download Word manuscript"
 msgstr "Ladda ner Word-manus"
@@ -348,6 +516,19 @@ msgstr "Ladda ner Word-manus"
 #: src/app/Shell.tsx
 msgid "Download Word transcript"
 msgstr "Ladda ner Word-manus"
+
+#: src/views/agendas/AgendasView.tsx
+#: src/views/namelists/NameListsView.tsx
+msgid "Draft"
+msgstr "Utkast"
+
+#: src/views/namelists/NameListsView.tsx
+msgid "Duplicate"
+msgstr "Duplicera"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Duration"
+msgstr "Längd"
 
 #: src/views/users/UsersView.tsx
 msgid "e.g. Example Municipality"
@@ -407,6 +588,10 @@ msgstr "Hämtar…"
 msgid "Files"
 msgstr "Filer"
 
+#: src/views/namelists/NameListsView.tsx
+msgid "Filter names"
+msgstr "Filtrera namn"
+
 #: src/views/jobs/JobsView.tsx
 msgid "Finished"
 msgstr "Klara"
@@ -423,9 +608,38 @@ msgstr "Glömt PIN-kod?"
 msgid "Forgot your PIN?"
 msgstr "Glömt din PIN-kod?"
 
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Go to project"
+msgstr "Gå till projekt"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "HLS link"
+msgstr "HLS-länk"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Idle"
+msgstr "Vilande"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Idle for {days} days without a linked project. Candidate for cleanup — an allocated channel takes up a slot even when it costs nothing."
+msgstr "Vilande i {days} dygn utan kopplat projekt. Kandidat för städning — en allokerad kanal upptar en plats även när den inte kostar något."
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Idle for {days} days. Candidate for cleanup — an allocated channel takes up a slot even when it costs nothing."
+msgstr "Vilande i {days} dygn. Kandidat för städning — en allokerad kanal upptar en plats även när den inte kostar något."
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Idle resources cost nothing but count against the account's channel limit."
+msgstr "Vilande resurser kostar inget men räknas mot kontots kanaltak."
+
 #: src/app/LoginView.tsx
 msgid "If we have the address, we have sent an email with a link. The link is valid for one hour. Check your spam folder too."
 msgstr "Om adressen finns hos oss har vi skickat ett mejl med en länk. Länken gäller i en timme. Kontrollera även skräpposten."
+
+#: src/views/agendas/AgendasView.tsx
+#: src/views/namelists/NameListsView.tsx
+msgid "Import..."
+msgstr "Importera..."
 
 #: src/app/jobRetention.ts
 #: src/views/trash/TrashView.tsx
@@ -439,6 +653,14 @@ msgstr "Pågår"
 #: src/views/users/UsersView.tsx
 msgid "Inactive"
 msgstr "Inaktiv"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Incoming signal"
+msgstr "Inkommande signal"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Ingest server"
+msgstr "Ingest-server"
 
 #: src/views/users/UsersView.tsx
 msgid "Invitation sent to {email}. The text is copied."
@@ -482,6 +704,14 @@ msgstr "nyss"
 msgid "Last sign-in"
 msgstr "Senaste inloggning"
 
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Last used"
+msgstr "Senast använd"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Latest frame"
+msgstr "Senaste bild"
+
 #: src/views/users/UsersView.tsx
 msgid "Leave empty for ungap's default key"
 msgstr "Lämna tomt för ungaps standardnyckel"
@@ -490,12 +720,28 @@ msgstr "Lämna tomt för ungaps standardnyckel"
 msgid "Light"
 msgstr "Ljust"
 
+#: src/views/resources/LiveResourcesView.tsx
+msgid "linked"
+msgstr "kopplad"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Linked to project"
+msgstr "Kopplad till projekt"
+
 #: src/app/Shell.tsx
 msgctxt "navigation"
 msgid "Live"
 msgstr "Live"
 
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Live resources"
+msgstr "Live-resurser"
+
 #: src/app/App.tsx
+#: src/views/agendas/AgendasView.tsx
+#: src/views/archive/VideoArchiveView.tsx
+#: src/views/namelists/NameListsView.tsx
+#: src/views/resources/LiveResourcesView.tsx
 #: src/views/trash/TrashView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Loading…"
@@ -517,9 +763,25 @@ msgstr "Logga ut"
 msgid "Logging in…"
 msgstr "Loggar in…"
 
+#: src/views/agendas/AgendasView.tsx
+msgid "Make template"
+msgstr "Gör till mall"
+
 #: src/views/users/UsersView.tsx
 msgid "Manages the whole installation and all domains."
 msgstr "Hanterar hela installationen och alla domäner."
+
+#: src/views/agendas/AgendasView.tsx
+#: src/views/archive/VideoArchiveView.tsx
+#: src/views/namelists/NameListsView.tsx
+msgid "Move to trash"
+msgstr "Flytta till papperskorgen"
+
+#: src/views/agendas/AgendasView.tsx
+#: src/views/archive/VideoArchiveView.tsx
+#: src/views/namelists/NameListsView.tsx
+msgid "Move to trash?"
+msgstr "Flytta till papperskorgen?"
 
 #: src/views/users/UsersView.tsx
 msgid "Mux env key (the customer's own Mux account)"
@@ -540,6 +802,7 @@ msgid "Name list"
 msgstr "Namnlista"
 
 #: src/app/Shell.tsx
+#: src/views/namelists/NameListsView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Name lists"
 msgstr "Namnlistor"
@@ -552,13 +815,49 @@ msgstr "namn@exempel.se"
 msgid "never"
 msgstr "aldrig"
 
+#: src/views/resources/LiveResourcesView.tsx
+msgid "never used"
+msgstr "aldrig använd"
+
+#: src/views/agendas/AgendasView.tsx
+msgid "New agenda"
+msgstr "Ny dagordning"
+
 #: src/views/users/UsersView.tsx
 msgid "New domain"
 msgstr "Ny domän"
 
+#: src/views/agendas/AgendasView.tsx
+msgid "New item"
+msgstr "Ny punkt"
+
+#: src/views/namelists/NameListsView.tsx
+msgid "New name list"
+msgstr "Ny namnlista"
+
+#: src/views/namelists/NameListsView.tsx
+msgid "New person"
+msgstr "Ny person"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "New resource"
+msgstr "Ny resurs"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "New stream key generated. The old one stops working immediately."
+msgstr "Ny stream key genererad. Den gamla slutar gälla omedelbart."
+
 #: src/views/users/UsersView.tsx
 msgid "New user in {host}"
 msgstr "Ny användare i {host}"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "New video resource"
+msgstr "Ny videoresurs"
+
+#: src/views/agendas/AgendasView.tsx
+msgid "No agenda yet."
+msgstr "Ingen dagordning ännu."
 
 #: src/views/projects/publishOutcome.ts
 msgid "No captions"
@@ -580,10 +879,42 @@ msgstr "Inga jobb pågår."
 msgid "No longer available"
 msgstr "Inte längre tillgänglig"
 
+#: src/views/namelists/NameListsView.tsx
+msgid "No name list yet."
+msgstr "Ingen namnlista ännu."
+
+#: src/views/namelists/NameListsView.tsx
+msgid "No name matches the filter."
+msgstr "Inget namn matchar filtret."
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "No recording yet."
+msgstr "Ingen inspelning ännu."
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "No resource yet."
+msgstr "Ingen resurs ännu."
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "No signal. The resource is allocated and waiting for an encoder."
+msgstr "Ingen signal. Resursen är allokerad och väntar på enkoder."
+
 #: src/app/Shell.tsx
 #: src/views/users/UsersView.tsx
 msgid "Not invited"
 msgstr "Ej inbjuden"
+
+#: src/views/agendas/AgendasView.tsx
+msgid "Not used"
+msgstr "Används inte"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "off"
+msgstr "av"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "on"
+msgstr "på"
 
 #: src/views/projects/publishOutcome.ts
 msgid "On demand published"
@@ -597,14 +928,23 @@ msgstr "Ondemand uppdaterad"
 msgid "Open menu"
 msgstr "Öppna meny"
 
+#: src/views/agendas/AgendasView.tsx
+msgid "Open PDF documents for {title}"
+msgstr "Öppna PDF-dokument för {title}"
+
 #: src/app/Shell.tsx
 #: src/views/jobs/JobsView.tsx
+#: src/views/resources/LiveResourcesView.tsx
 msgid "Open the project"
 msgstr "Öppna projektet"
 
 #: src/views/projects/PublishOutcomeDialog.tsx
 msgid "Open to viewers"
 msgstr "Öppna för tittare"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Opening the project: {name}"
+msgstr "Öppnar projektet: {name}"
 
 #: src/views/users/UsersView.tsx
 msgid "Operator"
@@ -618,6 +958,18 @@ msgstr "Domän"
 msgid "Organization name"
 msgstr "Organisationens namn"
 
+#: src/views/archive/VideoArchiveView.tsx
+msgid "outside the clip"
+msgstr "utanför klippet"
+
+#: src/views/agendas/AgendasView.tsx
+msgid "PDF documents"
+msgstr "PDF-dokument"
+
+#: src/views/agendas/AgendasView.tsx
+msgid "PDF documents ({count})"
+msgstr "PDF-dokument ({count})"
+
 #: src/views/users/UsersView.tsx
 msgid "Permission"
 msgstr "Behörighet"
@@ -629,6 +981,18 @@ msgstr "Behörigheter"
 #: src/app/LoginView.tsx
 msgid "PIN"
 msgstr "PIN-kod"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Playback URL"
+msgstr "Playback-URL"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Prepare again"
+msgstr "Förbered på nytt"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Prepares a downloadable file (can take a few minutes). The file is kept for 7 days."
+msgstr "Förbereder en nedladdningsbar fil (kan ta några minuter). Filen sparas i 7 dagar."
 
 #: src/app/jobPhase.ts
 msgid "Preparing the audio"
@@ -663,6 +1027,10 @@ msgstr "Projekt"
 msgid "Projects"
 msgstr "Projekt"
 
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Published"
+msgstr "Publicerad"
+
 #: src/views/projects/publishOutcome.ts
 msgid "Publishing"
 msgstr "Publicerar"
@@ -691,13 +1059,19 @@ msgstr "Senaste aktivitet"
 msgid "Recipients"
 msgstr "Mottagare"
 
+#: src/views/resources/LiveResourcesView.tsx
 #: src/views/trash/TrashView.tsx
 msgid "Recording"
 msgstr "Inspelning"
 
+#: src/views/archive/VideoArchiveView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Recordings"
 msgstr "Inspelningar"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Recordings linked to a project can only be removed there."
+msgstr "Inspelningar kopplade till ett projekt kan bara tas bort där."
 
 #: src/views/users/UsersView.tsx
 msgid "Remove"
@@ -707,9 +1081,29 @@ msgstr "Ta bort"
 msgid "Remove {removeName} completely? From now on the history shows only the name, without an account."
 msgstr "Ta bort {removeName} helt? Historiken visar hädanefter bara namnet, utan konto."
 
+#: src/views/agendas/AgendasView.tsx
+msgid "Remove template status"
+msgstr "Ta bort mallstatus"
+
 #: src/views/users/UsersView.tsx
 msgid "Remove user?"
 msgstr "Ta bort användare?"
+
+#: src/views/agendas/AgendasView.tsx
+msgid "Rename the agenda"
+msgstr "Byt namn på dagordningen"
+
+#: src/views/namelists/NameListsView.tsx
+msgid "Rename the name list"
+msgstr "Byt namn på namnlistan"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Rename the recording"
+msgstr "Byt namn på inspelningen"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Rename the resource"
+msgstr "Byt namn på resursen"
 
 #: src/views/users/UsersView.tsx
 msgid "Rename the user"
@@ -726,6 +1120,11 @@ msgstr "Återställningslänk"
 #: src/app/CredentialLinkView.tsx
 msgid "Reset your PIN"
 msgstr "Återställ din PIN-kod"
+
+#: src/views/archive/VideoArchiveView.tsx
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Resolution"
+msgstr "Upplösning"
 
 #: src/views/trash/TrashView.tsx
 msgid "Restore"
@@ -751,6 +1150,18 @@ msgstr "Root-administratör"
 msgid "Root administrator, locked"
 msgstr "Root-administratör, låst"
 
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Rotate anyway"
+msgstr "Rotera ändå"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Rotate stream key"
+msgstr "Rotera stream key"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Rotate stream key?"
+msgstr "Rotera stream key?"
+
 #: src/app/Shell.tsx
 #: src/views/users/UsersView.tsx
 msgid "Save"
@@ -773,9 +1184,41 @@ msgstr "Sök i papperskorgen"
 msgid "Select {title} for sharing"
 msgstr "Välj {title} för delning"
 
+#: src/views/namelists/NameListsView.tsx
+msgid "Select a name list in the list."
+msgstr "Välj en namnlista i listan."
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Select a recording in the list."
+msgstr "Välj en inspelning i listan."
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Select a resource in the list."
+msgstr "Välj en resurs i listan."
+
 #: src/views/users/UsersView.tsx
 msgid "Select a user in the list."
 msgstr "Välj en användare i listan."
+
+#: src/views/agendas/AgendasView.tsx
+msgid "Select an agenda in the list."
+msgstr "Välj en dagordning i listan."
+
+#: src/views/agendas/AgendasView.tsx
+msgid "Selected agenda"
+msgstr "Vald dagordning"
+
+#: src/views/namelists/NameListsView.tsx
+msgid "Selected name list"
+msgstr "Vald namnlista"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Selected recording"
+msgstr "Vald inspelning"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Selected resource"
+msgstr "Vald resurs"
 
 #: src/views/users/UsersView.tsx
 msgid "Send invitation"
@@ -810,6 +1253,10 @@ msgstr "Delad (avslutad)"
 msgid "Shared by {sharedBy} {sharedAt} · valid until {validUntil}"
 msgstr "Delad av {sharedBy} {sharedAt} · gäller till {validUntil}"
 
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Show jobs"
+msgstr "Visa jobb"
+
 #: src/app/CredentialLinkView.tsx
 msgid "Show my PIN"
 msgstr "Visa min PIN-kod"
@@ -817,6 +1264,10 @@ msgstr "Visa min PIN-kod"
 #: src/views/users/UsersView.tsx
 msgid "Sign-in"
 msgstr "Inloggning"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Size"
+msgstr "Storlek"
 
 #: src/app/SharedDownloadsView.tsx
 msgid "Someone"
@@ -831,17 +1282,58 @@ msgstr "Något gick fel."
 msgid "Something went wrong. Try again in a while."
 msgstr "Något gick fel. Försök igen om en stund."
 
+#: src/views/namelists/NameListsView.tsx
+msgid "Sort A–Z"
+msgstr "Sortera A–Ö"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Speaker"
+msgstr "Talare"
+
 #: src/app/jobActions.ts
 msgid "Speaker changes · {name}"
 msgstr "Talarbyten · {name}"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "standalone"
+msgstr "fristående"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Standalone"
+msgstr "Fristående"
 
 #: src/views/jobs/JobsView.tsx
 msgid "Started by"
 msgstr "Startat av"
 
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Starting…"
+msgstr "Startar…"
+
 #: src/app/Shell.tsx
+#: src/views/resources/LiveResourcesView.tsx
 msgid "Status"
 msgstr "Status"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Tear down {teardownLabel}? The ingest server and stream key stop working. Recordings in the video archive are not affected."
+msgstr "Riv {teardownLabel}? Ingest-server och stream key slutar gälla. Inspelningar i videoarkivet påverkas inte."
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Tear down resource"
+msgstr "Riv resurs"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Tear down resource?"
+msgstr "Riv resurs?"
+
+#: src/views/agendas/AgendasView.tsx
+msgid "Template"
+msgstr "Mall"
+
+#: src/views/agendas/AgendasView.tsx
+msgid "Templates"
+msgstr "Mallar"
 
 #: src/app/Shell.tsx
 msgid "The caption draft for {name} is ready and waiting for review."
@@ -850,6 +1342,10 @@ msgstr "Undertextutkastet för {name} är klart och väntar på granskning."
 #: src/app/Shell.tsx
 msgid "The captions for {name} failed."
 msgstr "Undertexterna för {name} misslyckades."
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "The channel limit is reached ({limit}). Tear down an idle resource first."
+msgstr "Kanaltaket är nått ({limit}). Riv en vilande resurs först."
 
 #: src/views/users/UsersView.tsx
 msgid "The domain has no users."
@@ -863,6 +1359,10 @@ msgstr "Domänen måste ha minst en aktiv administratör"
 msgid "The domain still has users and cannot be removed."
 msgstr "Domänen har användare kvar och kan inte tas bort."
 
+#: src/views/archive/VideoArchiveView.tsx
+msgid "The download could not be prepared."
+msgstr "Nedladdningen kunde inte förberedas."
+
 #: src/app/SharedDownloadsView.tsx
 #: src/app/Shell.tsx
 #: src/views/jobs/JobsView.tsx
@@ -872,6 +1372,10 @@ msgstr "Nedladdningen misslyckades."
 #: src/app/Shell.tsx
 msgid "The download for {name} failed."
 msgstr "Nedladdningen för {name} misslyckades."
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "The download is being prepared. You will be notified when it is ready."
+msgstr "Nedladdningen förbereds. Du får en avisering när den är klar."
 
 #: src/app/Shell.tsx
 msgid "The download of {name} is ready."
@@ -934,6 +1438,10 @@ msgstr "Manuset kunde inte skapas."
 msgid "The only active administrator on {adminHost}. Appoint another one before the role is removed."
 msgstr "Enda aktiva administratören på {adminHost}. Utse en till innan rollen tas bort."
 
+#: src/views/archive/VideoArchiveView.tsx
+msgid "The original is never published directly. Trim it to create a version that can be reviewed and published."
+msgstr "Originalet publiceras aldrig direkt. Trimma det för att skapa en version som kan granskas och publiceras."
+
 #: src/views/users/UsersView.tsx
 msgid "The PIN becomes valid only when the invitation has been sent"
 msgstr "PIN-koden blir giltig först när inbjudan är skickad"
@@ -949,6 +1457,10 @@ msgstr "inspelningen"
 #: src/views/projects/publishOutcome.ts
 msgid "The recording is published, but the project is closed, so viewers cannot see it yet."
 msgstr "Inspelningen är publicerad, men projektet är stängt så tittarna ser den inte än."
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "The resource cannot be torn down while a signal is being received. Stop the encoder first."
+msgstr "Resursen kan inte rivas medan signal tas emot. Stoppa enkodern först."
 
 #: src/views/users/UsersView.tsx
 msgid "The role cannot be changed here."
@@ -986,6 +1498,10 @@ msgstr "Papperskorgen är tom."
 msgid "The video for {name} is processed and waiting for review."
 msgstr "Videon för {name} är bearbetad och väntar på granskning."
 
+#: src/views/archive/VideoArchiveView.tsx
+msgid "This version is published. The chapter list is frozen and no longer follows the project's agenda."
+msgstr "Den här versionen är publicerad. Kapitellistan är fryst och följer inte längre projektets dagordning."
+
 #: src/views/jobs/JobsView.tsx
 msgid "Time"
 msgstr "Tid"
@@ -1014,6 +1530,14 @@ msgstr "Transkriberar"
 msgid "Trash"
 msgstr "Papperskorg"
 
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Trimmed"
+msgstr "Trimmad"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Trimmed but not published. Publishing happens in the project's on-demand tab."
+msgstr "Trimmad men inte publicerad. Publicering sker i projektets ondemand-flik."
+
 #: src/app/SharedDownloadsView.tsx
 msgid "Try again"
 msgstr "Försök igen"
@@ -1026,9 +1550,21 @@ msgstr "Typ"
 msgid "unknown recording"
 msgstr "okänd inspelning"
 
+#: src/views/resources/LiveResourcesView.tsx
+msgid "unused {days} d"
+msgstr "oanvänd {days} d"
+
 #: src/app/jobActions.ts
 msgid "Upload · {name}"
 msgstr "Uppladdning · {name}"
+
+#: src/views/agendas/AgendasView.tsx
+msgid "Used in"
+msgstr "Används i"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "used today"
+msgstr "använd idag"
 
 #: src/views/users/UsersView.tsx
 msgid "User details"
@@ -1038,6 +1574,14 @@ msgstr "Användarens detaljer"
 #: src/views/users/UsersView.tsx
 msgid "Users"
 msgstr "Användare"
+
+#: src/views/archive/VideoArchiveView.tsx
+msgid "Video archive"
+msgstr "Videoarkiv"
+
+#: src/views/resources/LiveResourcesView.tsx
+msgid "Viewers"
+msgstr "Tittare"
 
 #: src/views/projects/publishOutcome.ts
 msgid "Viewers can now see the changes."

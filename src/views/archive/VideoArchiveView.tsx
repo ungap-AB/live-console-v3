@@ -1,3 +1,4 @@
+import { plural, t } from '@lingui/core/macro'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Chapter, CueKind, Recording } from '../../data/types'
@@ -18,11 +19,17 @@ import './VideoArchiveView.css'
 import { errorMessage, runOptimistic } from '../../app/optimistic'
 
 function kindLabel(kind: CueKind): string {
-  if (kind === 'agendaItem') return 'Ärende'
-  if (kind === 'person') return 'Talare'
-  if (kind === 'pauseIn') return 'Paus'
-  if (kind === 'pauseOut') return 'Paus slut'
-  return 'Utrop'
+  if (kind === 'agendaItem') return t`Agenda item`
+  if (kind === 'person') return t`Speaker`
+  if (kind === 'pauseIn') return t`Break`
+  if (kind === 'pauseOut') return t`Break ends`
+  return t`Announcement`
+}
+
+function clippedText(startSeconds: number, endSeconds: number): string {
+  const start = formatHms(startSeconds)
+  const end = formatHms(endSeconds)
+  return t`Clipped ${start}–${end} from the original`
 }
 
 function isInRange(recording: Recording, chapter: Chapter): boolean {
@@ -68,11 +75,11 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   const childrenOf = (id: string) => recordings.filter((r) => r.kind === 'trimmed' && r.parentId === id)
   const rows = originals.flatMap((o) => [{ recording: o, child: false }, ...childrenOf(o.id).map((k) => ({ recording: k, child: true }))])
 
-  // Listan är medvetet lätt (inga kapitel) — full detalj, och vid trimmad
-  // version även originalets kapitel, hämtas separat när något väljs. Se
-  // PLAN-live-server-v3.md Steg 2. Kollar lokal state FÖRST (inte bara vid
-  // client-miss) — en nyss skapad videoresurs (se createRecording) finns
-  // bara lokalt tills skapandet är kopplat mot en riktig backend.
+  // The list is deliberately light (no chapters) — full details, and for a trimmed
+  // version also the original's chapters, are fetched separately when something is
+  // selected. See PLAN-live-server-v3.md step 2. Checks local state FIRST (not only
+  // on a client miss) — a just-created video resource (see createRecording) exists
+  // only locally until creating is wired to a real backend.
   const detailResource = useResource(async () => {
     if (!selectedId) return null
     const recording = recordings.find((r) => r.id === selectedId) ?? (await client.recordings.get(selectedId))
@@ -90,10 +97,10 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
   const selected = detail?.recording ?? null
   const chapters = !detail ? [] : detail.recording.kind === 'original' ? detail.recording.chapters : detail.original?.chapters ?? []
 
-  // Skapandet av en riktig videoresurs (uppladdning, referens till en
-  // existerande IVS-inspelning, m.m.) är inte byggt än — den här vyn är en
-  // mock. "+ Ny" skapar därför bara en tom lokal platshållare (aldrig
-  // sparad hos client/backend) och visar den, sedan stannar flödet där.
+  // Creating a real video resource (upload, reference to an existing IVS
+  // recording, etc.) is not built yet — this view is a mock. "+ New" therefore
+  // only creates an empty local placeholder (never saved to the client/backend)
+  // and shows it; the flow stops there.
   function createRecording(name: string) {
     const draft: Recording = {
       id: `local-${Date.now()}`,
@@ -103,7 +110,7 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
       durationSeconds: 0,
       sizeBytes: 0,
       resolution: '–',
-      source: 'Manuellt tillagd',
+      source: t`Added manually`,
       hlsUrl: '',
       project: null,
       segments: [],
@@ -114,9 +121,9 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
     setCreating(false)
   }
 
-  // Draften från createRecording (id "local-…") finns bara i lokal state,
-  // aldrig hos client/backend — försök inte spara den dit.
-  // UNG-105: det nya namnet visas direkt; vid fel återställs det och en toast visar felet.
+  // The draft from createRecording (id "local-…") exists only in local state,
+  // never in the client/backend — do not try to save it there.
+  // UNG-105: the new name shows immediately; on failure it is restored and a toast shows the error.
   function patchRecordingName(id: string, name: string) {
     setRecordings((prev) => prev.map((r) => (r.id === id ? { ...r, name } : r)))
     setDetail((prev) => (prev && prev.recording.id === id ? { ...prev, recording: { ...prev.recording, name } } : prev))
@@ -139,7 +146,7 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
         setRecordings((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
         setDetail((prev) => (prev && prev.recording.id === updated.id ? { ...prev, recording: updated } : prev))
       },
-      onError: (err) => setToast(errorMessage(err, 'Kunde inte byta namn.')),
+      onError: (err) => setToast(errorMessage(err, t`Could not rename.`)),
     })
   }
 
@@ -150,11 +157,11 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
     setConfirmTrash(null)
   }
 
-  // Jobbet (HLS → MP4 via MediaConvert, se UNG-58) kan ta flera minuter för
-  // en hel sändning — client.recordings.download pollar internt tills klart.
-  // Renderar en synlig länk istället för window.open(): ett popup-anrop så
-  // långt efter den ursprungliga klickgesten blockeras ofta tyst av
-  // webbläsaren (inte en direkt reaktion på användarens klick längre).
+  // The job (HLS → MP4 via MediaConvert, see UNG-58) can take several minutes for
+  // a whole broadcast — client.recordings.download polls internally until done.
+  // Renders a visible link instead of window.open(): a popup call this long after
+  // the original click gesture is often silently blocked by the browser (it is no
+  // longer a direct reaction to the user's click).
   async function downloadRecording(recording: Recording) {
     setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'starting' } }))
     try {
@@ -162,7 +169,7 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
       if (job.url) {
         setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'ready', url: job.url } }))
       } else {
-        // Servern kör jobbet; framsteget visas i jobbfältet och en toast säger till när filen är klar.
+        // The server runs the job; progress shows in the jobs bar and a toast says when the file is ready.
         setDownloads((prev) => ({ ...prev, [recording.id]: { status: 'queued' } }))
         notifyJobsChanged()
       }
@@ -171,33 +178,36 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
         ...prev,
         [recording.id]: {
           status: 'error',
-          message: error instanceof Error ? error.message : 'Nedladdningen kunde inte förberedas.',
+          message: error instanceof Error ? error.message : t`The download could not be prepared.`,
         },
       }))
     }
   }
 
+  const trashName = confirmTrash?.name ?? ''
+  const trashChildren = confirmTrash ? childrenOf(confirmTrash.id).length : 0
+
   return (
     <div class="view">
       <header>
         <div class="header-list-zone">
-          <h1>Videoarkiv</h1>
+          <h1>{t`Video archive`}</h1>
           <span class="spacer" />
           <button class="btn btn-sm" type="button" onClick={() => setCreating(true)}>
-            + Ny
+            {t`+ New`}
           </button>
         </div>
       </header>
 
       <div class="content">
         <SplitPane
-          listLabel="Inspelningar"
-          detailLabel="Vald inspelning"
+          listLabel={t`Recordings`}
+          detailLabel={t`Selected recording`}
           list={
             <>
               <ul>
-                {resource.loading && recordings.length === 0 && <li class="none">Laddar…</li>}
-                {!resource.loading && rows.length === 0 && <li class="none">Ingen inspelning ännu.</li>}
+                {resource.loading && recordings.length === 0 && <li class="none">{t`Loading…`}</li>}
+                {!resource.loading && rows.length === 0 && <li class="none">{t`No recording yet.`}</li>}
                 {rows.map(({ recording: r, child }) => (
                   <li key={r.id} class={`${r.id === selectedId ? 'sel' : ''} ${child ? 'child' : ''}`}>
                     <button class="row" type="button" onClick={() => setSelectedId(r.id)}>
@@ -207,8 +217,8 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
                       <span class="meta-row">
                         {r.kind === 'trimmed' && (
                           <>
-                            <StatusChip tone="accent">Trimmad</StatusChip>
-                            {r.published && <StatusChip tone="live">Publicerad</StatusChip>}
+                            <StatusChip tone="accent">{t`Trimmed`}</StatusChip>
+                            {r.published && <StatusChip tone="live">{t`Published`}</StatusChip>}
                           </>
                         )}
                         <span class="meta meta-mono">{formatDateTime(r.createdAt)}</span>
@@ -221,9 +231,9 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
           }
           detail={
             !selectedId ? (
-              <div class="docnone">Välj en inspelning i listan.</div>
+              <div class="docnone">{t`Select a recording in the list.`}</div>
             ) : !selected ? (
-              <div class="docnone">Laddar…</div>
+              <div class="docnone">{t`Loading…`}</div>
             ) : (
               <ArchiveDetail
                 recording={selected}
@@ -245,22 +255,19 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
 
       {confirmTrash && (
         <ConfirmModal
-          title="Flytta till papperskorgen?"
-          confirmLabel="Flytta till papperskorgen"
+          title={t`Move to trash?`}
+          confirmLabel={t`Move to trash`}
           danger
           onCancel={() => setConfirmTrash(null)}
           onConfirm={() => trash(confirmTrash)}
         >
-          <p>
-            {confirmTrash.name} har {childrenOf(confirmTrash.id).length} trimmad version. Flytta
-            originalet och dess versioner till papperskorgen?
-          </p>
+          <p>{plural(trashChildren, { one: `${trashName} has # trimmed version. Move the original and its versions to trash?`, other: `${trashName} has # trimmed versions. Move the original and its versions to trash?` })}</p>
         </ConfirmModal>
       )}
 
       {creating && (
         <RenameModal
-          title="Ny videoresurs"
+          title={t`New video resource`}
           initialValue=""
           onCancel={() => setCreating(false)}
           onSave={createRecording}
@@ -269,7 +276,7 @@ export function VideoArchiveView({ onOpenProject }: VideoArchiveViewProps) {
 
       {renaming && (
         <RenameModal
-          title="Byt namn på inspelningen"
+          title={t`Rename the recording`}
           initialValue={renaming.name}
           onCancel={() => setRenaming(null)}
           onSave={(name) => renameRecording(renaming, name)}
@@ -294,31 +301,32 @@ interface ArchiveDetailProps {
 function ArchiveDetail({ recording: r, chapters, onTrash, onRename, onDownload, download, onOpenProject }: ArchiveDetailProps) {
   const isOriginal = r.kind === 'original'
   const visibleChapterCount = chapters.filter((c) => isInRange(r, c)).length
+  const fileName = `${r.name}.mp4`
 
   return (
     <>
       <div class="head">
         <h2>
           {r.name}
-          <button class="ib" type="button" title="Byt namn på inspelningen" aria-label="Byt namn på inspelningen" onClick={onRename}>
+          <button class="ib" type="button" title={t`Rename the recording`} aria-label={t`Rename the recording`} onClick={onRename}>
             <EditIcon />
           </button>
           {!isOriginal && (
             <>
-              <StatusChip tone="accent">Trimmad</StatusChip>
-              {r.published && <StatusChip tone="live">Publicerad</StatusChip>}
+              <StatusChip tone="accent">{t`Trimmed`}</StatusChip>
+              {r.published && <StatusChip tone="live">{t`Published`}</StatusChip>}
             </>
           )}
           {isOriginal && r.segments.length > 1 && (
-            <StatusChip tone="warn">{r.segments.length - 1} glapp</StatusChip>
+            <StatusChip tone="warn">{plural(r.segments.length - 1, { one: '# gap', other: '# gaps' })}</StatusChip>
           )}
           <span class="head-actions">
             <OverflowMenu
               items={[{
-                label: 'Flytta till papperskorgen',
+                label: t`Move to trash`,
                 danger: true,
                 disabled: !!r.project,
-                title: r.project ? 'Inspelningar kopplade till ett projekt kan bara tas bort där.' : undefined,
+                title: r.project ? t`Recordings linked to a project can only be removed there.` : undefined,
                 onClick: onTrash,
               }]}
             />
@@ -328,29 +336,26 @@ function ArchiveDetail({ recording: r, chapters, onTrash, onRename, onDownload, 
           <span>{formatDateTime(r.createdAt)}</span>
           <span>{r.source}</span>
           {!isOriginal && r.trimRange && (
-            <span>
-              Klippt {formatHms(r.trimRange.startOffsetSeconds)}–{formatHms(r.trimRange.endOffsetSeconds)} ur
-              originalet
-            </span>
+            <span>{clippedText(r.trimRange.startOffsetSeconds, r.trimRange.endOffsetSeconds)}</span>
           )}
         </div>
         <div class="tools">
           {download?.status === 'starting' ? (
-            <button class="btn btn-sm" type="button" disabled>Startar…</button>
+            <button class="btn btn-sm" type="button" disabled>{t`Starting…`}</button>
           ) : download?.status === 'queued' ? (
             <span class="download-ready">
-              <span>Nedladdningen förbereds. Du får en avisering när den är klar.</span>
+              <span>{t`The download is being prepared. You will be notified when it is ready.`}</span>
               <button class="btn btn-sm" type="button" onClick={openJobsView}>
-                Visa jobb
+                {t`Show jobs`}
               </button>
             </span>
           ) : download?.status === 'ready' && download.url ? (
             <span class="download-ready">
               <a class="btn btn-sm" href={download.url} download>
-                Ladda ner {r.name}.mp4
+                {t`Download ${fileName}`}
               </a>
               <button class="btn btn-sm" type="button" onClick={onDownload}>
-                Förbered på nytt
+                {t`Prepare again`}
               </button>
             </span>
           ) : (
@@ -358,16 +363,16 @@ function ArchiveDetail({ recording: r, chapters, onTrash, onRename, onDownload, 
               class="btn btn-sm"
               type="button"
               onClick={onDownload}
-              title="Förbereder en nedladdningsbar fil (kan ta några minuter). Filen sparas i 7 dagar."
+              title={t`Prepares a downloadable file (can take a few minutes). The file is kept for 7 days.`}
             >
-              Ladda ner
+              {t`Download`}
             </button>
           )}
           {download?.status !== 'queued' && download?.status !== 'starting' && download?.status !== 'ready' && <NotifyCheckbox />}
           {download?.status === 'error' && <span class="download-error">{download.message}</span>}
           {r.project && (
             <button class="btn btn-sm" type="button" onClick={onOpenProject}>
-              Gå till projekt
+              {t`Go to project`}
             </button>
           )}
         </div>
@@ -376,31 +381,31 @@ function ArchiveDetail({ recording: r, chapters, onTrash, onRename, onDownload, 
       <div class="body">
         <div class="grid">
           <div>
-            <div class="k">Längd</div>
+            <div class="k">{t`Duration`}</div>
             <div class="v">{formatHms(r.durationSeconds)}</div>
           </div>
           <div>
-            <div class="k">Upplösning</div>
+            <div class="k">{t`Resolution`}</div>
             <div class="v">{r.resolution}</div>
           </div>
           <div>
-            <div class="k">Storlek</div>
+            <div class="k">{t`Size`}</div>
             <div class="v">{formatGb(r.sizeBytes)}</div>
           </div>
           <div>
-            <div class="k">Kapitel</div>
+            <div class="k">{t`Chapters`}</div>
             <div class="v">{visibleChapterCount || '–'}</div>
           </div>
         </div>
 
         <div class="block">
-          <h3>HLS-länk</h3>
+          <h3>{t`HLS link`}</h3>
           <CopyField value={r.hlsUrl} monospace />
         </div>
 
         {chapters.length > 0 && (
           <div class="block">
-            <h3>Kapitel{!isOriginal ? ' (offset räknat från trimstart)' : ''}</h3>
+            <h3>{isOriginal ? t`Chapters` : t`Chapters (offset counted from trim start)`}</h3>
             <ul class="chapters">
               {chapters.map((c) => {
                 const inside = isInRange(r, c)
@@ -411,7 +416,7 @@ function ArchiveDetail({ recording: r, chapters, onTrash, onRename, onDownload, 
                       {c.label}
                       <em>{kindLabel(c.kind)}</em>
                     </span>
-                    {!inside && <span class="flag">utanför klippet</span>}
+                    {!inside && <span class="flag">{t`outside the clip`}</span>}
                   </li>
                 )
               })}
@@ -421,22 +426,19 @@ function ArchiveDetail({ recording: r, chapters, onTrash, onRename, onDownload, 
 
         {isOriginal && r.segments.length > 1 && (
           <p class="note warn">
-            Inspelningen består av {r.segments.length} segment — enkodern tappade anslutningen under
-            sändningen. Kontrollera kapitlens offset efter trimning.
+            {plural(r.segments.length, { one: 'The recording consists of # segment — the encoder lost the connection during the broadcast. Check the chapter offsets after trimming.', other: 'The recording consists of # segments — the encoder lost the connection during the broadcast. Check the chapter offsets after trimming.' })}
           </p>
         )}
         {isOriginal ? (
           <p class="note">
-            Originalet publiceras aldrig direkt. Trimma det för att skapa en version som kan granskas
-            och publiceras.
+            {t`The original is never published directly. Trim it to create a version that can be reviewed and published.`}
           </p>
         ) : r.published ? (
           <p class="note">
-            Den här versionen är publicerad. Kapitellistan är fryst och följer inte längre projektets
-            dagordning.
+            {t`This version is published. The chapter list is frozen and no longer follows the project's agenda.`}
           </p>
         ) : (
-          <p class="note">Trimmad men inte publicerad. Publicering sker i projektets ondemand-flik.</p>
+          <p class="note">{t`Trimmed but not published. Publishing happens in the project's on-demand tab.`}</p>
         )}
       </div>
     </>
