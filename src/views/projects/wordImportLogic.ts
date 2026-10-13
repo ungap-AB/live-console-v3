@@ -1,3 +1,4 @@
+import { plural, t } from '@lingui/core/macro'
 import type { WordImportConflict, WordImportResult, WordImportWarning } from '../../data/types'
 import type { EditCue } from './captionEditOps'
 
@@ -113,18 +114,16 @@ export function nextReviewIndex(stops: readonly number[], origin: number, backwa
   return null
 }
 
-const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
-
 /** Rubriken i granskningsfältet, t.ex. "31 ändrade rutor · 2 nya · 3 konflikter · 2 att kontrollera". */
 export function reviewHeadline(review: WordReview): string {
   const { summary } = review
   const parts: string[] = []
   const changed = summary.changedCues
-  parts.push(changed === 0 && summary.addedCues === 0 && summary.removedCues === 0 ? 'Inga ändrade rutor' : plural(changed, 'ändrad ruta', 'ändrade rutor'))
-  if (summary.addedCues > 0) parts.push(plural(summary.addedCues, 'ny ruta', 'nya rutor'))
-  if (summary.removedCues > 0) parts.push(`${plural(summary.removedCues, 'borttagen', 'borttagna')}`)
+  parts.push(changed === 0 && summary.addedCues === 0 && summary.removedCues === 0 ? t`No changed boxes` : plural(changed, { one: '# changed box', other: '# changed boxes' }))
+  if (summary.addedCues > 0) parts.push(plural(summary.addedCues, { one: '# new box', other: '# new boxes' }))
+  if (summary.removedCues > 0) parts.push(plural(summary.removedCues, { one: '# removed', other: '# removed' }))
   const conflicts = openConflictCount(review)
-  if (conflicts > 0) parts.push(plural(conflicts, 'konflikt', 'konflikter'))
-  if (summary.checkCues > 0) parts.push(`${summary.checkCues} att kontrollera`)
+  if (conflicts > 0) parts.push(plural(conflicts, { one: '# conflict', other: '# conflicts' }))
+  if (summary.checkCues > 0) parts.push(t`${summary.checkCues} to check`)
   return parts.join(' · ')
 }

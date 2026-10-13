@@ -1,3 +1,4 @@
+import { plural, t } from '@lingui/core/macro'
 import type { Chapter, CueKind, Project, Recording } from '../../data/types'
 
 // UNG-193: export av kapitel. Presenters interna kapitelmodell är den kanoniska; formaten nedan är bara serialiserare. Allt här är
@@ -123,16 +124,16 @@ export function formatYoutubeTime(totalSeconds: number, withHours: boolean): str
  * minst tio sekunder. Därför läggs en inledande rad till om första kapitlet börjar senare, och kapitel som blir kortare än tio sekunder
  * hoppas över (föregående får lite längre tid). Det som ändrats berättas i `notes`.
  */
-export function toYoutubeChapters(chapters: readonly ExportChapter[], durationSeconds: number, introTitle = 'Start'): YoutubeChapters {
+export function toYoutubeChapters(chapters: readonly ExportChapter[], durationSeconds: number, introTitle = t({ message: 'Start', context: 'YouTube chapter' })): YoutubeChapters {
   const notes: string[] = []
   if (chapters.length === 0) {
-    return { text: '', count: 0, valid: false, notes: ['Det finns inga kapitel att exportera.'] }
+    return { text: '', count: 0, valid: false, notes: [t`There are no chapters to export.`] }
   }
 
   const lines: { start: number; title: string }[] = chapters.map((chapter) => ({ start: chapter.start, title: chapter.title }))
   if (lines[0].start >= 1) {
     lines.unshift({ start: 0, title: introTitle })
-    notes.push(`En inledande rad ("${introTitle}") lades till, eftersom YouTube kräver att första kapitlet börjar på 00:00.`)
+    notes.push(t`An opening line ("${introTitle}") was added, because YouTube requires the first chapter to start at 00:00.`)
   } else {
     lines[0] = { ...lines[0], start: 0 }
   }
@@ -148,12 +149,12 @@ export function toYoutubeChapters(chapters: readonly ExportChapter[], durationSe
     }
     kept.push(lines[index])
   }
-  if (skipped > 0) notes.push(`${skipped} kapitel kortare än ${YOUTUBE_MIN_CHAPTER_SECONDS} sekunder hoppades över, eftersom YouTube kräver minst så långa kapitel.`)
+  if (skipped > 0) notes.push(plural(skipped, { one: `# chapter shorter than ${YOUTUBE_MIN_CHAPTER_SECONDS} seconds was skipped, because YouTube requires chapters at least that long.`, other: `# chapters shorter than ${YOUTUBE_MIN_CHAPTER_SECONDS} seconds were skipped, because YouTube requires chapters at least that long.` }))
 
   const withHours = kept.some((line) => line.start >= 3600)
   const text = kept.map((line) => `${formatYoutubeTime(line.start, withHours)} ${line.title}`).join('\n')
   const valid = kept.length >= YOUTUBE_MIN_CHAPTERS
-  if (!valid) notes.push(`YouTube kräver minst ${YOUTUBE_MIN_CHAPTERS} kapitel. Listan har ${kept.length}.`)
+  if (!valid) notes.push(t`YouTube requires at least ${YOUTUBE_MIN_CHAPTERS} chapters. The list has ${kept.length}.`)
   return { text, count: kept.length, valid, notes }
 }
 

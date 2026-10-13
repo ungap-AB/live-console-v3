@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useMemo, useRef } from 'preact/hooks'
 import type { CaptionEnergy } from '../../data/types'
 import {
@@ -92,7 +93,7 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
     try {
       paint()
     } catch (error) {
-      console.error('Vågformsbandet kunde inte ritas', error)
+      console.error('The waveform band could not be drawn', error)
     }
   }
 
@@ -481,7 +482,7 @@ export function CaptionWaveform(props: CaptionWaveformProps) {
         ref={canvasRef}
         class="ce-wave"
         style={{ width: `${WAVEFORM_WIDTH}px`, height: `${props.height}px` }}
-        aria-label="Vågform för ljudet. Klicka för att hoppa i videon, dra en gräns för att flytta den."
+        aria-label={t`Waveform of the audio. Click to jump in the video, drag a boundary to move it.`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}

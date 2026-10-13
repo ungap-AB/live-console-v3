@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { formatHms } from '../app/time'
 import { Icon } from './Icon'
@@ -52,7 +53,7 @@ export function VideoPositionControls({ position, duration, playing, disabled = 
       <button
         class="vpc-nudge"
         type="button"
-        aria-label={`${NUDGE_SECONDS} sekunder bakåt`}
+        aria-label={t`${NUDGE_SECONDS} seconds back`}
         disabled={disabled || position <= 0}
         onClick={() => onSeek(nudgePosition(position, -NUDGE_SECONDS, duration))}
       >
@@ -66,7 +67,7 @@ export function VideoPositionControls({ position, duration, playing, disabled = 
             type="text"
             inputMode="numeric"
             value={draft}
-            aria-label="Videons position, hh:mm:ss"
+            aria-label={t`The video's position, hh:mm:ss`}
             onInput={(event) => setDraft((event.currentTarget as HTMLInputElement).value)}
             onBlur={() => finish(true)}
             onKeyDown={(event) => {
@@ -84,8 +85,8 @@ export function VideoPositionControls({ position, duration, playing, disabled = 
             class="vpc-time"
             role="button"
             tabIndex={disabled ? -1 : 0}
-            title="Dubbelklicka för att skriva in en tid"
-            aria-label={`Videons position ${formatHms(position)}. Tryck Enter för att skriva in en tid.`}
+            title={t`Double-click to enter a time`}
+            aria-label={t`The video's position ${formatHms(position)}. Press Enter to enter a time.`}
             onDblClick={begin}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === 'F2') {
@@ -101,14 +102,14 @@ export function VideoPositionControls({ position, duration, playing, disabled = 
       <button
         class="vpc-nudge"
         type="button"
-        aria-label={`${NUDGE_SECONDS} sekunder framåt`}
+        aria-label={t`${NUDGE_SECONDS} seconds forward`}
         disabled={disabled || position >= duration}
         onClick={() => onSeek(nudgePosition(position, NUDGE_SECONDS, duration))}
       >
         +{NUDGE_SECONDS} s
       </button>
       {!overlay && (
-        <button class="vpc-play" type="button" aria-label={playing ? 'Pausa' : 'Spela'} title={playing ? 'Pausa' : 'Spela'} disabled={disabled} onClick={onTogglePlay}>
+        <button class="vpc-play" type="button" aria-label={playing ? t`Pause` : t`Play`} title={playing ? t`Pause` : t`Play`} disabled={disabled} onClick={onTogglePlay}>
           <Icon name={playing ? 'pause' : 'play_arrow'} size={24} />
         </button>
       )}

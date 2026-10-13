@@ -1,3 +1,4 @@
+import { plural, t } from '@lingui/core/macro'
 import { useMemo, useState } from 'preact/hooks'
 import type { ImportMode, TextImportCounts } from '../data/types'
 import { Modal } from './Modal'
@@ -13,27 +14,33 @@ interface ImportTextDialogProps {
   run: (text: string, mode: ImportMode) => Promise<TextImportCounts>
 }
 
-const COPY = {
-  agenda: {
-    title: 'Importera dagordning',
-    subtitle: 'En punkt per rad.',
-    placeholder: 'Kommunfullmäktiges sammanträde\nVal av justerare\nFrågor',
-    noun: 'punkter',
-    replaceHelp: 'Befintliga punkter ersätts efter plats: de behåller bilagor och Meeting-koppling men får ny rubrik och tom referens. Punkter utan motsvarande rad tas bort.',
-  },
-  namelist: {
-    title: 'Importera namn',
-    subtitle: 'Ett namn per rad.',
-    placeholder: 'Anna Andersson\nBo Berg\nCecilia Carlsson',
-    noun: 'namn',
-    replaceHelp: 'Befintliga namn ersätts efter plats: de får nytt namn och tomt parti och titel. Namn utan motsvarande rad tas bort.',
-  },
-} as const
+// Texts per kind, built when shown (the language is chosen at start).
+function copyFor(kind: ImportKind) {
+  return kind === 'agenda'
+    ? {
+      title: t`Import agenda`,
+      subtitle: t`One item per line.`,
+      placeholder: t`City council meeting\nElection of adjusters\nQuestions`,
+      lineCount: (lines: number) => plural(lines, { one: '# item', other: '# items' }),
+      existing: (count: number) => t`Existing items (${count})`,
+      replaceHelp: t`Existing items are replaced by position: they keep attachments and Meeting link but get a new heading and an empty reference. Items without a corresponding line are removed.`,
+      missing: t`Paste at least one line, one item per line.`,
+    }
+    : {
+      title: t`Import names`,
+      subtitle: t`One name per line.`,
+      placeholder: t`Anna Andersson\nBo Berg\nCecilia Carlsson`,
+      lineCount: (lines: number) => plural(lines, { one: '# name', other: '# names' }),
+      existing: (count: number) => t`Existing names (${count})`,
+      replaceHelp: t`Existing names are replaced by position: they get a new name and an empty party and title. Names without a corresponding line are removed.`,
+      missing: t`Paste at least one line, one person per line.`,
+    }
+}
 
 // UNG-197: delad dialog för att importera dagordningspunkter och namn. Hela texten skickas i ETT anrop och servern delar upp den och sparar
 // allt eller inget. "Lägg till sist" är förvalt: att skriva över är ett aktivt val.
 export function ImportTextDialog({ kind, existingCount, onClose, run }: ImportTextDialogProps) {
-  const copy = COPY[kind]
+  const copy = copyFor(kind)
   const [text, setText] = useState('')
   const [mode, setMode] = useState<ImportMode>('append')
   const [busy, setBusy] = useState(false)
@@ -44,7 +51,7 @@ export function ImportTextDialog({ kind, existingCount, onClose, run }: ImportTe
   async function submit() {
     if (busy) return
     if (check.lines === 0) {
-      setError(`Klistra in minst en rad, en ${kind === 'agenda' ? 'punkt' : 'person'} per rad.`)
+      setError(copy.missing)
       return
     }
     setBusy(true)
@@ -52,7 +59,7 @@ export function ImportTextDialog({ kind, existingCount, onClose, run }: ImportTe
     try {
       setDone(importSummary(kind, await run(text, existingCount > 0 ? mode : 'append')))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Importen misslyckades. Inget importerades.')
+      setError(err instanceof Error ? err.message : t`The import failed. Nothing was imported.`)
     } finally {
       setBusy(false)
     }
@@ -60,7 +67,7 @@ export function ImportTextDialog({ kind, existingCount, onClose, run }: ImportTe
 
   if (done !== null) {
     return (
-      <Modal title={copy.title} onClose={onClose} footer={<button class="btn btn-sm primary" type="button" onClick={onClose}>Klart</button>}>
+      <Modal title={copy.title} onClose={onClose} footer={<button class="btn btn-sm primary" type="button" onClick={onClose}>{t`Done`}</button>}>
         <p class="import-done" role="status">{done}</p>
       </Modal>
     )
@@ -74,9 +81,9 @@ export function ImportTextDialog({ kind, existingCount, onClose, run }: ImportTe
       closeDisabled={busy}
       footer={(
         <>
-          <button class="btn btn-sm" type="button" disabled={busy} onClick={onClose}>Avbryt</button>
+          <button class="btn btn-sm" type="button" disabled={busy} onClick={onClose}>{t`Cancel`}</button>
           <button class="btn btn-sm primary" type="button" disabled={busy || check.problem !== null} onClick={() => void submit()}>
-            {busy ? 'Importerar…' : 'Importera'}
+            {busy ? t({ message: 'Importing…', context: 'list import' }) : t`Import`}
           </button>
         </>
       )}
@@ -90,18 +97,18 @@ export function ImportTextDialog({ kind, existingCount, onClose, run }: ImportTe
         autofocus
       />
       <p class="import-count">
-        {check.lines} {copy.noun}{check.blank > 0 && check.lines > 0 ? ` (${check.blank} tomma rader hoppas över)` : ''}
+        {copy.lineCount(check.lines)}{check.blank > 0 && check.lines > 0 ? ' ' + plural(check.blank, { one: '(# empty line is skipped)', other: '(# empty lines are skipped)' }) : ''}
       </p>
       {existingCount > 0 && (
         <fieldset class="import-mode">
-          <legend>Befintliga {copy.noun} ({existingCount})</legend>
+          <legend>{copy.existing(existingCount)}</legend>
           <label>
             <input type="radio" name="import-mode" checked={mode === 'append'} onChange={() => setMode('append')} />
-            <span>Lägg till sist</span>
+            <span>{t`Add at the end`}</span>
           </label>
           <label>
             <input type="radio" name="import-mode" checked={mode === 'replace'} onChange={() => setMode('replace')} />
-            <span>Ersätt de befintliga</span>
+            <span>{t`Replace the existing ones`}</span>
           </label>
           {mode === 'replace' && <span class="import-help">{copy.replaceHelp}</span>}
         </fieldset>

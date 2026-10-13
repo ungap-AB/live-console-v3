@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { ShareEvent } from '../data/types'
 import { mailErrorText } from './shareRecipients.ts'
 
@@ -6,14 +7,14 @@ export function shareEventText(event: ShareEvent): string {
   const detail = event.detail ?? ''
   switch (event.kind) {
     case 'created':
-      return `Delningen skapades (${detail})`
+      return t`The share was created (${detail})`
     case 'downloaded':
-      return `Hämtade "${detail}"`
+      return t`Downloaded "${detail}"`
     case 'revoked':
-      return `Återkallades av ${detail}`
+      return t`Revoked by ${detail}`
     case 'mail_failed': {
       const [address, code] = detail.split(': ')
-      return `Mejlet till ${address} gick inte iväg (${mailErrorText(code)})`
+      return t`The email to ${address} was not sent (${mailErrorText(code)})`
     }
   }
 }

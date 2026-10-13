@@ -1,3 +1,5 @@
+import { t } from '@lingui/core/macro'
+import { i18n } from '@lingui/core'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import { ApiError } from '../../data/http/fetchJson'
@@ -38,7 +40,7 @@ export function WordImportDialog({ projectId, blockedByEdits, startWithBaseChoic
     try {
       onResult(await client.projects.importWordCorrections(projectId, file, baseChoice === 'auto' ? undefined : Number(baseChoice)))
     } catch (err) {
-      setError(err instanceof ApiError || err instanceof Error ? err.message : 'Filen kunde inte läsas in.')
+      setError(err instanceof ApiError || err instanceof Error ? err.message : t`The file could not be imported.`)
     } finally {
       setBusy(false)
     }
@@ -46,30 +48,29 @@ export function WordImportDialog({ projectId, blockedByEdits, startWithBaseChoic
 
   return (
     <Modal
-      title="Läs in rättningar från Word"
+      title={t`Import corrections from Word`}
       onClose={onClose}
       closeDisabled={busy}
       footer={(
         <>
-          <button class="btn btn-sm" type="button" disabled={busy} onClick={onClose}>Avbryt</button>
+          <button class="btn btn-sm" type="button" disabled={busy} onClick={onClose}>{t`Cancel`}</button>
           <button class="btn btn-sm btn-primary" type="button" disabled={!file || busy || blockedByEdits} onClick={() => void read()}>
-            {busy ? 'Läser in…' : 'Läs in'}
+            {busy ? t`Importing…` : t({ message: 'Import', context: 'Word corrections' })}
           </button>
         </>
       )}
     >
       <p>
-        Rätta texten direkt i Word-dokumentet (manuset) som du skrivit ut från ungap, spara filen och välj den här. Rättningarna läggs in som förslag i
-        undertexterna, och inget sparas förrän du sparar.
+        {t`Correct the text directly in the Word document (the manuscript) that you printed from ungap, save the file and choose it here. The corrections are added as suggestions in the captions, and nothing is saved until you save.`}
       </p>
       <ul class="ce-word-hints">
-        <li>Rätta bara själva texten. Rubriker (punkter och talare) läses inte och ändringar i dem följer inte med.</li>
-        <li>Du kan använda Spåra ändringar i Word. Alla spårade ändringar läses som om du godkänt dem.</li>
-        <li>Text du tar bort tas bort ur rutan, och text du lägger till hamnar i rutan där den hör hemma. Rutor ändras bara där du ändrat något.</li>
+        <li>{t`Correct only the text itself. Headings (items and speakers) are not read and changes in them are not included.`}</li>
+        <li>{t`You can use Track Changes in Word. All tracked changes are read as if you had accepted them.`}</li>
+        <li>{t`Text you remove is removed from the box, and text you add ends up in the box where it belongs. Boxes are changed only where you changed something.`}</li>
       </ul>
-      {blockedByEdits && <p class="ce-error-text" role="alert">Du har osparade ändringar. Spara eller ångra dem först.</p>}
+      {blockedByEdits && <p class="ce-error-text" role="alert">{t`You have unsaved changes. Save or undo them first.`}</p>}
       <label class="ce-word-file">
-        <span>Word-fil (.docx)</span>
+        <span>{t`Word file (.docx)`}</span>
         <input
           type="file"
           accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -77,16 +78,15 @@ export function WordImportDialog({ projectId, blockedByEdits, startWithBaseChoic
         />
       </label>
       <details class="ce-word-advanced" open={startWithBaseChoice}>
-        <summary>Dokumentet stämmer inte? Välj version att jämföra mot</summary>
+        <summary>{t`The document does not match? Choose a version to compare against`}</summary>
         <p class="ce-regen-hint">
-          Som standard jämförs dokumentet mot den version av undertexterna som manuset skrevs ut från. Välj en annan om den har gallrats eller
-          om dokumentet kommer från en annan version.
+          {t`By default the document is compared against the version of the captions that the manuscript was printed from. Choose another one if it has been pruned or if the document comes from another version.`}
         </p>
-        <select value={baseChoice} onChange={(event) => setBaseChoice(event.currentTarget.value)} aria-label="Version att jämföra mot">
-          <option value="auto">Den version manuset skrevs ut från (rekommenderas)</option>
+        <select value={baseChoice} onChange={(event) => setBaseChoice(event.currentTarget.value)} aria-label={t`Version to compare against`}>
+          <option value="auto">{t`The version the manuscript was printed from (recommended)`}</option>
           {(versions ?? []).map((item) => (
             <option key={item.version} value={String(item.version)}>
-              Version {item.version}{item.current ? ' (nuvarande)' : ''}{item.published ? ' (publicerad)' : ''} · {new Date(item.createdAtUtc).toLocaleString('sv-SE', { dateStyle: 'short', timeStyle: 'short' })}
+              {t`Version ${item.version}`}{item.current ? ' ' + t`(current)` : ''}{item.published ? ' ' + t`(published)` : ''} · {new Date(item.createdAtUtc).toLocaleString(i18n.locales, { dateStyle: 'short', timeStyle: 'short' })}
             </option>
           ))}
         </select>

@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { Modal } from './Modal'
 import { PlusIcon } from './icons'
 import './PickerModal.css'
@@ -23,7 +24,7 @@ export function PickerModal({
   title,
   items,
   selectedId,
-  noneLabel = 'Ingen',
+  noneLabel = t({ message: 'None', context: 'picker' }),
   onPick,
   onCancel,
   createNewLabel,

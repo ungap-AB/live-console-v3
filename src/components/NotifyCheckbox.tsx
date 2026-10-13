@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useState } from 'preact/hooks'
 import { readNotifyByEmail, storeNotifyByEmail } from '../app/notifyPreference'
 import './NotifyCheckbox.css'
@@ -21,7 +22,7 @@ export function NotifyCheckbox({ disabled }: NotifyCheckboxProps) {
           storeNotifyByEmail(event.currentTarget.checked)
         }}
       />
-      Mejla mig när det är klart
+      {t`Email me when it is done`}
     </label>
   )
 }

@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useRef, useState } from 'preact/hooks'
 import type { ComponentChildren } from 'preact'
 import { useDismiss } from '../app/useDismiss'
@@ -22,7 +23,7 @@ interface OverflowMenuProps {
 // Generaliserad från .used-by-menu (AgendasView) — samma "..."-mönster
 // återanvänds nu för objektnivåns destruktiva åtgärder (Radera projekt,
 // Flytta till papperskorgen, Riv resurs), se granskningen 2026-09-17.
-export function OverflowMenu({ items, label = 'Fler alternativ' }: OverflowMenuProps) {
+export function OverflowMenu({ items, label = t`More options` }: OverflowMenuProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 

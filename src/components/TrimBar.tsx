@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useRef } from 'preact/hooks'
 import { Icon } from './Icon'
 import {
@@ -142,10 +143,10 @@ export function TrimBar({
         ))}
       </div>
       <div class="trimbar-plays" style={{ '--trimbar-start': along(start), '--trimbar-end': along(end) }}>
-        <button class="trimbar-play trimbar-play-start" type="button" title="Spela från början av det som behålls" aria-label="Spela från början av det som behålls" disabled={disabled} onClick={onPlayFromStart}>
+        <button class="trimbar-play trimbar-play-start" type="button" title={t`Play from the beginning of what is kept`} aria-label={t`Play from the beginning of what is kept`} disabled={disabled} onClick={onPlayFromStart}>
           <Icon name="play_arrow" size={17} />
         </button>
-        <button class="trimbar-play trimbar-play-end" type="button" title="Spela de sista sekunderna före slutet" aria-label="Spela de sista sekunderna före slutet" disabled={disabled} onClick={onPlayEnd}>
+        <button class="trimbar-play trimbar-play-end" type="button" title={t`Play the last seconds before the end`} aria-label={t`Play the last seconds before the end`} disabled={disabled} onClick={onPlayEnd}>
           <Icon name="play_arrow" size={17} />
         </button>
       </div>

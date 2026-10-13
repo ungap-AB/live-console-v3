@@ -1,3 +1,4 @@
+import { plural, t } from '@lingui/core/macro'
 import type { MediaJob } from '../data/types'
 import { jobTitle } from '../app/jobActions'
 import { routeHref } from '../app/router'
@@ -22,11 +23,11 @@ export function JobStatusBlock({ jobs, newFinished }: JobStatusBlockProps) {
   const shown = active.slice(0, MAX_SHOWN)
 
   return (
-    <a class="job-block" href={routeHref('jobs')} title="Öppna Jobb">
+    <a class="job-block" href={routeHref('jobs')} title={t`Open Jobs`}>
       <div class="job-block-head">
         <Icon name={active.length > 0 ? 'sync' : 'task_alt'} size={16} />
-        <span class="job-block-label">{active.length > 0 ? `${active.length} pågår` : 'Jobb'}</span>
-        {newFinished > 0 && <span class="job-block-new">{newFinished} {newFinished === 1 ? 'klart' : 'klara'}</span>}
+        <span class="job-block-label">{active.length > 0 ? t`${active.length} in progress` : t`Jobs`}</span>
+        {newFinished > 0 && <span class="job-block-new">{plural(newFinished, { one: '# done', other: '# done' })}</span>}
       </div>
       {shown.map((job) => (
         <div class="job-block-row" key={job.id}>
@@ -34,7 +35,7 @@ export function JobStatusBlock({ jobs, newFinished }: JobStatusBlockProps) {
           <JobProgress progress={job.progress} phase={job.phase} />
         </div>
       ))}
-      {active.length > shown.length && <div class="job-block-more">+{active.length - shown.length} till</div>}
+      {active.length > shown.length && <div class="job-block-more">{t`+${active.length - shown.length} more`}</div>}
     </a>
   )
 }

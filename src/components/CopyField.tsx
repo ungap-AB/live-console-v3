@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useState } from 'preact/hooks'
 import { FieldBlock } from './FieldBlock'
 import './CopyField.css'
@@ -52,8 +53,8 @@ export function CopyField({ label, value, placeholder = '–', monospace = false
         type="button"
         onClick={copy}
         disabled={value == null}
-        title="Kopiera"
-        aria-label={`Kopiera ${label ?? 'värde'}`}
+        title={t`Copy`}
+        aria-label={t`Copy ${label ?? t`value`}`}
       >
         {copied ? '✓' : '⧉'}
       </button>

@@ -1,12 +1,13 @@
+import { t } from '@lingui/core/macro'
 import type { ProjectCaptions } from '../../data/types'
 
 export const MAX_CAPTION_FILE_BYTES = 2 * 1024 * 1024
 
 /** Klientsidans förkontroll av filen — servern kontrollerar innehållet (WEBVTT-huvud, tidsangivelser, UTF-8). */
 export function validateCaptionFile(file: { name: string; size: number }): string | null {
-  if (!/\.vtt$/i.test(file.name)) return 'Välj en VTT-fil (filnamnet ska sluta på .vtt).'
-  if (file.size <= 0) return 'Filen är tom.'
-  if (file.size > MAX_CAPTION_FILE_BYTES) return 'Filen är för stor. Högst 2 MB.'
+  if (!/\.vtt$/i.test(file.name)) return t`Choose a VTT file (the file name must end in .vtt).`
+  if (file.size <= 0) return t`The file is empty.`
+  if (file.size > MAX_CAPTION_FILE_BYTES) return t`The file is too large. At most 2 MB.`
   return null
 }
 
@@ -26,10 +27,10 @@ export function captionsLengthWarning(captions: Pick<ProjectCaptions, 'lastCueEn
   if (!videoDurationSeconds || videoDurationSeconds <= 0) return null
   const end = captions.lastCueEndSeconds
   if (end > videoDurationSeconds + 10) {
-    return `Undertexten slutar efter videons slut (${hms(end)} mot ${hms(videoDurationSeconds)}). Är filen gjord från den trimmade, publicerade videon?`
+    return t`The captions end after the end of the video (${hms(end)} against ${hms(videoDurationSeconds)}). Is the file made from the trimmed, published video?`
   }
   if (videoDurationSeconds > 120 && end < videoDurationSeconds * 0.5) {
-    return `Undertexten slutar långt före videons slut (${hms(end)} mot ${hms(videoDurationSeconds)}). Kontrollera att den hör till den här videon.`
+    return t`The captions end long before the end of the video (${hms(end)} against ${hms(videoDurationSeconds)}). Check that they belong to this video.`
   }
   return null
 }

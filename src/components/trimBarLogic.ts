@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 // UNG-233: ren logik för trimbalken (tidslinjen med två dragbara balkar för början och slutet). Testas utan DOM.
 import { formatHms } from '../app/time.ts'
 
@@ -85,7 +86,7 @@ export function isOutside(time: number, start: number, end: number): boolean {
 }
 
 export function handleLabel(handle: Handle): string {
-  return handle === 'start' ? 'Början' : 'Slutet'
+  return handle === 'start' ? t`The start` : t`The end`
 }
 
 /** Text för skärmläsare: "Början 00:03:12". */

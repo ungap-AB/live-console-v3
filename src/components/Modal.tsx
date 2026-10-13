@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { ComponentChildren } from 'preact'
 import { useEffect } from 'preact/hooks'
 import './Modal.css'
@@ -46,7 +47,7 @@ export function Modal({ title, subtitle, onClose, children, footer, wide = false
             <h2>{title}</h2>
             {subtitle && <div class="msub">{subtitle}</div>}
           </div>
-          <button class="ib" type="button" onClick={onClose} disabled={closeDisabled} aria-label="Stäng" title={closeDisabled ? 'Vänta tills överföringen är klar' : undefined}>
+          <button class="ib" type="button" onClick={onClose} disabled={closeDisabled} aria-label={t`Close`} title={closeDisabled ? t`Wait until the transfer is finished` : undefined}>
             ✕
           </button>
         </div>

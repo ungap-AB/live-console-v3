@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { CaptionCue } from '../../data/types'
 
 /** Gräns för tecken per rad (bekräftad av operatören) och antal rader per replik. Bara varningar, aldrig spärrar. */
@@ -85,8 +86,10 @@ export function uncoveredNotice(start: number, end: number, coveredStart?: numbe
   const from = coveredStart ?? 0
   const to = coveredEnd ?? Number.POSITIVE_INFINITY
   if (start >= from - 1 && end <= to + 1) return null
-  const range = coveredEnd == null ? `från ${formatCueTime(from)}` : `för ${formatCueTime(from)}–${formatCueTime(to)}`
-  return `Undertexterna är skapade ${range}. Trimmen går utanför, och där saknas undertexter. Välj Skapa på nytt för att täcka hela trimmen.`
+  const fromText = formatCueTime(from)
+  if (coveredEnd == null) return t`The captions are created from ${fromText}. The trim goes outside, and there are no captions there. Choose Create again to cover the whole trim.`
+  const toText = formatCueTime(to)
+  return t`The captions are created for ${fromText}–${toText}. The trim goes outside, and there are no captions there. Choose Create again to cover the whole trim.`
 }
 
 /** Tid som hh:mm:ss (hel sekund, avrundad nedåt), för listans kolumner. Interna tider behåller millisekunder. */

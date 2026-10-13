@@ -1,3 +1,4 @@
+import { plural, t } from '@lingui/core/macro'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../data'
 import type { CreatedShare, MediaJob } from '../data/types'
@@ -33,7 +34,7 @@ function candidatesFrom(jobs: MediaJob[]): Candidate[] {
     seen.add(job.recordingId)
     result.push({
       recordingId: job.recordingId,
-      name: job.recordingName ?? job.projectName ?? 'Inspelning',
+      name: job.recordingName ?? job.projectName ?? t`Recording`,
       detail: job.projectName && job.projectName !== job.recordingName ? job.projectName : undefined,
     })
   }
@@ -59,7 +60,7 @@ export function ShareDialog({ initialRecordingIds, onClose, onShared }: ShareDia
         const list = candidatesFrom(jobs)
         // Filerna man valt ska alltid gå att välja, även om jobbraden hunnit rensas — servern kontrollerar dem ändå.
         for (const id of initialRecordingIds ?? []) {
-          if (!list.some((c) => c.recordingId === id)) list.unshift({ recordingId: id, name: 'Vald inspelning' })
+          if (!list.some((c) => c.recordingId === id)) list.unshift({ recordingId: id, name: t`Selected recording` })
         }
         setCandidates(list)
       },
@@ -89,7 +90,7 @@ export function ShareDialog({ initialRecordingIds, onClose, onShared }: ShareDia
       setCreated(result)
       onShared?.()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Delningen kunde inte skapas.')
+      setError(err instanceof Error ? err.message : t`The share could not be created.`)
     } finally {
       setBusy(false)
     }
@@ -99,14 +100,14 @@ export function ShareDialog({ initialRecordingIds, onClose, onShared }: ShareDia
     const failed = created.recipients.filter((recipient) => !recipient.sent)
     return (
       <Modal
-        title="Delningen är skapad"
+        title={t`The share is created`}
         onClose={onClose}
-        footer={<button class="btn btn-sm btn-primary" type="button" onClick={onClose}>Stäng</button>}
+        footer={<button class="btn btn-sm btn-primary" type="button" onClick={onClose}>{t`Close`}</button>}
       >
         <p class="share-note">
           {failed.length === 0
-            ? `Ett mejl med länken har skickats till ${created.recipients.length === 1 ? 'mottagaren' : `${created.recipients.length} mottagare`}.`
-            : `Mejlet gick till ${created.recipients.length - failed.length} av ${created.recipients.length} mottagare.`}
+            ? plural(created.recipients.length, { one: 'An email with the link has been sent to the recipient.', other: 'An email with the link has been sent to # recipients.' })
+            : t`The email went to ${created.recipients.length - failed.length} of ${created.recipients.length} recipients.`}
         </p>
         <ul class="share-recipients">
           {created.recipients.map((recipient) => (
@@ -116,10 +117,9 @@ export function ShareDialog({ initialRecordingIds, onClose, onShared }: ShareDia
             </li>
           ))}
         </ul>
-        <CopyField label="Länk" value={created.link} monospace />
+        <CopyField label={t`Link`} value={created.link} monospace />
         <p class="share-note">
-          Länken gäller i 7 dagar och visas bara nu. Kopiera den om du vill skicka den själv. Du hittar delningen och kan
-          återkalla den under Nedladdningar.
+          {t`The link is valid for 7 days and is only shown now. Copy it if you want to send it yourself. You find the share and can revoke it under Downloads.`}
         </p>
       </Modal>
     )
@@ -127,23 +127,23 @@ export function ShareDialog({ initialRecordingIds, onClose, onShared }: ShareDia
 
   return (
     <Modal
-      title="Dela nedladdning"
+      title={t`Share download`}
       onClose={onClose}
       wide
       footer={
         <>
-          <button class="btn btn-sm" type="button" onClick={onClose}>Avbryt</button>
+          <button class="btn btn-sm" type="button" onClick={onClose}>{t`Cancel`}</button>
           <button class="btn btn-sm btn-primary" type="button" disabled={!canSubmit} onClick={() => void submit()}>
-            {busy ? 'Delar…' : 'Dela och skicka'}
+            {busy ? t`Sharing…` : t`Share and send`}
           </button>
         </>
       }
     >
       <section class="share-section">
-        <h3>Filer</h3>
-        {candidates === null && <p class="share-note" role="status">Hämtar klara nedladdningar…</p>}
+        <h3>{t`Files`}</h3>
+        {candidates === null && <p class="share-note" role="status">{t`Fetching finished downloads…`}</p>}
         {candidates?.length === 0 && (
-          <p class="share-note">Det finns inga klara nedladdningar att dela. Förbered en nedladdning först; filen sparas i 7 dagar.</p>
+          <p class="share-note">{t`There are no finished downloads to share. Prepare a download first; the file is kept for 7 days.`}</p>
         )}
         {candidates && candidates.length > 0 && (
           <ul class="share-files">
@@ -167,40 +167,38 @@ export function ShareDialog({ initialRecordingIds, onClose, onShared }: ShareDia
       </section>
 
       <section class="share-section">
-        <h3>Mottagare</h3>
+        <h3>{t`Recipients`}</h3>
         <textarea
           rows={3}
-          aria-label="Mottagare"
-          placeholder="E-postadresser, åtskilda av komma eller radbrytning"
+          aria-label={t`Recipients`}
+          placeholder={t`Email addresses, separated by comma or line break`}
           value={recipientsText}
           onInput={(event) => setRecipientsText(event.currentTarget.value)}
         />
         <p class={`share-note${invalid.length > 0 || tooMany ? ' share-problem' : ''}`}>
           {invalid.length > 0
-            ? `Ogiltig adress: ${invalid.join(', ')}`
+            ? t`Invalid address: ${invalid.join(', ')}`
             : tooMany
-              ? `Högst ${MAX_RECIPIENTS} mottagare åt gången.`
+              ? t`At most ${MAX_RECIPIENTS} recipients at a time.`
               : valid.length === 0
-                ? 'Alla med länken kan hämta filerna, så skicka den bara till rätt personer.'
-                : valid.length === 1
-                  ? '1 mottagare'
-                  : `${valid.length} mottagare`}
+                ? t`Anyone with the link can download the files, so only send it to the right people.`
+                : plural(valid.length, { one: '# recipient', other: '# recipients' })}
         </p>
       </section>
 
       <section class="share-section">
-        <h3>Meddelande (valfritt)</h3>
+        <h3>{t`Message (optional)`}</h3>
         <textarea
           rows={3}
           maxLength={MAX_MESSAGE}
-          aria-label="Meddelande"
-          placeholder="Visas i mejlet och på nedladdningssidan"
+          aria-label={t`Message`}
+          placeholder={t`Shown in the email and on the download page`}
           value={message}
           onInput={(event) => setMessage(event.currentTarget.value)}
         />
       </section>
 
-      <p class="share-note">Länken gäller i 7 dagar. Du kan återkalla den under Nedladdningar, och varje nedladdning loggas.</p>
+      <p class="share-note">{t`The link is valid for 7 days. You can revoke it under Downloads, and every download is logged.`}</p>
       {error && <p class="share-note share-problem" role="alert">{error}</p>}
     </Modal>
   )

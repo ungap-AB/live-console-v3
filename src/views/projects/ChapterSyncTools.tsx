@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { Chapter } from '../../data/types'
 import { formatHms } from '../../app/time'
 import { Icon } from '../../components/Icon'
@@ -31,15 +32,16 @@ interface AnchorGuideProps {
 // kapitel följer sändningens tider och finjusteras enskilt i listan.
 export function AnchorGuide(props: AnchorGuideProps) {
   const { step, anchorLabel, anchorOffset, position, playing, busy } = props
+  const anchor = anchorLabel ?? ''
   return (
-    <div class="od-guide" role="region" aria-label="Förankra kapitel">
+    <div class="od-guide" role="region" aria-label={t`Anchor chapters`}>
       <div class="od-guide-head">
-        <strong>Förankra kapitel · steg {step} av 3</strong>
-        <button class="btn btn-sm" type="button" onClick={props.onClose}>Stäng</button>
+        <strong>{t`Anchor chapters · step ${step} of 3`}</strong>
+        <button class="btn btn-sm" type="button" onClick={props.onClose}>{t`Close`}</button>
       </div>
       {step === 1 && (
         <p class="od-empty">
-          <strong>Välj kapitel.</strong> {props.candidates ? 'Välj ett kapitel' : 'Klicka på ett kapitel i listan'} vars start du tydligt hör eller ser i videon, till exempel första punkten.
+          <strong>{t`Choose chapter.`}</strong> {props.candidates ? t`Choose a chapter whose start you clearly hear or see in the video, for example the first item.` : t`Click a chapter in the list whose start you clearly hear or see in the video, for example the first item.`}
         </p>
       )}
       {step === 1 && props.candidates && (
@@ -52,30 +54,32 @@ export function AnchorGuide(props: AnchorGuideProps) {
       {step === 2 && (
         <>
           <p class="od-empty">
-            <strong>Spela fram till där ”{anchorLabel}” börjar</strong> i videon och klicka Förankra.
+            <strong>{t`Play up to where “${anchor}” starts`}</strong> {t`in the video and click Anchor.`}
           </p>
           <PositionControls position={position} playing={playing} onSeekBy={props.onSeekBy} onTogglePlay={props.onTogglePlay} />
           <div class="od-guide-controls">
             <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={props.onAnchor}>
-              {busy ? 'Förankrar…' : 'Förankra'}
+              {busy ? t`Anchoring…` : t`Anchor`}
             </button>
-            <button class="btn btn-sm" type="button" disabled={busy} onClick={props.onChooseAgain}>Välj annat kapitel</button>
+            <button class="btn btn-sm" type="button" disabled={busy} onClick={props.onChooseAgain}>{t`Choose another chapter`}</button>
           </div>
         </>
       )}
       {step === 3 && (
         <>
           <p class="od-empty">
-            <strong>Kontrollera ankaret</strong> ”{anchorLabel}”{anchorOffset !== null ? ` vid ${formatHms(anchorOffset)}` : ''}. Gå till ankaret, lyssna och justera. Justeringen flyttar alla kapitel. Övriga kapitel följer tiderna från sändningen — finjustera enskilda kapitel i listan vid behov.
+            <strong>{t`Check the anchor`}</strong> {anchorOffset !== null
+              ? t`“${anchor}” at ${formatHms(anchorOffset)}. Go to the anchor, listen and adjust. The adjustment moves all chapters. The other chapters follow the times from the broadcast — fine-tune individual chapters in the list if needed.`
+              : t`“${anchor}”. Go to the anchor, listen and adjust. The adjustment moves all chapters. The other chapters follow the times from the broadcast — fine-tune individual chapters in the list if needed.`}
           </p>
           <div class="od-guide-controls">
-            <button class="btn btn-sm" type="button" disabled={busy || anchorOffset === null} onClick={props.onGoToAnchor}>Gå till ankare</button>
-            <button class="btn btn-sm" type="button" disabled={busy} title="Flyttar alla kapitel" onClick={() => props.onNudge(-1)}>−1 s</button>
-            <button class="btn btn-sm" type="button" disabled={busy} title="Flyttar alla kapitel" onClick={() => props.onNudge(1)}>+1 s</button>
+            <button class="btn btn-sm" type="button" disabled={busy || anchorOffset === null} onClick={props.onGoToAnchor}>{t`Go to anchor`}</button>
+            <button class="btn btn-sm" type="button" disabled={busy} title={t`Moves all chapters`} onClick={() => props.onNudge(-1)}>−1 s</button>
+            <button class="btn btn-sm" type="button" disabled={busy} title={t`Moves all chapters`} onClick={() => props.onNudge(1)}>+1 s</button>
           </div>
           <div class="od-guide-controls">
-            <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={props.onConfirm}>Bekräfta ankaret</button>
-            <button class="btn btn-sm" type="button" disabled={busy} onClick={props.onChooseAgain}>Förankra om</button>
+            <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={props.onConfirm}>{t`Confirm the anchor`}</button>
+            <button class="btn btn-sm" type="button" disabled={busy} onClick={props.onChooseAgain}>{t`Anchor again`}</button>
           </div>
         </>
       )}
@@ -95,7 +99,7 @@ export function PositionControls({ position, playing, onSeekBy, onTogglePlay }: 
     <div class="od-guide-controls">
       <button class="btn btn-sm" type="button" onClick={() => onSeekBy(-5)}>−5 s</button>
       <button class="btn btn-sm" type="button" onClick={() => onSeekBy(-1)}>−1 s</button>
-      <button class="btn btn-sm" type="button" aria-label="Spela eller pausa" onClick={onTogglePlay}>
+      <button class="btn btn-sm" type="button" aria-label={t`Play or pause`} onClick={onTogglePlay}>
         <Icon name={playing ? 'pause' : 'play_arrow'} size={18} />
       </button>
       <output>{formatHms(Math.round(position))}</output>
@@ -125,19 +129,19 @@ interface SyncStepperProps {
 export function SyncStepper(props: SyncStepperProps) {
   const { target, remaining, position, playing, busy, canUndo, warning } = props
   return (
-    <div class="od-guide" role="region" aria-label="Sätt tider på kapitlen">
+    <div class="od-guide" role="region" aria-label={t`Set times on the chapters`}>
       <div class="od-guide-head">
-        <strong>Sätt tider på kapitlen · {remaining} kvar</strong>
+        <strong>{t`Set times on the chapters · ${remaining} left`}</strong>
       </div>
-      <p class="od-empty">Nästa: <strong>{target.label}</strong></p>
+      <p class="od-empty">{t`Next:`} <strong>{target.label}</strong></p>
       <PositionControls position={position} playing={playing} onSeekBy={props.onSeekBy} onTogglePlay={props.onTogglePlay} />
-      {warning && <p class="od-download-error">Kapitlet hamnar före det förra. Klicka Synka igen om det är rätt.</p>}
+      {warning && <p class="od-download-error">{t`The chapter ends up before the previous one. Click Sync again if it is right.`}</p>}
       <div class="od-guide-controls">
         <button class="btn btn-sm btn-primary" type="button" disabled={busy} onClick={props.onStep}>
-          {busy ? 'Sätter…' : `Synka här · ${formatHms(Math.round(position))}`}
+          {busy ? t`Setting…` : t`Sync here · ${formatHms(Math.round(position))}`}
         </button>
-        <button class="btn btn-sm" type="button" disabled={busy} onClick={props.onSkip}>Hoppa över</button>
-        <button class="btn btn-sm" type="button" disabled={busy || !canUndo} onClick={props.onUndo}>Ångra förra</button>
+        <button class="btn btn-sm" type="button" disabled={busy} onClick={props.onSkip}>{t`Skip`}</button>
+        <button class="btn btn-sm" type="button" disabled={busy || !canUndo} onClick={props.onUndo}>{t`Undo previous`}</button>
       </div>
     </div>
   )

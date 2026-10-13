@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 // UNG-80 steg 4: tolkar mottagarfältet i delningsdialogen. Adresser kan klistras in åtskilda av komma, semikolon,
 // radbrytning eller mellanslag, eller som "Namn <adress>" (som i en e-postklient). Samma regel som servern.
 const VALID = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -26,10 +27,10 @@ export function parseRecipients(text: string): ParsedRecipients {
 export function mailErrorText(code?: string): string {
   switch (code) {
     case 'email_rate_limited':
-      return 'för många mejl till adressen den senaste timmen'
+      return t`too many emails to the address in the last hour`
     case 'invalid_email':
-      return 'ogiltig adress'
+      return t`invalid address`
     default:
-      return 'mejlet kunde inte köas'
+      return t`the email could not be queued`
   }
 }

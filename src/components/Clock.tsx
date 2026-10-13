@@ -1,3 +1,4 @@
+import { i18n } from '@lingui/core'
 import { useEffect, useState } from 'preact/hooks'
 
 // Bara tid, inget datum — en stödklocka för operatören under en pågående sändning.
@@ -11,7 +12,7 @@ export function Clock() {
 
   return (
     <span class="clock">
-      {now.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+      {now.toLocaleTimeString(i18n.locales, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
     </span>
   )
 }

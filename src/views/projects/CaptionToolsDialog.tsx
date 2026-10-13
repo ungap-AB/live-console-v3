@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { Modal } from '../../components/Modal'
 
 export interface CaptionTool {
@@ -23,11 +24,11 @@ interface CaptionToolsDialogProps {
 export function CaptionToolsDialog({ projectName, tools, onClose }: CaptionToolsDialogProps) {
   return (
     <Modal
-      title="Undertexter"
+      title={t`Captions`}
       subtitle={projectName}
       wide
       onClose={onClose}
-      footer={<button class="btn" type="button" onClick={onClose}>Stäng</button>}
+      footer={<button class="btn" type="button" onClick={onClose}>{t`Close`}</button>}
     >
       <ul class="ctd-list">
         {tools.map((tool) => (

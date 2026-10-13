@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 // UNG-228: kapitel i undertextredigerarens lista. Kapitel (punkter och personer) läggs som egna rader mellan replikraderna, i tidsordning.
 // Ren logik (testas utan DOM).
 import { mixedLayout, type LayoutEntry, type RowLayout } from './rowLayout.ts'
@@ -104,14 +105,14 @@ export function currentChapters(chapters: readonly EditorChapter[], time: number
 export function chapterKindText(kind: string): string {
   switch (kind) {
     case 'agendaItem':
-      return 'Punkt'
+      return t`Item`
     case 'person':
-      return 'Person'
+      return t`Person`
     case 'exclamation':
-      return 'Utrop'
+      return t`Announcement`
     case 'pauseIn':
     case 'pauseOut':
-      return 'Paus'
+      return t`Break`
     default:
       return ''
   }

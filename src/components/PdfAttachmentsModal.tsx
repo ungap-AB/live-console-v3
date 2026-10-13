@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useRef, useState } from 'preact/hooks'
 import { client } from '../data'
 import type { Agenda, AgendaItem } from '../data/types'
@@ -57,7 +58,7 @@ export function PdfAttachmentsModal({ agenda, item, onChanged, onClose }: PdfAtt
       bodyClassName="pdf-modal-body"
       footer={
         <button class="btn" type="button" onClick={onClose}>
-          Stäng
+          {t`Close`}
         </button>
       }
     >
@@ -73,13 +74,13 @@ export function PdfAttachmentsModal({ agenda, item, onChanged, onClose }: PdfAtt
         }}
       />
       <div class="pdf-modal-drop-hint">
-        <span>Dra och släpp en eller flera PDF-filer här</span>
+        <span>{t`Drag and drop one or more PDF files here`}</span>
         <button class="btn btn-primary" type="button" disabled={busy} onClick={() => inputRef.current?.click()}>
-          {busy ? 'Laddar...' : 'Lägg till...'}
+          {busy ? t`Loading...` : t`Add...`}
         </button>
       </div>
       {attachments.length === 0 ? (
-        <p class="hint pdf-modal-empty">Inga PDF-dokument kopplade.</p>
+        <p class="hint pdf-modal-empty">{t`No PDF documents attached.`}</p>
       ) : (
         <div class="pdf-modal-list">
           {attachments.map((attachment) => (
@@ -88,7 +89,7 @@ export function PdfAttachmentsModal({ agenda, item, onChanged, onClose }: PdfAtt
               <button
                 type="button"
                 class="ib del"
-                title="Ta bort PDF"
+                title={t`Remove PDF`}
                 aria-label={`Ta bort ${attachment.fileName}`}
                 disabled={busy}
                 onClick={() => {
@@ -102,7 +103,7 @@ export function PdfAttachmentsModal({ agenda, item, onChanged, onClose }: PdfAtt
           ))}
         </div>
       )}
-      {dragging && <div class="pdf-modal-drag-overlay">Släpp PDF-filer för att lägga till dem</div>}
+      {dragging && <div class="pdf-modal-drag-overlay">{t`Drop PDF files to add them`}</div>}
     </Modal>
   )
 }

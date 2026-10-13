@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { CaptionGeneration } from '../../data/types'
@@ -56,7 +57,7 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, ge
   }, [closeSignal])
 
   if (showEditor) {
-    const createFailed = phase === 'failed' ? (job?.errorMessage ?? 'okänt fel.') : undefined
+    const createFailed = phase === 'failed' ? (job?.errorMessage ?? t`unknown error.`) : undefined
     return <CaptionEditor key="editor" projectId={projectId} projectName={projectName} onClose={onClose} onSaved={() => { onChanged(); void refresh() }} onRegenerated={setGeneration} onChaptersSaved={onChaptersChanged} trim={trim} trimLock={trimLock} createFailed={createFailed} chapterTools={chapterTools} closeSignal={closeSignal} focus={focus} />
   }
 
@@ -68,7 +69,7 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, ge
       if (generation?.job) await client.jobs.cancel(generation.job.id)
       await refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Jobbet kunde inte avbrytas.')
+      setError(err instanceof Error ? err.message : t`The job could not be cancelled.`)
     } finally {
       setBusy(false)
     }
@@ -78,24 +79,24 @@ export function CaptionStudio({ projectId, projectName, videoDurationSeconds, ge
   return (
     <>
       <CaptionEditor key="background" projectId={projectId} projectName={projectName} onClose={onClose} trim={trim} trimLock={trimLock} chapterTools={chapterTools} background />
-      <div class="cs-scrim" role="dialog" aria-modal="true" aria-label="Undertexterna skapas">
+      <div class="cs-scrim" role="dialog" aria-modal="true" aria-label={t`The captions are being created`}>
         <div class="cs-card">
-          <h3>Undertexterna skapas</h3>
+          <h3>{t`The captions are being created`}</h3>
           <JobProgress progress={job.progress} phase={job.phase} />
           <p class="cs-text cs-estimate" aria-live="polite">
             {jobEstimateText({ videoDurationSeconds, includeSpeakers: job.includeSpeakers === true, startedAtUtc: job.createdAtUtc, progress: job.progress, nowMs: now })}
           </p>
-          <p class="cs-text">Ljudet tas fram, skrivs ut och delas upp i repliker. Sedan kan du redigera dem här. Du kan stänga fönstret: jobbet fortsätter, och du följer det på knappen ovanför videon.</p>
+          <p class="cs-text">{t`The audio is extracted, transcribed and split into lines. Then you can edit them here. You can close the window: the job continues, and you follow it on the button above the video.`}</p>
           <div class="cs-actions">
-            <button class="btn btn-sm" type="button" disabled={busy} onClick={() => setConfirmCancel(true)}>Avbryt</button>
-            <button class="btn btn-sm" type="button" onClick={onClose}>Stäng, fortsätt i bakgrunden</button>
+            <button class="btn btn-sm" type="button" disabled={busy} onClick={() => setConfirmCancel(true)}>{t`Cancel`}</button>
+            <button class="btn btn-sm" type="button" onClick={onClose}>{t`Close, continue in the background`}</button>
           </div>
           {error && <p class="cs-error" role="alert">{error}</p>}
         </div>
 
         {confirmCancel && (
-          <ConfirmModal title="Avbryta?" confirmLabel="Avbryt jobbet" danger onCancel={() => setConfirmCancel(false)} onConfirm={() => void cancel()}>
-            <p>Skapandet stoppas och inget utkast sparas. Du kan starta det igen när som helst.</p>
+          <ConfirmModal title={t`Cancel?`} confirmLabel={t`Cancel the job`} danger onCancel={() => setConfirmCancel(false)} onConfirm={() => void cancel()}>
+            <p>{t`The creation is stopped and no draft is saved. You can start it again at any time.`}</p>
           </ConfirmModal>
         )}
       </div>

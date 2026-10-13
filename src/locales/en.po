@@ -11,9 +11,43 @@ msgstr ""
 msgid ", last {when}"
 msgstr ", last {when}"
 
+#. placeholder {0}: formatHms(anchorOffset)
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "“{anchor}” at {0}. Go to the anchor, listen and adjust. The adjustment moves all chapters. The other chapters follow the times from the broadcast — fine-tune individual chapters in the list if needed."
+msgstr "“{anchor}” at {0}. Go to the anchor, listen and adjust. The adjustment moves all chapters. The other chapters follow the times from the broadcast — fine-tune individual chapters in the list if needed."
+
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "“{anchor}”. Go to the anchor, listen and adjust. The adjustment moves all chapters. The other chapters follow the times from the broadcast — fine-tune individual chapters in the list if needed."
+msgstr "“{anchor}”. Go to the anchor, listen and adjust. The adjustment moves all chapters. The other chapters follow the times from the broadcast — fine-tune individual chapters in the list if needed."
+
+#: src/views/projects/WordImportDialog.tsx
+msgid "(current)"
+msgstr "(current)"
+
 #: src/views/projects/layoutInherit.ts
 msgid "(empty)"
 msgstr "(empty)"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "(nothing)"
+msgstr "(nothing)"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "(or double-click in it)"
+msgstr "(or double-click in it)"
+
+#: src/views/projects/WordImportDialog.tsx
+msgid "(published)"
+msgstr "(published)"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "(removed)"
+msgstr "(removed)"
+
+#. placeholder {0}: check.blank
+#: src/components/ImportTextDialog.tsx
+msgid "{0, plural, one {(# empty line is skipped)} other {(# empty lines are skipped)}}"
+msgstr "{0, plural, one {(# empty line is skipped)} other {(# empty lines are skipped)}}"
 
 #. placeholder {0}: items.length
 #: src/views/trash/TrashView.tsx
@@ -40,10 +74,30 @@ msgstr "{0, plural, one {# item} other {# items}}"
 msgid "{0, plural, one {# name} other {# names}}"
 msgstr "{0, plural, one {# name} other {# names}}"
 
+#. placeholder {0}: summary.addedCues
+#: src/views/projects/wordImportLogic.ts
+msgid "{0, plural, one {# new box} other {# new boxes}}"
+msgstr "{0, plural, one {# new box} other {# new boxes}}"
+
+#. placeholder {0}: valid.length
+#: src/components/ShareDialog.tsx
+msgid "{0, plural, one {# recipient} other {# recipients}}"
+msgstr "{0, plural, one {# recipient} other {# recipients}}"
+
+#. placeholder {0}: summary.removedCues
+#: src/views/projects/wordImportLogic.ts
+msgid "{0, plural, one {# removed} other {# removed}}"
+msgstr "{0, plural, one {# removed} other {# removed}}"
+
 #. placeholder {0}: topics.length
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "{0, plural, one {Agenda (# item) and a name list for the meeting are linked.} other {Agenda (# items) and a name list for the meeting are linked.}}"
 msgstr "{0, plural, one {Agenda (# item) and a name list for the meeting are linked.} other {Agenda (# items) and a name list for the meeting are linked.}}"
+
+#. placeholder {0}: created.recipients.length
+#: src/components/ShareDialog.tsx
+msgid "{0, plural, one {An email with the link has been sent to the recipient.} other {An email with the link has been sent to # recipients.}}"
+msgstr "{0, plural, one {An email with the link has been sent to the recipient.} other {An email with the link has been sent to # recipients.}}"
 
 #. placeholder {0}: r.segments.length
 #: src/views/archive/VideoArchiveView.tsx
@@ -57,6 +111,32 @@ msgstr "{0, plural, one {The recording consists of # segment — the encoder los
 msgid "{0, plural, one {Used in # project} other {Used in # projects}}"
 msgstr "{0, plural, one {Used in # project} other {Used in # projects}}"
 
+#. placeholder {0}: cueCharCount(cue.text)
+#: src/views/projects/CaptionEditor.tsx
+msgid "{0} characters"
+msgstr "{0} characters"
+
+#. placeholder {0}: active.length
+#: src/components/JobStatusBlock.tsx
+msgid "{0} in progress"
+msgstr "{0} in progress"
+
+#. placeholder {0}: group.count
+#. placeholder {1}: formatHms(group.firstTime)
+#: src/views/projects/CorrectionsPanel.tsx
+msgid "{0} times, first at {1}"
+msgstr "{0} times, first at {1}"
+
+#. placeholder {0}: summary.checkCues
+#: src/views/projects/wordImportLogic.ts
+msgid "{0} to check"
+msgstr "{0} to check"
+
+#. placeholder {0}: conflictDescription(conflict)
+#: src/views/projects/CaptionEditor.tsx
+msgid "{0} Your changes are not saved."
+msgstr "{0} Your changes are not saved."
+
 #: src/app/Shell.tsx
 msgid "{activeJobs} in progress"
 msgstr "{activeJobs} in progress"
@@ -69,9 +149,29 @@ msgstr "{activeShares, plural, one {Shared · # active} other {Shared · # activ
 msgid "{breaks, plural, one {{chapterText} · # break} other {{chapterText} · # breaks}}"
 msgstr "{breaks, plural, one {{chapterText} · # break} other {{chapterText} · # breaks}}"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "{changeCount, plural, one {# unsaved change} other {# unsaved changes}}"
+msgstr "{changeCount, plural, one {# unsaved change} other {# unsaved changes}}"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "{changeCount, plural, one {You have # unsaved change. It will be lost if you close now.} other {You have # unsaved changes. They will be lost if you close now.}}"
+msgstr "{changeCount, plural, one {You have # unsaved change. It will be lost if you close now.} other {You have # unsaved changes. They will be lost if you close now.}}"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "{changeCount, plural, one {Your # unsaved change will be lost.} other {Your # unsaved changes will be lost.}}"
+msgstr "{changeCount, plural, one {Your # unsaved change will be lost.} other {Your # unsaved changes will be lost.}}"
+
+#: src/views/projects/wordImportLogic.ts
+msgid "{changed, plural, one {# changed box} other {# changed boxes}}"
+msgstr "{changed, plural, one {# changed box} other {# changed boxes}}"
+
 #: src/views/projects/publishOutcome.ts
 msgid "{chapterCount, plural, =0 {No chapters} one {# chapter} other {# chapters}}"
 msgstr "{chapterCount, plural, =0 {No chapters} one {# chapter} other {# chapters}}"
+
+#: src/views/projects/wordImportLogic.ts
+msgid "{conflicts, plural, one {# conflict} other {# conflicts}}"
+msgstr "{conflicts, plural, one {# conflict} other {# conflicts}}"
 
 #: src/views/projects/OndemandView.tsx
 #: src/views/projects/VideoStatusRow.tsx
@@ -114,13 +214,37 @@ msgstr "{count, plural, one {# item} other {# items}}"
 msgid "{count, plural, one {# name · changed {changed}} other {# names · changed {changed}}}"
 msgstr "{count, plural, one {# name · changed {changed}} other {# names · changed {changed}}}"
 
+#: src/views/projects/speakersLogic.ts
+msgid "{count, plural, one {# speaker turn analyzed{when}.} other {# speaker turns analyzed{when}.}}"
+msgstr "{count, plural, one {# speaker turn analyzed{when}.} other {# speaker turns analyzed{when}.}}"
+
 #: src/views/projects/PlayoutColumns.tsx
 msgid "{count} play-outs"
 msgstr "{count} play-outs"
 
+#: src/components/importTextLogic.ts
+msgid "{created, plural, one {created # item} other {created # items}}"
+msgstr "{created, plural, one {created # item} other {created # items}}"
+
+#: src/components/importTextLogic.ts
+msgid "{created, plural, one {created # name} other {created # names}}"
+msgstr "{created, plural, one {created # name} other {created # names}}"
+
 #: src/views/projects/publishOutcome.ts
 msgid "{cueCount, plural, one {Captions: {label} ({cues} line)} other {Captions: {label} ({cues} lines)}}"
 msgstr "{cueCount, plural, one {Captions: {label} ({cues} line)} other {Captions: {label} ({cues} lines)}}"
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "{currentChapterCount, plural, one {The # current chapter} other {The # current chapters}}"
+msgstr "{currentChapterCount, plural, one {The # current chapter} other {The # current chapters}}"
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "{currentChapterCount, plural, one {The import replaces the # current chapter and the anchoring.} other {The import replaces the # current chapters and the anchoring.}}"
+msgstr "{currentChapterCount, plural, one {The import replaces the # current chapter and the anchoring.} other {The import replaces the # current chapters and the anchoring.}}"
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "{currentChapterCount, plural, one {The import replaces the # current chapter.} other {The import replaces the # current chapters.}}"
+msgstr "{currentChapterCount, plural, one {The import replaces the # current chapter.} other {The import replaces the # current chapters.}}"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "{days} days"
@@ -162,6 +286,14 @@ msgstr "{hours} h ago"
 msgid "{kind} in progress. Open Jobs."
 msgstr "{kind} in progress. Open Jobs."
 
+#: src/components/ImportTextDialog.tsx
+msgid "{lines, plural, one {# item} other {# items}}"
+msgstr "{lines, plural, one {# item} other {# items}}"
+
+#: src/components/ImportTextDialog.tsx
+msgid "{lines, plural, one {# name} other {# names}}"
+msgstr "{lines, plural, one {# name} other {# names}}"
+
 #: src/views/projects/pauseLogic.ts
 msgid "{minutes} min"
 msgstr "{minutes} min"
@@ -182,21 +314,53 @@ msgstr "{name} (trimmed)"
 msgid "{name} is moved to the trash. It can be restored from there before the retention period runs out."
 msgstr "{name} is moved to the trash. It can be restored from there before the retention period runs out."
 
+#: src/components/JobStatusBlock.tsx
+msgid "{newFinished, plural, one {# done} other {# done}}"
+msgstr "{newFinished, plural, one {# done} other {# done}}"
+
 #: src/app/Shell.tsx
 msgid "{newFinished} done"
 msgstr "{newFinished} done"
+
+#: src/components/VideoPositionControls.tsx
+msgid "{NUDGE_SECONDS} seconds back"
+msgstr "{NUDGE_SECONDS} seconds back"
+
+#: src/components/VideoPositionControls.tsx
+msgid "{NUDGE_SECONDS} seconds forward"
+msgstr "{NUDGE_SECONDS} seconds forward"
 
 #: src/views/users/UsersView.tsx
 msgid "{organization} removed."
 msgstr "{organization} removed."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "{outside, plural, one {# chapter ended up outside the video and is hidden until it fits. Adjust the anchor or remove it.} other {# chapters ended up outside the video and are hidden until they fit. Adjust the anchor or remove them.}}"
+msgstr "{outside, plural, one {# chapter ended up outside the video and is hidden until it fits. Adjust the anchor or remove it.} other {# chapters ended up outside the video and are hidden until they fit. Adjust the anchor or remove them.}}"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "{outside, plural, one {# chapter was after the end of the video and has no time yet.} other {# chapters were after the end of the video and have no time yet.}}"
+msgstr "{outside, plural, one {# chapter was after the end of the video and has no time yet.} other {# chapters were after the end of the video and have no time yet.}}"
+
 #: src/views/projects/UploadPanel.tsx
 msgid "{percent} % — do not leave the page until the upload is done"
 msgstr "{percent} % — do not leave the page until the upload is done"
 
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "{positionedChapterCount, plural, one {# chapter with a time is removed from the draft.} other {# chapters with a time are removed from the draft.}}"
+msgstr "{positionedChapterCount, plural, one {# chapter with a time is removed from the draft.} other {# chapters with a time are removed from the draft.}}"
+
 #: src/views/projects/ForkDialog.tsx
 msgid "{projectName} (start–end, hh:mm)"
 msgstr "{projectName} (start–end, hh:mm)"
+
+#: src/components/importTextLogic.ts
+msgid "{replaced, plural, one {replaced # item} other {replaced # items}}"
+msgstr "{replaced, plural, one {replaced # item} other {replaced # items}}"
+
+#: src/components/importTextLogic.ts
+msgid "{replaced, plural, one {replaced # name} other {replaced # names}}"
+msgstr "{replaced, plural, one {replaced # name} other {replaced # names}}"
 
 #: src/views/trash/TrashView.tsx
 msgid "{rounded, plural, one {# day} other {# days}}"
@@ -205,6 +369,14 @@ msgstr "{rounded, plural, one {# day} other {# days}}"
 #: src/views/resources/LiveResourcesView.tsx
 msgid "{seconds} s ago"
 msgstr "{seconds} s ago"
+
+#: src/views/projects/chapterExport.ts
+msgid "{skipped, plural, one {# chapter shorter than {YOUTUBE_MIN_CHAPTER_SECONDS} seconds was skipped, because YouTube requires chapters at least that long.} other {# chapters shorter than {YOUTUBE_MIN_CHAPTER_SECONDS} seconds were skipped, because YouTube requires chapters at least that long.}}"
+msgstr "{skipped, plural, one {# chapter shorter than {YOUTUBE_MIN_CHAPTER_SECONDS} seconds was skipped, because YouTube requires chapters at least that long.} other {# chapters shorter than {YOUTUBE_MIN_CHAPTER_SECONDS} seconds were skipped, because YouTube requires chapters at least that long.}}"
+
+#: src/components/importTextLogic.ts
+msgid "{skipped, plural, one {skipped # empty line} other {skipped # empty lines}}"
+msgstr "{skipped, plural, one {skipped # empty line} other {skipped # empty lines}}"
 
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "{title} is linked to the project."
@@ -247,6 +419,19 @@ msgstr "+ New"
 msgid "+ New project"
 msgstr "+ New project"
 
+#. placeholder {0}: active.length - shown.length
+#: src/components/JobStatusBlock.tsx
+msgid "+{0} more"
+msgstr "+{0} more"
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "00:00:00 The meeting is opened\n"
+"00:12:34 Previous minutes\n"
+"00:41:10 Financial follow-up"
+msgstr "00:00:00 The meeting is opened\n"
+"00:12:34 Previous minutes\n"
+"00:41:10 Financial follow-up"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "A broadcast is in progress. Rotating the stream key breaks the encoder's connection. Continue?"
 msgstr "A broadcast is in progress. Rotating the stream key breaks the encoder's connection. Continue?"
@@ -255,9 +440,25 @@ msgstr "A broadcast is in progress. Rotating the stream key breaks the encoder's
 msgid "A broadcast is in progress. Wait until it has ended."
 msgstr "A broadcast is in progress. Wait until it has ended."
 
+#: src/views/projects/autoCaptionsLogic.ts
+msgid "a few minutes"
+msgstr "a few minutes"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "A lot of text in a short time. Check that there is time to read it."
+msgstr "A lot of text in a short time. Check that there is time to read it."
+
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "A marker for projects that are only to be used for live viewing, for example a full-day session that is not to be published on demand in its entirety. It changes nothing: recording, rewinding and creating on-demand projects work as usual. It is shown as a label in the project list and in the project header, and you can remove it whenever you want."
 msgstr "A marker for projects that are only to be used for live viewing, for example a full-day session that is not to be published on demand in its entirety. It changes nothing: recording, rewinding and creating on-demand projects work as usual. It is shown as a label in the project list and in the project header, and you can remove it whenever you want."
+
+#: src/views/projects/autoCaptionsLogic.ts
+msgid "a minute or so"
+msgstr "a minute or so"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "A new draft is created from the audio and replaces this working version. The current version remains in the version history, and the current published captions stay for the viewers until you approve the new draft."
+msgstr "A new draft is created from the audio and replaces this working version. The current version remains in the version history, and the current published captions stay for the viewers until you approve the new draft."
 
 #: src/views/users/UsersView.tsx
 msgid "A new invitation replaces the previous one: the old link and PIN stop working."
@@ -286,6 +487,22 @@ msgstr "A video is being processed or waiting for your approval. Finish that fir
 #: src/views/users/UsersView.tsx
 msgid "A welcome email with a one-time link is sent to {email}. The link is valid for 7 days. When the recipient clicks it, a personal PIN is created that is shown only once."
 msgstr "A welcome email with a one-time link is sent to {email}. The link is valid for 7 days. When the recipient clicks it, a personal PIN is created that is shown only once."
+
+#: src/views/projects/autoCaptionsLogic.ts
+msgid "about {minutes} minutes"
+msgstr "about {minutes} minutes"
+
+#: src/views/projects/autoCaptionsLogic.ts
+msgid "About {remaining} minutes left."
+msgstr "About {remaining} minutes left."
+
+#: src/views/projects/autoCaptionsLogic.ts
+msgid "about 1 minute"
+msgstr "about 1 minute"
+
+#: src/views/projects/autoCaptionsLogic.ts
+msgid "About 1 minute left."
+msgstr "About 1 minute left."
 
 #: src/views/users/UsersView.tsx
 msgid "Account created"
@@ -317,19 +534,44 @@ msgstr "Active"
 msgid "Active meeting"
 msgstr "Active meeting"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Add"
+msgstr "Add"
+
+#: src/components/ImportTextDialog.tsx
+msgid "Add at the end"
+msgstr "Add at the end"
+
 #: src/views/agendas/AgendasView.tsx
 #: src/views/projects/PlayoutColumns.tsx
 msgid "Add item"
 msgstr "Add item"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Add line here"
+msgstr "Add line here"
 
 #: src/views/namelists/NameListsView.tsx
 #: src/views/projects/PlayoutColumns.tsx
 msgid "Add name"
 msgstr "Add name"
 
+#. placeholder {0}: items.length
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Add to the chapter list ({0})"
+msgstr "Add to the chapter list ({0})"
+
+#: src/components/PdfAttachmentsModal.tsx
+msgid "Add..."
+msgstr "Add..."
+
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Added manually"
 msgstr "Added manually"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Adds a new chapter without a time, to sync with Time here"
+msgstr "Adds a new chapter without a time, to sync with Time here"
 
 #: src/views/projects/pauseLogic.ts
 msgid "Adjournment. The broadcast continues shortly."
@@ -364,31 +606,83 @@ msgstr "Agenda options"
 msgid "Agendas"
 msgstr "Agendas"
 
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/ListPickerDialog.tsx
 #: src/views/projects/ProjectsView.tsx
 #: src/views/trash/TrashView.tsx
 msgid "All"
 msgstr "All"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Already have a caption file?"
+msgstr "Already have a caption file?"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Also analyze speaker changes (for a manuscript in Word)"
+msgstr "Also analyze speaker changes (for a manuscript in Word)"
+
 #: src/views/projects/OndemandView.tsx
 msgid "An external video cannot be trimmed."
 msgstr "An external video cannot be trimmed."
+
+#: src/views/projects/chapterExport.ts
+msgid "An opening line (\"{introTitle}\") was added, because YouTube requires the first chapter to start at 00:00."
+msgstr "An opening line (\"{introTitle}\") was added, because YouTube requires the first chapter to start at 00:00."
 
 #: src/app/jobPhase.ts
 msgid "Analysing speaker changes"
 msgstr "Analysing speaker changes"
 
+#: src/views/projects/speakersLogic.ts
+msgid "Analyze again"
+msgstr "Analyze again"
+
 #: src/views/projects/ManuscriptSpeakersWarning.tsx
+#: src/views/projects/speakersLogic.ts
 msgid "Analyze speaker changes"
 msgstr "Analyze speaker changes"
 
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Anchor"
+msgstr "Anchor"
+
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Anchor again"
+msgstr "Anchor again"
+
+#: src/views/projects/CaptionEditor.tsx
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Anchor chapters"
+msgstr "Anchor chapters"
+
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Anchor chapters · step {step} of 3"
+msgstr "Anchor chapters · step {step} of 3"
+
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Anchoring…"
+msgstr "Anchoring…"
+
+#: src/components/ImportTextDialog.tsx
+msgid "Anna Andersson\n"
+"Bo Berg\n"
+"Cecilia Carlsson"
+msgstr "Anna Andersson\n"
+"Bo Berg\n"
+"Cecilia Carlsson"
+
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/chapterRows.ts
 msgid "Announcement"
 msgstr "Announcement"
 
 #: src/views/projects/LiveHlsField.tsx
 msgid "Anyone who has the address can watch the broadcast even when the project is not open to the public. The address is valid as long as the project's channel exists, and is issued anew for every project that starts broadcasting. A TV player that has lost the stream (for example overnight) must be restarted by whoever runs the TV."
 msgstr "Anyone who has the address can watch the broadcast even when the project is not open to the public. The address is valid as long as the project's channel exists, and is issued anew for every project that starts broadcasting. A TV player that has lost the stream (for example overnight) must be restarted by whoever runs the TV."
+
+#: src/components/ShareDialog.tsx
+msgid "Anyone with the link can download the files, so only send it to the right people."
+msgstr "Anyone with the link can download the files, so only send it to the right people."
 
 #: src/app/Shell.tsx
 msgid "Appearance"
@@ -414,6 +708,15 @@ msgstr "Approve uploaded video"
 msgid "Ask the sender to share the files again."
 msgstr "Ask the sender to share the files again."
 
+#. placeholder {0}: formatHms(group.firstTime)
+#: src/views/projects/CorrectionsPanel.tsx
+msgid "at {0}"
+msgstr "at {0}"
+
+#: src/components/ShareDialog.tsx
+msgid "At most {MAX_RECIPIENTS} recipients at a time."
+msgstr "At most {MAX_RECIPIENTS} recipients at a time."
+
 #: src/views/projects/ForkDialog.tsx
 msgid "At the time"
 msgstr "At the time"
@@ -421,6 +724,10 @@ msgstr "At the time"
 #: src/app/Shell.tsx
 msgid "Auto"
 msgstr "Auto"
+
+#: src/components/VideoLightbox.tsx
+msgid "AWS IVS Player cannot run in this browser."
+msgstr "AWS IVS Player cannot run in this browser."
 
 #: src/views/projects/ListPickerDialog.tsx
 #: src/views/projects/MeetingBindingModal.tsx
@@ -439,6 +746,11 @@ msgstr "Before the broadcast"
 msgid "Before the latest break ({time})"
 msgstr "Before the latest break ({time})"
 
+#. placeholder {0}: before.replace(/\n/g, ' ')
+#: src/views/projects/WordReviewBar.tsx
+msgid "Before: “{0}”"
+msgstr "Before: “{0}”"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Bitrate"
 msgstr "Bitrate"
@@ -448,7 +760,17 @@ msgstr "Bitrate"
 msgid "Bottom edge"
 msgstr "Bottom edge"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Boundary"
+msgstr "Boundary"
+
+#. placeholder {0}: selectedIndex + 1
+#: src/views/projects/WordReviewBar.tsx
+msgid "Box {0}"
+msgstr "Box {0}"
+
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/chapterRows.ts
 #: src/views/projects/PauseButton.tsx
 msgid "Break"
 msgstr "Break"
@@ -490,11 +812,23 @@ msgstr "Broadcasting since"
 msgid "Broadcasts made"
 msgstr "Broadcasts made"
 
+#: src/views/projects/WordImportDialog.tsx
+msgid "By default the document is compared against the version of the captions that the manuscript was printed from. Choose another one if it has been pruned or if the document comes from another version."
+msgstr "By default the document is compared against the version of the captions that the manuscript was printed from. Choose another one if it has been pruned or if the document comes from another version."
+
 #: src/views/projects/OndemandView.tsx
 msgid "Can be edited when the recording is done"
 msgstr "Can be edited when the recording is done"
 
+#: src/components/ConfirmModal.tsx
+#: src/components/EditableItemList.tsx
+#: src/components/ImportTextDialog.tsx
+#: src/components/RenameModal.tsx
+#: src/components/ShareDialog.tsx
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/CaptionEditor.tsx
+#: src/views/projects/CaptionStudio.tsx
+#: src/views/projects/ChapterImportDialog.tsx
 #: src/views/projects/CreateProjectDialog.tsx
 #: src/views/projects/ForkDialog.tsx
 #: src/views/projects/InheritLayoutDialog.tsx
@@ -505,6 +839,7 @@ msgstr "Can be edited when the recording is done"
 #: src/views/projects/ProjectHeader.tsx
 #: src/views/projects/UploadPanel.tsx
 #: src/views/projects/VttImportDialog.tsx
+#: src/views/projects/WordImportDialog.tsx
 #: src/views/users/UsersView.tsx
 msgid "Cancel"
 msgstr "Cancel"
@@ -514,6 +849,7 @@ msgid "Cancel and go to Before?"
 msgstr "Cancel and go to Before?"
 
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/CaptionStudio.tsx
 msgid "Cancel the job"
 msgstr "Cancel the job"
 
@@ -524,6 +860,10 @@ msgstr "Cancel the job?"
 #: src/views/projects/OndemandView.tsx
 msgid "Cancel the upload"
 msgstr "Cancel the upload"
+
+#: src/views/projects/CaptionStudio.tsx
+msgid "Cancel?"
+msgstr "Cancel?"
 
 #: src/views/jobs/JobsView.tsx
 msgid "Canceled"
@@ -537,12 +877,18 @@ msgstr "Cannot be deleted while a signal is being received"
 msgid "Cannot be torn down while a signal is being received"
 msgstr "Cannot be torn down while a signal is being received"
 
+#: src/views/projects/CaptionToolsDialog.tsx
 #: src/views/projects/ExportImportDialog.tsx
 #: src/views/projects/OndemandView.tsx
 #: src/views/projects/projectJobLogic.ts
 #: src/views/projects/ProjectsView.tsx
 msgid "Captions"
 msgstr "Captions"
+
+#. placeholder {0}: cues.length
+#: src/views/projects/CaptionEditor.tsx
+msgid "Captions · {0}"
+msgstr "Captions · {0}"
 
 #: src/app/jobActions.ts
 msgid "Captions · {name}"
@@ -560,6 +906,18 @@ msgstr "Captions (.vtt)"
 msgid "Captions and upload video"
 msgstr "Captions and upload video"
 
+#: src/views/projects/speakersLogic.ts
+msgid "Captions are being created right now."
+msgstr "Captions are being created right now."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Captions cannot be created automatically for this video"
+msgstr "Captions cannot be created automatically for this video"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Captions cannot be created automatically right now."
+msgstr "Captions cannot be created automatically right now."
+
 #: src/views/projects/VideoStatusRow.tsx
 msgid "Captions:"
 msgstr "Captions:"
@@ -567,6 +925,10 @@ msgstr "Captions:"
 #: src/views/projects/OndemandView.tsx
 msgid "Captions: {value}"
 msgstr "Captions: {value}"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Captions…"
+msgstr "Captions…"
 
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Category"
@@ -590,15 +952,43 @@ msgstr "Change image…"
 msgid "Change name list"
 msgstr "Change name list"
 
+#: src/components/AttachedListPicker.tsx
+msgid "Change..."
+msgstr "Change..."
+
 #: src/views/agendas/AgendasView.tsx
 #: src/views/namelists/NameListsView.tsx
 msgid "Changed {changed}"
 msgstr "Changed {changed}"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Changed in Word"
+msgstr "Changed in Word"
+
 #: src/views/agendas/AgendasView.tsx
 #: src/views/namelists/NameListsView.tsx
 msgid "Changes take effect in projects that have not been published yet. Published broadcasts have a frozen copy and are not affected."
 msgstr "Changes take effect in projects that have not been published yet. Published broadcasts have a frozen copy and are not affected."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Chapter"
+msgstr "Chapter"
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Chapter list"
+msgstr "Chapter list"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Chapter name"
+msgstr "Chapter name"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Chapter tools"
+msgstr "Chapter tools"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Chapter type"
+msgstr "Chapter type"
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "chapters"
@@ -610,6 +1000,11 @@ msgstr "chapters"
 msgid "Chapters"
 msgstr "Chapters"
 
+#. placeholder {0}: chapterList.length
+#: src/views/projects/CaptionEditor.tsx
+msgid "Chapters · {0}"
+msgstr "Chapters · {0}"
+
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Chapters (offset counted from trim start)"
 msgstr "Chapters (offset counted from trim start)"
@@ -617,6 +1012,10 @@ msgstr "Chapters (offset counted from trim start)"
 #: src/views/projects/draftActions.ts
 msgid "Chapters and captions are published."
 msgstr "Chapters and captions are published."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Chapters and captions go back to what is published. What you have changed since then disappears (the captions' earlier versions remain in the history). Unsaved changes in the editor are also lost."
+msgstr "Chapters and captions go back to what is published. What you have changed since then disappears (the captions' earlier versions remain in the history). Unsaved changes in the editor are also lost."
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Chapters as time ranges, for players and platforms that read WebVTT chapters."
@@ -626,6 +1025,14 @@ msgstr "Chapters as time ranges, for players and platforms that read WebVTT chap
 msgid "Chapters for archiving (Word)"
 msgstr "Chapters for archiving (Word)"
 
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Chapters without a time are hidden from the audience until they have been placed."
+msgstr "Chapters without a time are hidden from the audience until they have been placed."
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Chapters without a time, and clock times not yet anchored, are hidden from the audience until they have been placed."
+msgstr "Chapters without a time, and clock times not yet anchored, are hidden from the audience until they have been placed."
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "chapters youtube"
 msgstr "chapters youtube"
@@ -633,6 +1040,10 @@ msgstr "chapters youtube"
 #: src/views/projects/OndemandView.tsx
 msgid "Chapters: {value}"
 msgstr "Chapters: {value}"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Chapters…"
+msgstr "Chapters…"
 
 #: src/views/projects/OndemandView.tsx
 msgid "Check in the preview above. You cannot continue with chapters, trimming or publishing until you have chosen."
@@ -642,6 +1053,10 @@ msgstr "Check in the preview above. You cannot continue with chapters, trimming 
 msgid "Check that you copied the whole link. Otherwise ask the sender to share the files again."
 msgstr "Check that you copied the whole link. Otherwise ask the sender to share the files again."
 
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Check the anchor"
+msgstr "Check the anchor"
+
 #: src/app/CredentialLinkView.tsx
 msgid "Checking the link…"
 msgstr "Checking the link…"
@@ -650,17 +1065,37 @@ msgstr "Checking the link…"
 msgid "Checking…"
 msgstr "Checking…"
 
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Choose a chapter whose start you clearly hear or see in the video, for example the first item."
+msgstr "Choose a chapter whose start you clearly hear or see in the video, for example the first item."
+
 #: src/views/projects/playerSettings.ts
 msgid "Choose a JPG, PNG or WebP image."
 msgstr "Choose a JPG, PNG or WebP image."
+
+#: src/views/projects/captionsCheck.ts
+msgid "Choose a VTT file (the file name must end in .vtt)."
+msgstr "Choose a VTT file (the file name must end in .vtt)."
 
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "Choose agenda"
 msgstr "Choose agenda"
 
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Choose another chapter"
+msgstr "Choose another chapter"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Choose another version…"
+msgstr "Choose another version…"
+
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "Choose another…"
 msgstr "Choose another…"
+
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Choose chapter."
+msgstr "Choose chapter."
 
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Choose image…"
@@ -689,6 +1124,14 @@ msgstr "Choose which broadcast to use"
 #: src/views/projects/createProjectLists.ts
 msgid "Chosen: {name}"
 msgstr "Chosen: {name}"
+
+#: src/components/ImportTextDialog.tsx
+msgid "City council meeting\n"
+"Election of adjusters\n"
+"Questions"
+msgstr "City council meeting\n"
+"Election of adjusters\n"
+"Questions"
 
 #: src/views/projects/PlayoutColumns.tsx
 msgid "Clear {name} on screen"
@@ -726,6 +1169,10 @@ msgstr "Clear the search (Esc)"
 msgid "Clear the test play-out"
 msgstr "Clear the test play-out"
 
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Click a chapter in the list whose start you clearly hear or see in the video, for example the first item."
+msgstr "Click a chapter in the list whose start you clearly hear or see in the video, for example the first item."
+
 #: src/app/CredentialLinkView.tsx
 msgid "Click the button to activate your account. You will then get your personal PIN."
 msgstr "Click the button to activate your account. You will then get your personal PIN."
@@ -738,11 +1185,26 @@ msgstr "Click the button to get a new PIN. Your old PIN then stops working."
 msgid "Clipped {start}–{end} from the original"
 msgstr "Clipped {start}–{end} from the original"
 
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Clock times in the broadcast (anchored to the video)"
+msgstr "Clock times in the broadcast (anchored to the video)"
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Clock times in the broadcast (placed directly against the video)"
+msgstr "Clock times in the broadcast (placed directly against the video)"
+
 #: src/views/agendas/AgendasView.tsx
 msgid "Clone to new agenda"
 msgstr "Clone to new agenda"
 
 #: src/app/Shell.tsx
+#: src/components/Modal.tsx
+#: src/components/PdfAttachmentsModal.tsx
+#: src/components/ShareDialog.tsx
+#: src/components/VideoLightbox.tsx
+#: src/views/projects/CaptionEditor.tsx
+#: src/views/projects/CaptionToolsDialog.tsx
+#: src/views/projects/ChapterSyncTools.tsx
 #: src/views/projects/ExportImportDialog.tsx
 #: src/views/projects/IngestInfoPanel.tsx
 #: src/views/projects/LiveWorkspace.tsx
@@ -757,6 +1219,14 @@ msgstr "Close"
 msgid "Close player and end"
 msgstr "Close player and end"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Close the editor (Esc)"
+msgstr "Close the editor (Esc)"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Close the message"
+msgstr "Close the message"
+
 #: src/views/projects/PlayerLinkField.tsx
 msgid "Close the player to the public"
 msgstr "Close the player to the public"
@@ -765,6 +1235,18 @@ msgstr "Close the player to the public"
 msgid "Close the project before it is deleted"
 msgstr "Close the project before it is deleted"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Close without saving"
+msgstr "Close without saving"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Close without saving?"
+msgstr "Close without saving?"
+
+#: src/views/projects/CaptionStudio.tsx
+msgid "Close, continue in the background"
+msgstr "Close, continue in the background"
+
 #: src/views/projects/ProjectsView.tsx
 msgid "Closed"
 msgstr "Closed"
@@ -772,6 +1254,24 @@ msgstr "Closed"
 #: src/views/projects/LiveStatusBadges.tsx
 msgid "Concurrent viewers according to IVS. The number is an estimate with a few seconds' delay."
 msgstr "Concurrent viewers according to IVS. The number is an estimate with a few seconds' delay."
+
+#: src/components/EditableItemList.tsx
+msgid "Confirm removal"
+msgstr "Confirm removal"
+
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Confirm the anchor"
+msgstr "Confirm the anchor"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Conflict"
+msgstr "Conflict"
+
+#. placeholder {0}: conflict.baseText || t`(nothing)`
+#. placeholder {1}: conflict.wordText || t`(removed)`
+#: src/views/projects/WordReviewBar.tsx
+msgid "Conflict: in Word “{0}” was changed to “{1}”, but the box is also changed here. The box has kept its current text, so change it by hand if the Word version is to apply."
+msgstr "Conflict: in Word “{0}” was changed to “{1}”, but the box is also changed here. The box has kept its current text, so change it by hand if the Word version is to apply."
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Connection"
@@ -785,6 +1285,7 @@ msgstr "Content"
 msgid "Contents"
 msgstr "Contents"
 
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "Continue"
 msgstr "Continue"
@@ -814,9 +1315,15 @@ msgstr "Copied ✓"
 msgid "Copies the message texts, the text placement, the Mux setting and the poster image. More choices: mark a project as a template in the project list's ⋯ menu."
 msgstr "Copies the message texts, the text placement, the Mux setting and the poster image. More choices: mark a project as a template in the project list's ⋯ menu."
 
+#: src/components/CopyField.tsx
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Copy"
 msgstr "Copy"
+
+#. placeholder {0}: label ?? t`value`
+#: src/components/CopyField.tsx
+msgid "Copy {0}"
+msgstr "Copy {0}"
 
 #: src/views/projects/PlayerLinkField.tsx
 msgid "Copy IFRAME code"
@@ -834,13 +1341,33 @@ msgstr "Copy the live HLS address"
 msgid "Copy the on-demand HLS address"
 msgstr "Copy the on-demand HLS address"
 
+#: src/views/projects/WordReviewBar.tsx
+msgid "Copy the Word text"
+msgstr "Copy the Word text"
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Copying failed. Select the text and copy it yourself."
 msgstr "Copying failed. Select the text and copy it yourself."
 
+#: src/views/projects/WordImportDialog.tsx
+msgid "Correct only the text itself. Headings (items and speakers) are not read and changes in them are not included."
+msgstr "Correct only the text itself. Headings (items and speakers) are not read and changes in them are not included."
+
+#: src/views/projects/WordImportDialog.tsx
+msgid "Correct the text directly in the Word document (the manuscript) that you printed from ungap, save the file and choose it here. The corrections are added as suggestions in the captions, and nothing is saved until you save."
+msgstr "Correct the text directly in the Word document (the manuscript) that you printed from ungap, save the file and choose it here. The corrections are added as suggestions in the captions, and nothing is saved until you save."
+
 #: src/app/jobPhase.ts
 msgid "Correcting and building captions"
 msgstr "Correcting and building captions"
+
+#: src/views/projects/CorrectionsPanel.tsx
+msgid "Corrections"
+msgstr "Corrections"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Corrections from Word"
+msgstr "Corrections from Word"
 
 #: src/views/projects/ProjectsView.tsx
 msgid "Could not clear."
@@ -907,14 +1434,41 @@ msgid "Count announcements as speakers"
 msgstr "Count announcements as speakers"
 
 #: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/captionEntryLogic.ts
 #: src/views/projects/CreateProjectDialog.tsx
 #: src/views/users/UsersView.tsx
 msgid "Create"
 msgstr "Create"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Create again"
+msgstr "Create again"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Create again…"
+msgstr "Create again…"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Create automatically"
+msgstr "Create automatically"
+
+#: src/views/projects/CaptionEditor.tsx
+#: src/views/projects/captionEntryLogic.ts
 #: src/views/projects/OndemandView.tsx
 msgid "Create captions"
 msgstr "Create captions"
+
+#: src/views/projects/captionEntryLogic.ts
+msgid "Create captions automatically"
+msgstr "Create captions automatically"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Create captions automatically?"
+msgstr "Create captions automatically?"
+
+#: src/views/projects/speakersLogic.ts
+msgid "Create captions first."
+msgstr "Create captions first."
 
 #: src/views/projects/BeforeWorkspace.tsx
 msgid "Create ingest"
@@ -932,9 +1486,34 @@ msgstr "Create on-demand project: creates a new project from the broadcast (or t
 msgid "Create project"
 msgstr "Create project"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Create the captions again?"
+msgstr "Create the captions again?"
+
+#. placeholder {0}: items.length
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Create the chapter list ({0})"
+msgstr "Create the chapter list ({0})"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Create…"
+msgstr "Create…"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Created {created}"
 msgstr "Created {created}"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Creates a new draft from the audio. The current version remains in the version history."
+msgstr "Creates a new draft from the audio. The current version remains in the version history."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Creates captions automatically from the audio"
+msgstr "Creates captions automatically from the audio"
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Creates one chapter per agenda item, without a time. You set the times with the Sync button below the video."
+msgstr "Creates one chapter per agenda item, without a time. You set the times with the Sync button below the video."
 
 #: src/views/users/UsersView.tsx
 msgid "Creates projects, broadcasts and publishes on demand."
@@ -950,6 +1529,7 @@ msgstr "Creating the document…"
 
 #: src/app/CredentialLinkView.tsx
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/ExportImportDialog.tsx
 #: src/views/projects/ForkDialog.tsx
 msgid "Creating…"
@@ -967,6 +1547,7 @@ msgstr "Current speaker"
 msgid "Dark"
 msgstr "Dark"
 
+#: src/views/projects/ChapterImportDialog.tsx
 #: src/views/projects/ProjectsView.tsx
 msgid "Date"
 msgstr "Date"
@@ -1032,9 +1613,25 @@ msgstr "Disabled accounts cannot sign in but are kept in the history — earlier
 msgid "Disappears"
 msgstr "Disappears"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Discard"
+msgstr "Discard"
+
 #: src/views/projects/draftActions.ts
 msgid "Discard anyway"
 msgstr "Discard anyway"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Discard changes"
+msgstr "Discard changes"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Discard the changes?"
+msgstr "Discard the changes?"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Discard the corrections"
+msgstr "Discard the corrections"
 
 #: src/views/projects/BeforeWorkspace.tsx
 msgid "Do not use"
@@ -1060,14 +1657,27 @@ msgstr "Domain updated."
 msgid "Domains"
 msgstr "Domains"
 
+#: src/components/ImportTextDialog.tsx
 #: src/views/projects/MeetingBindingModal.tsx
 #: src/views/projects/PublishProgressDialog.tsx
 msgid "Done"
 msgstr "Done"
 
+#: src/views/projects/autoCaptionsLogic.ts
+msgid "Done in a little while."
+msgstr "Done in a little while."
+
 #: src/views/projects/exportImportLogic.ts
 msgid "Done inside the project."
 msgstr "Done inside the project."
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Done reviewing"
+msgstr "Done reviewing"
+
+#: src/components/VideoPositionControls.tsx
+msgid "Double-click to enter a time"
+msgstr "Double-click to enter a time"
 
 #: src/app/SharedDownloadsView.tsx
 #: src/app/Shell.tsx
@@ -1111,9 +1721,14 @@ msgstr "Download Word manuscript"
 msgid "Download Word transcript"
 msgstr "Download Word transcript"
 
+#: src/app/shareEvents.ts
+msgid "Downloaded \"{detail}\""
+msgstr "Downloaded \"{detail}\""
+
 #: src/views/agendas/AgendasView.tsx
 #: src/views/namelists/NameListsView.tsx
 #: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/captionEntryLogic.ts
 #: src/views/projects/PlayoutColumns.tsx
 msgid "Draft"
 msgstr "Draft"
@@ -1125,6 +1740,14 @@ msgstr "Draft for editing (.vtt)"
 #: src/views/projects/UploadPanel.tsx
 msgid "Drag a video file here, or click to choose"
 msgstr "Drag a video file here, or click to choose"
+
+#: src/components/PdfAttachmentsModal.tsx
+msgid "Drag and drop one or more PDF files here"
+msgstr "Drag and drop one or more PDF files here"
+
+#: src/components/PdfAttachmentsModal.tsx
+msgid "Drop PDF files to add them"
+msgstr "Drop PDF files to add them"
 
 #: src/views/namelists/NameListsView.tsx
 msgid "Duplicate"
@@ -1151,6 +1774,13 @@ msgstr "e.g. Example Municipality"
 msgid "e.g. example.com"
 msgstr "e.g. example.com"
 
+#: src/components/EditableItemList.tsx
+#: src/views/projects/CaptionEntry.tsx
+#: src/views/projects/captionEntryLogic.ts
+msgid "Edit"
+msgstr "Edit"
+
+#: src/views/projects/captionEntryLogic.ts
 #: src/views/projects/OndemandView.tsx
 msgid "Edit captions"
 msgstr "Edit captions"
@@ -1159,9 +1789,22 @@ msgstr "Edit captions"
 msgid "Edit chapters"
 msgstr "Edit chapters"
 
+#: src/views/projects/captionEntryLogic.ts
+msgid "Edit draft"
+msgstr "Edit draft"
+
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/OndemandView.tsx
 msgid "Edit project"
 msgstr "Edit project"
+
+#: src/views/projects/captionEntryLogic.ts
+msgid "Edit the draft. It is not visible to the viewers until it has been published."
+msgstr "Edit the draft. It is not visible to the viewers until it has been published."
+
+#: src/views/projects/captionEntryLogic.ts
+msgid "Edit the published captions"
+msgstr "Edit the published captions"
 
 #: src/views/projects/ProjectHeader.tsx
 msgid "Edit title"
@@ -1176,6 +1819,15 @@ msgstr "email"
 #: src/views/users/UsersView.tsx
 msgid "Email"
 msgstr "Email"
+
+#: src/components/ShareDialog.tsx
+msgid "Email addresses, separated by comma or line break"
+msgstr "Email addresses, separated by comma or line break"
+
+#: src/components/NotifyCheckbox.tsx
+#: src/views/projects/CaptionEditor.tsx
+msgid "Email me when it is done"
+msgstr "Email me when it is done"
 
 #: src/views/projects/ManuscriptSpeakersWarning.tsx
 msgid "Email me when the speaker changes are done"
@@ -1196,6 +1848,14 @@ msgstr "End break"
 #: src/views/projects/PauseButton.tsx
 msgid "End break (paused since {since}, {duration})"
 msgstr "End break (paused since {since}, {duration})"
+
+#: src/components/PositionScrubber.tsx
+msgid "End here"
+msgstr "End here"
+
+#: src/components/PositionScrubber.tsx
+msgid "End here: end on-demand at the video's position"
+msgstr "End here: end on-demand at the video's position"
 
 #: src/views/projects/projectMode.ts
 msgid "End the live broadcast?"
@@ -1229,14 +1889,39 @@ msgstr "Enter the organization name."
 msgid "Enter your email address and we will send you a link where you get a new PIN."
 msgstr "Enter your email address and we will send you a link where you get a new PIN."
 
+#: src/views/projects/autoCaptionsLogic.ts
+msgid "Estimated time: {duration}, started {clock}."
+msgstr "Estimated time: {duration}, started {clock}."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Everything is saved"
+msgstr "Everything is saved"
+
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Example text"
 msgstr "Example text"
+
+#: src/components/ImportTextDialog.tsx
+msgid "Existing items ({count})"
+msgstr "Existing items ({count})"
+
+#: src/components/ImportTextDialog.tsx
+msgid "Existing items are replaced by position: they keep attachments and Meeting link but get a new heading and an empty reference. Items without a corresponding line are removed."
+msgstr "Existing items are replaced by position: they keep attachments and Meeting link but get a new heading and an empty reference. Items without a corresponding line are removed."
+
+#: src/components/ImportTextDialog.tsx
+msgid "Existing names ({count})"
+msgstr "Existing names ({count})"
+
+#: src/components/ImportTextDialog.tsx
+msgid "Existing names are replaced by position: they get a new name and an empty party and title. Names without a corresponding line are removed."
+msgstr "Existing names are replaced by position: they get a new name and an empty party and title. Names without a corresponding line are removed."
 
 #: src/views/jobs/JobsView.tsx
 msgid "Expired"
 msgstr "Expired"
 
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Export"
 msgstr "Export"
@@ -1249,6 +1934,10 @@ msgstr "Export & import…"
 #: src/views/projects/VideoStatusRow.tsx
 msgid "Export and import"
 msgstr "Export and import"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Export to Word"
+msgstr "Export to Word"
 
 #: src/views/projects/OndemandView.tsx
 msgid "external address"
@@ -1270,6 +1959,14 @@ msgstr "Fetching agenda..."
 msgid "Fetching downloads…"
 msgstr "Fetching downloads…"
 
+#: src/components/ShareDialog.tsx
+msgid "Fetching finished downloads…"
+msgstr "Fetching finished downloads…"
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Fetching the agenda…"
+msgstr "Fetching the agenda…"
+
 #: src/app/jobPhase.ts
 msgid "Fetching the audio"
 msgstr "Fetching the audio"
@@ -1288,6 +1985,9 @@ msgid "Fetching..."
 msgstr "Fetching..."
 
 #: src/app/SharedDownloadsView.tsx
+#: src/views/projects/CaptionEditor.tsx
+#: src/views/projects/CaptionEntry.tsx
+#: src/views/projects/CorrectionsPanel.tsx
 #: src/views/projects/ExportImportDialog.tsx
 #: src/views/projects/IngestInfo.tsx
 #: src/views/projects/InheritLayoutDialog.tsx
@@ -1296,6 +1996,7 @@ msgstr "Fetching..."
 msgid "Fetching…"
 msgstr "Fetching…"
 
+#: src/components/ShareDialog.tsx
 #: src/views/jobs/JobsView.tsx
 msgid "Files"
 msgstr "Files"
@@ -1311,6 +2012,10 @@ msgstr "Finished"
 #: src/views/users/UsersView.tsx
 msgid "First and last name"
 msgstr "First and last name"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Follow"
+msgstr "Follow"
 
 #: src/app/LoginView.tsx
 msgid "Forgot PIN?"
@@ -1328,6 +2033,10 @@ msgstr "Fork is not made for tight clips: start and end are placed on the neares
 msgid "Fork…"
 msgstr "Fork…"
 
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "From the agenda"
+msgstr "From the agenda"
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "From the agenda, a name list or a pasted list with times."
 msgstr "From the agenda, a name list or a pasted list with times."
@@ -1344,9 +2053,26 @@ msgstr "From the start of the broadcast"
 msgid "From the time"
 msgstr "From the time"
 
+#: src/views/projects/captionEntryLogic.ts
+msgid "Generating captions…"
+msgstr "Generating captions…"
+
+#: src/views/projects/captionEntryLogic.ts
+msgid "Generating captions…{percent}"
+msgstr "Generating captions…{percent}"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Generating…"
 msgstr "Generating…"
+
+#: src/views/projects/captionEntryLogic.ts
+msgctxt "caption status"
+msgid "Generating…"
+msgstr "Generating…"
+
+#: src/views/projects/captionEntryLogic.ts
+msgid "Generating{percent}"
+msgstr "Generating{percent}"
 
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "Get anyway"
@@ -1388,6 +2114,10 @@ msgstr "Go to After"
 msgid "Go to After before Before — an aborted test is always reviewed there first."
 msgstr "Go to After before Before — an aborted test is always reviewed there first."
 
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Go to anchor"
+msgstr "Go to anchor"
+
 #: src/views/projects/projectMode.ts
 msgid "Go to Before"
 msgstr "Go to Before"
@@ -1400,9 +2130,22 @@ msgstr "Go to Live"
 msgid "Go to project"
 msgstr "Go to project"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Goes back to what is published (captions and chapters)"
+msgstr "Goes back to what is published (captions and chapters)"
+
 #: src/views/projects/ProjectHeader.tsx
 msgid "Has the broadcast ended?"
 msgstr "Has the broadcast ended?"
+
+#. placeholder {0}: chapter.label
+#: src/views/projects/CaptionEditor.tsx
+msgid "Hide the speakers under {0}"
+msgstr "Hide the speakers under {0}"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Hides this bar. The changes remain as unsaved changes"
+msgstr "Hides this bar. The changes remain as unsaved changes"
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "HLS link"
@@ -1456,6 +2199,7 @@ msgstr "Ignore the file"
 msgid "Image"
 msgstr "Image"
 
+#: src/components/ImportTextDialog.tsx
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Import"
 msgstr "Import"
@@ -1465,13 +2209,43 @@ msgctxt "caption file"
 msgid "Import"
 msgstr "Import"
 
+#: src/views/projects/WordImportDialog.tsx
+msgctxt "Word corrections"
+msgid "Import"
+msgstr "Import"
+
+#: src/components/ImportTextDialog.tsx
+msgid "Import agenda"
+msgstr "Import agenda"
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Import chapters"
+msgstr "Import chapters"
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Import chapters…"
 msgstr "Import chapters…"
 
+#: src/views/projects/WordImportDialog.tsx
+msgid "Import corrections from Word"
+msgstr "Import corrections from Word"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Import from Word"
+msgstr "Import from Word"
+
+#: src/components/ImportTextDialog.tsx
+msgid "Import names"
+msgstr "Import names"
+
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/VttImportDialog.tsx
 msgid "Import VTT file"
 msgstr "Import VTT file"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Import your own VTT file instead"
+msgstr "Import your own VTT file instead"
 
 #: src/views/agendas/AgendasView.tsx
 #: src/views/namelists/NameListsView.tsx
@@ -1479,9 +2253,28 @@ msgstr "Import VTT file"
 msgid "Import..."
 msgstr "Import..."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Import…"
+msgstr "Import…"
+
 #: src/views/projects/VttImportDialog.tsx
+#: src/views/projects/WordImportDialog.tsx
 msgid "Importing…"
 msgstr "Importing…"
+
+#: src/components/ImportTextDialog.tsx
+#: src/views/projects/ChapterImportDialog.tsx
+msgctxt "list import"
+msgid "Importing…"
+msgstr "Importing…"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Imports a corrected manuscript and suggests the changes in the captions, to review line by line."
+msgstr "Imports a corrected manuscript and suggests the changes in the captions, to review line by line."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Imports chapters from a list or the agenda (replaces or adds)"
+msgstr "Imports chapters from a list or the agenda (replaces or adds)"
 
 #: src/app/jobRetention.ts
 #: src/views/trash/TrashView.tsx
@@ -1496,6 +2289,10 @@ msgstr "In progress"
 #: src/views/projects/ExportImportDialog.tsx
 msgid "In the editor: import your own VTT file (the ⋯ menu) or create captions automatically. Published with Publish changes."
 msgstr "In the editor: import your own VTT file (the ⋯ menu) or create captions automatically. Published with Publish changes."
+
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "in the video and click Anchor."
+msgstr "in the video and click Anchor."
 
 #: src/views/projects/ForkDialog.tsx
 msgid "in this project and the stream is not interrupted. In the new project you trim, create captions and publish as a separate on-demand broadcast with its own link. The very latest seconds are not included."
@@ -1532,6 +2329,15 @@ msgstr "Ingest info"
 msgid "Ingest server"
 msgstr "Ingest server"
 
+#: src/app/shareRecipients.ts
+msgid "invalid address"
+msgstr "invalid address"
+
+#. placeholder {0}: invalid.join(', ')
+#: src/components/ShareDialog.tsx
+msgid "Invalid address: {0}"
+msgstr "Invalid address: {0}"
+
 #: src/views/users/UsersView.tsx
 msgid "Invitation sent to {email}. The text is copied."
 msgstr "Invitation sent to {email}. The text is copied."
@@ -1561,11 +2367,17 @@ msgstr "Is this the right file?"
 msgid "It can take a few minutes for long broadcasts. Leave this box open until publishing is done."
 msgstr "It can take a few minutes for long broadcasts. Leave this box open until publishing is done."
 
+#: src/views/projects/CaptionEditor.tsx
+#: src/views/projects/chapterRows.ts
+msgid "Item"
+msgstr "Item"
+
 #: src/views/trash/TrashView.tsx
 msgid "Items are purged automatically {period} after they were deleted. After that they cannot be restored."
 msgstr "Items are purged automatically {period} after they were deleted. After that they cannot be restored."
 
 #: src/app/Shell.tsx
+#: src/components/JobStatusBlock.tsx
 #: src/views/jobs/JobsView.tsx
 msgid "Jobs"
 msgstr "Jobs"
@@ -1586,6 +2398,10 @@ msgstr "just now"
 #: src/views/projects/OndemandView.tsx
 msgid "Keep the earlier one — ignore the file"
 msgstr "Keep the earlier one — ignore the file"
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Keep them and add the new ones"
+msgstr "Keep them and add the new ones"
 
 #: src/views/projects/OndemandView.tsx
 msgid "Last {when} by {actor}"
@@ -1627,6 +2443,32 @@ msgstr "Let the viewers rewind"
 msgid "Light"
 msgstr "Light"
 
+#: src/components/QuotaBar.tsx
+msgid "Limit reached"
+msgstr "Limit reached"
+
+#. placeholder {0}: item.index + 1
+#: src/views/projects/CorrectionsPanel.tsx
+msgid "line {0}"
+msgstr "line {0}"
+
+#. placeholder {0}: index + 1
+#. placeholder {1}: line.length
+#: src/components/importTextLogic.ts
+msgid "Line {0} is too long ({1} characters, at most {IMPORT_MAX_LINE_LENGTH})."
+msgstr "Line {0} is too long ({1} characters, at most {IMPORT_MAX_LINE_LENGTH})."
+
+#. placeholder {0}: selectedIndex + 1
+#. placeholder {1}: formatCueTime(selected.start)
+#: src/views/projects/CaptionEditor.tsx
+msgid "Line {0}: boundary at {1}"
+msgstr "Line {0}: boundary at {1}"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Lines"
+msgstr "Lines"
+
+#: src/components/ShareDialog.tsx
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Link"
 msgstr "Link"
@@ -1714,6 +2556,11 @@ msgstr "Live only"
 msgid "Live resources"
 msgstr "Live resources"
 
+#: src/components/PdfAttachments.tsx
+#: src/components/PdfAttachmentsModal.tsx
+msgid "Loading..."
+msgstr "Loading..."
+
 #: src/app/App.tsx
 #: src/views/agendas/AgendasView.tsx
 #: src/views/archive/VideoArchiveView.tsx
@@ -1725,6 +2572,14 @@ msgstr "Live resources"
 #: src/views/users/UsersView.tsx
 msgid "Loading…"
 msgstr "Loading…"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Locked: not changed in Word. Double-click to unlock."
+msgstr "Locked: not changed in Word. Double-click to unlock."
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Locked: this box was not changed in Word."
+msgstr "Locked: this box was not changed in Word."
 
 #: src/views/jobs/JobsView.tsx
 msgid "Log"
@@ -1742,6 +2597,20 @@ msgstr "Log out"
 msgid "Logging in…"
 msgstr "Logging in…"
 
+#. placeholder {0}: cueCharCount(cue.text)
+#: src/views/projects/CaptionEditor.tsx
+msgid "Long line, {0} characters"
+msgstr "Long line, {0} characters"
+
+#: src/views/projects/CorrectionsPanel.tsx
+msgid "Machine corrections"
+msgstr "Machine corrections"
+
+#. placeholder {0}: machine.reduce((sum, group) => sum + group.count, 0)
+#: src/views/projects/CorrectionsPanel.tsx
+msgid "Machine corrections ({0})"
+msgstr "Machine corrections ({0})"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Machine-generated, not reviewed."
 msgstr "Machine-generated, not reviewed."
@@ -1749,6 +2618,10 @@ msgstr "Machine-generated, not reviewed."
 #: src/views/agendas/AgendasView.tsx
 msgid "Make template"
 msgstr "Make template"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Makes all boxes editable"
+msgstr "Makes all boxes editable"
 
 #: src/views/users/UsersView.tsx
 msgid "Manages the whole installation and all domains."
@@ -1765,6 +2638,10 @@ msgstr "Manuscript without speakers"
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Mark as live only"
 msgstr "Mark as live only"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Mark as resolved"
+msgstr "Mark as resolved"
 
 #: src/views/projects/ProjectsView.tsx
 msgid "Marked as live only"
@@ -1798,6 +2675,22 @@ msgstr "Meeting ID {meetingId}"
 msgid "Meeting linked"
 msgstr "Meeting linked"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Merge anyway"
+msgstr "Merge anyway"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Merge despite the pause?"
+msgstr "Merge despite the pause?"
+
+#: src/components/ShareDialog.tsx
+msgid "Message"
+msgstr "Message"
+
+#: src/components/ShareDialog.tsx
+msgid "Message (optional)"
+msgstr "Message (optional)"
+
 #: src/views/projects/layoutInherit.ts
 #: src/views/projects/playerSettings.ts
 msgid "Middle"
@@ -1811,6 +2704,10 @@ msgstr "Mode"
 #: src/views/projects/ProjectsView.tsx
 msgid "More actions for {name}"
 msgstr "More actions for {name}"
+
+#: src/components/OverflowMenu.tsx
+msgid "More options"
+msgstr "More options"
 
 #: src/views/projects/personOrder.ts
 msgid "Most played"
@@ -1829,6 +2726,14 @@ msgstr "Move to trash"
 msgid "Move to trash?"
 msgstr "Move to trash?"
 
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Moves all chapters"
+msgstr "Moves all chapters"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Moves the boundary to the video's position (the text stays where it is)"
+msgstr "Moves the boundary to the video's position (the text stays where it is)"
+
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Mux env key"
 msgstr "Mux env key"
@@ -1846,6 +2751,7 @@ msgid "My account"
 msgstr "My account"
 
 #: src/app/Shell.tsx
+#: src/components/EditableItemList.tsx
 #: src/views/projects/CreateProjectDialog.tsx
 #: src/views/trash/TrashView.tsx
 #: src/views/users/UsersView.tsx
@@ -1877,6 +2783,10 @@ msgstr "Name list options"
 msgid "Name lists"
 msgstr "Name lists"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Name of the item"
+msgstr "Name of the item"
+
 #: src/views/projects/UploadPanel.tsx
 msgid "Name of the recording"
 msgstr "Name of the recording"
@@ -1903,6 +2813,7 @@ msgid "New domain"
 msgstr "New domain"
 
 #: src/views/agendas/AgendasView.tsx
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/PlayoutColumns.tsx
 msgid "New item"
 msgstr "New item"
@@ -1913,6 +2824,7 @@ msgid "New name list"
 msgstr "New name list"
 
 #: src/views/namelists/NameListsView.tsx
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/PlayoutColumns.tsx
 msgid "New person"
 msgstr "New person"
@@ -1937,6 +2849,18 @@ msgstr "New user in {host}"
 msgid "New video resource"
 msgstr "New video resource"
 
+#: src/views/projects/WordReviewBar.tsx
+msgid "Next"
+msgstr "Next"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Next changed box (Tab)"
+msgstr "Next changed box (Tab)"
+
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Next:"
+msgstr "Next:"
+
 #: src/views/projects/PlayoutColumns.tsx
 msgid "No agenda linked. Link one to be able to play out items."
 msgstr "No agenda linked. Link one to be able to play out items."
@@ -1954,6 +2878,18 @@ msgstr "No agenda, I will link one later"
 msgid "No captions"
 msgstr "No captions"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "No changed box after this one."
+msgstr "No changed box after this one."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "No changed box before this one."
+msgstr "No changed box before this one."
+
+#: src/views/projects/wordImportLogic.ts
+msgid "No changed boxes"
+msgstr "No changed boxes"
+
 #: src/views/projects/OndemandView.tsx
 msgid "No changes"
 msgstr "No changes"
@@ -1961,6 +2897,10 @@ msgstr "No changes"
 #: src/views/projects/OndemandView.tsx
 msgid "No chapters"
 msgstr "No chapters"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "No chapters with a time yet. Add under Unsynced chapters and sync with Time here."
+msgstr "No chapters with a time yet. Add under Unsynced chapters and sync with Time here."
 
 #: src/views/jobs/JobsView.tsx
 msgid "No finished jobs."
@@ -1994,6 +2934,10 @@ msgstr "No jobs in progress."
 msgid "No key configured"
 msgstr "No key configured"
 
+#: src/views/projects/captionEditOps.ts
+msgid "No line selected."
+msgstr "No line selected."
+
 #: src/app/SharedDownloadsView.tsx
 msgid "No longer available"
 msgstr "No longer available"
@@ -2017,6 +2961,14 @@ msgstr "No name list, I will link one later"
 #: src/views/namelists/NameListsView.tsx
 msgid "No name matches the filter."
 msgstr "No name matches the filter."
+
+#: src/views/projects/CorrectionsPanel.tsx
+msgid "No names or terms have been corrected automatically in this draft."
+msgstr "No names or terms have been corrected automatically in this draft."
+
+#: src/components/PdfAttachmentsModal.tsx
+msgid "No PDF documents attached."
+msgstr "No PDF documents attached."
 
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "No poster"
@@ -2051,6 +3003,10 @@ msgstr "No signal. The resource is allocated and waiting for an encoder."
 msgid "No text is shown"
 msgstr "No text is shown"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "No unpublished changes"
+msgstr "No unpublished changes"
+
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "No, ignore events"
 msgstr "No, ignore events"
@@ -2063,9 +3019,22 @@ msgstr "none"
 msgid "None"
 msgstr "None"
 
+#: src/components/PickerModal.tsx
+msgctxt "picker"
+msgid "None"
+msgstr "None"
+
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "None (empty texts and default values)"
 msgstr "None (empty texts and default values)"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "None. Import with Chapters… or add with +."
+msgstr "None. Import with Chapters… or add with +."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Not anchored"
+msgstr "Not anchored"
 
 #: src/views/projects/BeforeWorkspace.tsx
 msgid "Not created"
@@ -2105,6 +3074,10 @@ msgctxt "preparation step"
 msgid "Not used"
 msgstr "Not used"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Note: the captions are machine-generated and not reviewed."
+msgstr "Note: the captions are machine-generated and not reviewed."
+
 #: src/views/projects/projectMode.ts
 msgid "Nothing (closed)"
 msgstr "Nothing (closed)"
@@ -2112,6 +3085,10 @@ msgstr "Nothing (closed)"
 #: src/views/projects/ListPickerDialog.tsx
 msgid "Nothing matches."
 msgstr "Nothing matches."
+
+#: src/components/importTextLogic.ts
+msgid "Nothing to import."
+msgstr "Nothing to import."
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "off"
@@ -2137,6 +3114,10 @@ msgstr "Off by default. Takes effect for viewers who reload the player."
 msgid "Offered as a layout when a new project is created"
 msgstr "Offered as a layout when a new project is created"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Offset in seconds"
+msgstr "Offset in seconds"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "on"
 msgstr "on"
@@ -2157,6 +3138,18 @@ msgstr "On demand updated"
 msgid "On-demand HLS (published video)"
 msgstr "On-demand HLS (published video)"
 
+#: src/components/ImportTextDialog.tsx
+msgid "One item per line."
+msgstr "One item per line."
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "One line per chapter. Start the line with a time if you have one, for example “00:12:34 Item 3”."
+msgstr "One line per chapter. Start the line with a time if you have one, for example “00:12:34 Item 3”."
+
+#: src/components/ImportTextDialog.tsx
+msgid "One name per line."
+msgstr "One name per line."
+
 #: src/views/projects/OndemandView.tsx
 msgid "Only in After"
 msgstr "Only in After"
@@ -2168,6 +3161,10 @@ msgstr "Open"
 #: src/views/projects/PlayerLinkField.tsx
 msgid "Open example page"
 msgstr "Open example page"
+
+#: src/components/JobStatusBlock.tsx
+msgid "Open Jobs"
+msgstr "Open Jobs"
 
 #: src/app/Shell.tsx
 msgid "Open menu"
@@ -2209,6 +3206,14 @@ msgstr "Open to viewers"
 msgid "Opening the project: {name}"
 msgstr "Opening the project: {name}"
 
+#: src/views/projects/CaptionEntry.tsx
+msgid "Opens the caption editor"
+msgstr "Opens the caption editor"
+
+#: src/views/projects/CaptionEntry.tsx
+msgid "Opens the editor: trim and chapters. Captions are created from there."
+msgstr "Opens the editor: trim and chapters. Captions are created from there."
+
 #: src/views/users/UsersView.tsx
 msgid "Operator"
 msgstr "Operator"
@@ -2249,6 +3254,23 @@ msgstr "Overwrite and publish"
 msgid "Own HLS URL"
 msgstr "Own HLS URL"
 
+#: src/components/ImportTextDialog.tsx
+msgid "Paste at least one line, one item per line."
+msgstr "Paste at least one line, one item per line."
+
+#: src/components/ImportTextDialog.tsx
+msgid "Paste at least one line, one person per line."
+msgstr "Paste at least one line, one person per line."
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Paste list"
+msgstr "Paste list"
+
+#: src/components/VideoPositionControls.tsx
+#: src/views/projects/CaptionEditor.tsx
+msgid "Pause"
+msgstr "Pause"
+
 #: src/views/projects/PauseButton.tsx
 msgid "Pause the broadcast"
 msgstr "Pause the broadcast"
@@ -2275,13 +3297,47 @@ msgstr "Permission"
 msgid "Permissions"
 msgstr "Permissions"
 
+#: src/views/projects/CaptionEditor.tsx
+#: src/views/projects/chapterRows.ts
+msgid "Person"
+msgstr "Person"
+
 #: src/app/LoginView.tsx
 msgid "PIN"
 msgstr "PIN"
 
+#: src/views/projects/captionEditOps.ts
+msgid "Place the cursor after the words to be moved (and before at least one word that is to stay)."
+msgstr "Place the cursor after the words to be moved (and before at least one word that is to stay)."
+
+#: src/views/projects/captionEditOps.ts
+msgid "Place the cursor before the words to be moved (and after at least one word that is to stay)."
+msgstr "Place the cursor before the words to be moved (and after at least one word that is to stay)."
+
+#: src/views/projects/captionEditOps.ts
+msgid "Place the cursor between two words in the text, and the line is split there."
+msgstr "Place the cursor between two words in the text, and the line is split there."
+
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Placement in the video window"
 msgstr "Placement in the video window"
+
+#: src/components/VideoPositionControls.tsx
+msgid "Play"
+msgstr "Play"
+
+#: src/components/TrimBar.tsx
+msgid "Play from the beginning of what is kept"
+msgstr "Play from the beginning of what is kept"
+
+#. placeholder {0}: chapter.label
+#: src/views/projects/CaptionEditor.tsx
+msgid "Play from the chapter {0}"
+msgstr "Play from the chapter {0}"
+
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Play or pause"
+msgstr "Play or pause"
 
 #: src/views/projects/PlayoutColumns.tsx
 msgid "Play out"
@@ -2290,6 +3346,23 @@ msgstr "Play out"
 #: src/views/projects/PlayoutColumns.tsx
 msgid "Play out {name}"
 msgstr "Play out {name}"
+
+#: src/components/TrimBar.tsx
+msgid "Play the last seconds before the end"
+msgstr "Play the last seconds before the end"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Play this line (click again to pause)"
+msgstr "Play this line (click again to pause)"
+
+#. placeholder {0}: seconds(cue.end - cue.start)
+#: src/views/projects/CaptionEditor.tsx
+msgid "Play this line (click again to pause), {0} s"
+msgstr "Play this line (click again to pause), {0} s"
+
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Play up to where “{anchor}” starts"
+msgstr "Play up to where “{anchor}” starts"
 
 #: src/views/projects/PlayoutOverlay.tsx
 msgid "Play-out"
@@ -2330,6 +3403,10 @@ msgstr "Player settings…"
 #: src/views/projects/PlayoutColumns.tsx
 msgid "Position in the recording"
 msgstr "Position in the recording"
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Positions in the video (already synced)"
+msgstr "Positions in the video (already synced)"
 
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Poster"
@@ -2385,6 +3462,11 @@ msgstr "Presenter's own format with all chapters and speakers, for backup and mo
 msgid "Preview"
 msgstr "Preview"
 
+#: src/views/projects/ChapterImportDialog.tsx
+msgctxt "chapter import"
+msgid "Preview"
+msgstr "Preview"
+
 #: src/views/projects/BeforeWorkspace.tsx
 msgid "Preview (live)"
 msgstr "Preview (live)"
@@ -2401,6 +3483,14 @@ msgstr "Preview of poster and text"
 #: src/views/projects/PreviewOverlay.tsx
 msgid "Preview of the player"
 msgstr "Preview of the player"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Previous"
+msgstr "Previous"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Previous changed box (Shift+Tab)"
+msgstr "Previous changed box (Shift+Tab)"
 
 #: src/app/jobPhase.ts
 msgid "Processing"
@@ -2435,10 +3525,12 @@ msgstr "Project: {projectName}"
 msgid "Projects"
 msgstr "Projects"
 
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/OndemandView.tsx
 msgid "Publish"
 msgstr "Publish"
 
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/OndemandView.tsx
 msgid "Publish changes"
 msgstr "Publish changes"
@@ -2451,6 +3543,7 @@ msgstr "Publish on demand"
 msgid "Publish on demand?"
 msgstr "Publish on demand?"
 
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/OndemandView.tsx
 msgid "Publish the changes?"
 msgstr "Publish the changes?"
@@ -2460,11 +3553,17 @@ msgstr "Publish the changes?"
 msgid "Published"
 msgstr "Published"
 
+#: src/views/projects/captionEntryLogic.ts
+msgctxt "caption status"
+msgid "Published"
+msgstr "Published"
+
 #: src/views/projects/OndemandView.tsx
 msgctxt "project state"
 msgid "Published"
 msgstr "Published"
 
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Published part"
 msgstr "Published part"
@@ -2497,6 +3596,10 @@ msgstr "Publishing the changes and updating the player"
 msgid "Publishing was stopped"
 msgstr "Publishing was stopped"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Publishing…"
+msgstr "Publishing…"
+
 #: src/views/trash/TrashView.tsx
 msgid "Purged"
 msgstr "Purged"
@@ -2521,10 +3624,12 @@ msgstr "Reading the video…"
 msgid "Recent activity"
 msgstr "Recent activity"
 
+#: src/components/ShareDialog.tsx
 #: src/views/jobs/JobsView.tsx
 msgid "Recipients"
 msgstr "Recipients"
 
+#: src/components/ShareDialog.tsx
 #: src/views/resources/LiveResourcesView.tsx
 #: src/views/trash/TrashView.tsx
 msgid "Recording"
@@ -2539,22 +3644,78 @@ msgstr "Recordings"
 msgid "Recordings linked to a project can only be removed there."
 msgstr "Recordings linked to a project can only be removed there."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Reload (your changes will be lost)"
+msgstr "Reload (your changes will be lost)"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Reload to see what is there now, or overwrite with your changes."
+msgstr "Reload to see what is there now, or overwrite with your changes."
+
+#: src/components/EditableItemList.tsx
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/PlayerSettingsDialog.tsx
 #: src/views/users/UsersView.tsx
 msgid "Remove"
 msgstr "Remove"
 
+#. placeholder {0}: attachment.fileName
+#: src/components/PdfAttachments.tsx
+msgid "Remove {0}"
+msgstr "Remove {0}"
+
 #: src/views/users/UsersView.tsx
 msgid "Remove {removeName} completely? From now on the history shows only the name, without an account."
 msgstr "Remove {removeName} completely? From now on the history shows only the name, without an account."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Remove captions"
+msgstr "Remove captions"
+
+#: src/components/PdfAttachments.tsx
+#: src/components/PdfAttachmentsModal.tsx
+msgid "Remove PDF"
+msgstr "Remove PDF"
 
 #: src/views/agendas/AgendasView.tsx
 msgid "Remove template status"
 msgstr "Remove template status"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Remove the captions?"
+msgstr "Remove the captions?"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Remove the line"
+msgstr "Remove the line"
+
 #: src/views/users/UsersView.tsx
 msgid "Remove user?"
 msgstr "Remove user?"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Remove…"
+msgstr "Remove…"
+
+#: src/components/importTextLogic.ts
+msgid "removed {removed}"
+msgstr "removed {removed}"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Removed in Word"
+msgstr "Removed in Word"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Removes the captions completely, also for the viewers. It cannot be undone."
+msgstr "Removes the captions completely, also for the viewers. It cannot be undone."
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Removes the corrections and goes back to the saved version (can be undone)"
+msgstr "Removes the corrections and goes back to the saved version (can be undone)"
+
+#: src/components/RenameModal.tsx
+msgid "Rename"
+msgstr "Rename"
 
 #: src/views/agendas/AgendasView.tsx
 msgid "Rename the agenda"
@@ -2575,6 +3736,23 @@ msgstr "Rename the resource"
 #: src/views/users/UsersView.tsx
 msgid "Rename the user"
 msgstr "Rename the user"
+
+#. placeholder {0}: items.length
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Replace the chapter list ({0})"
+msgstr "Replace the chapter list ({0})"
+
+#: src/components/ImportTextDialog.tsx
+msgid "Replace the existing ones"
+msgstr "Replace the existing ones"
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Replace them"
+msgstr "Replace them"
+
+#: src/components/importTextLogic.ts
+msgid "replaced {replaced}"
+msgstr "replaced {replaced}"
 
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "Replaces the player's texts, text placement, Mux setting and poster image with a copy of the chosen project's."
@@ -2621,6 +3799,10 @@ msgstr "Revoke the share?"
 msgid "Revoked"
 msgstr "Revoked"
 
+#: src/app/shareEvents.ts
+msgid "Revoked by {detail}"
+msgstr "Revoked by {detail}"
+
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Rewind in a live broadcast"
 msgstr "Rewind in a live broadcast"
@@ -2650,6 +3832,9 @@ msgid "Same list as {project}: {list}"
 msgstr "Same list as {project}: {list}"
 
 #: src/app/Shell.tsx
+#: src/components/EditableItemList.tsx
+#: src/components/RenameModal.tsx
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/PlayerSettingsDialog.tsx
 #: src/views/projects/ProjectHeader.tsx
 #: src/views/users/UsersView.tsx
@@ -2660,9 +3845,21 @@ msgstr "Save"
 msgid "Save and import"
 msgstr "Save and import"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Save and publish"
+msgstr "Save and publish"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Save or undo your changes before you unpublish."
+msgstr "Save or undo your changes before you unpublish."
+
 #: src/views/projects/exportImportLogic.ts
 msgid "Saved as \"{fileName}\". The file is among your downloaded files."
 msgstr "Saved as \"{fileName}\". The file is among your downloaded files."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Saves and releases the changes in chapters and captions to the viewers"
+msgstr "Saves and releases the changes in chapters and captions to the viewers"
 
 #: src/views/projects/publishProgress.ts
 msgid "Saving chapters and times"
@@ -2677,6 +3874,7 @@ msgid "Saving..."
 msgstr "Saving..."
 
 #: src/app/Shell.tsx
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/OndemandView.tsx
 #: src/views/projects/PlayerSettingsDialog.tsx
 #: src/views/users/UsersView.tsx
@@ -2723,14 +3921,32 @@ msgstr "Select a user in the list."
 msgid "Select an agenda in the list."
 msgstr "Select an agenda in the list."
 
+#. placeholder {0}: index + 1
+#: src/views/projects/CaptionEditor.tsx
+msgid "Select and play line {0}"
+msgstr "Select and play line {0}"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Select the line and play from its start (click again to pause)"
+msgstr "Select the line and play from its start (click again to pause)"
+
 #: src/views/agendas/AgendasView.tsx
 msgid "Selected agenda"
 msgstr "Selected agenda"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Selected and all after"
+msgstr "Selected and all after"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Selected line"
+msgstr "Selected line"
 
 #: src/views/namelists/NameListsView.tsx
 msgid "Selected name list"
 msgstr "Selected name list"
 
+#: src/components/ShareDialog.tsx
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Selected recording"
 msgstr "Selected recording"
@@ -2752,6 +3968,35 @@ msgstr "Send reset link"
 msgid "Sending…"
 msgstr "Sending…"
 
+#. placeholder {0}: chapter.label
+#: src/views/projects/CaptionEditor.tsx
+msgid "Set {0} to the video's position"
+msgstr "Set {0} to the video's position"
+
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Set times on the chapters"
+msgstr "Set times on the chapters"
+
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Set times on the chapters · {remaining} left"
+msgstr "Set times on the chapters · {remaining} left"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Sets the chapter's time to the video's position (saved with Save)"
+msgstr "Sets the chapter's time to the video's position (saved with Save)"
+
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Setting…"
+msgstr "Setting…"
+
+#: src/components/ShareDialog.tsx
+msgid "Share and send"
+msgstr "Share and send"
+
+#: src/components/ShareDialog.tsx
+msgid "Share download"
+msgstr "Share download"
+
 #: src/views/jobs/JobsView.tsx
 msgid "Share selected"
 msgstr "Share selected"
@@ -2772,6 +4017,22 @@ msgstr "Shared (ended)"
 #: src/views/jobs/JobsView.tsx
 msgid "Shared by {sharedBy} {sharedAt} · valid until {validUntil}"
 msgstr "Shared by {sharedBy} {sharedAt} · valid until {validUntil}"
+
+#: src/components/ShareDialog.tsx
+msgid "Sharing…"
+msgstr "Sharing…"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Shift"
+msgstr "Shift"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Shifts all lines"
+msgstr "Shifts all lines"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Shifts the selected line and all after it"
+msgstr "Shifts the selected line and all after it"
 
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "Should events from Meeting play out agenda items and name signs in the broadcast?"
@@ -2807,6 +4068,11 @@ msgstr "Show projects in the mode"
 msgid "Show the player as"
 msgstr "Show the player as"
 
+#. placeholder {0}: chapter.label
+#: src/views/projects/CaptionEditor.tsx
+msgid "Show the speakers under {0}"
+msgstr "Show the speakers under {0}"
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Show the text"
 msgstr "Show the text"
@@ -2814,6 +4080,10 @@ msgstr "Show the text"
 #: src/views/projects/playerSettings.ts
 msgid "Shown before the broadcast has started."
 msgstr "Shown before the broadcast has started."
+
+#: src/components/ShareDialog.tsx
+msgid "Shown in the email and on the download page"
+msgstr "Shown in the email and on the download page"
 
 #: src/views/projects/playerSettings.ts
 msgid "Shown in the Live mode while the video is not yet playing, e.g. when the stream starts."
@@ -2848,6 +4118,10 @@ msgstr "Signal OK"
 msgid "Size"
 msgstr "Size"
 
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Skip"
+msgstr "Skip"
+
 #: src/app/SharedDownloadsView.tsx
 msgid "Someone"
 msgstr "Someone"
@@ -2855,6 +4129,10 @@ msgstr "Someone"
 #: src/views/projects/draftActions.ts
 msgid "Someone else has changed chapters or trimming since you opened the editor."
 msgstr "Someone else has changed chapters or trimming since you opened the editor."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Someone else has saved"
+msgstr "Someone else has saved"
 
 #: src/views/projects/draftActions.ts
 msgid "Someone else has saved the captions since you opened the editor."
@@ -2879,6 +4157,10 @@ msgstr "Sort A–Z"
 msgid "Sort name list"
 msgstr "Sort name list"
 
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "Source"
+msgstr "Source"
+
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Speaker"
 msgstr "Speaker"
@@ -2895,6 +4177,18 @@ msgstr "Speaker changes · {name}"
 msgid "Speaker changes are being analyzed"
 msgstr "Speaker changes are being analyzed"
 
+#: src/views/projects/speakersLogic.ts
+msgid "Speaker changes are being analyzed…"
+msgstr "Speaker changes are being analyzed…"
+
+#: src/views/projects/speakersLogic.ts
+msgid "Speaker changes have not been analyzed."
+msgstr "Speaker changes have not been analyzed."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Speaker changes that are already analyzed are kept: they belong to the audio, not to the text."
+msgstr "Speaker changes that are already analyzed are kept: they belong to the audio, not to the text."
+
 #: src/views/projects/PlayoutColumns.tsx
 msgid "Speakers are played out directly from Meeting."
 msgstr "Speakers are played out directly from Meeting."
@@ -2902,6 +4196,14 @@ msgstr "Speakers are played out directly from Meeting."
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Speakers in the agenda"
 msgstr "Speakers in the agenda"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Split"
+msgstr "Split"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Split from a longer box. The time is divided by number of characters, so check the times."
+msgstr "Split from a longer box. The time is divided by number of characters, so check the times."
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "SRT, for editing software and platforms that do not read WebVTT."
@@ -2919,6 +4221,16 @@ msgstr "Standalone"
 msgid "Start"
 msgstr "Start"
 
+#: src/views/projects/CaptionEditor.tsx
+msgctxt "caption line"
+msgid "Start"
+msgstr "Start"
+
+#: src/views/projects/chapterExport.ts
+msgctxt "YouTube chapter"
+msgid "Start"
+msgstr "Start"
+
 #: src/views/projects/PauseButton.tsx
 msgid "Start break"
 msgstr "Start break"
@@ -2926,6 +4238,19 @@ msgstr "Start break"
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "Start from layout"
 msgstr "Start from layout"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Start here"
+msgstr "Start here"
+
+#: src/components/PositionScrubber.tsx
+msgctxt "on-demand start"
+msgid "Start here"
+msgstr "Start here"
+
+#: src/components/PositionScrubber.tsx
+msgid "Start here: start on-demand at the video's position"
+msgstr "Start here: start on-demand at the video's position"
 
 #: src/views/projects/ForkDialog.tsx
 msgid "Start time for the new project"
@@ -2936,6 +4261,7 @@ msgid "Started by"
 msgstr "Started by"
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/ManuscriptSpeakersWarning.tsx
 #: src/views/projects/RecordingDownload.tsx
 msgid "Starting…"
@@ -2974,6 +4300,11 @@ msgstr "Switch broadcast"
 #: src/views/projects/OndemandView.tsx
 msgid "Switch broadcast…"
 msgstr "Switch broadcast…"
+
+#. placeholder {0}: formatHms(Math.round(position))
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Sync here · {0}"
+msgstr "Sync here · {0}"
 
 #: src/views/projects/ManuscriptSpeakersWarning.tsx
 msgid "Take out without speakers"
@@ -3031,6 +4362,10 @@ msgstr "Test bed"
 msgid "Test play-out: what you play out here is only visible in the preview, not to the viewers and not in the broadcast's history."
 msgstr "Test play-out: what you play out here is only visible in the preview, not to the viewers and not in the broadcast's history."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Text"
+msgstr "Text"
+
 #: src/views/projects/layoutInherit.ts
 msgid "Text after the broadcast (After)"
 msgstr "Text after the broadcast (After)"
@@ -3042,6 +4377,11 @@ msgstr "Text before the broadcast (Before)"
 #: src/views/projects/layoutInherit.ts
 msgid "Text during the live broadcast (Live)"
 msgstr "Text during the live broadcast (Live)"
+
+#. placeholder {0}: index + 1
+#: src/views/projects/CaptionEditor.tsx
+msgid "Text for line {0}"
+msgstr "Text for line {0}"
 
 #: src/views/projects/layoutInherit.ts
 msgid "Text for the recording (Ondemand)"
@@ -3063,6 +4403,10 @@ msgstr "Text shown in the player"
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Text to paste into the video's description on YouTube."
 msgstr "Text to paste into the video's description on YouTube."
+
+#: src/views/projects/WordImportDialog.tsx
+msgid "Text you remove is removed from the box, and text you add ends up in the box where it belongs. Boxes are changed only where you changed something."
+msgstr "Text you remove is removed from the box, and text you add ends up in the box where it belongs. Boxes are changed only where you changed something."
 
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Texts and poster"
@@ -3104,6 +4448,19 @@ msgstr "The address must start with https://."
 msgid "The After message"
 msgstr "The After message"
 
+#. placeholder {0}: speakers?.error ?? t`unknown error.`
+#: src/views/projects/speakersLogic.ts
+msgid "The analysis failed: {0}"
+msgstr "The analysis failed: {0}"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The anchoring failed."
+msgstr "The anchoring failed."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The anchoring is not confirmed. Publishing is blocked."
+msgstr "The anchoring is not confirmed. Publishing is blocked."
+
 #: src/views/projects/OndemandView.tsx
 msgid "The anchoring to the video is not confirmed."
 msgstr "The anchoring to the video is not confirmed."
@@ -3115,6 +4472,18 @@ msgstr "The audience sees the live broadcast again instead of the After message.
 #: src/views/projects/projectMode.ts
 msgid "The audience stops seeing the broadcast and sees the After message below instead."
 msgstr "The audience stops seeing the broadcast and sees the After message below instead."
+
+#: src/views/projects/CaptionStudio.tsx
+msgid "The audio is extracted, transcribed and split into lines. Then you can edit them here. You can close the window: the job continues, and you follow it on the button above the video."
+msgstr "The audio is extracted, transcribed and split into lines. Then you can edit them here. You can close the window: the job continues, and you follow it on the button above the video."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The audio is transcribed and split into lines. You follow the progress here and then get a draft to edit, with a waveform and a box for each line. The draft is not visible to the viewers until you approve it."
+msgstr "The audio is transcribed and split into lines. You follow the progress here and then get a draft to edit, with a waveform and a box for each line. The draft is not visible to the viewers until you approve it."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The audio is transcribed and split into lines. You get a draft to edit."
+msgstr "The audio is transcribed and split into lines. You get a draft to edit."
 
 #: src/views/projects/ProjectsView.tsx
 msgid "The backend did not confirm the clearing."
@@ -3157,25 +4526,96 @@ msgstr "The broadcast is set to Ondemand mode and everything below becomes visib
 msgid "The caption draft for {name} is ready and waiting for review."
 msgstr "The caption draft for {name} is ready and waiting for review."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "The caption functions: Word, create automatically, own VTT file, remove"
+msgstr "The caption functions: Word, create automatically, own VTT file, remove"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The captioning could not be started."
+msgstr "The captioning could not be started."
+
+#: src/views/projects/CaptionStudio.tsx
+msgid "The captions are being created"
+msgstr "The captions are being created"
+
+#: src/views/projects/CaptionEntry.tsx
+#: src/views/projects/captionEntryLogic.ts
+msgid "The captions are being generated. Open to follow the progress."
+msgstr "The captions are being generated. Open to follow the progress."
+
+#: src/views/projects/captionEditorLogic.ts
+msgid "The captions are created for {fromText}–{toText}. The trim goes outside, and there are no captions there. Choose Create again to cover the whole trim."
+msgstr "The captions are created for {fromText}–{toText}. The trim goes outside, and there are no captions there. Choose Create again to cover the whole trim."
+
+#: src/views/projects/captionEditorLogic.ts
+msgid "The captions are created from {fromText}. The trim goes outside, and there are no captions there. Choose Create again to cover the whole trim."
+msgstr "The captions are created from {fromText}. The trim goes outside, and there are no captions there. Choose Create again to cover the whole trim."
+
 #: src/views/projects/OndemandView.tsx
 msgid "The captions are machine-generated and not reviewed."
 msgstr "The captions are machine-generated and not reviewed."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "The captions are removed completely: the working version with the whole version history, and the published captions disappear for the viewers immediately. Chapters and trim are not touched. It cannot be undone."
+msgstr "The captions are removed completely: the working version with the whole version history, and the published captions disappear for the viewers immediately. Chapters and trim are not touched. It cannot be undone."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The captions as a manuscript in Word, to correct and then import here. Made from the saved version."
+msgstr "The captions as a manuscript in Word, to correct and then import here. Made from the saved version."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The captions could not be created: {createFailed} Try again with Create captions."
+msgstr "The captions could not be created: {createFailed} Try again with Create captions."
+
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/ExportImportDialog.tsx
 msgid "The captions could not be fetched."
 msgstr "The captions could not be fetched."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The captions could not be removed."
+msgstr "The captions could not be removed."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The captions could not be saved."
+msgstr "The captions could not be saved."
+
+#. placeholder {0}: hms(end)
+#. placeholder {1}: hms(videoDurationSeconds)
+#: src/views/projects/captionsCheck.ts
+msgid "The captions end after the end of the video ({0} against {1}). Is the file made from the trimmed, published video?"
+msgstr "The captions end after the end of the video ({0} against {1}). Is the file made from the trimmed, published video?"
+
+#. placeholder {0}: hms(end)
+#. placeholder {1}: hms(videoDurationSeconds)
+#: src/views/projects/captionsCheck.ts
+msgid "The captions end long before the end of the video ({0} against {1}). Check that they belong to this video."
+msgstr "The captions end long before the end of the video ({0} against {1}). Check that they belong to this video."
 
 #: src/app/Shell.tsx
 msgid "The captions for {name} failed."
 msgstr "The captions for {name} failed."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "The captions were changed during the import. Import the file again."
+msgstr "The captions were changed during the import. Import the file again."
+
 #: src/views/projects/draftActions.ts
 msgid "The changes are published."
 msgstr "The changes are published."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "The changes could not be discarded."
+msgstr "The changes could not be discarded."
+
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/OndemandView.tsx
 msgid "The changes could not be published."
 msgstr "The changes could not be published."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The changes in chapters and captions become visible to the viewers immediately and replace the current ones."
+msgstr "The changes in chapters and captions become visible to the viewers immediately and replace the current ones."
 
 #: src/views/projects/OndemandView.tsx
 msgid "The changes to chapters and captions are released to the viewers."
@@ -3185,6 +4625,18 @@ msgstr "The changes to chapters and captions are released to the viewers."
 msgid "The channel limit is reached ({limit}). Tear down an idle resource first."
 msgstr "The channel limit is reached ({limit}). Tear down an idle resource first."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "The chapter could not be added."
+msgstr "The chapter could not be added."
+
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "The chapter ends up before the previous one. Click Sync again if it is right."
+msgstr "The chapter ends up before the previous one. Click Sync again if it is right."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The chapters are anchored to the video."
+msgstr "The chapters are anchored to the video."
+
 #: src/views/projects/exportImportLogic.ts
 msgid "The chapters can be exported when the broadcast has ended."
 msgstr "The chapters can be exported when the broadcast has ended."
@@ -3193,6 +4645,14 @@ msgstr "The chapters can be exported when the broadcast has ended."
 msgid "The chapters could not be read."
 msgstr "The chapters could not be read."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "The chapters could not be saved."
+msgstr "The chapters could not be saved."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The chapters from the broadcast are not anchored to the video."
+msgstr "The chapters from the broadcast are not anchored to the video."
+
 #: src/views/projects/OndemandView.tsx
 msgid "The chapters' anchoring to the video is not confirmed. Confirm it in the editor."
 msgstr "The chapters' anchoring to the video is not confirmed. Confirm it in the editor."
@@ -3200,6 +4660,14 @@ msgstr "The chapters' anchoring to the video is not confirmed. Confirm it in the
 #: src/views/projects/OndemandView.tsx
 msgid "The chosen broadcast is very short ({duration}) — check that it was not a test before you switch."
 msgstr "The chosen broadcast is very short ({duration}) — check that it was not a test before you switch."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The confirmation failed."
+msgstr "The confirmation failed."
+
+#: src/views/projects/CaptionStudio.tsx
+msgid "The creation is stopped and no draft is saved. You can start it again at any time."
+msgstr "The creation is stopped and no draft is saved. You can start it again at any time."
 
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "The current agenda is replaced by a new Meeting agenda and is no longer linked to the project."
@@ -3216,6 +4684,10 @@ msgstr "The details the encoder sends to. The live HLS address is under the Link
 #: src/views/projects/ExportImportDialog.tsx
 msgid "The document could not be created."
 msgstr "The document could not be created."
+
+#: src/views/projects/WordImportDialog.tsx
+msgid "The document does not match? Choose a version to compare against"
+msgstr "The document does not match? Choose a version to compare against"
 
 #: src/views/users/UsersView.tsx
 msgid "The domain has no users."
@@ -3257,19 +4729,55 @@ msgstr "The download of {name} is ready."
 msgid "The draft could not be fetched."
 msgstr "The draft could not be fetched."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "The draft has been changed by someone else. Close, reload and try again."
+msgstr "The draft has been changed by someone else. Close, reload and try again."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The draft has been changed by someone else. Reload and try again."
+msgstr "The draft has been changed by someone else. Reload and try again."
+
+#: src/views/projects/autoCaptionsLogic.ts
+msgid "The draft was created in an older way and cannot be approved or edited. Create new captions."
+msgstr "The draft was created in an older way and cannot be approved or edited. Create new captions."
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "The draft was downloaded as a .vtt file."
 msgstr "The draft was downloaded as a .vtt file."
 
+#: src/app/shareRecipients.ts
+msgid "the email could not be queued"
+msgstr "the email could not be queued"
+
+#. placeholder {0}: mailErrorText(code)
+#: src/app/shareEvents.ts
+msgid "The email to {address} was not sent ({0})"
+msgstr "The email to {address} was not sent ({0})"
+
+#. placeholder {0}: created.recipients.length - failed.length
+#. placeholder {1}: created.recipients.length
+#: src/components/ShareDialog.tsx
+msgid "The email went to {0} of {1} recipients."
+msgstr "The email went to {0} of {1} recipients."
+
 #: src/views/projects/ProjectHeader.tsx
 msgid "The encoder has stopped sending. Should we tear down the streaming server (the ingest) that was used? If this was only a test, answer Cancel — the server stays, ready for a new broadcast."
 msgstr "The encoder has stopped sending. Should we tear down the streaming server (the ingest) that was used? If this was only a test, answer Cancel — the server stays, ready for a new broadcast."
+
+#: src/components/trimBarLogic.ts
+msgid "The end"
+msgstr "The end"
 
 #: src/views/users/UsersView.tsx
 msgid "The end date must be after the start date."
 msgstr "The end date must be after the start date."
 
 #: src/views/projects/forkLogic.ts
+msgid "The end must be after the start."
+msgstr "The end must be after the start."
+
+#: src/views/projects/captionEditOps.ts
+msgctxt "caption line"
 msgid "The end must be after the start."
 msgstr "The end must be after the start."
 
@@ -3281,9 +4789,19 @@ msgstr "The file becomes a draft in the editor and replaces the current working 
 msgid "The file becomes a draft in the editor. Viewers see it only when you publish."
 msgstr "The file becomes a draft in the editor. Viewers see it only when you publish."
 
+#: src/views/projects/CaptionEditor.tsx
+#: src/views/projects/WordImportDialog.tsx
+msgid "The file could not be imported."
+msgstr "The file could not be imported."
+
+#: src/views/projects/captionsCheck.ts
 #: src/views/projects/playerSettings.ts
 msgid "The file is empty."
 msgstr "The file is empty."
+
+#: src/views/projects/captionsCheck.ts
+msgid "The file is too large. At most 2 MB."
+msgstr "The file is too large. At most 2 MB."
 
 #: src/views/projects/VttImportDialog.tsx
 msgid "The file's times are counted from"
@@ -3305,6 +4823,18 @@ msgstr "The image is shown in the player when no video is playing, e.g. before t
 msgid "The image is too large. At most 5 MB."
 msgstr "The image is too large. At most 5 MB."
 
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "The import creates the chapter list."
+msgstr "The import creates the chapter list."
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "The import failed."
+msgstr "The import failed."
+
+#: src/components/ImportTextDialog.tsx
+msgid "The import failed. Nothing was imported."
+msgstr "The import failed. Nothing was imported."
+
 #: src/views/projects/BeforeWorkspace.tsx
 #: src/views/projects/IngestInfoPanel.tsx
 msgid "The ingest resource is removed. To broadcast you need to create a new ingest and use a new stream key in the encoder."
@@ -3314,13 +4844,41 @@ msgstr "The ingest resource is removed. To broadcast you need to create a new in
 msgid "The job could not be canceled."
 msgstr "The job could not be canceled."
 
+#: src/views/projects/CaptionStudio.tsx
+msgid "The job could not be cancelled."
+msgstr "The job could not be cancelled."
+
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "The key is set per domain by an administrator. Without a key of its own, ungap's default key is used."
 msgstr "The key is set per domain by an administrator. Without a key of its own, ungap's default key is used."
 
+#: src/views/projects/captionEntryLogic.ts
+msgid "The last attempt failed. Create the captions again."
+msgstr "The last attempt failed. Create the captions again."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The latest draft could not be read."
+msgstr "The latest draft could not be read."
+
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "The layout is already the same. Nothing is overwritten."
 msgstr "The layout is already the same. Nothing is overwritten."
+
+#: src/views/projects/captionEditOps.ts
+msgid "The line does not end after it starts."
+msgstr "The line does not end after it starts."
+
+#: src/views/projects/captionEditOps.ts
+msgid "The line has no text and is removed when saving."
+msgstr "The line has no text and is removed when saving."
+
+#: src/views/projects/captionEditOps.ts
+msgid "The line overlaps the previous one."
+msgstr "The line overlaps the previous one."
+
+#: src/views/projects/captionEditOps.ts
+msgid "The line starts before the previous one (re-sorted when saving)."
+msgstr "The line starts before the previous one (re-sorted when saving)."
 
 #: src/app/SharedDownloadsView.tsx
 msgid "The link could not be checked"
@@ -3355,6 +4913,14 @@ msgstr "The link has expired or has already been used. Ask for a new reset."
 msgid "The link is copied"
 msgstr "The link is copied"
 
+#: src/components/ShareDialog.tsx
+msgid "The link is valid for 7 days and is only shown now. Copy it if you want to send it yourself. You find the share and can revoke it under Downloads."
+msgstr "The link is valid for 7 days and is only shown now. Copy it if you want to send it yourself. You find the share and can revoke it under Downloads."
+
+#: src/components/ShareDialog.tsx
+msgid "The link is valid for 7 days. You can revoke it under Downloads, and every download is logged."
+msgstr "The link is valid for 7 days. You can revoke it under Downloads, and every download is logged."
+
 #: src/app/SharedDownloadsView.tsx
 msgid "The link is valid until {date}."
 msgstr "The link is valid until {date}."
@@ -3376,9 +4942,22 @@ msgid "The log could not be loaded."
 msgstr "The log could not be loaded."
 
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/ExportImportDialog.tsx
 msgid "The manuscript could not be created."
 msgstr "The manuscript could not be created."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The manuscript is made from the saved version. Your unsaved changes are not included."
+msgstr "The manuscript is made from the saved version. Your unsaved changes are not included."
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "The new chapters are added after the current ones."
+msgstr "The new chapters are added after the current ones."
+
+#: src/views/projects/captionEditOps.ts
+msgid "The offset would move the line before the beginning of the video."
+msgstr "The offset would move the line before the beginning of the video."
 
 #: src/views/projects/projectMode.ts
 msgid "The ongoing broadcast is cut off for the audience, who see the Before message instead."
@@ -3391,6 +4970,10 @@ msgstr "The only active administrator on {adminHost}. Appoint another one before
 #: src/views/archive/VideoArchiveView.tsx
 msgid "The original is never published directly. Trim it to create a version that can be reviewed and published."
 msgstr "The original is never published directly. Trim it to create a version that can be reviewed and published."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The person's name"
+msgstr "The person's name"
 
 #: src/views/users/UsersView.tsx
 msgid "The PIN becomes valid only when the invitation has been sent"
@@ -3440,6 +5023,14 @@ msgstr "The project cannot be deleted right now"
 #: src/views/projects/ForkDialog.tsx
 msgid "The project could not be created."
 msgstr "The project could not be created."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The project has no captions yet"
+msgstr "The project has no captions yet"
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "The project has no linked agenda."
+msgstr "The project has no linked agenda."
 
 #: src/views/projects/exportImportLogic.ts
 msgid "The project has no video yet."
@@ -3501,9 +5092,21 @@ msgstr "The role cannot be changed here."
 msgid "The sender has withdrawn the share. Contact the sender if you need the files."
 msgstr "The sender has withdrawn the share. Contact the sender if you need the files."
 
+#: src/components/ShareDialog.tsx
+msgid "The share could not be created."
+msgstr "The share could not be created."
+
 #: src/views/jobs/JobsView.tsx
 msgid "The share could not be revoked."
 msgstr "The share could not be revoked."
+
+#: src/components/ShareDialog.tsx
+msgid "The share is created"
+msgstr "The share is created"
+
+#: src/app/shareEvents.ts
+msgid "The share was created ({detail})"
+msgstr "The share was created ({detail})"
 
 #: src/app/Shell.tsx
 msgid "The speaker change analysis for {name} failed."
@@ -3537,6 +5140,14 @@ msgstr "The speaker changes could not be started."
 msgid "The speaker changes for {name} are analysed. The Word transcript can be downloaded with speakers."
 msgstr "The speaker changes for {name} are analysed. The Word transcript can be downloaded with speakers."
 
+#: src/components/trimBarLogic.ts
+msgid "The start"
+msgstr "The start"
+
+#: src/views/projects/captionEditOps.ts
+msgid "The start must be before the end."
+msgstr "The start must be before the end."
+
 #: src/views/projects/VttImportDialog.tsx
 msgid "The start of the original recording"
 msgstr "The start of the original recording"
@@ -3553,9 +5164,17 @@ msgstr "The step “{stepLabel}” failed. The error message was shown as a noti
 msgid "The text the viewers see in each mode. If a field is left empty, the player's default text is used, if there is one."
 msgstr "The text the viewers see in each mode. If a field is left empty, the player's default text is used, if there is one."
 
+#: src/views/projects/WordReviewBar.tsx
+msgid "The text was removed in Word. Type in the box to keep it, otherwise the box is removed when you save. Before: “{beforeText}”"
+msgstr "The text was removed in Word. Type in the box to keep it, otherwise the box is removed when you save. Before: “{beforeText}”"
+
 #: src/views/projects/forkLogic.ts
 msgid "The time is outside what can be chosen ({first}–{last})."
 msgstr "The time is outside what can be chosen ({first}–{last})."
+
+#: src/views/projects/ChapterImportDialog.tsx
+msgid "The times are"
+msgstr "The times are"
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "The times are counted from the start of the published video."
@@ -3573,6 +5192,14 @@ msgstr "The trash is empty."
 msgid "The trim is applied when you publish."
 msgstr "The trim is applied when you publish."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "The trimming could not be saved."
+msgstr "The trimming could not be saved."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "The trimming is locked when the project is published. Unpublish to change it."
+msgstr "The trimming is locked when the project is published. Unpublish to change it."
+
 #: src/views/projects/OndemandView.tsx
 msgid "The upload could not be canceled."
 msgstr "The upload could not be canceled."
@@ -3581,6 +5208,10 @@ msgstr "The upload could not be canceled."
 msgid "The upload failed."
 msgstr "The upload failed."
 
+#: src/views/projects/WordImportDialog.tsx
+msgid "The version the manuscript was printed from (recommended)"
+msgstr "The version the manuscript was printed from (recommended)"
+
 #: src/views/projects/exportImportLogic.ts
 msgid "The video can be downloaded when it is published as on demand."
 msgstr "The video can be downloaded when it is published as on demand."
@@ -3588,6 +5219,10 @@ msgstr "The video can be downloaded when it is published as on demand."
 #: src/views/projects/exportImportLogic.ts
 msgid "The video can be downloaded when the broadcast has ended and been published."
 msgstr "The video can be downloaded when the broadcast has ended and been published."
+
+#: src/components/VideoLightbox.tsx
+msgid "The video cannot be played in this environment."
+msgstr "The video cannot be played in this environment."
 
 #: src/app/Shell.tsx
 msgid "The video for {name} is processed and waiting for review."
@@ -3614,6 +5249,23 @@ msgstr "The video is not ready yet."
 msgid "The video is trimmed in the After mode."
 msgstr "The video is trimmed in the After mode."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "The video player cannot run in this browser."
+msgstr "The video player cannot run in this browser."
+
+#: src/components/PositionScrubber.tsx
+msgid "The video's position"
+msgstr "The video's position"
+
+#. placeholder {0}: formatHms(position)
+#: src/components/VideoPositionControls.tsx
+msgid "The video's position {0}. Press Enter to enter a time."
+msgstr "The video's position {0}. Press Enter to enter a time."
+
+#: src/components/VideoPositionControls.tsx
+msgid "The video's position, hh:mm:ss"
+msgstr "The video's position, hh:mm:ss"
+
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "The viewers can pause the live broadcast, rewind and jump to an earlier agenda item, and then go back to live. Only what was broadcast publicly can be watched afterwards."
 msgstr "The viewers can pause the live broadcast, rewind and jump to an earlier agenda item, and then go back to live. Only what was broadcast publicly can be watched afterwards."
@@ -3626,6 +5278,7 @@ msgstr "The viewers see the text over the video until you end the break. A marke
 msgid "The whole draft, with any unpublished changes, in the original recording's time."
 msgstr "The whole draft, with any unpublished changes, in the original recording's time."
 
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/ExportImportDialog.tsx
 #: src/views/projects/OndemandView.tsx
 msgid "The whole recording"
@@ -3635,9 +5288,14 @@ msgstr "The whole recording"
 msgid "The whole transcription as running text under agenda items and speakers, without timestamps. The document says whether the text is an unreviewed draft or approved."
 msgstr "The whole transcription as running text under agenda items and speakers, without timestamps. The document says whether the text is an unreviewed draft or approved."
 
+#: src/views/projects/chapterExport.ts
 #: src/views/projects/ExportImportDialog.tsx
 msgid "There are no chapters to export."
 msgstr "There are no chapters to export."
+
+#: src/components/ShareDialog.tsx
+msgid "There are no finished downloads to share. Prepare a download first; the file is kept for 7 days."
+msgstr "There are no finished downloads to share. Prepare a download first; the file is kept for 7 days."
 
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "There are no other projects to get a layout from."
@@ -3647,13 +5305,40 @@ msgstr "There are no other projects to get a layout from."
 msgid "There are no published captions. Create and approve them under Video and captions."
 msgstr "There are no published captions. Create and approve them under Video and captions."
 
+#. placeholder {0}: seconds(pendingInfo.gapSeconds)
+#. placeholder {1}: seconds(pendingInfo.durationSeconds)
+#: src/views/projects/CaptionEditor.tsx
+msgid "There is a {0} s pause between the lines. If you merge them, the whole text is shown during the pause, as one line of {1} s."
+msgstr "There is a {0} s pause between the lines. If you merge them, the whole text is shown during the pause, as one line of {1} s."
+
 #: src/views/projects/exportImportLogic.ts
 msgid "There is no caption draft."
 msgstr "There is no caption draft."
 
+#: src/views/projects/captionEditOps.ts
+msgid "There is no line after this one to move words to."
+msgstr "There is no line after this one to move words to."
+
+#: src/views/projects/captionEditOps.ts
+msgid "There is no line before this one to move words to."
+msgstr "There is no line before this one to move words to."
+
+#: src/views/projects/captionEditOps.ts
+#: src/views/projects/CaptionEditor.tsx
+msgid "There is no line to merge with."
+msgstr "There is no line to merge with."
+
+#: src/views/projects/captionEditOps.ts
+msgid "There is no previous line."
+msgstr "There is no previous line."
+
 #: src/views/projects/exportImportLogic.ts
 msgid "There is no video to download."
 msgstr "There is no video to download."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "This draft was created in an older way and cannot be edited here. Create new captions in the captions panel."
+msgstr "This draft was created in an older way and cannot be edited here. Create new captions in the captions panel."
 
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "This is replaced:"
@@ -3675,6 +5360,11 @@ msgstr "This version is published. The chapter list is frozen and no longer foll
 msgid "Time"
 msgstr "Time"
 
+#. placeholder {0}: formatHms(Math.round(currentTime))
+#: src/views/projects/CaptionEditor.tsx
+msgid "Time here · {0}"
+msgstr "Time here · {0}"
+
 #: src/views/projects/ProjectHeader.tsx
 msgid "Title"
 msgstr "Title"
@@ -3693,6 +5383,14 @@ msgstr "today"
 #: src/views/trash/TrashView.tsx
 msgid "tomorrow"
 msgstr "tomorrow"
+
+#: src/app/shareRecipients.ts
+msgid "too many emails to the address in the last hour"
+msgstr "too many emails to the address in the last hour"
+
+#: src/components/importTextLogic.ts
+msgid "Too many lines ({lines}, at most {IMPORT_MAX_LINES})."
+msgstr "Too many lines ({lines}, at most {IMPORT_MAX_LINES})."
 
 #: src/views/projects/layoutInherit.ts
 #: src/views/projects/playerSettings.ts
@@ -3729,21 +5427,53 @@ msgstr "Trimmed · {duration}"
 msgid "Trimmed but not published. Publishing happens in the project's on-demand tab."
 msgstr "Trimmed but not published. Publishing happens in the project's on-demand tab."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Trimming"
+msgstr "Trimming"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Trimming (locked)"
+msgstr "Trimming (locked)"
+
 #: src/app/SharedDownloadsView.tsx
+#: src/views/projects/CaptionEditor.tsx
+#: src/views/projects/captionEntryLogic.ts
+#: src/views/projects/speakersLogic.ts
 msgid "Try again"
 msgstr "Try again"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Turn on the sound"
+msgstr "Turn on the sound"
 
 #: src/views/trash/TrashView.tsx
 msgid "Type"
 msgstr "Type"
 
+#: src/views/projects/ChapterSyncTools.tsx
+msgid "Undo previous"
+msgstr "Undo previous"
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "ungap Chapters (.json)"
 msgstr "ungap Chapters (.json)"
 
+#: src/views/projects/CaptionStudio.tsx
+#: src/views/projects/speakersLogic.ts
+msgid "unknown error."
+msgstr "unknown error."
+
 #: src/app/jobActions.ts
 msgid "unknown recording"
 msgstr "unknown recording"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Unlock all"
+msgstr "Unlock all"
+
+#: src/views/projects/WordReviewBar.tsx
+msgid "Unlock the box"
+msgstr "Unlock the box"
 
 #: src/views/projects/projectMode.ts
 msgid "Unpublish"
@@ -3760,6 +5490,15 @@ msgstr "Unpublished changes"
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "Unsaved changes in the player settings are lost."
 msgstr "Unsaved changes in the player settings are lost."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Unsynced chapters"
+msgstr "Unsynced chapters"
+
+#. placeholder {0}: unplacedChapters.length
+#: src/views/projects/CaptionEditor.tsx
+msgid "Unsynced chapters ({0})"
+msgstr "Unsynced chapters ({0})"
 
 #: src/views/projects/forkLogic.ts
 msgid "Until now"
@@ -3855,6 +5594,25 @@ msgstr "User details"
 msgid "Users"
 msgstr "Users"
 
+#: src/components/CopyField.tsx
+msgid "value"
+msgstr "value"
+
+#. placeholder {0}: master.version
+#: src/views/projects/CaptionEditor.tsx
+msgid "version {0}"
+msgstr "version {0}"
+
+#. placeholder {0}: item.version
+#: src/views/projects/WordImportDialog.tsx
+msgid "Version {0}"
+msgstr "Version {0}"
+
+#: src/views/projects/WordImportDialog.tsx
+msgid "Version to compare against"
+msgstr "Version to compare against"
+
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/ExportImportDialog.tsx
 #: src/views/projects/OndemandView.tsx
 msgid "Video"
@@ -3908,6 +5666,10 @@ msgstr "Wait until the recording is done before you trim and publish on demand."
 msgid "Wait until the transfer is done"
 msgstr "Wait until the transfer is done"
 
+#: src/components/Modal.tsx
+msgid "Wait until the transfer is finished"
+msgstr "Wait until the transfer is finished"
+
 #: src/views/projects/PublishProgressDialog.tsx
 msgid "Waiting"
 msgstr "Waiting"
@@ -3919,6 +5681,10 @@ msgstr "Waiting for signal"
 #: src/views/projects/liveStatus.ts
 msgid "Waiting for the encoder to stop"
 msgstr "Waiting for the encoder to stop"
+
+#: src/views/projects/CaptionWaveform.tsx
+msgid "Waveform of the audio. Click to jump in the video, drag a boundary to move it."
+msgstr "Waveform of the audio. Click to jump in the video, drag a boundary to move it."
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "WebVTT chapters (.vtt)"
@@ -3948,6 +5714,18 @@ msgstr "What do you want to export"
 msgid "What do you want to import"
 msgstr "What do you want to import"
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Which part of the video should the manuscript cover? You can import the corrected manuscript here again whatever you choose."
+msgstr "Which part of the video should the manuscript cover? You can import the corrected manuscript here again whatever you choose."
+
+#: src/views/projects/WordImportDialog.tsx
+msgid "Word file (.docx)"
+msgstr "Word file (.docx)"
+
+#: src/views/projects/CorrectionsPanel.tsx
+msgid "Words you replace in the text are shown here, until you have saved."
+msgstr "Words you replace in the text are shown here, until you have saved."
+
 #: src/views/users/UsersView.tsx
 msgid "Works operationally within their domain."
 msgstr "Works operationally within their domain."
@@ -3964,13 +5742,34 @@ msgstr "Yes, play out events"
 msgid "You can link or change the agenda and name list at any time in the project."
 msgstr "You can link or change the agenda and name list at any time in the project."
 
+#: src/views/projects/WordImportDialog.tsx
+msgid "You can use Track Changes in Word. All tracked changes are read as if you had accepted them."
+msgstr "You can use Track Changes in Word. All tracked changes are read as if you had accepted them."
+
+#: src/views/projects/WordImportDialog.tsx
+msgid "You have unsaved changes. Save or undo them first."
+msgstr "You have unsaved changes. Save or undo them first."
+
 #: src/app/CredentialLinkView.tsx
 msgid "Your account is activated"
 msgstr "Your account is activated"
 
+#. placeholder {0}: own.length
+#: src/views/projects/CorrectionsPanel.tsx
+msgid "Your corrections ({0})"
+msgstr "Your corrections ({0})"
+
 #: src/app/CredentialLinkView.tsx
 msgid "Your new PIN"
 msgstr "Your new PIN"
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Your own caption file becomes the captions' draft."
+msgstr "Your own caption file becomes the captions' draft."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Your own caption file replaces the working version (the old one remains in the version history)."
+msgstr "Your own caption file replaces the working version (the old one remains in the version history)."
 
 #: src/app/CredentialLinkView.tsx
 msgid "Your personal PIN:"
@@ -3980,6 +5779,18 @@ msgstr "Your personal PIN:"
 msgid "Your session has expired. Log in again and you will continue where you were."
 msgstr "Your session has expired. Log in again and you will continue where you were."
 
+#: src/views/projects/CaptionEditor.tsx
+msgid "Your unsaved changes are saved first."
+msgstr "Your unsaved changes are saved first."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Your unsaved changes in chapters and trim are saved first."
+msgstr "Your unsaved changes in chapters and trim are saved first."
+
+#: src/views/projects/CaptionEditor.tsx
+msgid "Your unsaved changes in the captions will be lost."
+msgstr "Your unsaved changes in the captions will be lost."
+
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "Your user has no domain."
 msgstr "Your user has no domain."
@@ -3987,3 +5798,8 @@ msgstr "Your user has no domain."
 #: src/views/projects/ExportImportDialog.tsx
 msgid "YouTube chapters"
 msgstr "YouTube chapters"
+
+#. placeholder {0}: kept.length
+#: src/views/projects/chapterExport.ts
+msgid "YouTube requires at least {YOUTUBE_MIN_CHAPTERS} chapters. The list has {0}."
+msgstr "YouTube requires at least {YOUTUBE_MIN_CHAPTERS} chapters. The list has {0}."

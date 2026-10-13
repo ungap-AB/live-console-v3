@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { formatHms } from '../app/time'
 import { DEFAULT_MIN_KEEP_SECONDS, fraction, type TrimRange } from './trimBarLogic'
 import { setBoundaryHere } from './trimPositionLogic'
@@ -41,8 +42,8 @@ export function PositionScrubber({ position, duration, start, end, minKeep = DEF
           <button
             class="pscrub-ring pscrub-ring-start"
             type="button"
-            title="Start här"
-            aria-label="Start här: börja ondemand vid videons position"
+            title={t({ message: 'Start here', context: 'on-demand start' })}
+            aria-label={t`Start here: start on-demand at the video's position`}
             disabled={disabled || locked}
             onClick={() => setHere('start')}
           >
@@ -54,8 +55,8 @@ export function PositionScrubber({ position, duration, start, end, minKeep = DEF
           <button
             class="pscrub-ring pscrub-ring-end"
             type="button"
-            title="Slut här"
-            aria-label="Slut här: sluta ondemand vid videons position"
+            title={t`End here`}
+            aria-label={t`End here: end on-demand at the video's position`}
             disabled={disabled || locked}
             onClick={() => setHere('end')}
           >
@@ -74,7 +75,7 @@ export function PositionScrubber({ position, duration, start, end, minKeep = DEF
         step={1}
         value={position}
         disabled={disabled}
-        aria-label="Videons position"
+        aria-label={t`The video's position`}
         aria-valuetext={formatHms(position)}
         onInput={(event) => onSeek(Number((event.currentTarget as HTMLInputElement).value))}
       />

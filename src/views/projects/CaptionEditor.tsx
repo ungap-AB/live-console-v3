@@ -1,3 +1,4 @@
+import { plural, t } from '@lingui/core/macro'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { notifyJobsChanged } from '../../app/jobsBus'
 import { shouldCaptureTab, shouldTogglePlayback, spaceAction, spaceTargetKind, tabOriginIndex, tabTargetIndex, tabTargetKind } from './captionKeysLogic'
@@ -323,7 +324,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       setSaveError('')
       setNotice('')
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : 'Undertexterna kunde inte hämtas.')
+      setLoadError(err instanceof Error ? err.message : t`The captions could not be fetched.`)
     }
   }
 
@@ -428,7 +429,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
     const video = videoElement
     if (!video || !hlsUrl) return
     if (!isPlayerSupported) {
-      setVideoError('Videospelaren kan inte köras i den här webbläsaren.')
+      setVideoError(t`The video player cannot run in this browser.`)
       return
     }
     const player = create({ wasmWorker, wasmBinary })
@@ -752,7 +753,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   // ligger kvar; bara listan med ej synkade kapitel läses om.
   async function addUntimedChapter() {
     if (readOnly) return
-    const label = addLabel.trim() || (addKind === 'agendaItem' ? 'Ny punkt' : 'Ny person')
+    const label = addLabel.trim() || (addKind === 'agendaItem' ? t`New item` : t`New person`)
     setChapterBusy(true)
     setSaveError('')
     try {
@@ -763,7 +764,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       setAddChapterOpen(false)
     } catch (err) {
       if (isConflict(err)) void markConflict()
-      else setSaveError(err instanceof Error ? err.message : 'Kapitlet kunde inte läggas till.')
+      else setSaveError(err instanceof Error ? err.message : t`The chapter could not be added.`)
     } finally {
       setChapterBusy(false)
     }
@@ -801,7 +802,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
     if (review) {
       const next = nextReviewIndex(reviewIndexes(cues, review), origin, backwards)
       if (next === null) {
-        setNotice(backwards ? 'Ingen ändrad ruta före den här.' : 'Ingen ändrad ruta efter den här.')
+        setNotice(backwards ? t`No changed box before this one.` : t`No changed box after this one.`)
         focusRow(Math.min(cues.length - 1, Math.max(0, origin)))
       } else {
         setNotice('')
@@ -858,9 +859,9 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
     try {
       const blob = await client.projects.exportManuscriptDocx(projectId, scope)
       saveFile(exportFileName(projectName, 'manus', 'docx'), blob, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-      setNotice(dirty ? 'Manuset är gjort av den sparade versionen. Dina osparade ändringar ingår inte.' : '')
+      setNotice(dirty ? t`The manuscript is made from the saved version. Your unsaved changes are not included.` : '')
     } catch (err) {
-      setNotice(err instanceof Error ? err.message : 'Manuset kunde inte skapas.')
+      setNotice(err instanceof Error ? err.message : t`The manuscript could not be created.`)
     } finally {
       setExporting(false)
     }
@@ -869,7 +870,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   function startWordReview(result: WordImportResult) {
     if (!master || result.currentVersion !== master.version) {
       setWordDialog(null)
-      setNotice('Undertexterna har ändrats under inläsningen. Läs in filen igen.')
+      setNotice(t`The captions were changed during the import. Import the file again.`)
       return
     }
     const built = buildReview(result, newId)
@@ -906,7 +907,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   function startMerge(firstIndex: number) {
     const info = mergeInfo(cues, firstIndex)
     if (!info) {
-      setNotice('Det finns ingen replik att slå ihop med.')
+      setNotice(t`There is no line to merge with.`)
       return
     }
     if (info.fits && info.gapSeconds > LONG_GAP_SECONDS) setPendingMerge(firstIndex)
@@ -1048,7 +1049,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       return next
     } catch (err) {
       if (isConflict(err)) void markConflict()
-      else setSaveError(err instanceof Error ? err.message : 'Undertexterna kunde inte sparas.')
+      else setSaveError(err instanceof Error ? err.message : t`The captions could not be saved.`)
       return null
     } finally {
       setSaving(false)
@@ -1081,7 +1082,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       return true
     } catch (err) {
       if (isConflict(err)) void markConflict()
-      else setSaveError(err instanceof Error ? err.message : 'Kapitlen kunde inte sparas.')
+      else setSaveError(err instanceof Error ? err.message : t`The chapters could not be saved.`)
       try {
         setSavedChapters(positionedChapters(await client.projects.chapters(projectId)))
       } catch {
@@ -1106,7 +1107,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       return true
     } catch (err) {
       if (isConflict(err)) void markConflict()
-      else setSaveError(err instanceof Error ? err.message : 'Trimningen kunde inte sparas.')
+      else setSaveError(err instanceof Error ? err.message : t`The trimming could not be saved.`)
       return false
     } finally {
       setSaving(false)
@@ -1172,8 +1173,8 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
     let outside = 0
     const ok = await chapterOp(async () => {
       outside = (await client.projects.syncChapters(projectId, anchorId, offsetSeconds, draftRevision.current)).outsideVideo
-    }, 'Förankringen misslyckades.')
-    if (ok && outside > 0) setNotice(`${outside} kapitel hamnade utanför videon och är dolda tills de ryms. Justera ankaret eller ta bort dem.`)
+    }, t`The anchoring failed.`)
+    if (ok && outside > 0) setNotice(plural(outside, { one: '# chapter ended up outside the video and is hidden until it fits. Adjust the anchor or remove it.', other: '# chapters ended up outside the video and are hidden until they fit. Adjust the anchor or remove them.' }))
     return ok
   }
 
@@ -1190,7 +1191,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   }
 
   async function confirmAnchor() {
-    if (await chapterOp(() => client.projects.confirmChapterSync(projectId, draftRevision.current), 'Bekräftelsen misslyckades.')) setGuide(null)
+    if (await chapterOp(() => client.projects.confirmChapterSync(projectId, draftRevision.current), t`The confirmation failed.`)) setGuide(null)
   }
 
   async function openChapterImport() {
@@ -1210,7 +1211,8 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
     setHistory(emptyHistory())
     await refreshRevision()
     onChaptersSaved?.()
-    if (result.outsideVideo > 0) setNotice(`${result.outsideVideo} kapitel låg efter videons slut och har ingen tid än.`)
+    const outside = result.outsideVideo
+    if (outside > 0) setNotice(plural(outside, { one: '# chapter was after the end of the video and has no time yet.', other: '# chapters were after the end of the video and have no time yet.' }))
   }
 
   async function refreshStatus() {
@@ -1262,7 +1264,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       notifyJobsChanged()
       onRegenerated?.(generation)
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Det gick inte att starta undertextningen.')
+      setSaveError(err instanceof Error ? err.message : t`The captioning could not be started.`)
     } finally {
       setRegenerating(false)
     }
@@ -1287,8 +1289,8 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       onSaved?.()
     } catch (err) {
       setVttError(isConflict(err)
-        ? 'Utkastet har ändrats av någon annan. Stäng, ladda om och försök igen.'
-        : err instanceof Error ? err.message : 'Filen kunde inte läsas in.')
+        ? t`The draft has been changed by someone else. Close, reload and try again.`
+        : err instanceof Error ? err.message : t`The file could not be imported.`)
     } finally {
       setCaptionsBusy(false)
     }
@@ -1306,8 +1308,8 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       await refreshDraftInfo()
       onSaved?.()
     } catch (err) {
-      if (isConflict(err)) setSaveError('Utkastet har ändrats av någon annan. Ladda om och försök igen.')
-      else setSaveError(err instanceof Error ? err.message : 'Undertexterna kunde inte tas bort.')
+      if (isConflict(err)) setSaveError(t`The draft has been changed by someone else. Reload and try again.`)
+      else setSaveError(err instanceof Error ? err.message : t`The captions could not be removed.`)
     } finally {
       setCaptionsBusy(false)
     }
@@ -1331,7 +1333,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       onChaptersSaved?.()
     } catch (err) {
       if (isConflict(err)) void markConflict()
-      else setSaveError(err instanceof Error ? err.message : 'Ändringarna kunde inte publiceras.')
+      else setSaveError(err instanceof Error ? err.message : t`The changes could not be published.`)
     } finally {
       setPublishing(false)
     }
@@ -1355,7 +1357,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       onChaptersSaved?.()
     } catch (err) {
       if (isConflict(err)) void markConflict()
-      else setSaveError(err instanceof Error ? err.message : 'Ändringarna kunde inte förkastas.')
+      else setSaveError(err instanceof Error ? err.message : t`The changes could not be discarded.`)
     } finally {
       setPublishing(false)
     }
@@ -1406,7 +1408,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       setDraftStatus(status)
       setRetry(action)
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Det gick inte att läsa det senaste utkastet.')
+      setSaveError(err instanceof Error ? err.message : t`The latest draft could not be read.`)
     }
   }
 
@@ -1422,7 +1424,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   // UNG-247: avpubliceringen görs i ondemand-vyn (med dess bekräftelse), så redigeraren stängs först. Osparat måste sparas eller ångras.
   function unpublish() {
     if (dirty) {
-      setNotice('Spara eller ångra dina ändringar innan du avpublicerar.')
+      setNotice(t`Save or undo your changes before you unpublish.`)
       return
     }
     onClose()
@@ -1584,7 +1586,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
             type="button"
             tabIndex={-1}
             aria-expanded={group.toggle.open}
-            aria-label={`${group.toggle.open ? 'Dölj' : 'Visa'} talarna under ${chapter.label}`}
+            aria-label={group.toggle.open ? t`Hide the speakers under ${chapter.label}` : t`Show the speakers under ${chapter.label}`}
             onClick={group.toggle.onToggle}
           >
             <Icon name={group.toggle.open ? 'expand_more' : 'chevron_right'} size={18} />
@@ -1599,7 +1601,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
               class="ce-chrow-input"
               type="text"
               value={chapterDraft}
-              aria-label="Kapitlets namn"
+              aria-label={t`Chapter name`}
               ref={(element) => { if (element && !chapterEditFinished.current) element.focus() }}
               onInput={(event) => setChapterDraft(event.currentTarget.value)}
               onBlur={() => finishChapterEdit(true)}
@@ -1624,14 +1626,14 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
           class="ce-time"
           type="button"
           tabIndex={-1}
-          aria-label={`Spela från kapitlet ${chapter.label}`}
+          aria-label={t`Play from the chapter ${chapter.label}`}
           onClick={() => seekTo(chapter.time, true)}
         >
           {formatCueTime(shownTime)}
         </button>
         {!readOnly ? (
           <div class="ce-row-actions">
-            <button class="ce-icon" type="button" tabIndex={-1} aria-label={`Sätt ${chapter.label} till videons position`} onClick={() => chapterHere(chapter.id)}>
+            <button class="ce-icon" type="button" tabIndex={-1} aria-label={t`Set ${chapter.label} to the video's position`} onClick={() => chapterHere(chapter.id)}>
               <Icon name="my_location" size={16} />
             </button>
             <button class="ce-icon" type="button" tabIndex={-1} aria-label={`Ta bort ${chapter.label}`} onClick={() => chapterDelete(chapter.id)}>
@@ -1660,13 +1662,13 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   const pendingInfo = pendingMerge === null ? null : mergeInfo(cues, pendingMerge)
 
   return (
-    <div class="ce-scrim" role={background ? undefined : 'dialog'} aria-modal={background ? undefined : 'true'} aria-label="Redigera projekt" aria-hidden={background ? 'true' : undefined} inert={background}>
+    <div class="ce-scrim" role={background ? undefined : 'dialog'} aria-modal={background ? undefined : 'true'} aria-label={t`Edit project`} aria-hidden={background ? 'true' : undefined} inert={background}>
       <header class="ce-head">
         <div class="ce-title">
-          <h2>Redigera projekt</h2>
+          <h2>{t`Edit project`}</h2>
           <div class="ce-sub">
             {projectName}
-            {master && hasCaptions && <> · version {master.version}{master.updatedByName ? ` (${master.updatedByName})` : ''}</>}
+            {master && hasCaptions && <> · {t`version ${master.version}`}{master.updatedByName ? ` (${master.updatedByName})` : ''}</>}
           </div>
         </div>
         <div class="ce-actions">
@@ -1675,24 +1677,24 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
               class="btn btn-sm"
               type="button"
               disabled={!master || readOnly || saving || publishing || regenerating || !canRegenerate}
-              title={canRegenerate ? 'Skapar undertexter automatiskt från ljudet' : 'Undertexter går inte att skapa automatiskt för den här videon'}
+              title={canRegenerate ? t`Creates captions automatically from the audio` : t`Captions cannot be created automatically for this video`}
               onClick={() => setConfirmRegenerate(true)}
             >
-              {regenerating ? 'Startar…' : 'Skapa undertexter'}
+              {regenerating ? t`Starting…` : t`Create captions`}
             </button>
           )}
-          <button class="btn btn-sm ce-save" type="button" disabled={!dirty || saving || publishing || readOnly} title={dirty ? `${changeCount} osparade ändringar` : 'Allt är sparat'} onClick={() => void save()}>
-            {saving ? 'Sparar…' : 'Spara'}
+          <button class="btn btn-sm ce-save" type="button" disabled={!dirty || saving || publishing || readOnly} title={dirty ? plural(changeCount, { one: '# unsaved change', other: '# unsaved changes' }) : t`Everything is saved`} onClick={() => void save()}>
+            {saving ? t`Saving…` : t`Save`}
           </button>
           {actions.showDiscard && (
             <button
               class="btn btn-sm"
               type="button"
               disabled={!actions.discardEnabled}
-              title="Går tillbaka till det som är publicerat (undertexter och kapitel)"
+              title={t`Goes back to what is published (captions and chapters)`}
               onClick={() => setConfirmDiscard(true)}
             >
-              Förkasta ändringar
+              {t`Discard changes`}
             </button>
           )}
           {actions.showPublishChanges && (
@@ -1700,13 +1702,13 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
               class="btn btn-sm btn-primary"
               type="button"
               disabled={!actions.publishChangesEnabled}
-              title={actions.publishChangesEnabled ? 'Sparar och släpper ändringarna i kapitel och undertexter för tittarna' : 'Inga opublicerade ändringar'}
+              title={actions.publishChangesEnabled ? t`Saves and releases the changes in chapters and captions to the viewers` : t`No unpublished changes`}
               onClick={() => setConfirmPublish(true)}
             >
-              {publishing ? 'Publicerar…' : 'Publicera ändringar'}
+              {publishing ? t`Publishing…` : t`Publish changes`}
             </button>
           )}
-          <button class="btn btn-sm" type="button" title="Stäng redigeraren (Esc)" onClick={requestClose}>Stäng</button>
+          <button class="btn btn-sm" type="button" title={t`Close the editor (Esc)`} onClick={requestClose}>{t`Close`}</button>
         </div>
       </header>
 
@@ -1715,27 +1717,27 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       {loadError && (
         <div key="load-error" class="ce-banner ce-error" role="alert">
           {loadError}
-          <button class="btn btn-sm" type="button" onClick={() => void load()}>Försök igen</button>
+          <button class="btn btn-sm" type="button" onClick={() => void load()}>{t`Try again`}</button>
         </div>
       )}
       {readOnly && (
         <div key="read-only" class="ce-banner ce-warn" role="alert">
-          Det här utkastet är skapat på ett äldre sätt och går inte att redigera här. Skapa nya undertexter i undertextpanelen.
+          {t`This draft was created in an older way and cannot be edited here. Create new captions in the captions panel.`}
         </div>
       )}
       {saveError && <div key="save-error" class="ce-banner ce-error" role="alert">{saveError}</div>}
       {createFailed && !hasCaptions && (
-        <div key="create-failed" class="ce-banner ce-error" role="alert">Undertexterna kunde inte skapas: {createFailed} Försök igen med Skapa undertexter.</div>
+        <div key="create-failed" class="ce-banner ce-error" role="alert">{t`The captions could not be created: ${createFailed} Try again with Create captions.`}</div>
       )}
       {uncovered && <div key="uncovered" class="ce-banner ce-warn" role="status">{uncovered}</div>}
       {notice && (
         <div key="notice" class="ce-banner ce-warn ce-notice" role="status">
           {notice}
-          <button class="ib" type="button" aria-label="Stäng meddelandet" onClick={() => setNotice('')}>✕</button>
+          <button class="ib" type="button" aria-label={t`Close the message`} onClick={() => setNotice('')}>✕</button>
         </div>
       )}
 
-      {!master && !loadError && <div key="loading" class="ce-loading">Hämtar…</div>}
+      {!master && !loadError && <div key="loading" class="ce-loading">{t`Fetching…`}</div>}
 
       {review && (
         <WordReviewBar
@@ -1757,7 +1759,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
 
       {master && (
         <div key="body" class="ce-body">
-          <section class="ce-video" aria-label="Video">
+          <section class="ce-video" aria-label={t`Video`}>
             <div class="ce-stage">
               <video key="video" ref={videoRefCallback} controls playsInline preload="metadata" onPointerDown={() => setAnchor(null)} onKeyDown={() => setAnchor(null)} />
               {activeCue && <div key="overlay" class="ce-overlay" aria-hidden="true">{activeCue.text}</div>}
@@ -1789,14 +1791,14 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                   }}
                 >
                   <Icon name="volume_up" size={18} />
-                  Slå på ljudet
+                  {t`Turn on the sound`}
                 </button>
               )}
             </div>
             {videoError && <p class="ce-error-text" role="alert">{videoError}</p>}
 
             {showTrim && trim && (
-              <div key="trim" class="ce-trim" aria-label="Trimning">
+              <div key="trim" class="ce-trim" aria-label={t`Trimming`}>
                 <PositionScrubber
                   position={currentTime}
                   duration={trimDuration}
@@ -1823,7 +1825,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
             )}
 
             {showLockedTrim && lockedRange && (
-              <div key="trim-locked" class="ce-trim" aria-label="Trimning (låst)">
+              <div key="trim-locked" class="ce-trim" aria-label={t`Trimming (locked)`}>
                 <PositionScrubber
                   position={currentTime}
                   duration={trimDuration}
@@ -1849,22 +1851,22 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                   onPlayEnd={() => seekTo(playEndFrom(lockedRange.start, lockedRange.end), true)}
                 />
                 <p class="ce-trim-locked">
-                  Trimningen är låst när projektet är publicerat. Avpublicera för att ändra den.
+                  {t`The trimming is locked when the project is published. Unpublish to change it.`}
                   <button class="btn btn-sm" type="button" onClick={unpublish}>Avpublicera</button>
                 </p>
               </div>
             )}
 
             {toolsEnabled && (
-              <div key="chapter-tools" class="ce-chaptertools" aria-label="Kapitelverktyg">
+              <div key="chapter-tools" class="ce-chaptertools" aria-label={t`Chapter tools`}>
                 {anchorToolsVisible && !guide && (
                   <div class="od-sync-status">
                     <span>
                       {syncState === 'pending'
-                        ? 'Förankringen är inte bekräftad. Publicering är spärrad.'
+                        ? t`The anchoring is not confirmed. Publishing is blocked.`
                         : syncState === 'confirmed'
-                          ? 'Kapitlen är förankrade mot videon.'
-                          : 'Kapitlen från sändningen är inte förankrade mot videon.'}
+                          ? t`The chapters are anchored to the video.`
+                          : t`The chapters from the broadcast are not anchored to the video.`}
                     </span>
                     <button
                       class="btn btn-sm"
@@ -1874,7 +1876,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                         ? { step: 3, anchorId: serverChapters.find((chapter) => chapter.anchor)?.chapterId ?? null }
                         : { step: 1, anchorId: null })}
                     >
-                      {syncState === 'pending' ? 'Fortsätt' : 'Förankra kapitel'}
+                      {syncState === 'pending' ? t`Continue` : t`Anchor chapters`}
                     </button>
                   </div>
                 )}
@@ -1900,33 +1902,33 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                 )}
                 {/* Alltid synlig: importerade kapitel utan tid och nya rader (+) parkeras här och synkas med Tid här. */}
                 {(
-                  <div class="ce-unplaced" role="group" aria-label="Ej synkade kapitel">
+                  <div class="ce-unplaced" role="group" aria-label={t`Unsynced chapters`}>
                     <div class="ce-unplaced-head">
-                      <h3 class="ce-side-title">Ej synkade kapitel ({unplacedChapters.length})</h3>
+                      <h3 class="ce-side-title">{t`Unsynced chapters (${unplacedChapters.length})`}</h3>
                       {!readOnly && (
                         <button
                           class="btn btn-sm"
                           type="button"
                           aria-expanded={addChapterOpen}
-                          title="Lägger till ett nytt kapitel utan tid, att synka med Tid här"
+                          title={t`Adds a new chapter without a time, to sync with Time here`}
                           onClick={() => setAddChapterOpen(!addChapterOpen)}
                         >
-                          <Icon name="add" size={16} /> Kapitel
+                          <Icon name="add" size={16} /> {t`Chapter`}
                         </button>
                       )}
                     </div>
                     {addChapterOpen && !readOnly && (
                       <div class="ce-addchapter">
-                        <div class="ce-addchapter-kind" role="group" aria-label="Typ av kapitel">
-                          <button class={`ce-chip${addKind === 'agendaItem' ? ' is-on' : ''}`} type="button" aria-pressed={addKind === 'agendaItem'} onClick={() => setAddKind('agendaItem')}>Punkt</button>
-                          <button class={`ce-chip${addKind === 'person' ? ' is-on' : ''}`} type="button" aria-pressed={addKind === 'person'} onClick={() => setAddKind('person')}>Person</button>
+                        <div class="ce-addchapter-kind" role="group" aria-label={t`Chapter type`}>
+                          <button class={`ce-chip${addKind === 'agendaItem' ? ' is-on' : ''}`} type="button" aria-pressed={addKind === 'agendaItem'} onClick={() => setAddKind('agendaItem')}>{t`Item`}</button>
+                          <button class={`ce-chip${addKind === 'person' ? ' is-on' : ''}`} type="button" aria-pressed={addKind === 'person'} onClick={() => setAddKind('person')}>{t`Person`}</button>
                         </div>
                         <input
                           class="ce-addchapter-name"
                           type="text"
                           value={addLabel}
-                          placeholder={addKind === 'agendaItem' ? 'Namn på punkten' : 'Personens namn'}
-                          aria-label="Kapitlets namn"
+                          placeholder={addKind === 'agendaItem' ? t`Name of the item` : t`The person's name`}
+                          aria-label={t`Chapter name`}
                           onInput={(event) => setAddLabel(event.currentTarget.value)}
                           onKeyDown={(event) => {
                             if (event.key === 'Enter') {
@@ -1939,11 +1941,11 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                             }
                           }}
                         />
-                        <button class="btn btn-sm btn-primary" type="button" disabled={chapterBusy} onClick={() => void addUntimedChapter()}>Lägg till</button>
-                        <button class="btn btn-sm" type="button" onClick={() => setAddChapterOpen(false)}>Avbryt</button>
+                        <button class="btn btn-sm btn-primary" type="button" disabled={chapterBusy} onClick={() => void addUntimedChapter()}>{t`Add`}</button>
+                        <button class="btn btn-sm" type="button" onClick={() => setAddChapterOpen(false)}>{t`Cancel`}</button>
                       </div>
                     )}
-                    {unplacedChapters.length === 0 && !addChapterOpen && <p class="ce-unplaced-empty">Inga. Importera med Kapitel… eller lägg till med +.</p>}
+                    {unplacedChapters.length === 0 && !addChapterOpen && <p class="ce-unplaced-empty">{t`None. Import with Chapters… or add with +.`}</p>}
                     <ul>
                       {unplacedChapters.map((chapter) => (
                         <li key={chapter.chapterId}>
@@ -1954,13 +1956,13 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                               class="btn btn-sm"
                               type="button"
                               disabled={chapterBusy || readOnly}
-                              title="Sätter kapitlets tid till videons position (sparas med Spara)"
+                              title={t`Sets the chapter's time to the video's position (saved with Save)`}
                               onClick={() => placeChapter(chapter.chapterId)}
                             >
-                              Tid här · {formatHms(Math.round(currentTime))}
+                              {t`Time here · ${formatHms(Math.round(currentTime))}`}
                             </button>
                           ) : (
-                            <span class="ce-unplaced-note">Ej förankrad</span>
+                            <span class="ce-unplaced-note">{t`Not anchored`}</span>
                           )}
                         </li>
                       ))}
@@ -1971,11 +1973,11 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
             )}
 
             {sideTab === 'tools' && selected && (
-              <div class="ce-tools" aria-label="Vald replik">
-                <div class="ce-tools-title">Replik {selectedIndex + 1}: gräns vid {formatCueTime(selected.start)}</div>
+              <div class="ce-tools" aria-label={t`Selected line`}>
+                <div class="ce-tools-title">{t`Line ${selectedIndex + 1}: boundary at ${formatCueTime(selected.start)}`}</div>
                 <div class="ce-tools-row">
-                  <span class="ce-tools-label">Gräns</span>
-                  <button class="btn btn-sm" type="button" disabled={readOnly} title="Flyttar gränsen till videons position (texten stannar där den är)" onClick={() => setBoundaryTime(selectedIndex, playhead())}>Starta här</button>
+                  <span class="ce-tools-label">{t`Boundary`}</span>
+                  <button class="btn btn-sm" type="button" disabled={readOnly} title={t`Moves the boundary to the video's position (the text stays where it is)`} onClick={() => setBoundaryTime(selectedIndex, playhead())}>{t`Start here`}</button>
                   {[-0.5, -0.1, 0.1, 0.5].map((delta) => (
                     <button key={delta} class="btn btn-sm ce-nudge" type="button" disabled={readOnly} onClick={() => setBoundaryTime(selectedIndex, selected.start + delta)}>
                       {delta > 0 ? '+' : '−'}{Math.abs(delta).toString().replace('.', ',')}
@@ -1983,36 +1985,36 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                   ))}
                 </div>
                 <div class="ce-tools-row">
-                  <span class="ce-tools-label">Flytta</span>
+                  <span class="ce-tools-label">{t`Shift`}</span>
                   <input
                     class="ce-shift-input"
                     type="text"
                     inputMode="decimal"
-                    aria-label="Förskjutning i sekunder"
+                    aria-label={t`Offset in seconds`}
                     value={shiftInput}
                     onInput={(event) => setShiftInput(event.currentTarget.value)}
                   />
                   <span class="ce-unit">s</span>
-                  <button class="btn btn-sm" type="button" disabled={readOnly || parsedShift() === null} title="Förskjuter den valda repliken och alla efter den" onClick={() => { const delta = parsedShift(); if (delta !== null) apply(shiftFrom(cues, selectedIndex, delta)) }}>
-                    Vald och alla efter
+                  <button class="btn btn-sm" type="button" disabled={readOnly || parsedShift() === null} title={t`Shifts the selected line and all after it`} onClick={() => { const delta = parsedShift(); if (delta !== null) apply(shiftFrom(cues, selectedIndex, delta)) }}>
+                    {t`Selected and all after`}
                   </button>
-                  <button class="btn btn-sm" type="button" disabled={readOnly || parsedShift() === null} title="Förskjuter alla repliker" onClick={() => { const delta = parsedShift(); if (delta !== null) apply(shiftFrom(cues, 0, delta)) }}>
-                    Alla
+                  <button class="btn btn-sm" type="button" disabled={readOnly || parsedShift() === null} title={t`Shifts all lines`} onClick={() => { const delta = parsedShift(); if (delta !== null) apply(shiftFrom(cues, 0, delta)) }}>
+                    {t`All`}
                   </button>
                 </div>
                 <div class="ce-tools-row">
-                  <button class="btn btn-sm" type="button" disabled={readOnly} onClick={() => apply(addCue(cues, playhead(), newId()))}>Lägg till replik här</button>
+                  <button class="btn btn-sm" type="button" disabled={readOnly} onClick={() => apply(addCue(cues, playhead(), newId()))}>{t`Add line here`}</button>
                 </div>
               </div>
             )}
 
           </section>
 
-          <section class="ce-list-wrap" aria-label="Repliker">
+          <section class="ce-list-wrap" aria-label={t`Lines`}>
             <div class="ce-chapterbar">
               <label class="ce-follow">
                 <input type="checkbox" checked={follow} onChange={(event) => setFollow(event.currentTarget.checked)} />
-                Följ med
+                {t`Follow`}
               </label>
               {chapterState === 'ok' && review === null && (
               <>
@@ -2024,13 +2026,13 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                       type="button"
                       aria-pressed={showCues && hasCaptions}
                       disabled={!hasCaptions}
-                      title={hasCaptions ? undefined : 'Projektet har inga undertexter än'}
+                      title={hasCaptions ? undefined : t`The project has no captions yet`}
                       onClick={(event) => {
                         blurAfterMouse(event)
                         if (!showCues || showChapters) changeFilter({ cues: !showCues, chapters: true })
                       }}
                     >
-                      Undertexter · {cues.length}
+                      {t`Captions · ${cues.length}`}
                     </button>
                     <button
                       class={`ce-chip${showChapters || !hasCaptions ? ' is-on' : ''}`}
@@ -2042,7 +2044,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                         if (!showChapters || showCues) changeFilter({ cues: true, chapters: !showChapters })
                       }}
                     >
-                      Kapitel · {chapterList.length}
+                      {t`Chapters · ${chapterList.length}`}
                     </button>
                   </>
                 )}
@@ -2051,13 +2053,13 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                     class="ce-chip"
                     type="button"
                     disabled={saving || chapterBusy}
-                    title="Importerar kapitel från en lista eller dagordningen (ersätter eller lägger till)"
+                    title={t`Imports chapters from a list or the agenda (replaces or adds)`}
                     onClick={(event) => {
                       blurAfterMouse(event)
                       void openChapterImport()
                     }}
                   >
-                    Kapitel…
+                    {t`Chapters…`}
                   </button>
                 )}
                 {!readOnly && (
@@ -2065,13 +2067,13 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                     class="ce-chip"
                     type="button"
                     disabled={!master}
-                    title="Undertextfunktionerna: Word, skapa automatiskt, egen VTT-fil, ta bort"
+                    title={t`The caption functions: Word, create automatically, own VTT file, remove`}
                     onClick={(event) => {
                       blurAfterMouse(event)
                       setShowCaptionTools(true)
                     }}
                   >
-                    Undertext…
+                    {t`Captions…`}
                   </button>
                 )}
               </>
@@ -2081,12 +2083,12 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
               <div class="ce-list-head" aria-hidden="true" style={energy ? { marginLeft: `${WAVEFORM_WIDTH}px` } : undefined}>
                 <span />
                 {/* Kapitlet som spelhuvudet står i ersätter rubriken Text, så att det syns när listan skrollar. */}
-                {topChapters?.agenda ? <span class="ce-list-head-chapter" title={topChapters.agenda.label}>{topChapters.agenda.label}</span> : <span>Text</span>}
-                <span>#</span><span>Start</span><span />
+                {topChapters?.agenda ? <span class="ce-list-head-chapter" title={topChapters.agenda.label}>{topChapters.agenda.label}</span> : <span>{t`Text`}</span>}
+                <span>#</span><span>{t({ message: 'Start', context: 'caption line' })}</span><span />
               </div>
             )}
             {chaptersOnly && chapterList.length === 0 && (
-              <p key="no-chapters" class="ce-empty">Inga kapitel med tid än. Lägg till under Ej synkade kapitel och synka med Tid här.</p>
+              <p key="no-chapters" class="ce-empty">{t`No chapters with a time yet. Add under Unsynced chapters and sync with Time here.`}</p>
             )}
             <div class="ce-list-main">
             {energy && !chaptersOnly && (
@@ -2152,7 +2154,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                   const wordConflict = review !== null && openConflicts(review, cue.id).length > 0
                   const wordFlags = review?.flags.get(cue.id) ?? []
                   const wordRemoved = review?.removedIds.has(cue.id) ?? false
-                  const wordBadgeText = wordConflict ? 'Konflikt' : wordRemoved ? 'Borttagen i Word' : wordChanged ? (wordFlags.includes('split') ? 'Delad' : 'Ändrad i Word') : ''
+                  const wordBadgeText = wordConflict ? t`Conflict` : wordRemoved ? t`Removed in Word` : wordChanged ? (wordFlags.includes('split') ? t`Split` : t`Changed in Word`) : ''
                   const classes = [
                     'ce-row',
                     index === activeIndex ? 'is-active' : '',
@@ -2171,8 +2173,8 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                       <div
                         class="ce-playcol"
                         role="button"
-                        aria-label={index === playIndex && playing ? 'Pausa' : `Välj och spela replik ${index + 1}`}
-                        title={index === playIndex && playing ? 'Pausa' : 'Välj repliken och spela från dess start (klicka igen för paus)'}
+                        aria-label={index === playIndex && playing ? t`Pause` : t`Select and play line ${index + 1}`}
+                        title={index === playIndex && playing ? t`Pause` : t`Select the line and play from its start (click again to pause)`}
                         tabIndex={0}
                         onClick={() => playRow(index)}
                         onKeyDown={(event) => {
@@ -2196,9 +2198,9 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                           rows={3}
                           value={cue.text}
                           readOnly={readOnly || locked}
-                          title={locked ? 'Låst: ändrades inte i Word. Dubbelklicka för att låsa upp.' : undefined}
+                          title={locked ? t`Locked: not changed in Word. Double-click to unlock.` : undefined}
                           onDblClick={locked ? () => updateReview((next) => { next.unlocked.add(cue.id) }) : undefined}
-                          aria-label={`Text för replik ${index + 1}`}
+                          aria-label={t`Text for line ${index + 1}`}
                           onInput={(event) => {
                             // Skrivning är en ändring för sig: utgångsläget sparas första gången något skrivs i rutan.
                             if (focusBase.current?.id !== cue.id) focusBase.current = { id: cue.id, cues }
@@ -2224,24 +2226,24 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                           <span class={`ce-wordbadge${wordConflict ? ' is-conflict' : ''}${wordRemoved ? ' is-removed' : ''}`} aria-label={wordBadgeText}>{wordBadgeText}</span>
                         )}
                         {isLongCue(cue.text) && (
-                          <span class="ce-longcue" role="note" aria-label={`Lång replik, ${cueCharCount(cue.text)} tecken`}>
-                            {cueCharCount(cue.text)} tecken
+                          <span class="ce-longcue" role="note" aria-label={t`Long line, ${cueCharCount(cue.text)} characters`}>
+                            {t`${cueCharCount(cue.text)} characters`}
                           </span>
                         )}
                         {issue?.error && <div class="ce-counters" role="alert"><span class="is-over">{issue.message}</span></div>}
                       </div>
-                      <button class="ce-time ce-num" type="button" title="Spela den här repliken (klicka igen för paus)" onClick={() => playRow(index)}>{index + 1}</button>
+                      <button class="ce-time ce-num" type="button" title={t`Play this line (click again to pause)`} onClick={() => playRow(index)}>{index + 1}</button>
                       <button
                         class="ce-time"
                         type="button"
-                        title={`Spela den här repliken (klicka igen för paus), ${seconds(cue.end - cue.start)} s`}
+                        title={t`Play this line (click again to pause), ${seconds(cue.end - cue.start)} s`}
                         onClick={() => playRow(index)}
                       >
                         {formatCueTime(cue.start)}
                       </button>
                       {!readOnly && !locked && (
                         <div class="ce-row-actions">
-                          <button class="ce-icon" type="button" title="Ta bort repliken" onClick={() => apply(deleteCue(cues, index))}>
+                          <button class="ce-icon" type="button" title={t`Remove the line`} onClick={() => apply(deleteCue(cues, index))}>
                             <Icon name="delete" size={16} />
                           </button>
                         </div>
@@ -2258,8 +2260,8 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
 
       {pendingMerge !== null && pendingInfo && (
         <ConfirmModal
-          title="Slå ihop trots paus?"
-          confirmLabel="Slå ihop ändå"
+          title={t`Merge despite the pause?`}
+          confirmLabel={t`Merge anyway`}
           onCancel={() => setPendingMerge(null)}
           onConfirm={() => {
             const index = pendingMerge
@@ -2268,19 +2270,18 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
           }}
         >
           <p>
-            Det är {seconds(pendingInfo.gapSeconds)} s paus mellan replikerna. Slår du ihop dem visas hela texten under pausen, som en replik på
-            {' '}{seconds(pendingInfo.durationSeconds)} s.
+            {t`There is a ${seconds(pendingInfo.gapSeconds)} s pause between the lines. If you merge them, the whole text is shown during the pause, as one line of ${seconds(pendingInfo.durationSeconds)} s.`}
           </p>
         </ConfirmModal>
       )}
 
       {exportChoice && (
-        <Modal title="Exportera till Word" onClose={() => setExportChoice(false)}>
-          <p>Vilken del av videon ska manuset gälla? Du kan läsa in det rättade manuset här igen oavsett val.</p>
+        <Modal title={t`Export to Word`} onClose={() => setExportChoice(false)}>
+          <p>{t`Which part of the video should the manuscript cover? You can import the corrected manuscript here again whatever you choose.`}</p>
           <div class="modal-actions">
-            <button class="btn btn-sm" type="button" onClick={() => setExportChoice(false)}>Avbryt</button>
-            <button class="btn btn-sm" type="button" onClick={() => void requestWord('whole')}>Hela inspelningen</button>
-            <button class="btn btn-sm btn-primary" type="button" onClick={() => void requestWord('published')}>Publicerad del</button>
+            <button class="btn btn-sm" type="button" onClick={() => setExportChoice(false)}>{t`Cancel`}</button>
+            <button class="btn btn-sm" type="button" onClick={() => void requestWord('whole')}>{t`The whole recording`}</button>
+            <button class="btn btn-sm btn-primary" type="button" onClick={() => void requestWord('published')}>{t`Published part`}</button>
           </div>
         </Modal>
       )}
@@ -2320,43 +2321,41 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
 
       {confirmRegenerate && (
         <ConfirmModal
-          title={hasCaptions ? 'Skapa undertexterna på nytt?' : 'Skapa undertexter automatiskt?'}
-          confirmLabel={hasCaptions ? 'Skapa på nytt' : 'Skapa undertexter'}
+          title={hasCaptions ? t`Create the captions again?` : t`Create captions automatically?`}
+          confirmLabel={hasCaptions ? t`Create again` : t`Create captions`}
           danger={hasCaptions}
           onCancel={() => setConfirmRegenerate(false)}
           onConfirm={() => void regenerate()}
         >
           {hasCaptions ? (
           <p>
-            Ett nytt utkast skapas från ljudet och ersätter den här arbetsversionen. Nuvarande version finns kvar i versionshistoriken, och
-            nuvarande publicerade undertexter ligger kvar för tittarna tills du godkänner det nya utkastet.
-            {dirty ? ` Dina ${changeCount} osparade ändringar går förlorade.` : ''}
+            {t`A new draft is created from the audio and replaces this working version. The current version remains in the version history, and the current published captions stay for the viewers until you approve the new draft.`}
+            {dirty ? ' ' + plural(changeCount, { one: 'Your # unsaved change will be lost.', other: 'Your # unsaved changes will be lost.' }) : ''}
           </p>
           ) : (
           <p>
-            Ljudet skrivs ut och delas upp i repliker. Du följer framsteget här och får sedan ett utkast att redigera, med vågform och en ruta
-            för varje replik. Utkastet syns inte för tittarna förrän du godkänner det.
-            {dirty ? ' Dina osparade ändringar i kapitel och trim sparas först.' : ''}
+            {t`The audio is transcribed and split into lines. You follow the progress here and then get a draft to edit, with a waveform and a box for each line. The draft is not visible to the viewers until you approve it.`}
+            {dirty ? ' ' + t`Your unsaved changes in chapters and trim are saved first.` : ''}
           </p>
           )}
           <label class="ce-regen-option">
             <input type="checkbox" checked={regenNotify} onChange={(event) => setRegenNotify(event.currentTarget.checked)} />
-            Mejla mig när det är klart
+            {t`Email me when it is done`}
           </label>
           {speakersAvailable && (
             <label class="ce-regen-option">
               <input type="checkbox" checked={regenSpeakers} onChange={(event) => setRegenSpeakers(event.currentTarget.checked)} />
-              Analysera också talarbyten (för manus i Word)
+              {t`Also analyze speaker changes (for a manuscript in Word)`}
             </label>
           )}
           {speakersAvailable && speakersReady && !regenSpeakers && (
-            <p class="ce-regen-hint">Talarbyten som redan är analyserade behålls: de hör till ljudet, inte till texten.</p>
+            <p class="ce-regen-hint">{t`Speaker changes that are already analyzed are kept: they belong to the audio, not to the text.`}</p>
           )}
           {!hasCaptions && (
             <p class="ce-regen-hint">
-              Har du redan en undertextfil?{' '}
+              {t`Already have a caption file?`}{' '}
               <button class="btn btn-sm" type="button" onClick={() => { setConfirmRegenerate(false); setVttError(''); setShowVttImport(true) }}>
-                Läs in egen VTT-fil i stället
+                {t`Import your own VTT file instead`}
               </button>
             </p>
           )}
@@ -2370,43 +2369,43 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
           tools={([
             ...(hasCaptions ? [
               {
-                title: 'Exportera till Word',
-                description: 'Undertexterna som ett manus i Word, att rätta och sedan läsa in här. Görs av den sparade versionen.',
-                action: exporting ? 'Skapar…' : 'Exportera',
+                title: t`Export to Word`,
+                description: t`The captions as a manuscript in Word, to correct and then import here. Made from the saved version.`,
+                action: exporting ? t`Creating…` : t`Export`,
                 disabled: !master || readOnly || exporting,
                 onClick: () => (master?.publishedStartSeconds !== undefined ? setExportChoice(true) : void requestWord('whole')),
               },
               {
-                title: 'Läs in från Word',
-                description: 'Läser in ett rättat manus och föreslår ändringarna i undertexterna, att granska rad för rad.',
-                action: 'Läs in…',
+                title: t`Import from Word`,
+                description: t`Imports a corrected manuscript and suggests the changes in the captions, to review line by line.`,
+                action: t`Import…`,
                 disabled: !master || readOnly || saving || publishing || regenerating,
                 onClick: () => setWordDialog({ baseChoice: false }),
               },
             ] : []),
             ...(onRegenerated ? [{
-              title: hasCaptions ? 'Skapa på nytt' : 'Skapa automatiskt',
+              title: hasCaptions ? t`Create again` : t`Create automatically`,
               description: hasCaptions
-                ? 'Skapar ett nytt utkast från ljudet. Nuvarande version finns kvar i versionshistoriken.'
-                : 'Ljudet skrivs ut och delas upp i repliker. Du får ett utkast att redigera.',
-              action: regenerating ? 'Startar…' : hasCaptions ? 'Skapa på nytt…' : 'Skapa…',
+                ? t`Creates a new draft from the audio. The current version remains in the version history.`
+                : t`The audio is transcribed and split into lines. You get a draft to edit.`,
+              action: regenerating ? t`Starting…` : hasCaptions ? t`Create again…` : t`Create…`,
               disabled: !master || readOnly || saving || publishing || regenerating || !canRegenerate,
-              disabledReason: canRegenerate ? undefined : 'Undertexter går inte att skapa automatiskt just nu.',
+              disabledReason: canRegenerate ? undefined : t`Captions cannot be created automatically right now.`,
               onClick: () => setConfirmRegenerate(true),
             }] : []),
             {
-              title: 'Läs in VTT-fil',
+              title: t`Import VTT file`,
               description: hasCaptions
-                ? 'En egen undertextfil ersätter arbetsversionen (den gamla finns kvar i versionshistoriken).'
-                : 'En egen undertextfil blir undertexternas utkast.',
-              action: 'Läs in…',
+                ? t`Your own caption file replaces the working version (the old one remains in the version history).`
+                : t`Your own caption file becomes the captions' draft.`,
+              action: t`Import…`,
               disabled: !master || readOnly || saving || publishing || regenerating || captionsBusy,
               onClick: () => { setVttError(''); setShowVttImport(true) },
             },
             ...(hasCaptions ? [{
-              title: 'Ta bort undertexter',
-              description: 'Tar bort undertexterna helt, även för tittarna. Det går inte att ångra.',
-              action: 'Ta bort…',
+              title: t`Remove captions`,
+              description: t`Removes the captions completely, also for the viewers. It cannot be undone.`,
+              action: t`Remove…`,
               danger: true,
               disabled: readOnly || saving || publishing || regenerating || captionsBusy,
               onClick: () => setConfirmRemoveCaptions(true),
@@ -2429,51 +2428,49 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
       )}
 
       {confirmRemoveCaptions && (
-        <ConfirmModal title="Ta bort undertexterna?" confirmLabel="Ta bort" danger onCancel={() => setConfirmRemoveCaptions(false)} onConfirm={() => void removeAllCaptions()}>
+        <ConfirmModal title={t`Remove the captions?`} confirmLabel={t`Remove`} danger onCancel={() => setConfirmRemoveCaptions(false)} onConfirm={() => void removeAllCaptions()}>
           <p>
-            Undertexterna tas bort helt: arbetsversionen med hela versionshistoriken, och de publicerade undertexterna försvinner för tittarna
-            direkt. Kapitel och trim rörs inte. Det går inte att ångra.
-            {cuesDirty ? ' Dina osparade ändringar i undertexterna går förlorade.' : ''}
+            {t`The captions are removed completely: the working version with the whole version history, and the published captions disappear for the viewers immediately. Chapters and trim are not touched. It cannot be undone.`}
+            {cuesDirty ? ' ' + t`Your unsaved changes in the captions will be lost.` : ''}
           </p>
         </ConfirmModal>
       )}
 
       {confirmPublish && (
         <ConfirmModal
-          title="Publicera ändringarna?"
-          confirmLabel={dirty ? 'Spara och publicera' : 'Publicera'}
+          title={t`Publish the changes?`}
+          confirmLabel={dirty ? t`Save and publish` : t`Publish`}
           onCancel={() => setConfirmPublish(false)}
           onConfirm={() => void publishChanges()}
         >
           <p>
-            Ändringarna i kapitel och undertexter blir synliga för tittarna direkt och ersätter de nuvarande.
-            {dirty ? ' Dina osparade ändringar sparas först.' : ''}
-            {unreviewed ? ' Obs: undertexterna är maskingenererade och inte granskade.' : ''}
+            {t`The changes in chapters and captions become visible to the viewers immediately and replace the current ones.`}
+            {dirty ? ' ' + t`Your unsaved changes are saved first.` : ''}
+            {unreviewed ? ' ' + t`Note: the captions are machine-generated and not reviewed.` : ''}
           </p>
         </ConfirmModal>
       )}
 
       {confirmDiscard && (
         <ConfirmModal
-          title="Förkasta ändringarna?"
-          confirmLabel="Förkasta"
+          title={t`Discard the changes?`}
+          confirmLabel={t`Discard`}
           onCancel={() => setConfirmDiscard(false)}
           onConfirm={() => void discardChanges()}
         >
           <p>
-            Kapitel och undertexter går tillbaka till det som är publicerat. Det du ändrat sedan dess försvinner (undertexternas tidigare versioner
-            finns kvar i historiken). Osparade ändringar i redigeraren förloras också.
+            {t`Chapters and captions go back to what is published. What you have changed since then disappears (the captions' earlier versions remain in the history). Unsaved changes in the editor are also lost.`}
           </p>
         </ConfirmModal>
       )}
 
       {conflict && (
-        <Modal title="Någon annan har sparat" onClose={() => setConflict(null)}>
-          <p>{conflictDescription(conflict)} Dina ändringar är inte sparade.</p>
-          <p>Ladda om för att se det som finns nu, eller skriv över med dina ändringar.</p>
+        <Modal title={t`Someone else has saved`} onClose={() => setConflict(null)}>
+          <p>{t`${conflictDescription(conflict)} Your changes are not saved.`}</p>
+          <p>{t`Reload to see what is there now, or overwrite with your changes.`}</p>
           <div class="modal-actions">
-            <button class="btn btn-sm" type="button" onClick={() => setConflict(null)}>Avbryt</button>
-            <button class="btn btn-sm" type="button" onClick={() => void reloadAll()}>Ladda om (dina ändringar går förlorade)</button>
+            <button class="btn btn-sm" type="button" onClick={() => setConflict(null)}>{t`Cancel`}</button>
+            <button class="btn btn-sm" type="button" onClick={() => void reloadAll()}>{t`Reload (your changes will be lost)`}</button>
             <button class="btn btn-sm btn-danger" type="button" onClick={() => void overwrite()}>{overwriteLabel(conflict.action)}</button>
           </div>
         </Modal>
@@ -2481,13 +2478,13 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
 
       {confirmClose && (
         <ConfirmModal
-          title="Stänga utan att spara?"
-          confirmLabel="Stäng utan att spara"
+          title={t`Close without saving?`}
+          confirmLabel={t`Close without saving`}
           danger
           onCancel={() => setConfirmClose(false)}
           onConfirm={onClose}
         >
-          <p>Du har {changeCount} osparade ändringar. De går förlorade om du stänger nu.</p>
+          <p>{plural(changeCount, { one: 'You have # unsaved change. It will be lost if you close now.', other: 'You have # unsaved changes. They will be lost if you close now.' })}</p>
         </ConfirmModal>
       )}
     </div>

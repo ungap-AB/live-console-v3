@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { ComponentChildren } from 'preact'
 import { Modal } from './Modal'
 
@@ -23,7 +24,7 @@ export function ConfirmModal({
       {children}
       <div class="modal-actions">
         <button class="btn btn-sm" type="button" onClick={onCancel}>
-          Avbryt
+          {t`Cancel`}
         </button>
         <button
           class={`btn btn-sm ${danger ? 'btn-danger' : 'btn-primary'}`}

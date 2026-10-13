@@ -1,3 +1,5 @@
+import { plural, t } from '@lingui/core/macro'
+import { i18n } from '@lingui/core'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { ChapterImportItem, ChapterImportResult } from '../../data/types'
@@ -70,7 +72,7 @@ export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, 
     try {
       onImported(await client.projects.importChapters(projectId, items, directClock ? importMode : undefined, ifDraftRevision))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Importen misslyckades.')
+      setError(err instanceof Error ? err.message : t`The import failed.`)
       setBusy(false)
     }
   }
@@ -78,48 +80,48 @@ export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, 
   const hasTimes = source === 'paste' && lines.some((line) => line.time)
   return (
     <Modal
-      title="Importera kapitel"
+      title={t`Import chapters`}
       onClose={onClose}
       footer={
         <>
-          <button class="btn btn-sm" type="button" onClick={onClose}>Avbryt</button>
+          <button class="btn btn-sm" type="button" onClick={onClose}>{t`Cancel`}</button>
           <button class="btn btn-sm btn-primary" type="button" disabled={busy || items.length === 0} onClick={() => void submit()}>
-            {busy ? 'Importerar…' : canAdd && importMode === 'add' ? `Lägg till i kapitellistan (${items.length})` : `${currentChapterCount > 0 ? 'Ersätt' : 'Skapa'} kapitellistan (${items.length})`}
+            {busy ? t({ message: 'Importing…', context: 'list import' }) : canAdd && importMode === 'add' ? t`Add to the chapter list (${items.length})` : currentChapterCount > 0 ? t`Replace the chapter list (${items.length})` : t`Create the chapter list (${items.length})`}
           </button>
         </>
       }
     >
       <div class="od-import">
-        <div class="theme-seg" role="group" aria-label="Källa">
-          <button type="button" aria-pressed={source === 'paste'} onClick={() => setSource('paste')}>Klistra in lista</button>
-          <button type="button" aria-pressed={source === 'agenda'} onClick={() => setSource('agenda')}>Från dagordningen</button>
+        <div class="theme-seg" role="group" aria-label={t`Source`}>
+          <button type="button" aria-pressed={source === 'paste'} onClick={() => setSource('paste')}>{t`Paste list`}</button>
+          <button type="button" aria-pressed={source === 'agenda'} onClick={() => setSource('agenda')}>{t`From the agenda`}</button>
         </div>
 
         {source === 'paste' ? (
           <>
-            <p class="od-empty">En rad per kapitel. Börja raden med en tid om du har en, till exempel ”00:12:34 Punkt 3”.</p>
+            <p class="od-empty">{t`One line per chapter. Start the line with a time if you have one, for example “00:12:34 Item 3”.`}</p>
             <textarea
               class="od-import-text"
               rows={8}
-              aria-label="Kapitellista"
-              placeholder={'00:00:00 Sammanträdet öppnas\n00:12:34 Föregående protokoll\n00:41:10 Ekonomisk uppföljning'}
+              aria-label={t`Chapter list`}
+              placeholder={t`00:00:00 The meeting is opened\n00:12:34 Previous minutes\n00:41:10 Financial follow-up`}
               value={text}
               onInput={(event) => setText(event.currentTarget.value)}
             />
             {hasTimes && (
               <fieldset class="od-import-mode">
-                <legend>Tiderna är</legend>
+                <legend>{t`The times are`}</legend>
                 <label>
                   <input type="radio" name="time-mode" checked={effectiveMode === 'video'} onChange={() => { setMode('video'); setModeChosen(true) }} />
-                  Positioner i videon (redan synkade)
+                  {t`Positions in the video (already synced)`}
                 </label>
                 <label>
                   <input type="radio" name="time-mode" checked={effectiveMode === 'clock'} onChange={() => { setMode('clock'); setModeChosen(true) }} />
-                  {directClock ? 'Klockslag i sändningen (placeras direkt mot videon)' : 'Klockslag i sändningen (förankras mot videon)'}
+                  {directClock ? t`Clock times in the broadcast (placed directly against the video)` : t`Clock times in the broadcast (anchored to the video)`}
                 </label>
                 {effectiveMode === 'clock' && (
                   <label>
-                    Datum
+                    {t`Date`}
                     <input type="date" value={date} onInput={(event) => setDate(event.currentTarget.value)} />
                   </label>
                 )}
@@ -127,22 +129,22 @@ export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, 
             )}
           </>
         ) : !agendaId ? (
-          <p class="od-empty">Projektet har ingen kopplad dagordning.</p>
+          <p class="od-empty">{t`The project has no linked agenda.`}</p>
         ) : agendaItems === null ? (
-          <p class="od-empty">Hämtar dagordningen…</p>
+          <p class="od-empty">{t`Fetching the agenda…`}</p>
         ) : (
-          <p class="od-empty">Skapar ett kapitel per dagordningspunkt, utan tid. Du sätter tiderna med Synk-knappen under videon.</p>
+          <p class="od-empty">{t`Creates one chapter per agenda item, without a time. You set the times with the Sync button below the video.`}</p>
         )}
 
         {items.length > 0 && (
-          <ol class="od-import-preview" aria-label="Förhandsgranskning">
+          <ol class="od-import-preview" aria-label={t({ message: 'Preview', context: 'chapter import' })}>
             {items.slice(0, 200).map((item, index) => (
               <li key={index}>
                 <span class="od-time">
                   {item.offsetSeconds !== undefined
                     ? formatHms(item.offsetSeconds)
                     : item.clockUtc
-                      ? new Date(item.clockUtc).toLocaleTimeString('sv-SE')
+                      ? new Date(item.clockUtc).toLocaleTimeString(i18n.locales)
                       : '—'}
                 </span>
                 <span>{item.label}</span>
@@ -152,24 +154,29 @@ export function ChapterImportDialog({ projectId, agendaId, currentChapterCount, 
         )}
         {canAdd && (
           <fieldset class="od-import-mode">
-            <legend>De {currentChapterCount} nuvarande kapitlen</legend>
+            <legend>{plural(currentChapterCount, { one: 'The # current chapter', other: 'The # current chapters' })}</legend>
             <label>
               <input type="radio" name="import-mode" checked={importMode === 'add'} onChange={() => setImportMode('add')} />
-              Behåll dem och lägg till de nya
+              {t`Keep them and add the new ones`}
             </label>
             <label>
               <input type="radio" name="import-mode" checked={importMode === 'replace'} onChange={() => setImportMode('replace')} />
-              Ersätt dem
+              {t`Replace them`}
             </label>
           </fieldset>
         )}
         <p class="od-empty">
           {currentChapterCount > 0 && !(canAdd && importMode === 'add')
-            ? `Importen ersätter de ${currentChapterCount} nuvarande kapitlen${directClock ? '' : ' och förankringen'}.${positionedChapterCount ? ` ${positionedChapterCount} kapitel med tid tas bort ur utkastet.` : ''}`
+            ? (directClock
+              ? plural(currentChapterCount, { one: 'The import replaces the # current chapter.', other: 'The import replaces the # current chapters.' })
+              : plural(currentChapterCount, { one: 'The import replaces the # current chapter and the anchoring.', other: 'The import replaces the # current chapters and the anchoring.' }))
+              + (positionedChapterCount ? ' ' + plural(positionedChapterCount, { one: '# chapter with a time is removed from the draft.', other: '# chapters with a time are removed from the draft.' }) : '')
             : currentChapterCount > 0
-              ? 'De nya kapitlen läggs efter de nuvarande.'
-              : 'Importen skapar kapitellistan.'}
-          {' '}Kapitel utan tid{directClock ? '' : ', och klockslag som inte förankrats ännu,'} är dolda för publiken tills de placerats.
+              ? t`The new chapters are added after the current ones.`
+              : t`The import creates the chapter list.`}
+          {' '}{directClock
+            ? t`Chapters without a time are hidden from the audience until they have been placed.`
+            : t`Chapters without a time, and clock times not yet anchored, are hidden from the audience until they have been placed.`}
         </p>
         {error && <span class="od-download-error">{error}</span>}
       </div>

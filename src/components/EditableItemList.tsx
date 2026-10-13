@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { ComponentChildren } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { SortableList } from './SortableList'
@@ -183,8 +184,8 @@ export function EditableItemList<T>({
                 <input
                   ref={inputRef}
                   value={draft}
-                  placeholder="Namn"
-                  aria-label="Namn"
+                  placeholder={t`Name`}
+                  aria-label={t`Name`}
                   onInput={(e) => setDraft(e.currentTarget.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') saveEdit(id)
@@ -202,14 +203,14 @@ export function EditableItemList<T>({
                 />
               </span>
               <span class="rowbtns">
-                <button class="ib" type="button" title="Spara" aria-label="Spara" onClick={() => saveEdit(id)}>
+                <button class="ib" type="button" title={t`Save`} aria-label={t`Save`} onClick={() => saveEdit(id)}>
                   <CheckIcon />
                 </button>
                 <button
                   class="ib"
                   type="button"
-                  title="Avbryt"
-                  aria-label="Avbryt"
+                  title={t`Cancel`}
+                  aria-label={t`Cancel`}
                   onClick={() => setEditingId(null)}
                 >
                   <CancelIcon />
@@ -228,8 +229,8 @@ export function EditableItemList<T>({
                 <button
                   class="ib"
                   type="button"
-                  title="Redigera"
-                  aria-label="Redigera"
+                  title={t`Edit`}
+                  aria-label={t`Edit`}
                   onClick={() => startEdit(item)}
                 >
                   <EditIcon />
@@ -238,8 +239,8 @@ export function EditableItemList<T>({
                   <button
                     class="ib del confirm"
                     type="button"
-                    title="Bekräfta borttagning"
-                    aria-label="Bekräfta borttagning"
+                    title={t`Confirm removal`}
+                    aria-label={t`Confirm removal`}
                     onClick={() => confirmRemove(id)}
                   >
                     <CheckIcon />
@@ -248,8 +249,8 @@ export function EditableItemList<T>({
                   <button
                     class="ib del"
                     type="button"
-                    title="Ta bort"
-                    aria-label="Ta bort"
+                    title={t`Remove`}
+                    aria-label={t`Remove`}
                     onClick={() => requestRemove(id)}
                   >
                     <DeleteIcon />

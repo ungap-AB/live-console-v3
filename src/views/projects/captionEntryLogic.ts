@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { CaptionGeneration } from '../../data/types'
 import { autoCaptionsPhase, type AutoCaptionsPhase } from './autoCaptionsLogic.ts'
 
@@ -39,24 +40,24 @@ export function captionStateView(state: CaptionState, progress?: number | null):
       return {
         kind: 'progress',
         tone: 'progress',
-        listLabel: percent ? `Genererar${percent}` : 'Genererar…',
-        entryLabel: percent ? `Genererar undertexter…${percent}` : 'Genererar undertexter…',
-        title: 'Undertexterna genereras. Öppna för att följa framsteget.',
+        listLabel: percent ? t`Generating${percent}` : t({ message: 'Generating…', context: 'caption status' }),
+        entryLabel: percent ? t`Generating captions…${percent}` : t`Generating captions…`,
+        title: t`The captions are being generated. Open to follow the progress.`,
       }
     case 'failed':
-      return { kind: 'create', tone: 'warn', listLabel: 'Försök igen', entryLabel: 'Försök igen', title: 'Förra försöket misslyckades. Skapa undertexterna igen.' }
+      return { kind: 'create', tone: 'warn', listLabel: t`Try again`, entryLabel: t`Try again`, title: t`The last attempt failed. Create the captions again.` }
     case 'draft':
       return {
         kind: 'edit',
         tone: 'draft',
-        listLabel: 'Utkast',
-        entryLabel: 'Redigera utkast',
-        title: 'Redigera utkastet. Det syns inte för tittarna förrän det publicerats.',
+        listLabel: t`Draft`,
+        entryLabel: t`Edit draft`,
+        title: t`Edit the draft. It is not visible to the viewers until it has been published.`,
       }
     case 'published':
-      return { kind: 'edit', tone: 'published', listLabel: 'Publicerade', entryLabel: 'Redigera undertexter', title: 'Redigera de publicerade undertexterna' }
+      return { kind: 'edit', tone: 'published', listLabel: t({ message: 'Published', context: 'caption status' }), entryLabel: t`Edit captions`, title: t`Edit the published captions` }
     default:
-      return { kind: 'create', tone: 'neutral', listLabel: 'Skapa', entryLabel: 'Skapa undertexter', title: 'Skapa undertexter automatiskt' }
+      return { kind: 'create', tone: 'neutral', listLabel: t`Create`, entryLabel: t`Create captions`, title: t`Create captions automatically` }
   }
 }
 
@@ -74,7 +75,7 @@ export function captionEntry(generation: CaptionGeneration | null): CaptionEntry
     return { kind: 'edit', label: captionStateView(published ? 'published' : 'draft').entryLabel }
   }
   // UNG-248: utan undertexter öppnar knappen redigeraren (trim och kapitel); undertexter skapas därifrån.
-  return { kind: 'create', label: 'Redigera' }
+  return { kind: 'create', label: t`Edit` }
 }
 
 export type StudioView = 'progress' | 'editor'

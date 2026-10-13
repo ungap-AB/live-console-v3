@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { MAX_LINES, MAX_LINE_LENGTH } from './captionEditorLogic.ts'
 
 // UNG-143: rena operationer på redigerarens radlista (slå ihop, dela, flytta ord, tider, lägg till, ta bort). Allt returnerar
@@ -120,7 +121,7 @@ export function mergeInfo(cues: readonly EditCue[], index: number): MergeInfo | 
 /** Slår ihop rad i med rad i+1: första startens och sista slutets tid, texten fogad och omradbruten. */
 export function mergeWithNext(cues: readonly EditCue[], index: number): OpResult {
   const info = mergeInfo(cues, index)
-  if (!info) return { ok: false, reason: 'Det finns ingen replik att slå ihop med.' }
+  if (!info) return { ok: false, reason: t`There is no line to merge with.` }
   const first = cues[index]
   const joinCaret = flatten(first.text).length
   const merged: EditCue = { id: first.id, start: info.startSeconds, end: info.endSeconds, text: info.text }
@@ -131,7 +132,7 @@ export function mergeWithNext(cues: readonly EditCue[], index: number): OpResult
 
 /** Samma som mergeWithNext men med föregående: raden index slås ihop med index-1. */
 export function mergeWithPrevious(cues: readonly EditCue[], index: number): OpResult {
-  if (index <= 0) return { ok: false, reason: 'Det finns ingen föregående replik.' }
+  if (index <= 0) return { ok: false, reason: t`There is no previous line.` }
   const result = mergeWithNext(cues, index - 1)
   return result.ok ? { ...result, focusIndex: index - 1 } : result
 }
@@ -153,10 +154,10 @@ function textCaret(wrapped: string, flatCaret: number): number {
  */
 export function splitCue(cues: readonly EditCue[], index: number, caret: number, newId: number, time: number | null = null): OpResult {
   const cue = cues[index]
-  if (!cue) return { ok: false, reason: 'Ingen replik vald.' }
+  if (!cue) return { ok: false, reason: t`No line selected.` }
   const left = flatten(cue.text.slice(0, caret))
   const right = flatten(cue.text.slice(caret))
-  if (!left || !right) return { ok: false, reason: 'Placera markören mellan två ord i texten, så delas repliken där.' }
+  if (!left || !right) return { ok: false, reason: t`Place the cursor between two words in the text, and the line is split there.` }
 
   const useTime = time !== null && time > cue.start + MIN_PART_SECONDS && time < cue.end - MIN_PART_SECONDS
   const boundary = round(useTime ? time : cue.start + ((cue.end - cue.start) * left.length) / (left.length + right.length))
@@ -183,10 +184,10 @@ function redistribute(a: EditCue, b: EditCue, aText: string, bText: string): [Ed
 export function moveTailToNext(cues: readonly EditCue[], index: number, caret: number): OpResult {
   const cue = cues[index]
   const next = cues[index + 1]
-  if (!cue || !next) return { ok: false, reason: 'Det finns ingen replik efter den här att flytta ord till.' }
+  if (!cue || !next) return { ok: false, reason: t`There is no line after this one to move words to.` }
   const keep = flatten(cue.text.slice(0, caret))
   const move = flatten(cue.text.slice(caret))
-  if (!keep || !move) return { ok: false, reason: 'Placera markören före de ord som ska flyttas (och efter minst ett ord som ska stanna).' }
+  if (!keep || !move) return { ok: false, reason: t`Place the cursor before the words to be moved (and after at least one word that is to stay).` }
   const aText = wrapAny(keep)
   const bText = wrapAny(`${move} ${flatten(next.text)}`)
   const [a, b] = redistribute(cue, next, aText, bText)
@@ -197,10 +198,10 @@ export function moveTailToNext(cues: readonly EditCue[], index: number, caret: n
 export function moveHeadToPrevious(cues: readonly EditCue[], index: number, caret: number): OpResult {
   const cue = cues[index]
   const previous = cues[index - 1]
-  if (!cue || !previous) return { ok: false, reason: 'Det finns ingen replik före den här att flytta ord till.' }
+  if (!cue || !previous) return { ok: false, reason: t`There is no line before this one to move words to.` }
   const move = flatten(cue.text.slice(0, caret))
   const keep = flatten(cue.text.slice(caret))
-  if (!keep || !move) return { ok: false, reason: 'Placera markören efter de ord som ska flyttas (och före minst ett ord som ska stanna).' }
+  if (!keep || !move) return { ok: false, reason: t`Place the cursor after the words to be moved (and before at least one word that is to stay).` }
   const aText = wrapAny(`${flatten(previous.text)} ${move}`)
   const bText = wrapAny(keep)
   const [a, b] = redistribute(previous, cue, aText, bText)
@@ -208,7 +209,7 @@ export function moveHeadToPrevious(cues: readonly EditCue[], index: number, care
 }
 
 export function deleteCue(cues: readonly EditCue[], index: number): OpResult {
-  if (!cues[index]) return { ok: false, reason: 'Ingen replik vald.' }
+  if (!cues[index]) return { ok: false, reason: t`No line selected.` }
   const next = cues.filter((_, position) => position !== index)
   return { ok: true, cues: next, focusIndex: Math.min(index, next.length - 1) }
 }
@@ -226,22 +227,22 @@ export function addCue(cues: readonly EditCue[], time: number, newId: number): O
 /** Sätter start eller slut. Tiden begränsas till minst 0 och minst 0,1 s mellan start och slut. */
 export function setTime(cues: readonly EditCue[], index: number, edge: 'start' | 'end', seconds: number): OpResult {
   const cue = cues[index]
-  if (!cue) return { ok: false, reason: 'Ingen replik vald.' }
+  if (!cue) return { ok: false, reason: t`No line selected.` }
   const value = round(Math.max(0, seconds))
-  if (edge === 'start' && value > cue.end - 0.1) return { ok: false, reason: 'Starten måste ligga före slutet.' }
-  if (edge === 'end' && value < cue.start + 0.1) return { ok: false, reason: 'Slutet måste ligga efter starten.' }
+  if (edge === 'start' && value > cue.end - 0.1) return { ok: false, reason: t`The start must be before the end.` }
+  if (edge === 'end' && value < cue.start + 0.1) return { ok: false, reason: t({ message: 'The end must be after the start.', context: 'caption line' }) }
   return { ok: true, cues: cues.map((item, position) => (position === index ? { ...item, [edge]: value } : item)), focusIndex: index }
 }
 
 export function nudge(cues: readonly EditCue[], index: number, edge: 'start' | 'end', delta: number): OpResult {
   const cue = cues[index]
-  return cue ? setTime(cues, index, edge, cue[edge] + delta) : { ok: false, reason: 'Ingen replik vald.' }
+  return cue ? setTime(cues, index, edge, cue[edge] + delta) : { ok: false, reason: t`No line selected.` }
 }
 
 /** Förskjuter alla repliker från och med rad fromIndex (eller alla om fromIndex är 0) med delta sekunder. Inget hamnar före 0. */
 export function shiftFrom(cues: readonly EditCue[], fromIndex: number, delta: number): OpResult {
-  if (!cues[fromIndex]) return { ok: false, reason: 'Ingen replik vald.' }
-  if (cues[fromIndex].start + delta < 0) return { ok: false, reason: 'Förskjutningen skulle flytta repliken före början av videon.' }
+  if (!cues[fromIndex]) return { ok: false, reason: t`No line selected.` }
+  if (cues[fromIndex].start + delta < 0) return { ok: false, reason: t`The offset would move the line before the beginning of the video.` }
   return {
     ok: true,
     cues: cues.map((cue, position) => (position >= fromIndex ? { ...cue, start: round(cue.start + delta), end: round(cue.end + delta) } : cue)),
@@ -293,12 +294,12 @@ export function withoutEmpty(cues: readonly EditCue[]): EditCue[] {
 export function validateCues(cues: readonly EditCue[]): Issue[] {
   const issues: Issue[] = []
   cues.forEach((cue, index) => {
-    if (!cue.text.trim()) issues.push({ index, kind: 'empty', error: false, message: 'Repliken saknar text och tas bort vid sparning.' })
-    if (!(cue.end > cue.start)) issues.push({ index, kind: 'badTime', error: true, message: 'Repliken slutar inte efter att den börjar.' })
+    if (!cue.text.trim()) issues.push({ index, kind: 'empty', error: false, message: t`The line has no text and is removed when saving.` })
+    if (!(cue.end > cue.start)) issues.push({ index, kind: 'badTime', error: true, message: t`The line does not end after it starts.` })
     const previous = cues[index - 1]
     if (previous) {
-      if (cue.start < previous.start) issues.push({ index, kind: 'order', error: false, message: 'Repliken börjar före föregående (sorteras om vid sparning).' })
-      else if (cue.start < previous.end - 0.001) issues.push({ index, kind: 'overlap', error: false, message: 'Repliken överlappar föregående.' })
+      if (cue.start < previous.start) issues.push({ index, kind: 'order', error: false, message: t`The line starts before the previous one (re-sorted when saving).` })
+      else if (cue.start < previous.end - 0.001) issues.push({ index, kind: 'overlap', error: false, message: t`The line overlaps the previous one.` })
     }
   })
   return issues

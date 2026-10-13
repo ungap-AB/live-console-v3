@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useState } from 'preact/hooks'
 import { Modal } from './Modal'
 
@@ -8,7 +9,7 @@ interface RenameModalProps {
   onSave: (value: string) => void
 }
 
-export function RenameModal({ title = 'Byt namn', initialValue, onCancel, onSave }: RenameModalProps) {
+export function RenameModal({ title = t`Rename`, initialValue, onCancel, onSave }: RenameModalProps) {
   const [value, setValue] = useState(initialValue)
   const trimmed = value.trim()
 
@@ -25,7 +26,7 @@ export function RenameModal({ title = 'Byt namn', initialValue, onCancel, onSave
       />
       <div class="modal-actions">
         <button class="btn btn-sm" type="button" onClick={onCancel}>
-          Avbryt
+          {t`Cancel`}
         </button>
         <button
           class="btn btn-sm btn-primary"
@@ -33,7 +34,7 @@ export function RenameModal({ title = 'Byt namn', initialValue, onCancel, onSave
           disabled={!trimmed}
           onClick={() => onSave(trimmed)}
         >
-          Spara
+          {t`Save`}
         </button>
       </div>
     </Modal>

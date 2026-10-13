@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { ComponentChildren } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import { PickerModal } from './PickerModal'
@@ -34,7 +35,7 @@ export function AttachedListPicker({
   createNewLabel,
   onPick,
   onCreateNew,
-  buttonLabel = 'Byt...',
+  buttonLabel = t`Change...`,
   buttonClassName = 'btn btn-sm',
   icon,
   ariaLabel,

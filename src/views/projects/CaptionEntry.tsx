@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { ComponentChildren } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
@@ -107,7 +108,7 @@ export function CaptionEntry({ projectId, projectName, videoDurationSeconds, onC
   }
 
   // Med egna knappar visas de (spärrade) även innan läget hämtats, så att stegen inte hoppar fram.
-  const entry = captionEntry(captions.generation) ?? (renderTrigger ? { kind: 'create' as const, label: 'Redigera', disabledReason: 'Hämtar…' } : null)
+  const entry = captionEntry(captions.generation) ?? (renderTrigger ? { kind: 'create' as const, label: t`Edit`, disabledReason: t`Fetching…` } : null)
   const loadedKind = captions.generation ? entry?.kind ?? null : null
   useEffect(() => {
     onEntryKindChange?.(loadedKind)
@@ -126,8 +127,8 @@ export function CaptionEntry({ projectId, projectName, videoDurationSeconds, onC
         type="button"
         disabled={Boolean(entry.disabledReason)}
         title={entry.disabledReason ?? (entry.kind === 'progress'
-          ? 'Undertexterna genereras. Öppna för att följa framsteget.'
-          : entry.kind === 'create' ? 'Öppnar redigeraren: trim och kapitel. Undertexter skapas därifrån.' : 'Öppnar undertextredigeraren')}
+          ? t`The captions are being generated. Open to follow the progress.`
+          : entry.kind === 'create' ? t`Opens the editor: trim and chapters. Captions are created from there.` : t`Opens the caption editor`)}
         onClick={() => setOpen(true)}
       >
         <Icon name={label || entry.kind === 'create' ? 'edit' : 'closed_caption'} size={18} /> {label && entry.kind !== 'progress' ? label : entry.label}

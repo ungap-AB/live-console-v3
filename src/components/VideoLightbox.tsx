@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { create, isPlayerSupported } from 'amazon-ivs-player'
 import wasmBinary from 'amazon-ivs-player/dist/assets/amazon-ivs-wasmworker.min.wasm?url'
@@ -28,7 +29,7 @@ export function VideoLightbox({ title, src, live, initialSeekSeconds = 0, onClos
     const video = videoRef.current
     if (!video) return
     if (!isPlayerSupported) {
-      setError('AWS IVS Player kan inte köras i den här webbläsaren.')
+      setError(t`AWS IVS Player cannot run in this browser.`)
       return
     }
 
@@ -60,13 +61,13 @@ export function VideoLightbox({ title, src, live, initialSeekSeconds = 0, onClos
             {title}
             {live && <span class="video-live">● Live</span>}
           </span>
-          <button class="ib" type="button" onClick={onClose} aria-label="Stäng">
+          <button class="ib" type="button" onClick={onClose} aria-label={t`Close`}>
             ✕
           </button>
         </div>
         {error && <div class="video-error">{error}</div>}
         <video ref={videoRef} controls autoPlay={live} playsInline>
-          Videon kan inte spelas upp i den här miljön.
+          {t`The video cannot be played in this environment.`}
         </video>
       </div>
     </div>

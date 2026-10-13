@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { ChipTone } from './StatusChip'
 import './QuotaBar.css'
 
@@ -23,7 +24,7 @@ export function QuotaBar({ used, limit, segments }: QuotaBarProps) {
         <span class="quota-count">
           {used} av {limit} kanaler
         </span>
-        {pct >= 100 && <span class="quota-full">Taket nått</span>}
+        {pct >= 100 && <span class="quota-full">{t`Limit reached`}</span>}
       </div>
       <div class="quota-bar">
         {hasSegments ? (
