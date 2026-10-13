@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { ForkResult, ForkWindow, Project } from '../../data/types'
 import { Modal } from '../../components/Modal'
-import { clockValue, forkFromOptions, timeInWindow, type ForkFromOption, type ForkSource } from './forkLogic'
+import { clockValue, forkFromOptions, forkRangeError, forkToOptions, timeInWindow, type ForkFromOption, type ForkSource, type ForkToOption } from './forkLogic'
 
 interface ForkDialogProps {
   project: Project
@@ -19,13 +19,21 @@ export function ForkDialog({ project, source, onClose, onForked }: ForkDialogPro
   // Egen starttid (tidväljare): klockslaget i lokal tid, inom fönstret som servern anger.
   const [window_, setWindow] = useState<ForkWindow | null>(null)
   const [time, setTime] = useState('')
+  // UNG-276: var forken slutar, på samma sätt som början.
+  const [toOptions, setToOptions] = useState<ForkToOption[]>(() => forkToOptions([], source))
+  const [toChoice, setToChoice] = useState('end')
+  const [toTime, setToTime] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
     let cancelled = false
     client.projects.playout(project.id).then(
-      (playout) => { if (!cancelled && playout) setOptions(forkFromOptions(playout.timeline)) },
+      (playout) => {
+        if (cancelled || !playout) return
+        setOptions(forkFromOptions(playout.timeline))
+        setToOptions(forkToOptions(playout.timeline, source))
+      },
       () => { /* förslagen är bara en hjälp; "från början" finns alltid */ },
     )
     client.projects.forkWindow(project.id).then(
@@ -33,22 +41,27 @@ export function ForkDialog({ project, source, onClose, onForked }: ForkDialogPro
         if (cancelled) return
         setWindow(value)
         setTime((current) => current || clockValue(value.startUtc))
+        setToTime((current) => current || clockValue(value.endUtc))
       },
       () => { /* utan fönster finns inte tidväljaren; förslagen räcker */ },
     )
     return () => { cancelled = true }
-  }, [project.id])
+  }, [project.id, source])
 
   const custom = choice === 'time' && window_ ? timeInWindow(time, window_) : null
-  const customError = custom && 'error' in custom ? custom.error : ''
+  const customTo = toChoice === 'time' && window_ ? timeInWindow(toTime, window_) : null
+  const fromUtc = choice === 'time' ? (custom && 'iso' in custom ? custom.iso : undefined) : options.find((option) => option.key === choice)?.fromUtc ?? undefined
+  const toUtc = toChoice === 'time' ? (customTo && 'iso' in customTo ? customTo.iso : undefined) : toOptions.find((option) => option.key === toChoice)?.toUtc ?? undefined
+  const customError = (custom && 'error' in custom ? custom.error : '')
+    || (customTo && 'error' in customTo ? customTo.error : '')
+    || forkRangeError(fromUtc, toUtc, window_)
 
   async function create() {
     if (busy) return
     setBusy(true)
     setError('')
     try {
-      const fromUtc = choice === 'time' ? (custom && 'iso' in custom ? custom.iso : undefined) : options.find((option) => option.key === choice)?.fromUtc ?? undefined
-      onForked(await client.projects.forkProject(project.id, { name: name.trim() || undefined, fromUtc }))
+      onForked(await client.projects.forkProject(project.id, { name: name.trim() || undefined, fromUtc, toUtc }))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Projektet kunde inte skapas.')
     } finally {
@@ -108,8 +121,32 @@ export function ForkDialog({ project, source, onClose, onForked }: ForkDialogPro
             <span class="fk-help">{window_.source === 'live' ? `Sändningen har pågått sedan ${clockValue(window_.startUtc)}.` : `Inspelningen gäller ${clockValue(window_.startUtc)}–${clockValue(window_.endUtc)}.`}</span>
           </label>
         )}
+      </fieldset>
+      <fieldset class="fk-from">
+        <legend>Sluta</legend>
+        {toOptions.map((option) => (
+          <label key={option.key} class="fk-option">
+            <input type="radio" name="fork-to" checked={toChoice === option.key} onChange={() => setToChoice(option.key)} />
+            <span>{option.label}</span>
+          </label>
+        ))}
+        {window_ && (
+          <label class="fk-option">
+            <input type="radio" name="fork-to" checked={toChoice === 'time'} onChange={() => setToChoice('time')} />
+            <span>Vid klockan</span>
+            <input
+              class="fk-time"
+              type="time"
+              step={60}
+              value={toTime}
+              aria-label="Sluttid för det nya projektet"
+              onFocus={() => setToChoice('time')}
+              onInput={(event) => { setToTime(event.currentTarget.value); setToChoice('time') }}
+            />
+          </label>
+        )}
         {customError && <span class="ce-error-text" role="alert">{customError}</span>}
-        <span class="fk-help">Fork är inte gjord för tajta klipp: starten läggs på närmaste segment och kan bli upp till 10 sekunder tidigare. Du väljer exakt början och slut när du trimmar i det nya projektet.</span>
+        <span class="fk-help">Fork är inte gjord för tajta klipp: start och slut läggs på närmaste segment och kan bli upp till 10 sekunder vidare. Du väljer exakt början och slut när du trimmar i det nya projektet.</span>
       </fieldset>
       {error && <p class="ce-error-text" role="alert">{error}</p>}
     </Modal>
