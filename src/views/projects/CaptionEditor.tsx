@@ -498,7 +498,12 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
   const chaptersAvailable = chapterState === 'ok' && (chapterList.length > 0 || !hasCaptions) && review === null
   const chaptersVisible = (showChapters || !hasCaptions) && chaptersAvailable
   const chaptersOnly = chaptersVisible && !(showCues && hasCaptions)
-  const listRows = useMemo(() => (chaptersVisible && !chaptersOnly ? mergeRows(cues, chapterList) : null), [chaptersVisible, chaptersOnly, cues, chapterList])
+  const coveredStart = master?.coveredStartSeconds
+  const coveredEnd = master?.coveredEndSeconds
+  const listRows = useMemo(
+    () => (chaptersVisible && !chaptersOnly ? mergeRows(cues, chapterList, { start: coveredStart, end: coveredEnd }) : null),
+    [chaptersVisible, chaptersOnly, cues, chapterList, coveredStart, coveredEnd],
+  )
 
   // UNG-231: bara kapitel. Talarna hör till punkten före dem (lös gruppering ur tidsordningen) och är hopfällda tills punkten öppnas.
   // Ett markerat kapitel håller sin grupp öppen.

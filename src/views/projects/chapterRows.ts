@@ -35,12 +35,24 @@ export function positionedChapters(chapters: readonly ChapterInput[]): EditorCha
     .sort((a, b) => a.time - b.time)
 }
 
+/** Delen av inspelningen som undertexterna (och vågformen) täcker, i originalets tid. null = obegränsat åt det hållet. */
+export interface CoveredRange {
+  start?: number | null
+  end?: number | null
+}
+
+function withinCovered(time: number, covered: CoveredRange): boolean {
+  return (covered.start == null || time >= covered.start) && (covered.end == null || time <= covered.end)
+}
+
 /**
  * Raderna i listan: replikerna i sin ordning med kapitlen invävda. Ett kapitel hamnar före första repliken som startar efter (eller
  * samtidigt med) kapitlets tid; kapitel efter sista repliken kommer sist. Replikerna behåller sin ordning även om den är oordnad
- * under redigering.
+ * under redigering. UNG-275: täcker undertexterna bara en del av inspelningen visas inga kapitel utanför den (där finns varken
+ * repliker eller vågform, och bandets solfjäder skulle spännas över tom tid).
  */
-export function mergeRows(cues: readonly { start: number }[], chapters: readonly EditorChapter[]): ListRow[] {
+export function mergeRows(cues: readonly { start: number }[], allChapters: readonly EditorChapter[], covered?: CoveredRange): ListRow[] {
+  const chapters = covered ? allChapters.filter((chapter) => withinCovered(chapter.time, covered)) : allChapters
   const rows: ListRow[] = []
   let next = 0
   cues.forEach((cue, index) => {

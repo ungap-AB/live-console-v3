@@ -37,6 +37,17 @@ test('kapitel före första repliken kommer först, och utan kapitel är raderna
   assert.deepEqual(mergeRows([], [chapter('a', 'agendaItem', 1)]).map((row) => row.kind), ['chapter'])
 })
 
+test('UNG-275: kapitel utanför det undertexterna täcker visas inte, null betyder obegränsat', () => {
+  const cues = [{ start: 550 }, { start: 600 }]
+  const chapters = [chapter('a', 'agendaItem', 2), chapter('b', 'agendaItem', 550), chapter('c', 'person', 580), chapter('d', 'agendaItem', 1024), chapter('e', 'agendaItem', 1094)]
+  const ids = (covered?: { start?: number | null; end?: number | null }) =>
+    mergeRows(cues, chapters, covered).map((row) => (row.kind === 'cue' ? `k${row.index}` : row.chapter.id))
+  assert.deepEqual(ids({ start: 550, end: 1024 }), ['b', 'k0', 'c', 'k1', 'd'])
+  assert.deepEqual(ids({ start: null, end: null }), ['a', 'b', 'k0', 'c', 'k1', 'd', 'e'])
+  assert.deepEqual(ids({ start: 550, end: null }), ['b', 'k0', 'c', 'k1', 'd', 'e'])
+  assert.deepEqual(ids(), ['a', 'b', 'k0', 'c', 'k1', 'd', 'e'])
+})
+
 test('oordnade repliker behåller sin ordning', () => {
   const cues = [{ start: 20 }, { start: 5 }, { start: 30 }]
   const rows = mergeRows(cues, [chapter('x', 'agendaItem', 10)])
