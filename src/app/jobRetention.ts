@@ -10,9 +10,10 @@ export function daysUntilPurge(job: Pick<MediaJob, 'state' | 'completedAtUtc'>, 
   return Math.max(0, Math.ceil(left))
 }
 
+/** Texten i Jobb-listans kolumn Försvinner (rubriken säger redan vad det gäller). */
 export function purgeText(days: number | null): string | null {
   if (days === null) return null
-  if (days === 0) return 'försvinner idag'
-  if (days === 1) return 'försvinner imorgon'
-  return `försvinner om ${days} dagar`
+  if (days === 0) return 'idag'
+  if (days === 1) return 'imorgon'
+  return `om ${days} dagar`
 }

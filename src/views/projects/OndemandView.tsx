@@ -844,7 +844,7 @@ interface GuideStepProps {
   /** Kort läge till höger (t.ex. "3 kapitel"). */
   status: string
   done?: boolean
-  /** Momentet görs i ett annat läge (Trimma video i Ondemand): lås i stället för pil, och en kort förklaring. */
+  /** Momentet görs i ett annat läge (Trimma video i Ondemand): lås i stället för pil, och en kort förklaring i stället för läget. */
   locked?: boolean
   note?: string
   /** Publiceringen, sista steget: publiceringsikon i stället för nummer och pil. */
@@ -866,7 +866,7 @@ function GuideStep({ n, label, status, done = false, busy = false, disabled = fa
           {busy ? <span class="od-flow-spinner" /> : publish ? <Icon name="publish" size={16} /> : done ? <Icon name="check" size={16} /> : n}
         </span>
         <span class="od-flow-label">{label}</span>
-        <span class="od-flow-status">{note ? `${status} · ${note}` : status}</span>
+        <span class="od-flow-status">{note ?? status}</span>
         <Icon name={locked ? 'lock' : 'chevron_right'} size={18} />
       </button>
     </li>

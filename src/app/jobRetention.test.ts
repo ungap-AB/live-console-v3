@@ -21,7 +21,7 @@ test('pågående jobb eller jobb utan sluttid har ingen rensningstid', () => {
 
 test('texten följer antalet dagar', () => {
   assert.equal(purgeText(null), null)
-  assert.equal(purgeText(0), 'försvinner idag')
-  assert.equal(purgeText(1), 'försvinner imorgon')
-  assert.equal(purgeText(5), 'försvinner om 5 dagar')
+  assert.equal(purgeText(0), 'idag')
+  assert.equal(purgeText(1), 'imorgon')
+  assert.equal(purgeText(5), 'om 5 dagar')
 })

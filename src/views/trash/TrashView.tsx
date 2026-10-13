@@ -20,10 +20,11 @@ function daysLeft(purgeAt: string): number {
   return Math.max(0, Math.ceil(ms / 86_400_000))
 }
 
+// Texten i kolumnen Rensas (rubriken säger redan vad det gäller).
 function leftText(days: number): string {
-  if (days === 0) return 'Rensas idag'
-  if (days === 1) return 'Rensas imorgon'
-  return `Rensas om ${days} dagar`
+  if (days === 0) return 'idag'
+  if (days === 1) return 'imorgon'
+  return `om ${days} dagar`
 }
 
 function urgency(days: number): 'urgent' | 'soon' | '' {

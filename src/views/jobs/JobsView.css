@@ -69,12 +69,12 @@
   width: 140px;
 }
 
-.jobs-col-actions {
-  min-width: 120px;
-}
-
+.jobs-col-actions,
 .jobs-list .dl-actions {
-  min-width: 120px;
+  flex: none;
+  width: 230px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 /* Raden växer om jobbet visar förlopp eller fel under titeln. */
