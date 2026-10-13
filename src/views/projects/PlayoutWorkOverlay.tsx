@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { client } from '../../data'
 import type { Channel, ChannelHealth, Project, TimelineEvent } from '../../data/types'
 import { useResource } from '../../app/useResource'
@@ -43,16 +44,16 @@ export function NowPanels({ project: p, actions, showTime }: NowPanelsProps) {
   const currentPersonEvent = latestEvent('person', p.playout.currentPersonId)
 
   const panels: { key: string; label: string; value: string | null; occurredAt: string | null; clearLabel: string; onClear: () => void }[] = [
-    { key: 'item', label: 'Aktuell punkt', value: nowItem, occurredAt: currentAgendaEvent?.occurredAt ?? null, clearLabel: 'Rensa ärende i bild', onClear: () => actions.clear('agendaItem') },
+    { key: 'item', label: t`Current item`, value: nowItem, occurredAt: currentAgendaEvent?.occurredAt ?? null, clearLabel: t`Clear agenda item on screen`, onClear: () => actions.clear('agendaItem') },
     {
       key: 'person',
-      label: 'Aktuell talare',
+      label: t`Current speaker`,
       // Tillfällig talare (exclamation-cue) är momentan och visas i samma ruta
       // istället för en egen — den vinner medan den är aktiv, annars faller
       // vi tillbaka till den ordinarie aktuella talaren.
       value: nowExclamation ?? nowSpeaker,
       occurredAt: nowExclamation ? null : currentPersonEvent?.occurredAt ?? null,
-      clearLabel: nowExclamation ? 'Rensa tillfällig talare' : 'Rensa talare i bild',
+      clearLabel: nowExclamation ? t`Clear temporary speaker` : t`Clear speaker on screen`,
       onClear: () => actions.clear(nowExclamation ? 'exclamation' : 'person'),
     },
   ]
@@ -120,12 +121,12 @@ interface SignalInterruptProps {
 export function SignalInterrupt({ actions }: SignalInterruptProps) {
   return (
     <div class="lw-interrupt" role="alert">
-      <p>Signalavbrott — videosignalen har avbrutits medan spelaren är öppen.</p>
+      <p>{t`Signal interruption — the video signal has been interrupted while the player is open.`}</p>
       <button class="btn btn-sm" type="button" onClick={() => void actions.interruptionDecision('wait_for_reconnect')}>
-        Invänta återanslutning
+        {t`Wait for reconnection`}
       </button>
       <button class="btn btn-danger btn-sm" type="button" onClick={() => void actions.interruptionDecision('end')}>
-        Stäng player och avsluta
+        {t`Close player and end`}
       </button>
     </div>
   )

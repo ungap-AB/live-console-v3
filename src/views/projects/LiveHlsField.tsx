@@ -1,10 +1,11 @@
+import { t } from '@lingui/core/macro'
 import { useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
 
 // UNG-198: livesändningens HLS-adress (.m3u8) att dela med en TV-uppspelare (t.ex. Quicktime i fullskärm i ett församlingshem).
 // Det är sändningens adress, inte inspelningens. Samma varning som i ingest-panelen finns som hjälptext på knappen.
-export const LIVE_HLS_WARNING =
-  'Den som har adressen kan se sändningen även när projektet inte är öppet för publik. Adressen gäller så länge projektets kanal finns, och ges ut på nytt för varje projekt som börjar sända. En TV-uppspelare som tappat strömmen (till exempel över natten) måste startas om av den som sköter TV:n.'
+export const liveHlsWarning = () =>
+  t`Anyone who has the address can watch the broadcast even when the project is not open to the public. The address is valid as long as the project's channel exists, and is issued anew for every project that starts broadcasting. A TV player that has lost the stream (for example overnight) must be restarted by whoever runs the TV.`
 
 interface LiveHlsFieldProps {
   url: string
@@ -16,7 +17,7 @@ interface LiveHlsFieldProps {
 }
 
 // Fältet delas av live-HLS-adressen (läge Live) och den publicerade videons HLS-adress (läge Ondemand), på samma plats i huvudet.
-export function LiveHlsField({ url, label = 'Live-HLS (TV, uppspelare)', warning = LIVE_HLS_WARNING, copyLabel = 'Kopiera live-HLS-adressen' }: LiveHlsFieldProps) {
+export function LiveHlsField({ url, label = t`Live HLS (TV, player)`, warning = liveHlsWarning(), copyLabel = t`Copy the live HLS address` }: LiveHlsFieldProps) {
   const [copied, setCopied] = useState(false)
 
   async function copy() {
@@ -34,7 +35,7 @@ export function LiveHlsField({ url, label = 'Live-HLS (TV, uppspelare)', warning
       <div class="pv-label">{label}</div>
       <div class="pv-link">
         <span class="pv-link-url" title={url}>{url.replace(/^https?:\/\//, '')}</span>
-        <button class="pv-icon-btn" type="button" aria-label={copied ? 'Adressen kopierad' : copyLabel} title={copyLabel} onClick={() => void copy()}>
+        <button class="pv-icon-btn" type="button" aria-label={copied ? t`The address is copied` : copyLabel} title={copyLabel} onClick={() => void copy()}>
           <Icon name={copied ? 'check' : 'content_copy'} size={18} />
         </button>
         {warning && (

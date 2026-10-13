@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { PublicMode } from '../../data/types.ts'
 
 // Signalstatus och tittarantal i projektets huvud (och i det expanderade live-läget, UNG-179). Ren logik, flyttad ut ur ProjectHeader så
@@ -12,14 +13,14 @@ export function encoderStatusOf(input: { hasChannel: boolean; publicMode: Public
   const phase = input.livePhase?.toLowerCase()
   const healthLive = input.healthState?.toLowerCase() === 'live'
   // Live utan ingest går inte att sända: varning i rött (UI-finslipning efter prod-prov 2026-10-13).
-  if (!input.hasChannel) return { label: 'Ingen ingest', tone: input.publicMode === 'live' ? 'danger' : 'neutral' }
-  if (input.publicMode === 'after' && (phase === 'live' || phase === 'waitingforstream' || healthLive)) return { label: 'Väntar på att enkoder stoppar', tone: 'warn' }
-  if (phase === 'live' || healthLive) return { label: 'Signal OK', tone: 'ok' }
-  if (phase === 'signalinterrupted' || phase === 'signalinterrupteddeclined') return { label: 'Avbrott i signal', tone: 'danger' }
-  if (input.publicMode === 'after' && phase === 'waitingforstream') return { label: 'Väntar på att enkoder stoppar', tone: 'warn' }
-  if (phase === 'streamended') return { label: 'Sändningen avslutad', tone: 'ended' }
-  if (input.publicMode === 'ondemand') return { label: 'Ingen signal', tone: 'warn' }
-  return { label: 'Väntar på signal', tone: 'warn' }
+  if (!input.hasChannel) return { label: t`No ingest`, tone: input.publicMode === 'live' ? 'danger' : 'neutral' }
+  if (input.publicMode === 'after' && (phase === 'live' || phase === 'waitingforstream' || healthLive)) return { label: t`Waiting for the encoder to stop`, tone: 'warn' }
+  if (phase === 'live' || healthLive) return { label: t`Signal OK`, tone: 'ok' }
+  if (phase === 'signalinterrupted' || phase === 'signalinterrupteddeclined') return { label: t`Signal interrupted`, tone: 'danger' }
+  if (input.publicMode === 'after' && phase === 'waitingforstream') return { label: t`Waiting for the encoder to stop`, tone: 'warn' }
+  if (phase === 'streamended') return { label: t`The broadcast has ended`, tone: 'ended' }
+  if (input.publicMode === 'ondemand') return { label: t`No signal`, tone: 'warn' }
+  return { label: t`Waiting for signal`, tone: 'warn' }
 }
 
 /** UNG-22: bara medan strömmen är live och IVS har gett en siffra. */

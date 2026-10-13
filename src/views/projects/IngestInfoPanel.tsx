@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useState } from 'preact/hooks'
 import type { Channel } from '../../data/types'
 import { ConfirmModal } from '../../components/ConfirmModal'
@@ -18,18 +19,18 @@ interface IngestInfoPanelProps {
 export function IngestInfoPanel({ channel, streamKey, onClose, onTeardown }: IngestInfoPanelProps) {
   const [confirmTeardown, setConfirmTeardown] = useState(false)
   return (
-    <div class="iip" role="region" aria-label="Ingest-info">
+    <div class="iip" role="region" aria-label={t({ message: 'Ingest info', context: 'region' })}>
       <IngestInfo
         channel={channel}
         streamKey={streamKey}
         trailingAction={(
           <div class="iip-actions">
             <button class="btn btn-sm btn-danger" type="button" onClick={() => setConfirmTeardown(true)}>
-              Riv ingest
+              {t`Tear down ingest`}
             </button>
             {onClose && (
               <button class="btn btn-sm" type="button" onClick={onClose}>
-                Stäng
+                {t`Close`}
               </button>
             )}
           </div>
@@ -37,8 +38,8 @@ export function IngestInfoPanel({ channel, streamKey, onClose, onTeardown }: Ing
       />
       {confirmTeardown && (
         <ConfirmModal
-          title="Riva ingest?"
-          confirmLabel="Riv ingest"
+          title={t`Tear down ingest?`}
+          confirmLabel={t`Tear down ingest`}
           danger
           onCancel={() => setConfirmTeardown(false)}
           onConfirm={() => {
@@ -47,7 +48,7 @@ export function IngestInfoPanel({ channel, streamKey, onClose, onTeardown }: Ing
             void onTeardown()
           }}
         >
-          <p>Ingest-resursen tas bort. För att sända behöver du skapa en ny ingest och använda en ny stream key i enkodern.</p>
+          <p>{t`The ingest resource is removed. To broadcast you need to create a new ingest and use a new stream key in the encoder.`}</p>
         </ConfirmModal>
       )}
     </div>

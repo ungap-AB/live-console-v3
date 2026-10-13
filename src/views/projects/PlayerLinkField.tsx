@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useRef, useState } from 'preact/hooks'
 import { useDismiss } from '../../app/useDismiss'
 import { Icon } from '../../components/Icon'
@@ -58,21 +59,21 @@ export function PlayerLinkField({ project: p, actions, label = true }: PlayerLin
 
   return (
     <div class="pv-field pv-link-field">
-      {label && <div class="pv-label">Spelarlänk</div>}
+      {label && <div class="pv-label">{t`Player link`}</div>}
       <div class="pv-link">
         <button
           class="pv-icon-btn"
           type="button"
           aria-pressed={p.visibility === 'open'}
           disabled={p.publicMode === 'after' && p.visibility === 'closed'}
-          aria-label={p.visibility === 'open' ? 'Stäng spelaren för publik' : 'Öppna spelaren för publik'}
-          title={p.visibility === 'open' ? 'Stäng spelaren för publik' : 'Öppna spelaren för publik'}
+          aria-label={p.visibility === 'open' ? t`Close the player to the public` : t`Open the player to the public`}
+          title={p.visibility === 'open' ? t`Close the player to the public` : t`Open the player to the public`}
           onClick={toggleVisibility}
         >
           <Icon name={p.visibility === 'open' ? 'visibility' : 'visibility_off'} size={18} />
         </button>
         <span class="pv-link-url" title={p.playerUrl}>{p.playerUrl.replace(/^https?:\/\//, '')}</span>
-        <button class="pv-icon-btn" type="button" aria-label={copied ? 'Länken kopierad' : 'Kopiera spelarlänk'} onClick={() => void copyLink()}>
+        <button class="pv-icon-btn" type="button" aria-label={copied ? t`The link is copied` : t`Copy player link`} onClick={() => void copyLink()}>
           <Icon name={copied ? 'check' : 'content_copy'} size={18} />
         </button>
         <div class="pv-iframe-menu-wrap" ref={iframeMenuRef}>
@@ -81,20 +82,20 @@ export function PlayerLinkField({ project: p, actions, label = true }: PlayerLin
             type="button"
             aria-haspopup="menu"
             aria-expanded={showIframeMenu}
-            aria-label={iframeCopied ? 'Iframe-koden kopierad' : 'IFRAME-alternativ'}
-            title={iframeCopied ? 'Iframe-koden kopierad' : 'IFRAME-alternativ'}
+            aria-label={iframeCopied ? t`The iframe code is copied` : t`IFRAME options`}
+            title={iframeCopied ? t`The iframe code is copied` : t`IFRAME options`}
             onClick={() => setShowIframeMenu((visible) => !visible)}
           >
             <Icon name={iframeCopied ? 'check' : 'code'} size={18} />
           </button>
           {showIframeMenu && (
             <div class="pv-iframe-menu" role="menu">
-              <button type="button" role="menuitem" onClick={() => void copyIframe()}>Kopiera IFRAME-kod</button>
-              <button type="button" role="menuitem" onClick={openIframeExample}>Öppna exempelsida</button>
+              <button type="button" role="menuitem" onClick={() => void copyIframe()}>{t`Copy IFRAME code`}</button>
+              <button type="button" role="menuitem" onClick={openIframeExample}>{t`Open example page`}</button>
             </div>
           )}
         </div>
-        <a class="pv-icon-btn" href={p.playerUrl} target="_blank" rel="noopener noreferrer" aria-label="Öppna spelaren i ny flik">
+        <a class="pv-icon-btn" href={p.playerUrl} target="_blank" rel="noopener noreferrer" aria-label={t`Open the player in a new tab`}>
           <Icon name="open_in_new" size={18} />
         </a>
       </div>
@@ -106,7 +107,7 @@ export function PlayerLinkField({ project: p, actions, label = true }: PlayerLin
 export function PlayerFooter({ project, actions, onSettings }: { project: Project; actions: ProjectActions; onSettings: () => void }) {
   return (
     <div class="pp-foot">
-      <button class="btn btn-sm" type="button" onClick={onSettings}><Icon name="settings" size={18} /> Spelarinställningar…</button>
+      <button class="btn btn-sm" type="button" onClick={onSettings}><Icon name="settings" size={18} /> {t`Player settings…`}</button>
       <PlayerLinkField project={project} actions={actions} label={false} />
     </div>
   )

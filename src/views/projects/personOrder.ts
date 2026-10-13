@@ -1,13 +1,16 @@
+import { t } from '@lingui/core/macro'
 // UNG-178: sorteringen av namnlistan i live-vyn är en vy, inte en ändring av listan. "Listans ordning" visar den lagrade ordningen;
 // "Namn A–Ö" och "Mest utspelade" ordnar bara det som visas och följer utspelningen löpande. Raden som just spelats ut flyttas inte
 // under pekaren: omsorteringen väntar tills pekaren lämnat listan (eller varit stilla en stund) och flyttas sedan mjukt.
 
+import { i18n } from '@lingui/core'
+
 export type PersonSort = 'manual' | 'name' | 'playCount'
 
-export const PERSON_SORT_OPTIONS: { value: PersonSort; label: string }[] = [
-  { value: 'manual', label: 'Listans ordning' },
-  { value: 'name', label: 'Namn A–Ö' },
-  { value: 'playCount', label: 'Mest utspelade' },
+export const personSortOptions = (): { value: PersonSort; label: string }[] => [
+  { value: 'manual', label: t`List order` },
+  { value: 'name', label: t`Name A–Z` },
+  { value: 'playCount', label: t`Most played` },
 ]
 
 export function parsePersonSort(value: string | null | undefined): PersonSort {
@@ -25,7 +28,7 @@ export function orderPeople<T extends { id: string; name: string }>(people: read
       const difference = playCount(right.id) - playCount(left.id)
       if (difference !== 0) return difference
     }
-    return left.name.localeCompare(right.name, 'sv')
+    return left.name.localeCompare(right.name, i18n.locales)
   })
 }
 

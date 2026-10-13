@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useState } from 'preact/hooks'
 import { Modal } from '../../components/Modal'
 import type { TimelineEvent } from '../../data/types'
@@ -27,6 +28,10 @@ function PauseGlyph({ filled }: { filled: boolean }) {
 // UNG-119: paus-knappen i lägesväljaren, precis till höger om Live. Vilande: neutral. Aktiv paus: fylld, varningsfärg och en
 // svag, långsam pulsering (3 s per varv; med reducerad rörelse i stället en synlig text). Att starta kräver bekräftelse i en dialog
 // med texten som visas över videon, att avsluta är ett klick.
+function endPauseLabel(since: string, duration: string): string {
+  return t`End break (paused since ${since}, ${duration})`
+}
+
 export function PauseButton({ pause, timeline, onStart, onResume, disabled = false }: PauseButtonProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [text, setText] = useState('')
@@ -51,8 +56,8 @@ export function PauseButton({ pause, timeline, onStart, onResume, disabled = fal
   }
 
   const label = pause
-    ? `Avsluta paus (pausad sedan ${formatLocalTime(pause.occurredAt)}, ${pauseDurationText(pause.occurredAt, now)})`
-    : disabled ? 'Paus går bara i läget Live' : 'Pausa sändningen'
+    ? endPauseLabel(formatLocalTime(pause.occurredAt), pauseDurationText(pause.occurredAt, now))
+    : disabled ? t`Break is only possible in the Live mode` : t`Pause the broadcast`
 
   return (
     <>
@@ -66,22 +71,22 @@ export function PauseButton({ pause, timeline, onStart, onResume, disabled = fal
         onClick={() => (pause ? onResume() : open())}
       >
         <PauseGlyph filled={Boolean(pause)} />
-        {pause && <span class="pv-pause-label">Paus</span>}
+        {pause && <span class="pv-pause-label">{t`Break`}</span>}
       </button>
       {dialogOpen && (
         <Modal
-          title="Pausa sändningen"
-          subtitle="Tittarna ser texten över videon tills du avslutar pausen. En markör sätts i kapitellistan."
+          title={t`Pause the broadcast`}
+          subtitle={t`The viewers see the text over the video until you end the break. A marker is set in the chapter list.`}
           onClose={() => setDialogOpen(false)}
           footer={
             <>
-              <button class="btn btn-sm" type="button" onClick={() => setDialogOpen(false)}>Avbryt</button>
-              <button class="btn btn-sm btn-primary" type="button" onClick={start}>Starta paus</button>
+              <button class="btn btn-sm" type="button" onClick={() => setDialogOpen(false)}>{t`Cancel`}</button>
+              <button class="btn btn-sm btn-primary" type="button" onClick={start}>{t`Start break`}</button>
             </>
           }
         >
           <label class="pause-dialog-field">
-            <span>Text som visas i spelaren</span>
+            <span>{t`Text shown in the player`}</span>
             <textarea
               class="pause-dialog-text"
               rows={3}

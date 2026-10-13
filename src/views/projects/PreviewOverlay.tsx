@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useMemo, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { CueKind, PreviewLink, PreviewPlayout, Project } from '../../data/types'
@@ -79,29 +80,29 @@ export function PreviewOverlay({ project: p, actions, kind, onClose }: PreviewOv
   }), [actions, p.id])
 
   const player = (
-    <section class="pvo-player" aria-label="Spelaren i förhandsvisning">
+    <section class="pvo-player" aria-label={t`The player in preview`}>
       {error && <p class="pvo-error" role="alert">{error}</p>}
       {link && p.playerUrl ? (
         <div class="pvo-frame">
-          <iframe key={link.token} src={previewPlayerUrl(p.playerUrl, link.token)} title="Förhandsvisning av spelaren" allow="autoplay; fullscreen" allowFullScreen />
+          <iframe key={link.token} src={previewPlayerUrl(p.playerUrl, link.token)} title={t`Preview of the player`} allow="autoplay; fullscreen" allowFullScreen />
         </div>
-      ) : !error && <p class="pvo-note">Förhandsvisningen laddas…</p>}
+      ) : !error && <p class="pvo-note">{t`The preview is loading…`}</p>}
     </section>
   )
 
   return (
     <PlayoutOverlay
-      title="Förhandsvisning"
-      label="Förhandsvisning av spelaren"
+      title={t`Preview`}
+      label={t`Preview of the player`}
       projectName={p.name}
       onClose={onClose}
       bar={beforeBroadcast && (
-        <div class="pvo-showas" role="group" aria-label="Visa spelaren som">
+        <div class="pvo-showas" role="group" aria-label={t`Show the player as`}>
           <button type="button" class={showAs === 'before' ? 'is-active' : ''} aria-pressed={showAs === 'before'} onClick={() => setShowAs('before')}>
-            Före sändningen
+            {t`Before the broadcast`}
           </button>
           <button type="button" class={showAs === 'live' ? 'is-active' : ''} aria-pressed={showAs === 'live'} onClick={() => setShowAs('live')}>
-            Under sändningen
+            {t`During the broadcast`}
           </button>
         </div>
       )}
@@ -110,9 +111,9 @@ export function PreviewOverlay({ project: p, actions, kind, onClose }: PreviewOv
         <div class="pvo">
           <div class="pvo-test">
             <div class="pvo-test-head">
-              <p class="pvo-hint">Testutspelning: det du spelar ut här syns bara i förhandsvisningen, inte för tittarna och inte i sändningens historik.</p>
+              <p class="pvo-hint">{t`Test play-out: what you play out here is only visible in the preview, not to the viewers and not in the broadcast's history.`}</p>
               <button class="btn btn-sm" type="button" disabled={!playout.currentAgendaItemId && !playout.currentPersonId} onClick={resetPlayout}>
-                Rensa testutspelningen
+                {t`Clear the test play-out`}
               </button>
             </div>
             <PlayoutColumns project={testProject} actions={testActions} searchable />
@@ -124,8 +125,8 @@ export function PreviewOverlay({ project: p, actions, kind, onClose }: PreviewOv
           {player}
           <p class="pvo-hint">
             {kind === 'draft'
-              ? 'Förhandsvisningen visar det sparade utkastet: trim, kapitel och undertexter som de blir när du publicerar. Ändringar som inte är sparade syns inte.'
-              : 'Förhandsvisningen visar det tittarna ser nu. Testutspelning finns bara före sändningen.'}
+              ? t`The preview shows the saved draft: trim, chapters and captions as they will be when you publish. Unsaved changes are not shown.`
+              : t`The preview shows what the viewers see now. Test play-out is only available before the broadcast.`}
           </p>
         </div>
       )}

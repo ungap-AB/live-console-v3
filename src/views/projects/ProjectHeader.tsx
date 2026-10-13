@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
 import { ConfirmModal } from '../../components/ConfirmModal'
@@ -61,7 +62,7 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
   useEffect(() => {
     const prevLabel = prevEncoderLabelRef.current
     prevEncoderLabelRef.current = encoderStatus.label
-    if (showIngestInfo && encoderStatus.label === 'Signal OK' && prevLabel !== 'Signal OK') onShowIngestInfoChange(false)
+    if (showIngestInfo && encoderStatus.tone === 'ok' && prevLabel !== encoderStatus.label) onShowIngestInfoChange(false)
   }, [encoderStatus.label, showIngestInfo])
 
   return (
@@ -69,7 +70,7 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
       <div class="pv-row">
         <button class="btn" type="button" onClick={onBack}>
           <Icon name="arrow_back" size={18} />
-          <span>Projekt</span>
+          <span>{t`Projects`}</span>
         </button>
         {editingTitle ? (
           <form
@@ -81,7 +82,7 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
           >
             <input
               class="pv-title-input"
-              aria-label="Rubrik"
+              aria-label={t`Title`}
               value={titleDraft}
               autoFocus
               onInput={(e) => setTitleDraft((e.target as HTMLInputElement).value)}
@@ -90,20 +91,20 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
               }}
             />
             <button class="btn btn-primary" type="submit">
-              Spara
+              {t`Save`}
             </button>
             <button class="btn" type="button" onClick={() => setEditingTitle(false)}>
-              Avbryt
+              {t`Cancel`}
             </button>
           </form>
         ) : (
           <>
             <h1 class="pv-title">{p.name}</h1>
-            {p.liveOnly && <span class="pv-liveonly" title="Markerat som endast live. Det ändrar inget beteende, och markören tas bort i spelarinställningarna.">Endast live</span>}
+            {p.liveOnly && <span class="pv-liveonly" title={t`Marked as live only. It changes no behavior, and the marker is removed in the player settings.`}>{t`Live only`}</span>}
             <button
               class="pv-icon-btn"
               type="button"
-              aria-label="Redigera rubrik"
+              aria-label={t`Edit title`}
               onClick={() => {
                 setTitleDraft(p.name)
                 setEditingTitle(true)
@@ -118,7 +119,7 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
         {viewerCount !== null && <ViewersChip count={viewerCount} />}
         {onIngestInfo && (
           <button class="btn btn-sm" type="button" disabled={!channel} onClick={onIngestInfo}>
-            <Icon name="info" size={18} /> Ingest info
+            <Icon name="info" size={18} /> {t`Ingest info`}
           </button>
         )}
         <span class="spacer" />
@@ -127,13 +128,13 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
 
       {confirmTeardown && (
         <ConfirmModal
-          title="Är sändningen slut?"
-          confirmLabel="Riv ingest"
+          title={t`Has the broadcast ended?`}
+          confirmLabel={t`Tear down ingest`}
           danger
           onCancel={() => setConfirmTeardown(false)}
           onConfirm={() => void teardownIngest()}
         >
-          <p>Enkodern har slutat sända. Ska vi riva streamingservern (ingesten) som användes? Om detta bara var ett test svarar du Avbryt — servern finns kvar och redo för en ny sändning.</p>
+          <p>{t`The encoder has stopped sending. Should we tear down the streaming server (the ingest) that was used? If this was only a test, answer Cancel — the server stays, ready for a new broadcast.`}</p>
         </ConfirmModal>
       )}
 

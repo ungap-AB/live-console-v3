@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { Modal } from '../../components/Modal'
 import type { Project } from '../../data/types'
@@ -21,11 +22,11 @@ import './PlayerSettingsDialog.css'
 
 // Dialogen är indelad i flikar efter kategori; alla flikar sparas tillsammans med Spara.
 const CATEGORIES = [
-  { key: 'link', label: 'Länk' },
-  { key: 'ingest', label: 'Ingest' },
-  { key: 'look', label: 'Texter och poster' },
-  { key: 'playback', label: 'Uppspelning' },
-  { key: 'stats', label: 'Mätning' },
+  { key: 'link', get label() { return t`Link` } },
+  { key: 'ingest', get label() { return t`Ingest` } },
+  { key: 'look', get label() { return t`Texts and poster` } },
+  { key: 'playback', get label() { return t`Playback` } },
+  { key: 'stats', get label() { return t`Measurement` } },
 ] as const
 export type PlayerSettingsCategory = (typeof CATEGORIES)[number]['key']
 
@@ -67,7 +68,7 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
   const shownPoster = posterRemoved ? null : localPreview ?? project.posterUrl ?? null
   // Exempeltexten i förhandsvisningen: den valda flikens text, annars spelarens standardtext eller ett exempel.
   const activeField = PLAYER_TEXT_FIELDS.find((field) => field.key === activeTextField) ?? PLAYER_TEXT_FIELDS[0]
-  const previewText = texts[activeField.key].trim() || activeField.fallback || 'Exempeltext'
+  const previewText = texts[activeField.key].trim() || activeField.fallback || t`Example text`
   const changed = changedSettings(project, texts, placement, muxEnabled, muxRespectDnt, dvrEnabled, exclamationsAsSpeakers, liveOnly)
   const dirty = changed !== null || posterFile !== null || (posterRemoved && Boolean(project.posterUrl))
 
@@ -107,7 +108,7 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
   return (
     <>
     <Modal
-      title="Spelarinställningar"
+      title={t`Player settings`}
       onClose={onClose}
       // Esc och ✕ hör till den öppna layoutdialogen medan den visas, så båda dialogerna inte stängs på en gång.
       closeDisabled={inheriting}
@@ -115,15 +116,15 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
       footer={
         <>
           <button class="btn btn-sm" type="button" onClick={onClose}>
-            Avbryt
+            {t`Cancel`}
           </button>
           <button class="btn btn-sm btn-primary" type="button" disabled={!dirty || saving} onClick={save}>
-            {saving ? 'Sparar…' : 'Spara'}
+            {saving ? t`Saving…` : t`Save`}
           </button>
         </>
       }
     >
-      <div class="ps-cats" role="tablist" aria-label="Kategori">
+      <div class="ps-cats" role="tablist" aria-label={t`Category`}>
         {CATEGORIES.map((item) => (
           <button
             key={item.key}
@@ -144,13 +145,13 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
       <div class="ps-cat-stack">
       <div class="ps-cat" role="tabpanel" id="ps-cat-link" aria-labelledby="ps-cat-tab-link" hidden={category !== 'link'}>
       <section class="ps-section">
-        <h3>Länk och adresser</h3>
-        <p class="ps-help">Öppna eller stäng spelaren för publik (gäller direkt), kopiera länken eller inbäddningskoden.</p>
+        <h3>{t`Link and addresses`}</h3>
+        <p class="ps-help">{t`Open or close the player to the public (takes effect immediately), copy the link or the embed code.`}</p>
         <div class="ps-links">
           <PlayerLinkField project={project} actions={actions} />
           {liveHlsUrl && <LiveHlsField url={liveHlsUrl} />}
           {project.publicMode === 'ondemand' && project.recording?.hlsUrl && project.recording.state !== 'awaitingApproval' && (
-            <LiveHlsField url={project.recording.hlsUrl} label="Ondemand-HLS (publicerad video)" warning={null} copyLabel="Kopiera ondemand-HLS-adressen" />
+            <LiveHlsField url={project.recording.hlsUrl} label={t`On-demand HLS (published video)`} warning={null} copyLabel={t`Copy the on-demand HLS address`} />
           )}
         </div>
       </section>
@@ -159,29 +160,29 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
 
       <div class="ps-cat" role="tabpanel" id="ps-cat-ingest" aria-labelledby="ps-cat-tab-ingest" hidden={category !== 'ingest'}>
       <section class="ps-section">
-        <h3>Ingest</h3>
-        <p class="ps-help">Uppgifterna som enkodern sänder till. Live-HLS-adressen finns under fliken Länk.</p>
+        <h3>{t`Ingest`}</h3>
+        <p class="ps-help">{t`The details the encoder sends to. The live HLS address is under the Link tab.`}</p>
         {ingest
           ? <IngestInfoPanel channel={ingest.channel} streamKey={ingest.streamKey} onTeardown={ingest.onTeardown} />
-          : <p class="ps-help">Ingen ingest skapad. Den skapas i Before, under förberedelsen Ingest.</p>}
+          : <p class="ps-help">{t`No ingest created. It is created in Before, under the Ingest preparation.`}</p>}
       </section>
       </div>
 
       <div class="ps-cat" role="tabpanel" id="ps-cat-look" aria-labelledby="ps-cat-tab-look" hidden={category !== 'look'}>
       <section class="ps-section">
-        <h3>Layout från ett annat projekt</h3>
-        <p class="ps-help">Hämta texter, textplacering, Mux-inställning och posterbild från ett annat projekt. De ersätter dessa inställningar, efter bekräftelse.</p>
+        <h3>{t`Layout from another project`}</h3>
+        <p class="ps-help">{t`Get texts, text placement, Mux setting and poster image from another project. They replace these settings, after confirmation.`}</p>
         <div class="ps-poster-actions">
           <button class="btn btn-sm" type="button" onClick={() => setInheriting(true)}>
-            Hämta layout från projekt…
+            {t`Get layout from project…`}
           </button>
         </div>
       </section>
 
       <section class="ps-section">
-        <h3>Texter i spelaren</h3>
-        <p class="ps-help">Texten som tittarna ser i respektive läge. Lämnas ett fält tomt används spelarens standardtext, om det finns någon.</p>
-        <div class="ps-tabs" role="tablist" aria-label="Textläge">
+        <h3>{t`Texts in the player`}</h3>
+        <p class="ps-help">{t`The text the viewers see in each mode. If a field is left empty, the player's default text is used, if there is one.`}</p>
+        <div class="ps-tabs" role="tablist" aria-label={t`Text mode`}>
           {PLAYER_TEXT_FIELDS.map((field) => (
             <button
               key={field.key}
@@ -211,7 +212,7 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
               rows={4}
               maxLength={MAX_PLAYER_TEXT_LENGTH}
               value={texts[field.key]}
-              placeholder={field.fallback ?? 'Ingen text visas'}
+              placeholder={field.fallback ?? t`No text is shown`}
               onInput={(e) => {
                 const value = (e.target as HTMLTextAreaElement).value
                 setTexts((current) => ({ ...current, [field.key]: value }))
@@ -222,7 +223,7 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
         ))}
 
         <div class="ps-placement">
-          <span id="ps-placement-label" class="ps-placement-label">Placering i videofönstret</span>
+          <span id="ps-placement-label" class="ps-placement-label">{t`Placement in the video window`}</span>
           <div class="ps-seg" role="radiogroup" aria-labelledby="ps-placement-label">
             {TEXT_PLACEMENT_OPTIONS.map((option) => (
               <button
@@ -237,18 +238,18 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
               </button>
             ))}
           </div>
-          <span class="ps-help">Gäller alla fyra texterna. Välj överkant eller underkant om posterns grafik ligger i mitten.</span>
+          <span class="ps-help">{t`Applies to all four texts. Choose top or bottom edge if the poster's graphics are in the middle.`}</span>
         </div>
       </section>
 
       <section class="ps-section">
-        <h3>Poster</h3>
-        <p class="ps-help">Bilden visas i spelaren när ingen video spelas, t.ex. före sändningen och när inspelningen inte är klar.</p>
-        <div class="ps-poster" aria-label="Förhandsvisning av poster och text">
-          {shownPoster ? <img src={shownPoster} alt="Poster" /> : <span>Ingen poster</span>}
+        <h3>{t`Poster`}</h3>
+        <p class="ps-help">{t`The image is shown in the player when no video is playing, e.g. before the broadcast and when the recording is not ready.`}</p>
+        <div class="ps-poster" aria-label={t`Preview of poster and text`}>
+          {shownPoster ? <img src={shownPoster} alt={t`Poster`} /> : <span>{t`No poster`}</span>}
           <span class={`ps-poster-text ps-poster-text-${placement}`}>{previewText}</span>
         </div>
-        <p class="ps-help">Förhandsvisningen visar vald placering med texten från den valda fliken.</p>
+        <p class="ps-help">{t`The preview shows the chosen placement with the text from the chosen tab.`}</p>
         <div class="ps-poster-actions">
           <input
             ref={fileInput}
@@ -262,26 +263,25 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
             }}
           />
           <button class="btn btn-sm" type="button" onClick={() => fileInput.current?.click()}>
-            {shownPoster ? 'Byt bild…' : 'Välj bild…'}
+            {shownPoster ? t`Change image…` : t`Choose image…`}
           </button>
           {shownPoster && (
             <button class="btn btn-sm" type="button" onClick={clearPoster}>
-              Ta bort
+              {t`Remove`}
             </button>
           )}
         </div>
         {posterError && <p class="ps-error" role="alert">{posterError}</p>}
-        <p class="ps-help">JPG, PNG eller WebP, högst 5 MB. Rekommenderat format 16:9, t.ex. 1920×1080.</p>
+        <p class="ps-help">{t`JPG, PNG or WebP, at most 5 MB. Recommended format 16:9, e.g. 1920×1080.`}</p>
       </section>
 
       </div>
 
       <div class="ps-cat" role="tabpanel" id="ps-cat-playback" aria-labelledby="ps-cat-tab-playback" hidden={category !== 'playback'}>
       <section class="ps-section">
-        <h3>Talare i dagordningen</h3>
+        <h3>{t`Speakers in the agenda`}</h3>
         <p class="ps-help">
-          Under en livesändning listar spelaren talarna under varje dagordningspunkt allteftersom de visas med namnskylt. Listan fylls på
-          med några tiotals sekunders fördröjning.
+          {t`During a live broadcast the player lists the speakers under each agenda item as they are shown with a name sign. The list is filled in with a delay of a few tens of seconds.`}
         </p>
         <label class="ps-switch">
           <input
@@ -289,29 +289,26 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
             checked={exclamationsAsSpeakers}
             onChange={(e) => setExclamationsAsSpeakers((e.target as HTMLInputElement).checked)}
           />
-          <span>Räkna utrop som talare</span>
+          <span>{t`Count announcements as speakers`}</span>
         </label>
-        <span class="ps-help">Av som standard. Utrop (fria texter som visas som namnskylt) listas då också under punkten.</span>
+        <span class="ps-help">{t`Off by default. Announcements (free texts shown as a name sign) are then also listed under the item.`}</span>
       </section>
 
       <section class="ps-section">
-        <h3>Endast live</h3>
+        <h3>{t`Live only`}</h3>
         <p class="ps-help">
-          En markör för projekt som bara ska användas för livetittning, till exempel ett heldagspass som inte ska läggas ut som ondemand i sin
-          helhet. Den ändrar inget: inspelning, spola tillbaka och att skapa ondemand-projekt fungerar som vanligt. Den visas som en etikett i
-          projektlistan och i projektets huvud, och du kan ta bort den när du vill.
+          {t`A marker for projects that are only to be used for live viewing, for example a full-day session that is not to be published on demand in its entirety. It changes nothing: recording, rewinding and creating on-demand projects work as usual. It is shown as a label in the project list and in the project header, and you can remove it whenever you want.`}
         </p>
         <label class="ps-switch">
           <input type="checkbox" checked={liveOnly} onChange={(e) => setLiveOnly((e.target as HTMLInputElement).checked)} />
-          <span>Markera som endast live</span>
+          <span>{t`Mark as live only`}</span>
         </label>
       </section>
 
       <section class="ps-section">
-        <h3>Spola tillbaka i livesändning</h3>
+        <h3>{t`Rewind in a live broadcast`}</h3>
         <p class="ps-help">
-          Tittarna kan pausa livesändningen, spola tillbaka och hoppa till en tidigare dagordningspunkt, och sedan gå tillbaka till live.
-          Bara det som sändes publikt går att se i efterhand.
+          {t`The viewers can pause the live broadcast, rewind and jump to an earlier agenda item, and then go back to live. Only what was broadcast publicly can be watched afterwards.`}
         </p>
         <label class="ps-switch">
           <input
@@ -319,19 +316,18 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
             checked={dvrEnabled}
             onChange={(e) => setDvrEnabled((e.target as HTMLInputElement).checked)}
           />
-          <span>Låt tittarna spola tillbaka</span>
+          <span>{t`Let the viewers rewind`}</span>
         </label>
-        <span class="ps-help">Av som standard. Börjar gälla för tittare som laddar om spelaren.</span>
+        <span class="ps-help">{t`Off by default. Takes effect for viewers who reload the player.`}</span>
       </section>
 
       </div>
 
       <div class="ps-cat" role="tabpanel" id="ps-cat-stats" aria-labelledby="ps-cat-tab-stats" hidden={category !== 'stats'}>
       <section class="ps-section">
-        <h3>Uppspelningsmätning</h3>
+        <h3>{t`Playback measurement`}</h3>
         <p class="ps-help">
-          Spelaren skickar anonym uppspelningsdata (kvalitet, buffring och fel) till Mux, till hjälp vid felsökning. Inga cookies används
-          och tittarna identifieras inte.
+          {t`The player sends anonymous playback data (quality, buffering and errors) to Mux, to help with troubleshooting. No cookies are used and the viewers are not identified.`}
         </p>
         <label class="ps-switch">
           <input
@@ -339,7 +335,7 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
             checked={muxEnabled}
             onChange={(e) => setMuxEnabled((e.target as HTMLInputElement).checked)}
           />
-          <span>Mät uppspelning med Mux</span>
+          <span>{t`Measure playback with Mux`}</span>
         </label>
         <label class="ps-switch">
           <input
@@ -348,14 +344,14 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
             disabled={!muxEnabled}
             onChange={(e) => setMuxRespectDnt((e.target as HTMLInputElement).checked)}
           />
-          <span>Respektera tittarens "Do Not Track"</span>
+          <span>{t`Respect the viewer's "Do Not Track"`}</span>
         </label>
-        <span class="ps-help">Av som standard: alla visningar mäts. Slås det på mäts inte tittare vars webbläsare har Do Not Track aktiverat.</span>
+        <span class="ps-help">{t`Off by default: all views are measured. When it is on, viewers whose browser has Do Not Track enabled are not measured.`}</span>
         <label class="ps-mux-key">
-          <span class="ps-placement-label">Mux env key</span>
-          <input type="text" readOnly value={project.muxEnvKey ?? ''} placeholder="Ingen nyckel konfigurerad" aria-label="Mux env key (skrivskyddad)" />
+          <span class="ps-placement-label">{t`Mux env key`}</span>
+          <input type="text" readOnly value={project.muxEnvKey ?? ''} placeholder={t`No key configured`} aria-label={t`Mux env key (read-only)`} />
         </label>
-        <span class="ps-help">Nyckeln ställs in per domän av en administratör. Utan egen nyckel används ungaps standardnyckel.</span>
+        <span class="ps-help">{t`The key is set per domain by an administrator. Without a key of its own, ungap's default key is used.`}</span>
       </section>
       </div>
 

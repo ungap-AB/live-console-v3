@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { ComponentChildren } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
@@ -64,7 +65,7 @@ interface PlayoutOverlayProps {
 
 // Utspelningen som arbetsvy över hela projektet. Stängs bara med Stäng (inte Esc), så att en tangenttryckning under sändning inte tar
 // bort listorna.
-export function PlayoutOverlay({ title = 'Utspelning', label = 'Utspelning av kapitel', projectName, center, bar, onClose, children }: PlayoutOverlayProps) {
+export function PlayoutOverlay({ title = t`Play-out`, label = t`Play-out of chapters`, projectName, center, bar, onClose, children }: PlayoutOverlayProps) {
   return (
     <div class="po" role="region" aria-label={label}>
       <header class="po-head">
@@ -76,7 +77,7 @@ export function PlayoutOverlay({ title = 'Utspelning', label = 'Utspelning av ka
         <div class="po-head-end">
           {bar}
           <button class="btn btn-sm" type="button" onClick={onClose}>
-            <Icon name="close" size={18} /> Stäng
+            <Icon name="close" size={18} /> {t`Close`}
           </button>
         </div>
       </header>

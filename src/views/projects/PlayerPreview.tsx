@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { ComponentChildren } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
@@ -66,12 +67,12 @@ export function PlayerPreview({ projectId, url, version, preview, footer }: Play
   }, [active, projectId, preview?.variant, preview?.mode, renewal])
 
   return (
-    <section class="pp" aria-label="Förhandsvisning av spelaren">
+    <section class="pp" aria-label={t`Preview of the player`}>
       {preview && (
         <div class="pp-bar">
-          <div class="pp-showas" role="group" aria-label="Visa spelaren som">
+          <div class="pp-showas" role="group" aria-label={t`Show the player as`}>
             <button type="button" class={!active ? 'is-active' : ''} aria-pressed={!active} onClick={() => setAsPreview(false)}>
-              Publicerad
+              {t`Published`}
             </button>
             <button type="button" class={active ? 'is-active' : ''} aria-pressed={active} onClick={() => setAsPreview(true)}>
               {preview.label}
@@ -83,12 +84,12 @@ export function PlayerPreview({ projectId, url, version, preview, footer }: Play
         error ? <p class="pp-note" role="alert">{error}</p>
         : link ? (
           <ScaledFrame>
-            <iframe key={`${link.token}|${version}`} src={previewPlayerUrl(url, link.token)} title="Förhandsvisning av spelaren" allow="autoplay; fullscreen" allowFullScreen />
+            <iframe key={`${link.token}|${version}`} src={previewPlayerUrl(url, link.token)} title={t`Preview of the player`} allow="autoplay; fullscreen" allowFullScreen />
           </ScaledFrame>
-        ) : <p class="pp-note">Förhandsvisningen laddas…</p>
+        ) : <p class="pp-note">{t`The preview is loading…`}</p>
       ) : (
         <ScaledFrame>
-          <iframe key={version} src={url} title="Spelaren som tittarna ser den" allow="autoplay; fullscreen" allowFullScreen />
+          <iframe key={version} src={url} title={t`The player as the viewers see it`} allow="autoplay; fullscreen" allowFullScreen />
         </ScaledFrame>
       )}
       {footer}

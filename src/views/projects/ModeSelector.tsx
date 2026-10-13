@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { Fragment } from 'preact'
 import type { Project } from '../../data/types'
 import type { ProjectActions } from './actions'
@@ -25,7 +26,7 @@ export function ModeSelector({ project: p, actions, onModeSelect }: ModeSelector
     <>
       {/* Utan synlig etikett "Läge", för att spara höjd. */}
       <div class="pv-field">
-        <div class="pv-seg" role="group" aria-label="Läge">
+        <div class="pv-seg" role="group" aria-label={t`Mode`}>
           {MODES.map((mode) => (
             <Fragment key={mode}>
               <button
@@ -34,7 +35,7 @@ export function ModeSelector({ project: p, actions, onModeSelect }: ModeSelector
                 aria-pressed={shownMode === mode}
                 aria-busy={switchingTo === mode ? true : undefined}
                 disabled={switchingTo !== null || (mode === 'before' && p.publicMode === 'live')}
-                title={mode === 'before' && p.publicMode === 'live' ? 'Gå till After innan Before — ett avbrutet test granskas alltid där först.' : undefined}
+                title={mode === 'before' && p.publicMode === 'live' ? t`Go to After before Before — an aborted test is always reviewed there first.` : undefined}
                 onClick={() => (onModeSelect ? onModeSelect(mode) : selectMode(mode))}
               >
                 {MODE_LABEL[mode]}

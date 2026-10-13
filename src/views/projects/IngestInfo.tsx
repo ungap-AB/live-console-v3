@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { ComponentChildren } from 'preact'
 import type { Channel } from '../../data/types'
 import { CopyField } from '../../components/CopyField'
@@ -13,11 +14,11 @@ export function IngestInfo({ channel, streamKey, trailingAction }: IngestInfoPro
   return (
     <div class="ingest-info">
       <div class="field">
-        <label>Ingest-server</label>
-        <CopyField value={channel?.ingestEndpoint ?? null} placeholder="Hämtar…" monospace />
+        <label>{t`Ingest server`}</label>
+        <CopyField value={channel?.ingestEndpoint ?? null} placeholder={t`Fetching…`} monospace />
       </div>
       <div class="field">
-        <label>Stream key</label>
+        <label>{t`Stream key`}</label>
         <CopyField value={streamKey} mask monospace />
       </div>
       {trailingAction}

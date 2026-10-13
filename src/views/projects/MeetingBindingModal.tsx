@@ -1,3 +1,4 @@
+import { plural, t } from '@lingui/core/macro'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { MeetingSummary, MeetingTopic } from '../../data/types'
@@ -13,6 +14,18 @@ interface MeetingBindingModalProps {
   currentAgendaName?: string
   actions: ProjectActions
   onClose: () => void
+}
+
+function meetingIdText(meetingId: string | number): string {
+  return t`Meeting ID ${meetingId}`
+}
+
+function topicsFetchedText(title: string, count: number): string {
+  return plural(count, { one: `${title} · # agenda item fetched`, other: `${title} · # agenda items fetched` })
+}
+
+function linkedText(title: string): string {
+  return t`${title} is linked to the project.`
 }
 
 export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaName, actions, onClose }: MeetingBindingModalProps) {
@@ -31,7 +44,7 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
   async function findMeetings() {
     const normalizedDomain = meetingDomain.trim().toLowerCase()
     if (!normalizedDomain) {
-      setError('Din användare saknar en domän.')
+      setError(t`Your user has no domain.`)
       return
     }
     setLoading(true)
@@ -50,9 +63,9 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
       // operatören välja själv (inget möte förvalt).
       setSelectedMeeting(sorted.find((meeting) => meeting.id === activeId) ?? null)
       setStep('meetings')
-      if (found.length === 0) setError('Inga möten hittades för domänen.')
+      if (found.length === 0) setError(t`No meetings were found for the domain.`)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Kunde inte hämta möten.')
+      setError(cause instanceof Error ? cause.message : t`Could not fetch meetings.`)
     } finally {
       setLoading(false)
     }
@@ -67,7 +80,7 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
       setTopics(agendaTopics)
       setStep('events')
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Kunde inte hämta Meeting-agendan.')
+      setError(cause instanceof Error ? cause.message : t`Could not fetch the Meeting agenda.`)
     } finally {
       setLoading(false)
     }
@@ -84,7 +97,7 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
       await actions.setMeetingBinding(meetingDomain.trim().toLowerCase(), String(selectedMeeting.id), eventsEnabled)
       setStep('done')
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Kunde inte koppla mötet.')
+      setError(cause instanceof Error ? cause.message : t`Could not link the meeting.`)
     } finally {
       setLoading(false)
     }
@@ -92,8 +105,8 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
 
   if (step === 'domain') {
     return (
-      <Modal title="Koppla till Meeting" subtitle={`Projekt: ${projectName}`} onClose={onClose}>
-        <label class="form-label" for="meeting-domain">Meeting-domän</label>
+      <Modal title={t`Link to Meeting`} subtitle={t`Project: ${projectName}`} onClose={onClose}>
+        <label class="form-label" for="meeting-domain">{t`Meeting domain`}</label>
         <input
           id="meeting-domain"
           class="form-input"
@@ -108,9 +121,9 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
         />
         {error && <p class="form-error">{error}</p>}
         <div class="modal-actions">
-          <button class="btn btn-sm" type="button" onClick={onClose}>Avbryt</button>
+          <button class="btn btn-sm" type="button" onClick={onClose}>{t`Cancel`}</button>
           <button class="btn btn-sm btn-primary" type="button" disabled={loading} onClick={() => void findMeetings()}>
-            {loading ? 'Hämtar...' : 'Fortsätt'}
+            {loading ? t`Fetching...` : t`Continue`}
           </button>
         </div>
       </Modal>
@@ -120,14 +133,14 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
   if (step === 'meetings') {
     return (
       <Modal
-        title="Välj möte"
-        subtitle={`Meeting-domän: ${meetingDomain}`}
+        title={t`Choose meeting`}
+        subtitle={t`Meeting domain: ${meetingDomain}`}
         onClose={onClose}
         footer={
           <>
-            <button class="btn btn-sm" type="button" onClick={() => setStep('domain')}>Tillbaka</button>
+            <button class="btn btn-sm" type="button" onClick={() => setStep('domain')}>{t`Back`}</button>
             <button class="btn btn-sm btn-primary" type="button" disabled={!selectedMeeting || loading} onClick={() => void loadMeetingAgenda()}>
-              {loading ? 'Hämtar agenda...' : 'Koppla'}
+              {loading ? t`Fetching agenda...` : t({ message: 'Link', context: 'verb' })}
             </button>
           </>
         }
@@ -146,15 +159,15 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
                 >
                   <strong>{meeting.title}</strong>
                   <span>
-                    Meeting-ID {meeting.id}
-                    {meeting.id === activeMeetingId && <span class="meeting-picker-active">Aktivt möte</span>}
+                    {meetingIdText(meeting.id)}
+                    {meeting.id === activeMeetingId && <span class="meeting-picker-active">{t`Active meeting`}</span>}
                   </span>
                 </button>
               </li>
             ))}
           </ul>
         ) : (
-          <p class="empty-state">{error ?? 'Inga möten hittades för domänen.'}</p>
+          <p class="empty-state">{error ?? t`No meetings were found for the domain.`}</p>
         )}
         {error && meetings.length > 0 && <p class="form-error">{error}</p>}
       </Modal>
@@ -163,16 +176,16 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
 
   if (step === 'events') {
     return (
-      <Modal title="Meeting kopplat" subtitle={`${selectedMeeting?.title ?? ''} · ${topics.length} agendapunkter hämtade`} onClose={onClose}>
-        <p>Ska händelser från Meeting spela ut dagordningspunkter och namnskyltar i sändningen?</p>
-        {currentAgendaName && <p class="field-help">Nuvarande agenda ersätts av en ny Meeting-agenda och kopplas inte längre till projektet.</p>}
+      <Modal title={t`Meeting linked`} subtitle={topicsFetchedText(selectedMeeting?.title ?? '', topics.length)} onClose={onClose}>
+        <p>{t`Should events from Meeting play out agenda items and name signs in the broadcast?`}</p>
+        {currentAgendaName && <p class="field-help">{t`The current agenda is replaced by a new Meeting agenda and is no longer linked to the project.`}</p>}
         {error && <p class="form-error">{error}</p>}
         <div class="modal-actions">
           <button class="btn btn-sm" type="button" disabled={loading} onClick={() => void connectMeeting(false)}>
-            {loading ? 'Sparar...' : 'Nej, ignorera händelser'}
+            {loading ? t`Saving...` : t`No, ignore events`}
           </button>
           <button class="btn btn-sm btn-primary" type="button" disabled={loading} onClick={() => void connectMeeting(true)}>
-            {loading ? 'Sparar...' : 'Ja, spela ut händelser'}
+            {loading ? t`Saving...` : t`Yes, play out events`}
           </button>
         </div>
       </Modal>
@@ -180,11 +193,11 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
   }
 
   return (
-    <Modal title="Meeting kopplat" onClose={onClose}>
-      <p>{selectedMeeting?.title} är kopplat till projektet.</p>
-      <p>Dagordning ({topics.length} punkter) och en namnlista för mötet är kopplade.</p>
+    <Modal title={t`Meeting linked`} onClose={onClose}>
+      <p>{linkedText(selectedMeeting?.title ?? '')}</p>
+      <p>{plural(topics.length, { one: 'Agenda (# item) and a name list for the meeting are linked.', other: 'Agenda (# items) and a name list for the meeting are linked.' })}</p>
       <div class="modal-actions">
-        <button class="btn btn-sm btn-primary" type="button" onClick={onClose}>Klart</button>
+        <button class="btn btn-sm btn-primary" type="button" onClick={onClose}>{t`Done`}</button>
       </div>
     </Modal>
   )

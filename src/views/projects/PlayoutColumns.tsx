@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { Agenda, AgendaItem, ImportMode, NameList, NameListPerson, Project, TextImportCounts } from '../../data/types'
@@ -14,7 +15,7 @@ import { errorMessage, runOptimistic } from '../../app/optimistic'
 import { Toast } from '../../components/Toast'
 import type { ProjectActions } from './actions'
 import { useNameList } from './useNameList'
-import { PERSON_SORT_OPTIONS, IDLE_REORDER_MS, orderPeople, parsePersonSort, resolveShown, type PersonSort } from './personOrder'
+import { personSortOptions, IDLE_REORDER_MS, orderPeople, parsePersonSort, resolveShown, type PersonSort } from './personOrder'
 import { useFlip } from './useFlip'
 import { highlight, markedHit, matches, moveActive, queryTokens, shouldActivateSearch, type Hit } from './playoutSearchLogic'
 import './PlayoutColumns.css'
@@ -42,6 +43,27 @@ function Highlighted({ text, tokens }: { text: string; tokens: readonly string[]
 // klientanrop och utspelningslogik) — Playouts egen kopia försvinner när
 // den gamla vyn tas bort. Kopplingen görs i kolumnens rubrikrad; en
 // okopplad kolumn visar ett tomt läge, inte ett fel.
+
+function pdfCountTitle(count: number): string {
+  return t`PDF documents (${count})`
+}
+
+function openPdfLabel(title: string): string {
+  return t`Open PDF documents for ${title}`
+}
+
+function clearOnScreenLabel(name: string): string {
+  return t`Clear ${name} on screen`
+}
+
+function playOutLabel(name: string): string {
+  return t`Play out ${name}`
+}
+
+function playCountTitle(count: number): string {
+  return t`${count} play-outs`
+}
+
 export function PlayoutColumns({ project: p, actions, live = false, openPicker = null, onPickerClosed, searchable = live }: PlayoutColumnsProps) {
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
@@ -108,7 +130,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
   useFlip(namesBodyRef, shownIds.current)
 
   async function addAgendaItem(): Promise<string> {
-    const updated = await client.agendas.addItem(agenda!.id, { title: 'Ny punkt' })
+    const updated = await client.agendas.addItem(agenda!.id, { title: t`New item` })
     setAgenda(updated)
     return updated.items[updated.items.length - 1].id
   }
@@ -130,7 +152,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
       },
       request: () => client.agendas.updateItem(current.id, itemId, { title }),
       onSuccess: (updated) => setAgenda((prev) => (prev && prev.id === updated.id ? updated : prev)),
-      onError: (err) => setRenameError(errorMessage(err, 'Kunde inte byta namn.')),
+      onError: (err) => setRenameError(errorMessage(err, t`Could not rename.`)),
     })
   }
 
@@ -144,7 +166,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
   }
 
   async function addPerson(): Promise<string> {
-    const updated = await client.namelists.addPerson(nameList!.id, { name: 'Ny person' })
+    const updated = await client.namelists.addPerson(nameList!.id, { name: t`New person` })
     setNameList(updated)
     return updated.people[updated.people.length - 1].id
   }
@@ -165,7 +187,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
       },
       request: () => client.namelists.updatePerson(current.id, personId, { name }),
       onSuccess: (updated) => setNameList((prev) => (prev && prev.id === updated.id ? updated : prev)),
-      onError: (err) => setRenameError(errorMessage(err, 'Kunde inte byta namn.')),
+      onError: (err) => setRenameError(errorMessage(err, t`Could not rename.`)),
     })
   }
 
@@ -188,13 +210,13 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
   }
 
   async function createAndAttachAgenda() {
-    const created = await client.agendas.create({ name: p.name, description: 'Utkast' })
+    const created = await client.agendas.create({ name: p.name, description: t`Draft` })
     await actions.setAgenda(created.id)
     allAgendasResource.reload()
   }
 
   async function createAndAttachNameList() {
-    const created = await client.namelists.create({ name: p.name, description: 'Utkast' })
+    const created = await client.namelists.create({ name: p.name, description: t`Draft` })
     actions.setNameList(created.id)
     allNameListsResource.reload()
   }
@@ -207,7 +229,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
   async function importAgenda(text: string, mode: ImportMode): Promise<TextImportCounts> {
     let target = agenda
     if (!target) {
-      target = await client.agendas.create({ name: p.name, description: 'Utkast' })
+      target = await client.agendas.create({ name: p.name, description: t`Draft` })
       await actions.setAgenda(target.id)
       allAgendasResource.reload()
     }
@@ -219,7 +241,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
   async function importNameList(text: string, mode: ImportMode): Promise<TextImportCounts> {
     let target = nameList
     if (!target) {
-      target = await client.namelists.create({ name: p.name, description: 'Utkast' })
+      target = await client.namelists.create({ name: p.name, description: t`Draft` })
       await actions.setNameList(target.id)
       allNameListsResource.reload()
     }
@@ -324,8 +346,8 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
             role="searchbox"
             autoComplete="off"
             spellcheck={false}
-            aria-label="Sök i dagordning och namnlista"
-            placeholder="Sök punkt eller namn. Tryck / för att söka"
+            aria-label={t`Search the agenda and name list`}
+            placeholder={t`Search item or name. Press / to search`}
             value={query}
             onInput={(event) => {
               setQuery(event.currentTarget.value)
@@ -334,7 +356,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
             onKeyDown={onSearchKeyDown}
           />
           {query && (
-            <button class="pcols-search-clear" type="button" aria-label="Rensa sökningen" title="Rensa sökningen (Esc)" onClick={clearSearch}>
+            <button class="pcols-search-clear" type="button" aria-label={t`Clear the search`} title={t`Clear the search (Esc)`} onClick={clearSearch}>
               <Icon name="close" size={16} />
             </button>
           )}
@@ -346,12 +368,12 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
       <div class={`pcols${live ? ' is-live' : ''}`}>
         <section class="pcol">
           <div class="pcol-head">
-            <h2>Dagordning</h2>
+            <h2>{t`Agenda`}</h2>
             <span class="pcol-sub">{agenda?.name ?? ''}</span>
             <AttachedListPicker
               currentId={p.agendaId}
               items={(allAgendasResource.data ?? []).map((a) => ({ id: a.id, name: a.name }))}
-              pickerTitle={p.agendaId ? 'Byt dagordning' : 'Koppla dagordning'}
+              pickerTitle={p.agendaId ? t`Change agenda` : t`Link agenda`}
               createNewLabel="Ny dagordning"
               onPick={(id) => {
                 void actions.setAgenda(id)
@@ -361,29 +383,29 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                 await createAndAttachAgenda()
                 onPickerClosed?.()
               }}
-              buttonLabel={p.agendaId ? 'Byt' : 'Koppla dagordning…'}
+              buttonLabel={p.agendaId ? t`Change` : t`Link agenda…`}
               buttonClassName="btn btn-sm btn-ghost"
               open={openPicker === 'agenda'}
               onClose={onPickerClosed}
             />
             <OverflowMenu
-              label="Dagordningsalternativ"
+              label={t`Agenda options`}
               items={[
-                { label: 'Lägg till punkt', disabled: !agenda, onClick: async () => void (await addAgendaItem()) },
-                { label: 'Importera...', onClick: () => openImport('agenda') },
+                { label: t`Add item`, disabled: !agenda, onClick: async () => void (await addAgendaItem()) },
+                { label: t`Import...`, onClick: () => openImport('agenda') },
               ]}
             />
           </div>
           <div class="pcol-body">
             {!agenda ? (
-              <p class="pcol-empty">{p.agendaId ? 'Laddar…' : 'Ingen dagordning kopplad. Koppla en för att kunna spela ut ärenden.'}</p>
+              <p class="pcol-empty">{p.agendaId ? t`Loading…` : t`No agenda linked. Link one to be able to play out items.`}</p>
             ) : (
               <EditableItemList
                 items={agenda.items}
                 getId={(it) => it.id}
                 getLabel={(it) => it.title}
                 numbered
-                addLabel="Lägg till punkt"
+                addLabel={t`Add item`}
                 hiddenIds={hiddenAgenda}
                 renderLabel={searching ? (it) => <Highlighted text={it.title} tokens={tokens} /> : undefined}
                 getItemClassName={(it) => [p.playout.currentAgendaItemId === it.id ? 'active' : '', isMarked('agenda', it.id) ? 'search-hit' : ''].filter(Boolean).join(' ')}
@@ -401,20 +423,20 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                       <button
                         class="ib pdf-row-action"
                         type="button"
-                        title={`PDF-dokument${it.attachments?.length ? ` (${it.attachments.length})` : ''}`}
-                        aria-label={`Öppna PDF-dokument för ${it.title}`}
+                        title={it.attachments?.length ? pdfCountTitle(it.attachments.length) : t`PDF documents`}
+                        aria-label={openPdfLabel(it.title)}
                         onClick={() => setPdfItem(it)}
                       >
                         <PdfIcon />
                         <span class="pdf-count" aria-hidden="true">{it.attachments?.length ?? 0}</span>
                       </button>
-                      {offset != null && <span class="time" title="Position i inspelningen">{formatHms(offset)}</span>}
+                      {offset != null && <span class="time" title={t`Position in the recording`}>{formatHms(offset)}</span>}
                       <button
                         class="play"
                         type="button"
                         disabled={!canPlay}
-                        title={active ? 'Rensa punkt i bild' : 'Spela ut'}
-                        aria-label={active ? `Rensa ${it.title} i bild` : `Spela ut ${it.title}`}
+                        title={active ? t`Clear item on screen` : t`Play out`}
+                        aria-label={active ? clearOnScreenLabel(it.title) : playOutLabel(it.title)}
                         onClick={() => {
                           if (active) {
                             actions.clear('agendaItem')
@@ -432,28 +454,28 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                 }}
               />
             )}
-            {searching && agenda && agendaHits.length === 0 && <p class="pcol-empty">Inga träffar</p>}
+            {searching && agenda && agendaHits.length === 0 && <p class="pcol-empty">{t`No hits`}</p>}
           </div>
         </section>
 
         <section class="pcol">
           <div class="pcol-head">
-            <h2>Namnlista</h2>
+            <h2>{t`Name list`}</h2>
             <span class="pcol-sub">{nameList?.name ?? ''}</span>
             {nameList && (
               <select
                 class="sort-select"
-                aria-label="Sortera namnlista"
+                aria-label={t`Sort name list`}
                 value={personSort}
                 onChange={(event) => changePersonSort(parsePersonSort(event.currentTarget.value))}
               >
-                {PERSON_SORT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                {personSortOptions().map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             )}
             <AttachedListPicker
               currentId={p.namelistId}
               items={(allNameListsResource.data ?? []).map((n) => ({ id: n.id, name: n.name }))}
-              pickerTitle={p.namelistId ? 'Byt namnlista' : 'Koppla namnlista'}
+              pickerTitle={p.namelistId ? t`Change name list` : t`Link name list`}
               createNewLabel="Ny namnlista"
               onPick={(id) => {
                 actions.setNameList(id)
@@ -463,16 +485,16 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                 createAndAttachNameList()
                 onPickerClosed?.()
               }}
-              buttonLabel={p.namelistId ? 'Byt' : 'Koppla namnlista…'}
+              buttonLabel={p.namelistId ? t`Change` : t`Link name list…`}
               buttonClassName="btn btn-sm btn-ghost"
               open={openPicker === 'namelist'}
               onClose={onPickerClosed}
             />
             <OverflowMenu
-              label="Namnlistealternativ"
+              label={t`Name list options`}
               items={[
-                { label: 'Lägg till namn', disabled: !nameList, onClick: async () => void (await addPerson()) },
-                { label: 'Importera...', onClick: () => openImport('namelist') },
+                { label: t`Add name`, disabled: !nameList, onClick: async () => void (await addPerson()) },
+                { label: t`Import...`, onClick: () => openImport('namelist') },
               ]}
             />
           </div>
@@ -489,10 +511,10 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
             {!nameList ? (
               <p class="pcol-empty">
                 {p.namelistId
-                  ? 'Laddar…'
+                  ? t`Loading…`
                   : p.meetingBindingId
-                    ? 'Talare spelas ut direkt från Meeting.'
-                    : 'Ingen namnlista kopplad. Koppla en för att kunna spela ut talare.'}
+                    ? t`Speakers are played out directly from Meeting.`
+                    : t`No name list linked. Link one to be able to play out speakers.`}
               </p>
             ) : (
               <EditableItemList
@@ -500,7 +522,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                 disabled={personSort !== 'manual'}
                 getId={(person) => person.id}
                 getLabel={(person) => person.name}
-                addLabel="Lägg till namn"
+                addLabel={t`Add name`}
                 hiddenIds={hiddenNames}
                 renderLabel={searching ? (person) => <Highlighted text={person.name} tokens={tokens} /> : undefined}
                 getItemClassName={(person) => [p.playout.currentPersonId === person.id ? 'active' : '', isMarked('names', person.id) ? 'search-hit' : ''].filter(Boolean).join(' ')}
@@ -514,15 +536,15 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                   const active = p.playout.currentPersonId === person.id
                   return (
                     <>
-                      <span class="play-count" title={`${speakerPlayCount(person.id)} utspelningar`}>
+                      <span class="play-count" title={playCountTitle(speakerPlayCount(person.id))}>
                         {speakerPlayCount(person.id)}
                       </span>
                       <button
                         class="play"
                         type="button"
                         disabled={!canPlay}
-                        title={active ? 'Rensa namn i bild' : 'Spela ut'}
-                        aria-label={active ? `Rensa ${person.name} i bild` : `Spela ut ${person.name}`}
+                        title={active ? t`Clear name on screen` : t`Play out`}
+                        aria-label={active ? clearOnScreenLabel(person.name) : playOutLabel(person.name)}
                         onClick={() => (active ? actions.clear('person') : actions.cue('person', person.id, person.name))}
                       >
                         {active ? <StopIcon /> : <PlayIcon />}
@@ -532,7 +554,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                 }}
               />
             )}
-            {searching && nameList && nameHits.length === 0 && <p class="pcol-empty">Inga träffar</p>}
+            {searching && nameList && nameHits.length === 0 && <p class="pcol-empty">{t`No hits`}</p>}
           </div>
         </section>
       </div>

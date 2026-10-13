@@ -40,6 +40,11 @@ msgstr "{0, plural, one {# poster} other {# poster}}"
 msgid "{0, plural, one {# name} other {# names}}"
 msgstr "{0, plural, one {# namn} other {# namn}}"
 
+#. placeholder {0}: topics.length
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "{0, plural, one {Agenda (# item) and a name list for the meeting are linked.} other {Agenda (# items) and a name list for the meeting are linked.}}"
+msgstr "{0, plural, one {Dagordning (# punkter) och en namnlista för mötet är kopplade.} other {Dagordning (# punkter) och en namnlista för mötet är kopplade.}}"
+
 #. placeholder {0}: r.segments.length
 #: src/views/archive/VideoArchiveView.tsx
 msgid "{0, plural, one {The recording consists of # segment — the encoder lost the connection during the broadcast. Check the chapter offsets after trimming.} other {The recording consists of # segments — the encoder lost the connection during the broadcast. Check the chapter offsets after trimming.}}"
@@ -73,6 +78,22 @@ msgstr "{chapterCount, plural, =0 {Inga kapitel} one {# kapitel} other {# kapite
 msgid "{count, plural, one {{cues} line} other {{cues} lines}}"
 msgstr "{count, plural, one {{cues} repliker} other {{cues} repliker}}"
 
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "{count, plural, one {{label} · # item} other {{label} · # items}}"
+msgstr "{count, plural, one {{label} · # punkt} other {{label} · # punkter}}"
+
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "{count, plural, one {{label} · # name} other {{label} · # names}}"
+msgstr "{count, plural, one {{label} · # namn} other {{label} · # namn}}"
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "{count, plural, one {{title} · # agenda item fetched} other {{title} · # agenda items fetched}}"
+msgstr "{count, plural, one {{title} · # agendapunkter hämtade} other {{title} · # agendapunkter hämtade}}"
+
+#: src/views/projects/LiveStatusBadges.tsx
+msgid "{count, plural, one {{viewers} viewer} other {{viewers} viewers}}"
+msgstr "{count, plural, one {{viewers} tittare} other {{viewers} tittare}}"
+
 #: src/views/projects/exportImportLogic.ts
 msgid "{count, plural, one {# chapter was copied. Paste it into the video description on YouTube.} other {# chapters were copied. Paste them into the video description on YouTube.}}"
 msgstr "{count, plural, one {# kapitel kopierades. Klistra in dem i videons beskrivning på YouTube.} other {# kapitel kopierades. Klistra in dem i videons beskrivning på YouTube.}}"
@@ -93,6 +114,10 @@ msgstr "{count, plural, one {# punkter} other {# punkter}}"
 msgid "{count, plural, one {# name · changed {changed}} other {# names · changed {changed}}}"
 msgstr "{count, plural, one {# namn · ändrad {changed}} other {# namn · ändrad {changed}}}"
 
+#: src/views/projects/PlayoutColumns.tsx
+msgid "{count} play-outs"
+msgstr "{count} utspelningar"
+
 #: src/views/projects/publishOutcome.ts
 msgid "{cueCount, plural, one {Captions: {label} ({cues} line)} other {Captions: {label} ({cues} lines)}}"
 msgstr "{cueCount, plural, one {Undertexter: {label} ({cues} repliker)} other {Undertexter: {label} ({cues} repliker)}}"
@@ -109,6 +134,10 @@ msgstr "{deleteOrganization} ({deleteHost}) tas bort permanent. Det går inte at
 msgid "{dirtyCount, plural, one {Your # unsaved change is saved first.} other {Your # unsaved changes are saved first.}}"
 msgstr "{dirtyCount, plural, one {Dina # osparade ändringar sparas först.} other {Dina # osparade ändringar sparas först.}}"
 
+#: src/views/projects/LiveWorkspace.tsx
+msgid "{failed} cue errors, the test continues"
+msgstr "{failed} cue-fel, testet fortsätter"
+
 #: src/app/SharedDownloadsView.tsx
 msgid "{fileCount, plural, one {{sender} has shared one file with you} other {{sender} has shared # files with you}}"
 msgstr "{fileCount, plural, one {{sender} har delat en fil med dig} other {{sender} har delat # filer med dig}}"
@@ -117,6 +146,14 @@ msgstr "{fileCount, plural, one {{sender} har delat en fil med dig} other {{send
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr "{hours, plural, one {# timme} other {# timmar}}"
 
+#: src/views/projects/pauseLogic.ts
+msgid "{hours} h"
+msgstr "{hours} h"
+
+#: src/views/projects/pauseLogic.ts
+msgid "{hours} h {rest} min"
+msgstr "{hours} h {rest} min"
+
 #: src/app/time.ts
 msgid "{hours} h ago"
 msgstr "{hours} tim sedan"
@@ -124,6 +161,10 @@ msgstr "{hours} tim sedan"
 #: src/views/projects/ProjectsView.tsx
 msgid "{kind} in progress. Open Jobs."
 msgstr "{kind} pågår. Öppna Jobb."
+
+#: src/views/projects/pauseLogic.ts
+msgid "{minutes} min"
+msgstr "{minutes} min"
 
 #: src/app/time.ts
 msgid "{minutes} min ago"
@@ -164,6 +205,14 @@ msgstr "{rounded, plural, one {# dag} other {# dagar}}"
 #: src/views/resources/LiveResourcesView.tsx
 msgid "{seconds} s ago"
 msgstr "{seconds} s sedan"
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "{title} is linked to the project."
+msgstr "{title} är kopplat till projektet."
+
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "{title}: {status}"
+msgstr "{title}: {status}"
 
 #: src/views/trash/TrashView.tsx
 msgid "{totalMinutes, plural, one {# minute} other {# minutes}}"
@@ -206,6 +255,10 @@ msgstr "Sändning pågår. Att rotera stream key bryter enkoderns anslutning. Fo
 msgid "A broadcast is in progress. Wait until it has ended."
 msgstr "En sändning pågår. Vänta tills den är avslutad."
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "A marker for projects that are only to be used for live viewing, for example a full-day session that is not to be published on demand in its entirety. It changes nothing: recording, rewinding and creating on-demand projects work as usual. It is shown as a label in the project list and in the project header, and you can remove it whenever you want."
+msgstr "En markör för projekt som bara ska användas för livetittning, till exempel ett heldagspass som inte ska läggas ut som ondemand i sin helhet. Den ändrar inget: inspelning, spola tillbaka och att skapa ondemand-projekt fungerar som vanligt. Den visas som en etikett i projektlistan och i projektets huvud, och du kan ta bort den när du vill."
+
 #: src/views/users/UsersView.tsx
 msgid "A new invitation replaces the previous one: the old link and PIN stop working."
 msgstr "En ny inbjudan ersätter den tidigare: den gamla länken och PIN-koden slutar gälla."
@@ -242,6 +295,10 @@ msgstr "Konto skapat"
 msgid "Account settings"
 msgstr "Kontoinställningar"
 
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Actions for {label}"
+msgstr "Åtgärder för {label}"
+
 #: src/views/projects/VideoStatusRow.tsx
 msgid "Actions for the video"
 msgstr "Åtgärder för videon"
@@ -256,17 +313,27 @@ msgstr "aktiv"
 msgid "Active"
 msgstr "Aktiv"
 
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Active meeting"
+msgstr "Aktivt möte"
+
 #: src/views/agendas/AgendasView.tsx
+#: src/views/projects/PlayoutColumns.tsx
 msgid "Add item"
 msgstr "Lägg till punkt"
 
 #: src/views/namelists/NameListsView.tsx
+#: src/views/projects/PlayoutColumns.tsx
 msgid "Add name"
 msgstr "Lägg till namn"
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Added manually"
 msgstr "Manuellt tillagd"
+
+#: src/views/projects/pauseLogic.ts
+msgid "Adjournment. The broadcast continues shortly."
+msgstr "Ajournering. Sändningen fortsätter strax."
 
 #: src/app/Shell.tsx
 msgid "Administration"
@@ -276,7 +343,9 @@ msgstr "Administration"
 msgid "After the latest break ({time})"
 msgstr "Efter senaste pausen ({time})"
 
+#: src/views/projects/BeforeWorkspace.tsx
 #: src/views/projects/CreateProjectDialog.tsx
+#: src/views/projects/PlayoutColumns.tsx
 #: src/views/trash/TrashView.tsx
 msgid "Agenda"
 msgstr "Dagordning"
@@ -284,6 +353,10 @@ msgstr "Dagordning"
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Agenda item"
 msgstr "Ärende"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Agenda options"
+msgstr "Dagordningsalternativ"
 
 #: src/app/Shell.tsx
 #: src/views/agendas/AgendasView.tsx
@@ -313,9 +386,17 @@ msgstr "Analysera talarbyten"
 msgid "Announcement"
 msgstr "Utrop"
 
+#: src/views/projects/LiveHlsField.tsx
+msgid "Anyone who has the address can watch the broadcast even when the project is not open to the public. The address is valid as long as the project's channel exists, and is issued anew for every project that starts broadcasting. A TV player that has lost the stream (for example overnight) must be restarted by whoever runs the TV."
+msgstr "Den som har adressen kan se sändningen även när projektet inte är öppet för publik. Adressen gäller så länge projektets kanal finns, och ges ut på nytt för varje projekt som börjar sända. En TV-uppspelare som tappat strömmen (till exempel över natten) måste startas om av den som sköter TV:n."
+
 #: src/app/Shell.tsx
 msgid "Appearance"
 msgstr "Utseende"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Applies to all four texts. Choose top or bottom edge if the poster's graphics are in the middle."
+msgstr "Gäller alla fyra texterna. Välj överkant eller underkant om posterns grafik ligger i mitten."
 
 #: src/views/projects/OndemandView.tsx
 msgid "Approve or ignore the uploaded file first."
@@ -342,12 +423,17 @@ msgid "Auto"
 msgstr "Auto"
 
 #: src/views/projects/ListPickerDialog.tsx
+#: src/views/projects/MeetingBindingModal.tsx
 msgid "Back"
 msgstr "Tillbaka"
 
 #: src/app/LoginView.tsx
 msgid "Back to login"
 msgstr "Tillbaka till inloggningen"
+
+#: src/views/projects/PreviewOverlay.tsx
+msgid "Before the broadcast"
+msgstr "Före sändningen"
 
 #: src/views/projects/forkLogic.ts
 msgid "Before the latest break ({time})"
@@ -358,16 +444,26 @@ msgid "Bitrate"
 msgstr "Bitrate"
 
 #: src/views/projects/layoutInherit.ts
+#: src/views/projects/playerSettings.ts
 msgid "Bottom edge"
 msgstr "Underkant"
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/PauseButton.tsx
 msgid "Break"
 msgstr "Paus"
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Break ends"
 msgstr "Paus slut"
+
+#: src/views/projects/LiveWorkspace.tsx
+msgid "Break in progress"
+msgstr "Paus pågår"
+
+#: src/views/projects/PauseButton.tsx
+msgid "Break is only possible in the Live mode"
+msgstr "Paus går bara i läget Live"
 
 #: src/app/Shell.tsx
 #: src/views/projects/OndemandView.tsx
@@ -402,7 +498,11 @@ msgstr "Kan redigeras när inspelningen är klar"
 #: src/views/projects/CreateProjectDialog.tsx
 #: src/views/projects/ForkDialog.tsx
 #: src/views/projects/InheritLayoutDialog.tsx
+#: src/views/projects/MeetingBindingModal.tsx
 #: src/views/projects/OndemandView.tsx
+#: src/views/projects/PauseButton.tsx
+#: src/views/projects/PlayerSettingsDialog.tsx
+#: src/views/projects/ProjectHeader.tsx
 #: src/views/projects/UploadPanel.tsx
 #: src/views/projects/VttImportDialog.tsx
 #: src/views/users/UsersView.tsx
@@ -439,6 +539,7 @@ msgstr "Går inte att riva medan signal tas emot"
 
 #: src/views/projects/ExportImportDialog.tsx
 #: src/views/projects/OndemandView.tsx
+#: src/views/projects/projectJobLogic.ts
 #: src/views/projects/ProjectsView.tsx
 msgid "Captions"
 msgstr "Undertexter"
@@ -466,6 +567,28 @@ msgstr "Undertexter:"
 #: src/views/projects/OndemandView.tsx
 msgid "Captions: {value}"
 msgstr "Undertexter: {value}"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Category"
+msgstr "Kategori"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Change"
+msgstr "Byt"
+
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Change agenda"
+msgstr "Byt dagordning"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Change image…"
+msgstr "Byt bild…"
+
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Change name list"
+msgstr "Byt namnlista"
 
 #: src/views/agendas/AgendasView.tsx
 #: src/views/namelists/NameListsView.tsx
@@ -527,6 +650,10 @@ msgstr "Kontrollerar länken…"
 msgid "Checking…"
 msgstr "Kontrollerar…"
 
+#: src/views/projects/playerSettings.ts
+msgid "Choose a JPG, PNG or WebP image."
+msgstr "Välj en JPG-, PNG- eller WebP-bild."
+
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "Choose agenda"
 msgstr "Välj dagordning"
@@ -534,6 +661,14 @@ msgstr "Välj dagordning"
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "Choose another…"
 msgstr "Välj annan…"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Choose image…"
+msgstr "Välj bild…"
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Choose meeting"
+msgstr "Välj möte"
 
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "Choose name list"
@@ -555,6 +690,42 @@ msgstr "Välj vilken sändning som ska användas"
 msgid "Chosen: {name}"
 msgstr "Vald: {name}"
 
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Clear {name} on screen"
+msgstr "Rensa {name} i bild"
+
+#: src/views/projects/PlayoutWorkOverlay.tsx
+msgid "Clear agenda item on screen"
+msgstr "Rensa ärende i bild"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Clear item on screen"
+msgstr "Rensa punkt i bild"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Clear name on screen"
+msgstr "Rensa namn i bild"
+
+#: src/views/projects/PlayoutWorkOverlay.tsx
+msgid "Clear speaker on screen"
+msgstr "Rensa talare i bild"
+
+#: src/views/projects/PlayoutWorkOverlay.tsx
+msgid "Clear temporary speaker"
+msgstr "Rensa tillfällig talare"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Clear the search"
+msgstr "Rensa sökningen"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Clear the search (Esc)"
+msgstr "Rensa sökningen (Esc)"
+
+#: src/views/projects/PreviewOverlay.tsx
+msgid "Clear the test play-out"
+msgstr "Rensa testutspelningen"
+
 #: src/app/CredentialLinkView.tsx
 msgid "Click the button to activate your account. You will then get your personal PIN."
 msgstr "Klicka på knappen för att aktivera ditt konto. Du får då din personliga PIN-kod."
@@ -573,11 +744,22 @@ msgstr "Klona till ny dagordning"
 
 #: src/app/Shell.tsx
 #: src/views/projects/ExportImportDialog.tsx
+#: src/views/projects/IngestInfoPanel.tsx
+#: src/views/projects/LiveWorkspace.tsx
 #: src/views/projects/ManuscriptSpeakersWarning.tsx
+#: src/views/projects/PlayoutOverlay.tsx
 #: src/views/projects/PublishOutcomeDialog.tsx
 #: src/views/users/UsersView.tsx
 msgid "Close"
 msgstr "Stäng"
+
+#: src/views/projects/PlayoutWorkOverlay.tsx
+msgid "Close player and end"
+msgstr "Stäng player och avsluta"
+
+#: src/views/projects/PlayerLinkField.tsx
+msgid "Close the player to the public"
+msgstr "Stäng spelaren för publik"
 
 #: src/views/projects/ProjectsView.tsx
 msgid "Close the project before it is deleted"
@@ -586,6 +768,10 @@ msgstr "Stäng projektet innan det raderas"
 #: src/views/projects/ProjectsView.tsx
 msgid "Closed"
 msgstr "Stängd"
+
+#: src/views/projects/LiveStatusBadges.tsx
+msgid "Concurrent viewers according to IVS. The number is an estimate with a few seconds' delay."
+msgstr "Samtidiga tittare enligt IVS. Siffran är en uppskattning med några sekunders fördröjning."
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Connection"
@@ -598,6 +784,10 @@ msgstr "Innehåll"
 #: src/views/trash/TrashView.tsx
 msgid "Contents"
 msgstr "Innehåll"
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Continue"
+msgstr "Fortsätt"
 
 #: src/app/Shell.tsx
 #: src/views/users/UsersView.tsx
@@ -628,6 +818,22 @@ msgstr "Kopierar meddelandetexterna, textens placering, Mux-inställningen och p
 msgid "Copy"
 msgstr "Kopiera"
 
+#: src/views/projects/PlayerLinkField.tsx
+msgid "Copy IFRAME code"
+msgstr "Kopiera IFRAME-kod"
+
+#: src/views/projects/PlayerLinkField.tsx
+msgid "Copy player link"
+msgstr "Kopiera spelarlänk"
+
+#: src/views/projects/LiveHlsField.tsx
+msgid "Copy the live HLS address"
+msgstr "Kopiera live-HLS-adressen"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Copy the on-demand HLS address"
+msgstr "Kopiera ondemand-HLS-adressen"
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Copying failed. Select the text and copy it yourself."
 msgstr "Det gick inte att kopiera. Markera texten och kopiera själv."
@@ -652,6 +858,18 @@ msgstr "Kunde inte skapa användaren."
 msgid "Could not end the break."
 msgstr "Kunde inte avsluta pausen."
 
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Could not fetch meetings."
+msgstr "Kunde inte hämta möten."
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Could not fetch the Meeting agenda."
+msgstr "Kunde inte hämta Meeting-agendan."
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Could not link the meeting."
+msgstr "Kunde inte koppla mötet."
+
 #: src/app/LoginView.tsx
 msgid "Could not log in."
 msgstr "Kunde inte logga in."
@@ -667,6 +885,7 @@ msgstr "Kunde inte ta bort domänen."
 #: src/views/agendas/AgendasView.tsx
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/namelists/NameListsView.tsx
+#: src/views/projects/PlayoutColumns.tsx
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Could not rename."
 msgstr "Kunde inte byta namn."
@@ -683,6 +902,11 @@ msgstr "Kunde inte starta pausen."
 msgid "Could not tear down the resource."
 msgstr "Kunde inte riva resursen."
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Count announcements as speakers"
+msgstr "Räkna utrop som talare"
+
+#: src/views/projects/BeforeWorkspace.tsx
 #: src/views/projects/CreateProjectDialog.tsx
 #: src/views/users/UsersView.tsx
 msgid "Create"
@@ -691,6 +915,10 @@ msgstr "Skapa"
 #: src/views/projects/OndemandView.tsx
 msgid "Create captions"
 msgstr "Skapa undertexter"
+
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Create ingest"
+msgstr "Skapa ingest"
 
 #: src/views/projects/ForkDialog.tsx
 msgid "Create on-demand project"
@@ -726,6 +954,14 @@ msgstr "Skapar dokumentet…"
 #: src/views/projects/ForkDialog.tsx
 msgid "Creating…"
 msgstr "Skapar…"
+
+#: src/views/projects/PlayoutWorkOverlay.tsx
+msgid "Current item"
+msgstr "Aktuell punkt"
+
+#: src/views/projects/PlayoutWorkOverlay.tsx
+msgid "Current speaker"
+msgstr "Aktuell talare"
 
 #: src/app/Shell.tsx
 msgid "Dark"
@@ -800,6 +1036,10 @@ msgstr "Försvinner"
 msgid "Discard anyway"
 msgstr "Förkasta ändå"
 
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Do not use"
+msgstr "Använd ej"
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Document with items and start times, speakers, attachment names and breaks."
 msgstr "Dokument med punkter och starttider, talare, bilagornas namn och pauser."
@@ -820,6 +1060,7 @@ msgstr "Domän uppdaterad."
 msgid "Domains"
 msgstr "Domäner"
 
+#: src/views/projects/MeetingBindingModal.tsx
 #: src/views/projects/PublishProgressDialog.tsx
 msgid "Done"
 msgstr "Klart"
@@ -835,6 +1076,11 @@ msgstr "Görs inne i projektet."
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Download"
 msgstr "Ladda ner"
+
+#: src/views/projects/projectJobLogic.ts
+msgctxt "job kind"
+msgid "Download"
+msgstr "Nedladdning"
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Download .txt"
@@ -867,6 +1113,8 @@ msgstr "Ladda ner Word-manus"
 
 #: src/views/agendas/AgendasView.tsx
 #: src/views/namelists/NameListsView.tsx
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/PlayoutColumns.tsx
 msgid "Draft"
 msgstr "Utkast"
 
@@ -887,6 +1135,14 @@ msgstr "Duplicera"
 msgid "Duration"
 msgstr "Längd"
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "During a live broadcast the player lists the speakers under each agenda item as they are shown with a name sign. The list is filled in with a delay of a few tens of seconds."
+msgstr "Under en livesändning listar spelaren talarna under varje dagordningspunkt allteftersom de visas med namnskylt. Listan fylls på med några tiotals sekunders fördröjning."
+
+#: src/views/projects/PreviewOverlay.tsx
+msgid "During the broadcast"
+msgstr "Under sändningen"
+
 #: src/views/users/UsersView.tsx
 msgid "e.g. Example Municipality"
 msgstr "t.ex. Exempel kommun"
@@ -906,6 +1162,10 @@ msgstr "Redigera kapitel"
 #: src/views/projects/OndemandView.tsx
 msgid "Edit project"
 msgstr "Redigera projekt"
+
+#: src/views/projects/ProjectHeader.tsx
+msgid "Edit title"
+msgstr "Redigera rubrik"
 
 #: src/views/users/UsersView.tsx
 msgid "email"
@@ -928,6 +1188,14 @@ msgstr "Aktivera konto"
 #: src/views/projects/ForkDialog.tsx
 msgid "End"
 msgstr "Sluta"
+
+#: src/views/projects/LiveWorkspace.tsx
+msgid "End break"
+msgstr "Avsluta paus"
+
+#: src/views/projects/PauseButton.tsx
+msgid "End break (paused since {since}, {duration})"
+msgstr "Avsluta paus (pausad sedan {since}, {duration})"
 
 #: src/views/projects/projectMode.ts
 msgid "End the live broadcast?"
@@ -961,6 +1229,10 @@ msgstr "Ange organisationens namn."
 msgid "Enter your email address and we will send you a link where you get a new PIN."
 msgstr "Ange din e-postadress så skickar vi en länk där du får en ny PIN-kod."
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Example text"
+msgstr "Exempeltext"
+
 #: src/views/jobs/JobsView.tsx
 msgid "Expired"
 msgstr "Utgången"
@@ -990,6 +1262,10 @@ msgstr "Extern adress · kan inte trimmas"
 msgid "External video"
 msgstr "Extern video"
 
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Fetching agenda..."
+msgstr "Hämtar agenda..."
+
 #: src/app/SharedDownloadsView.tsx
 msgid "Fetching downloads…"
 msgstr "Hämtar nedladdningar…"
@@ -1007,8 +1283,13 @@ msgstr "Hämtar kapitlen"
 msgid "Fetching the projects…"
 msgstr "Hämtar projekten…"
 
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Fetching..."
+msgstr "Hämtar..."
+
 #: src/app/SharedDownloadsView.tsx
 #: src/views/projects/ExportImportDialog.tsx
+#: src/views/projects/IngestInfo.tsx
 #: src/views/projects/InheritLayoutDialog.tsx
 #: src/views/projects/ListPickerDialog.tsx
 #: src/views/projects/OndemandView.tsx
@@ -1079,9 +1360,17 @@ msgstr "Hämta layout"
 msgid "Get layout from project"
 msgstr "Hämta layout från projekt"
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Get layout from project…"
+msgstr "Hämta layout från projekt…"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Get ready for on demand"
 msgstr "Gör klart för ondemand"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Get texts, text placement, Mux setting and poster image from another project. They replace these settings, after confirmation."
+msgstr "Hämta texter, textplacering, Mux-inställning och posterbild från ett annat projekt. De ersätter dessa inställningar, efter bekräftelse."
 
 #: src/views/projects/projectMode.ts
 msgid "Go back to Before?"
@@ -1095,6 +1384,10 @@ msgstr "Gå tillbaka till Live?"
 msgid "Go to After"
 msgstr "Gå till After"
 
+#: src/views/projects/ModeSelector.tsx
+msgid "Go to After before Before — an aborted test is always reviewed there first."
+msgstr "Gå till After innan Before — ett avbrutet test granskas alltid där först."
+
 #: src/views/projects/projectMode.ts
 msgid "Go to Before"
 msgstr "Gå till Before"
@@ -1106,6 +1399,10 @@ msgstr "Gå till Live"
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Go to project"
 msgstr "Gå till projekt"
+
+#: src/views/projects/ProjectHeader.tsx
+msgid "Has the broadcast ended?"
+msgstr "Är sändningen slut?"
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "HLS link"
@@ -1147,6 +1444,10 @@ msgstr "Om du använder filen raderas projektets tidigare inspelningar (och even
 msgid "If you use the file, the project's earlier recordings (and any trimmed versions) are deleted:"
 msgstr "Om du använder filen raderas projektets tidigare inspelningar (och eventuella trimmade versioner):"
 
+#: src/views/projects/PlayerLinkField.tsx
+msgid "IFRAME options"
+msgstr "IFRAME-alternativ"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Ignore the file"
 msgstr "Ignorera filen"
@@ -1174,6 +1475,7 @@ msgstr "Läs in VTT-fil"
 
 #: src/views/agendas/AgendasView.tsx
 #: src/views/namelists/NameListsView.tsx
+#: src/views/projects/PlayoutColumns.tsx
 msgid "Import..."
 msgstr "Importera..."
 
@@ -1211,6 +1513,21 @@ msgstr "Ta med talare som egna kapitel (YouTube och WebVTT)"
 msgid "Incoming signal"
 msgstr "Inkommande signal"
 
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Ingest"
+msgstr "Ingest"
+
+#: src/views/projects/ProjectHeader.tsx
+msgid "Ingest info"
+msgstr "Ingest info"
+
+#: src/views/projects/IngestInfoPanel.tsx
+msgctxt "region"
+msgid "Ingest info"
+msgstr "Ingest-info"
+
+#: src/views/projects/IngestInfo.tsx
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Ingest server"
 msgstr "Ingest-server"
@@ -1257,7 +1574,12 @@ msgstr "Jobb"
 msgid "Jobs disappear by themselves after 7 days. Finished downloads can be shared with external recipients, and a share is followed up and revoked on its row."
 msgstr "Jobb försvinner av sig själva efter 7 dagar. Klara nedladdningar går att dela med externa, och en delning följs upp och återkallas på raden."
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "JPG, PNG or WebP, at most 5 MB. Recommended format 16:9, e.g. 1920×1080."
+msgstr "JPG, PNG eller WebP, högst 5 MB. Rekommenderat format 16:9, t.ex. 1920×1080."
+
 #: src/app/time.ts
+#: src/views/projects/pauseLogic.ts
 msgid "just now"
 msgstr "nyss"
 
@@ -1289,35 +1611,101 @@ msgstr "Senaste projektet: {name}"
 msgid "Latest project: {name} (template)"
 msgstr "Senaste projektet: {name} (mall)"
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Layout from another project"
+msgstr "Layout från ett annat projekt"
+
 #: src/views/users/UsersView.tsx
 msgid "Leave empty for ungap's default key"
 msgstr "Lämna tomt för ungaps standardnyckel"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Let the viewers rewind"
+msgstr "Låt tittarna spola tillbaka"
 
 #: src/app/Shell.tsx
 msgid "Light"
 msgstr "Ljust"
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Link"
+msgstr "Länk"
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgctxt "verb"
+msgid "Link"
+msgstr "Koppla"
+
 #: src/views/projects/UploadPanel.tsx
 msgid "Link address"
 msgstr "Koppla adress"
 
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Link agenda"
+msgstr "Koppla dagordning"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Link agenda…"
+msgstr "Koppla dagordning…"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Link and addresses"
+msgstr "Länk och adresser"
+
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Link name list"
+msgstr "Koppla namnlista"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Link name list…"
+msgstr "Koppla namnlista…"
+
 #: src/views/projects/createProjectLists.ts
+#: src/views/projects/MeetingBindingModal.tsx
 msgid "Link to Meeting"
 msgstr "Koppla till Meeting"
+
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Link to Meeting..."
+msgstr "Koppla till Meeting..."
+
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Link…"
+msgstr "Koppla…"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "linked"
 msgstr "kopplad"
 
+#: src/views/projects/preparationLabels.ts
+msgid "Linked"
+msgstr "Kopplad"
+
+#: src/views/projects/preparationLabels.ts
+msgid "Linked to Meeting"
+msgstr "Kopplad till Meeting"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Linked to project"
 msgstr "Kopplad till projekt"
+
+#: src/views/projects/personOrder.ts
+msgid "List order"
+msgstr "Listans ordning"
 
 #: src/app/Shell.tsx
 msgctxt "navigation"
 msgid "Live"
 msgstr "Live"
 
+#: src/views/projects/LiveHlsField.tsx
+msgid "Live HLS (TV, player)"
+msgstr "Live-HLS (TV, uppspelare)"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+#: src/views/projects/ProjectHeader.tsx
 #: src/views/projects/ProjectsView.tsx
 msgid "Live only"
 msgstr "Endast live"
@@ -1330,6 +1718,7 @@ msgstr "Live-resurser"
 #: src/views/agendas/AgendasView.tsx
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/namelists/NameListsView.tsx
+#: src/views/projects/PlayoutColumns.tsx
 #: src/views/projects/ProjectsView.tsx
 #: src/views/resources/LiveResourcesView.tsx
 #: src/views/trash/TrashView.tsx
@@ -1373,14 +1762,48 @@ msgstr "Manus (Word)"
 msgid "Manuscript without speakers"
 msgstr "Manus utan talare"
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Mark as live only"
+msgstr "Markera som endast live"
+
 #: src/views/projects/ProjectsView.tsx
 msgid "Marked as live only"
 msgstr "Markerat som endast live"
 
+#: src/views/projects/ProjectHeader.tsx
+msgid "Marked as live only. It changes no behavior, and the marker is removed in the player settings."
+msgstr "Markerat som endast live. Det ändrar inget beteende, och markören tas bort i spelarinställningarna."
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Measure playback with Mux"
+msgstr "Mät uppspelning med Mux"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Measurement"
+msgstr "Mätning"
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Meeting domain"
+msgstr "Meeting-domän"
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Meeting domain: {meetingDomain}"
+msgstr "Meeting-domän: {meetingDomain}"
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Meeting ID {meetingId}"
+msgstr "Meeting-ID {meetingId}"
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Meeting linked"
+msgstr "Meeting kopplat"
+
 #: src/views/projects/layoutInherit.ts
+#: src/views/projects/playerSettings.ts
 msgid "Middle"
 msgstr "Mitten"
 
+#: src/views/projects/ModeSelector.tsx
 #: src/views/projects/ProjectsView.tsx
 msgid "Mode"
 msgstr "Läge"
@@ -1388,6 +1811,10 @@ msgstr "Läge"
 #: src/views/projects/ProjectsView.tsx
 msgid "More actions for {name}"
 msgstr "Fler åtgärder för {name}"
+
+#: src/views/projects/personOrder.ts
+msgid "Most played"
+msgstr "Mest utspelade"
 
 #: src/views/agendas/AgendasView.tsx
 #: src/views/archive/VideoArchiveView.tsx
@@ -1401,6 +1828,14 @@ msgstr "Flytta till papperskorgen"
 #: src/views/namelists/NameListsView.tsx
 msgid "Move to trash?"
 msgstr "Flytta till papperskorgen?"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Mux env key"
+msgstr "Mux env key"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Mux env key (read-only)"
+msgstr "Mux env key (skrivskyddad)"
 
 #: src/views/users/UsersView.tsx
 msgid "Mux env key (the customer's own Mux account)"
@@ -1421,10 +1856,20 @@ msgstr "Namn"
 msgid "Name (optional)"
 msgstr "Namn (valfritt)"
 
+#: src/views/projects/personOrder.ts
+msgid "Name A–Z"
+msgstr "Namn A–Ö"
+
+#: src/views/projects/BeforeWorkspace.tsx
 #: src/views/projects/CreateProjectDialog.tsx
+#: src/views/projects/PlayoutColumns.tsx
 #: src/views/trash/TrashView.tsx
 msgid "Name list"
 msgstr "Namnlista"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Name list options"
+msgstr "Namnlistealternativ"
 
 #: src/app/Shell.tsx
 #: src/views/namelists/NameListsView.tsx
@@ -1449,6 +1894,7 @@ msgid "never used"
 msgstr "aldrig använd"
 
 #: src/views/agendas/AgendasView.tsx
+#: src/views/projects/BeforeWorkspace.tsx
 msgid "New agenda"
 msgstr "Ny dagordning"
 
@@ -1457,14 +1903,17 @@ msgid "New domain"
 msgstr "Ny domän"
 
 #: src/views/agendas/AgendasView.tsx
+#: src/views/projects/PlayoutColumns.tsx
 msgid "New item"
 msgstr "Ny punkt"
 
 #: src/views/namelists/NameListsView.tsx
+#: src/views/projects/BeforeWorkspace.tsx
 msgid "New name list"
 msgstr "Ny namnlista"
 
 #: src/views/namelists/NameListsView.tsx
+#: src/views/projects/PlayoutColumns.tsx
 msgid "New person"
 msgstr "Ny person"
 
@@ -1487,6 +1936,10 @@ msgstr "Ny användare i {host}"
 #: src/views/archive/VideoArchiveView.tsx
 msgid "New video resource"
 msgstr "Ny videoresurs"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "No agenda linked. Link one to be able to play out items."
+msgstr "Ingen dagordning kopplad. Koppla en för att kunna spela ut ärenden."
 
 #: src/views/agendas/AgendasView.tsx
 msgid "No agenda yet."
@@ -1513,9 +1966,21 @@ msgstr "Inga kapitel"
 msgid "No finished jobs."
 msgstr "Inga klara jobb."
 
+#: src/views/projects/PlayoutColumns.tsx
+msgid "No hits"
+msgstr "Inga träffar"
+
 #: src/views/projects/layoutInherit.ts
 msgid "No image"
 msgstr "Ingen bild"
+
+#: src/views/projects/liveStatus.ts
+msgid "No ingest"
+msgstr "Ingen ingest"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "No ingest created. It is created in Before, under the Ingest preparation."
+msgstr "Ingen ingest skapad. Den skapas i Before, under förberedelsen Ingest."
 
 #: src/views/trash/TrashView.tsx
 msgid "No item matches the filter."
@@ -1525,9 +1990,21 @@ msgstr "Ingen post matchar filtret."
 msgid "No jobs in progress."
 msgstr "Inga jobb pågår."
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "No key configured"
+msgstr "Ingen nyckel konfigurerad"
+
 #: src/app/SharedDownloadsView.tsx
 msgid "No longer available"
 msgstr "Inte längre tillgänglig"
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "No meetings were found for the domain."
+msgstr "Inga möten hittades för domänen."
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "No name list linked. Link one to be able to play out speakers."
+msgstr "Ingen namnlista kopplad. Koppla en för att kunna spela ut talare."
 
 #: src/views/namelists/NameListsView.tsx
 msgid "No name list yet."
@@ -1540,6 +2017,10 @@ msgstr "Ingen namnlista, jag kopplar senare"
 #: src/views/namelists/NameListsView.tsx
 msgid "No name matches the filter."
 msgstr "Inget namn matchar filtret."
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "No poster"
+msgstr "Ingen poster"
 
 #: src/views/projects/ProjectsView.tsx
 msgid "No projects in the mode {mode}."
@@ -1557,9 +2038,22 @@ msgstr "Ingen inspelning ännu."
 msgid "No resource yet."
 msgstr "Ingen resurs ännu."
 
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/liveStatus.ts
+msgid "No signal"
+msgstr "Ingen signal"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "No signal. The resource is allocated and waiting for an encoder."
 msgstr "Ingen signal. Resursen är allokerad och väntar på enkoder."
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "No text is shown"
+msgstr "Ingen text visas"
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "No, ignore events"
+msgstr "Nej, ignorera händelser"
 
 #: src/views/projects/OndemandView.tsx
 msgid "none"
@@ -1573,10 +2067,18 @@ msgstr "Inga"
 msgid "None (empty texts and default values)"
 msgstr "Ingen (tomma texter och standardvärden)"
 
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Not created"
+msgstr "Inte skapad"
+
 #: src/app/Shell.tsx
 #: src/views/users/UsersView.tsx
 msgid "Not invited"
 msgstr "Ej inbjuden"
+
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Not linked"
+msgstr "Ej kopplad"
 
 #: src/views/projects/OndemandView.tsx
 msgid "Not published"
@@ -1598,6 +2100,11 @@ msgstr "Ej trimmad"
 msgid "Not used"
 msgstr "Används inte"
 
+#: src/views/projects/BeforeWorkspace.tsx
+msgctxt "preparation step"
+msgid "Not used"
+msgstr "Används ej"
+
 #: src/views/projects/projectMode.ts
 msgid "Nothing (closed)"
 msgstr "Inget (stängd)"
@@ -1613,6 +2120,18 @@ msgstr "av"
 #: src/views/projects/layoutInherit.ts
 msgid "Off"
 msgstr "Av"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Off by default: all views are measured. When it is on, viewers whose browser has Do Not Track enabled are not measured."
+msgstr "Av som standard: alla visningar mäts. Slås det på mäts inte tittare vars webbläsare har Do Not Track aktiverat."
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Off by default. Announcements (free texts shown as a name sign) are then also listed under the item."
+msgstr "Av som standard. Utrop (fria texter som visas som namnskylt) listas då också under punkten."
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Off by default. Takes effect for viewers who reload the player."
+msgstr "Av som standard. Börjar gälla för tittare som laddar om spelaren."
 
 #: src/views/projects/ProjectsView.tsx
 msgid "Offered as a layout when a new project is created"
@@ -1634,6 +2153,10 @@ msgstr "Ondemand publicerad"
 msgid "On demand updated"
 msgstr "Ondemand uppdaterad"
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "On-demand HLS (published video)"
+msgstr "Ondemand-HLS (publicerad video)"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Only in After"
 msgstr "Bara i After"
@@ -1642,17 +2165,34 @@ msgstr "Bara i After"
 msgid "Open"
 msgstr "Öppen"
 
+#: src/views/projects/PlayerLinkField.tsx
+msgid "Open example page"
+msgstr "Öppna exempelsida"
+
 #: src/app/Shell.tsx
 msgid "Open menu"
 msgstr "Öppna meny"
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Open or close the player to the public (takes effect immediately), copy the link or the embed code."
+msgstr "Öppna eller stäng spelaren för publik (gäller direkt), kopiera länken eller inbäddningskoden."
+
 #: src/views/agendas/AgendasView.tsx
+#: src/views/projects/PlayoutColumns.tsx
 msgid "Open PDF documents for {title}"
 msgstr "Öppna PDF-dokument för {title}"
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Open the editor…"
 msgstr "Öppna redigeraren…"
+
+#: src/views/projects/PlayerLinkField.tsx
+msgid "Open the player in a new tab"
+msgstr "Öppna spelaren i ny flik"
+
+#: src/views/projects/PlayerLinkField.tsx
+msgid "Open the player to the public"
+msgstr "Öppna spelaren för publik"
 
 #: src/app/Shell.tsx
 #: src/views/jobs/JobsView.tsx
@@ -1693,6 +2233,10 @@ msgstr "Övriga val är spärrade tills videon är klar eller uppladdningen avbr
 msgid "outside the clip"
 msgstr "utanför klippet"
 
+#: src/views/projects/OverviewShell.tsx
+msgid "Overview"
+msgstr "Översikt"
+
 #: src/views/projects/draftActions.ts
 msgid "Overwrite"
 msgstr "Skriv över"
@@ -1705,11 +2249,21 @@ msgstr "Skriv över och publicera"
 msgid "Own HLS URL"
 msgstr "Egen HLS-URL"
 
+#: src/views/projects/PauseButton.tsx
+msgid "Pause the broadcast"
+msgstr "Pausa sändningen"
+
+#: src/views/projects/LiveWorkspace.tsx
+msgid "Paused since {since} ({duration}). The viewers see the text below over the video."
+msgstr "Pausad sedan {since} ({duration}). Tittarna ser texten nedan över videon."
+
 #: src/views/agendas/AgendasView.tsx
+#: src/views/projects/PlayoutColumns.tsx
 msgid "PDF documents"
 msgstr "PDF-dokument"
 
 #: src/views/agendas/AgendasView.tsx
+#: src/views/projects/PlayoutColumns.tsx
 msgid "PDF documents ({count})"
 msgstr "PDF-dokument ({count})"
 
@@ -1725,6 +2279,34 @@ msgstr "Behörigheter"
 msgid "PIN"
 msgstr "PIN-kod"
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Placement in the video window"
+msgstr "Placering i videofönstret"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Play out"
+msgstr "Spela ut"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Play out {name}"
+msgstr "Spela ut {name}"
+
+#: src/views/projects/PlayoutOverlay.tsx
+msgid "Play-out"
+msgstr "Utspelning"
+
+#: src/views/projects/PlayoutOverlay.tsx
+msgid "Play-out of chapters"
+msgstr "Utspelning av kapitel"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Playback"
+msgstr "Uppspelning"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Playback measurement"
+msgstr "Uppspelningsmätning"
+
 #: src/views/projects/layoutInherit.ts
 msgid "Playback measurement (Mux)"
 msgstr "Uppspelningsmätning (Mux)"
@@ -1733,9 +2315,33 @@ msgstr "Uppspelningsmätning (Mux)"
 msgid "Playback URL"
 msgstr "Playback-URL"
 
+#: src/views/projects/PlayerLinkField.tsx
+msgid "Player link"
+msgstr "Spelarlänk"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Player settings"
+msgstr "Spelarinställningar"
+
+#: src/views/projects/PlayerLinkField.tsx
+msgid "Player settings…"
+msgstr "Spelarinställningar…"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Position in the recording"
+msgstr "Position i inspelningen"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Poster"
+msgstr "Poster"
+
 #: src/views/projects/layoutInherit.ts
 msgid "Poster image"
 msgstr "Posterbild"
+
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Preparations"
+msgstr "Förberedelser"
 
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/projects/RecordingDownload.tsx
@@ -1775,9 +2381,26 @@ msgstr "Finns"
 msgid "Presenter's own format with all chapters and speakers, for backup and moving."
 msgstr "Presenters eget format med alla kapitel och talare, för säkerhetskopia och flytt."
 
+#: src/views/projects/PreviewOverlay.tsx
+msgid "Preview"
+msgstr "Förhandsvisning"
+
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Preview (live)"
+msgstr "Preview (live)"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Preview (ondemand)"
 msgstr "Preview (ondemand)"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Preview of poster and text"
+msgstr "Förhandsvisning av poster och text"
+
+#: src/views/projects/PlayerPreview.tsx
+#: src/views/projects/PreviewOverlay.tsx
+msgid "Preview of the player"
+msgstr "Förhandsvisning av spelaren"
 
 #: src/app/jobPhase.ts
 msgid "Processing"
@@ -1801,7 +2424,12 @@ msgstr "Bearbetningen av videon stoppas och den uppladdade filen tas bort från 
 msgid "Project"
 msgstr "Projekt"
 
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Project: {projectName}"
+msgstr "Projekt: {projectName}"
+
 #: src/app/Shell.tsx
+#: src/views/projects/ProjectHeader.tsx
 #: src/views/projects/ProjectsView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Projects"
@@ -1828,6 +2456,7 @@ msgid "Publish the changes?"
 msgstr "Publicera ändringarna?"
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/PlayerPreview.tsx
 msgid "Published"
 msgstr "Publicerad"
 
@@ -1910,6 +2539,7 @@ msgstr "Inspelningar"
 msgid "Recordings linked to a project can only be removed there."
 msgstr "Inspelningar kopplade till ett projekt kan bara tas bort där."
 
+#: src/views/projects/PlayerSettingsDialog.tsx
 #: src/views/users/UsersView.tsx
 msgid "Remove"
 msgstr "Ta bort"
@@ -1971,6 +2601,10 @@ msgstr "Upplösning"
 msgid "Respect Do Not Track"
 msgstr "Respektera Do Not Track"
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Respect the viewer's \"Do Not Track\""
+msgstr "Respektera tittarens \"Do Not Track\""
+
 #: src/views/trash/TrashView.tsx
 msgid "Restore"
 msgstr "Återställ"
@@ -1986,6 +2620,10 @@ msgstr "Återkalla delningen?"
 #: src/views/jobs/JobsView.tsx
 msgid "Revoked"
 msgstr "Återkallad"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Rewind in a live broadcast"
+msgstr "Spola tillbaka i livesändning"
 
 #: src/views/users/UsersView.tsx
 msgid "Root administrator"
@@ -2012,6 +2650,8 @@ msgid "Same list as {project}: {list}"
 msgstr "Samma lista som {project}: {list}"
 
 #: src/app/Shell.tsx
+#: src/views/projects/PlayerSettingsDialog.tsx
+#: src/views/projects/ProjectHeader.tsx
 #: src/views/users/UsersView.tsx
 msgid "Save"
 msgstr "Spara"
@@ -2032,8 +2672,13 @@ msgstr "Sparar kapitel och tider"
 msgid "Saving the result"
 msgstr "Sparar resultatet"
 
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Saving..."
+msgstr "Sparar..."
+
 #: src/app/Shell.tsx
 #: src/views/projects/OndemandView.tsx
+#: src/views/projects/PlayerSettingsDialog.tsx
 #: src/views/users/UsersView.tsx
 msgid "Saving…"
 msgstr "Sparar…"
@@ -2041,6 +2686,14 @@ msgstr "Sparar…"
 #: src/views/projects/ListPickerDialog.tsx
 msgid "Search by name"
 msgstr "Sök på namn"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Search item or name. Press / to search"
+msgstr "Sök punkt eller namn. Tryck / för att söka"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Search the agenda and name list"
+msgstr "Sök i dagordning och namnlista"
 
 #: src/views/trash/TrashView.tsx
 msgid "Search the trash"
@@ -2120,6 +2773,10 @@ msgstr "Delad (avslutad)"
 msgid "Shared by {sharedBy} {sharedAt} · valid until {validUntil}"
 msgstr "Delad av {sharedBy} {sharedAt} · gäller till {validUntil}"
 
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Should events from Meeting play out agenda items and name signs in the broadcast?"
+msgstr "Ska händelser från Meeting spela ut dagordningspunkter och namnskyltar i sändningen?"
+
 #: src/views/projects/ListPickerDialog.tsx
 msgid "Show"
 msgstr "Visa"
@@ -2127,6 +2784,10 @@ msgstr "Visa"
 #: src/views/projects/ProjectsView.tsx
 msgid "Show all"
 msgstr "Visa alla"
+
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Show ingest info…"
+msgstr "Visa ingest-info…"
 
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/projects/RecordingDownload.tsx
@@ -2141,13 +2802,47 @@ msgstr "Visa min PIN-kod"
 msgid "Show projects in the mode"
 msgstr "Visa projekt i läget"
 
+#: src/views/projects/PlayerPreview.tsx
+#: src/views/projects/PreviewOverlay.tsx
+msgid "Show the player as"
+msgstr "Visa spelaren som"
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Show the text"
 msgstr "Visa texten"
 
+#: src/views/projects/playerSettings.ts
+msgid "Shown before the broadcast has started."
+msgstr "Visas innan sändningen har startat."
+
+#: src/views/projects/playerSettings.ts
+msgid "Shown in the Live mode while the video is not yet playing, e.g. when the stream starts."
+msgstr "Visas i Live-läget medan videon ännu inte spelar, t.ex. när strömmen startar."
+
+#: src/views/projects/playerSettings.ts
+msgid "Shown in the Ondemand mode while the recording cannot be played."
+msgstr "Visas i Ondemand-läget medan inspelningen inte går att spela upp."
+
+#: src/views/projects/playerSettings.ts
+msgid "Shown when the broadcast has ended and no recording is playing."
+msgstr "Visas när sändningen är avslutad och ingen inspelning spelas upp."
+
 #: src/views/users/UsersView.tsx
 msgid "Sign-in"
 msgstr "Inloggning"
+
+#: src/views/projects/liveStatus.ts
+msgid "Signal interrupted"
+msgstr "Avbrott i signal"
+
+#: src/views/projects/PlayoutWorkOverlay.tsx
+msgid "Signal interruption — the video signal has been interrupted while the player is open."
+msgstr "Signalavbrott — videosignalen har avbrutits medan spelaren är öppen."
+
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/liveStatus.ts
+msgid "Signal OK"
+msgstr "Signal OK"
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Size"
@@ -2180,9 +2875,17 @@ msgstr "Något gick fel. Försök igen om en stund."
 msgid "Sort A–Z"
 msgstr "Sortera A–Ö"
 
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Sort name list"
+msgstr "Sortera namnlista"
+
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Speaker"
 msgstr "Talare"
+
+#: src/views/projects/projectJobLogic.ts
+msgid "Speaker changes"
+msgstr "Talarbyten"
 
 #: src/app/jobActions.ts
 msgid "Speaker changes · {name}"
@@ -2191,6 +2894,14 @@ msgstr "Talarbyten · {name}"
 #: src/views/projects/ManuscriptSpeakersWarning.tsx
 msgid "Speaker changes are being analyzed"
 msgstr "Talarbyten analyseras"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Speakers are played out directly from Meeting."
+msgstr "Talare spelas ut direkt från Meeting."
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Speakers in the agenda"
+msgstr "Talare i dagordningen"
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "SRT, for editing software and platforms that do not read WebVTT."
@@ -2207,6 +2918,10 @@ msgstr "Fristående"
 #: src/views/projects/ForkDialog.tsx
 msgid "Start"
 msgstr "Börja"
+
+#: src/views/projects/PauseButton.tsx
+msgid "Start break"
+msgstr "Starta paus"
 
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "Start from layout"
@@ -2244,6 +2959,10 @@ msgstr "Stoppa enkodern för att trimma och publicera ondemand. Eller gå tillba
 msgid "Stop using as template"
 msgstr "Sluta använda som mall"
 
+#: src/views/projects/IngestInfo.tsx
+msgid "Stream key"
+msgstr "Stream key"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Summary"
 msgstr "Sammanfattning"
@@ -2260,9 +2979,24 @@ msgstr "Byt sändning…"
 msgid "Take out without speakers"
 msgstr "Ta ut utan talare"
 
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Tear down"
+msgstr "Riv"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Tear down {teardownLabel}? The ingest server and stream key stop working. Recordings in the video archive are not affected."
 msgstr "Riv {teardownLabel}? Ingest-server och stream key slutar gälla. Inspelningar i videoarkivet påverkas inte."
+
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/IngestInfoPanel.tsx
+#: src/views/projects/ProjectHeader.tsx
+msgid "Tear down ingest"
+msgstr "Riv ingest"
+
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/IngestInfoPanel.tsx
+msgid "Tear down ingest?"
+msgstr "Riva ingest?"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Tear down resource"
@@ -2289,6 +3023,14 @@ msgstr "Mallar"
 msgid "Templates are offered under \"Start from layout\" when a new project is created."
 msgstr "Mallar erbjuds under \"Utgå från layout\" när ett nytt projekt skapas."
 
+#: src/views/projects/LiveWorkspace.tsx
+msgid "Test bed"
+msgstr "Testbädd"
+
+#: src/views/projects/PreviewOverlay.tsx
+msgid "Test play-out: what you play out here is only visible in the preview, not to the viewers and not in the broadcast's history."
+msgstr "Testutspelning: det du spelar ut här syns bara i förhandsvisningen, inte för tittarna och inte i sändningens historik."
+
 #: src/views/projects/layoutInherit.ts
 msgid "Text after the broadcast (After)"
 msgstr "Text efter sändningen (After)"
@@ -2305,13 +3047,30 @@ msgstr "Text under livesändningen (Live)"
 msgid "Text for the recording (Ondemand)"
 msgstr "Text för inspelningen (Ondemand)"
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Text mode"
+msgstr "Textläge"
+
 #: src/views/projects/layoutInherit.ts
 msgid "Text placement"
 msgstr "Textens placering"
 
+#: src/views/projects/LiveWorkspace.tsx
+#: src/views/projects/PauseButton.tsx
+msgid "Text shown in the player"
+msgstr "Text som visas i spelaren"
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Text to paste into the video's description on YouTube."
 msgstr "Text att klistra in i videons beskrivning på YouTube."
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Texts and poster"
+msgstr "Texter och poster"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Texts in the player"
+msgstr "Texter i spelaren"
 
 #: src/views/projects/UploadPanel.tsx
 msgid "That does not seem to be a video file."
@@ -2324,6 +3083,10 @@ msgstr "Det där är ingen giltig adress."
 #: src/views/projects/UploadPanel.tsx
 msgid "The address could not be linked."
 msgstr "Adressen kunde inte kopplas."
+
+#: src/views/projects/LiveHlsField.tsx
+msgid "The address is copied"
+msgstr "Adressen kopierad"
 
 #: src/views/projects/recordingSource.ts
 msgid "The address must not contain a user name or password."
@@ -2365,13 +3128,26 @@ msgstr "Backend bekräftade inte den klickade punkten."
 msgid "The Before message"
 msgstr "Before-meddelandet"
 
+#: src/views/projects/LiveWorkspace.tsx
+msgid "The break also ends when you play out an item or a name. If you close this box, the break continues until you end it."
+msgstr "Pausen avslutas också när du spelar ut en punkt eller ett namn. Stänger du den här rutan fortsätter pausen tills du avslutar den."
+
 #: src/views/projects/ForkDialog.tsx
 msgid "The broadcast has been running since {start}."
 msgstr "Sändningen har pågått sedan {start}."
 
+#: src/views/projects/liveStatus.ts
 #: src/views/projects/OndemandView.tsx
 msgid "The broadcast has ended"
 msgstr "Sändningen avslutad"
+
+#: src/views/projects/playerSettings.ts
+msgid "The broadcast has ended."
+msgstr "Sändningen är avslutad."
+
+#: src/views/projects/playerSettings.ts
+msgid "The broadcast has not started yet."
+msgstr "Sändningen har inte startat ännu."
 
 #: src/views/projects/OndemandView.tsx
 msgid "The broadcast is set to Ondemand mode and everything below becomes visible to the viewers."
@@ -2425,9 +3201,17 @@ msgstr "Kapitlens förankring mot videon är inte bekräftad. Bekräfta den i re
 msgid "The chosen broadcast is very short ({duration}) — check that it was not a test before you switch."
 msgstr "Den valda sändningen är väldigt kort ({duration}) — kontrollera att det inte var ett test innan du byter."
 
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "The current agenda is replaced by a new Meeting agenda and is no longer linked to the project."
+msgstr "Nuvarande agenda ersätts av en ny Meeting-agenda och kopplas inte längre till projektet."
+
 #: src/views/projects/UploadPanel.tsx
 msgid "The current recording is replaced only when you have approved the new video."
 msgstr "Nuvarande inspelning ersätts först när du har godkänt den nya videon."
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "The details the encoder sends to. The live HLS address is under the Link tab."
+msgstr "Uppgifterna som enkodern sänder till. Live-HLS-adressen finns under fliken Länk."
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "The document could not be created."
@@ -2477,6 +3261,10 @@ msgstr "Utkastet kunde inte hämtas."
 msgid "The draft was downloaded as a .vtt file."
 msgstr "Utkastet laddades ner som en .vtt-fil."
 
+#: src/views/projects/ProjectHeader.tsx
+msgid "The encoder has stopped sending. Should we tear down the streaming server (the ingest) that was used? If this was only a test, answer Cancel — the server stays, ready for a new broadcast."
+msgstr "Enkodern har slutat sända. Ska vi riva streamingservern (ingesten) som användes? Om detta bara var ett test svarar du Avbryt — servern finns kvar och redo för en ny sändning."
+
 #: src/views/users/UsersView.tsx
 msgid "The end date must be after the start date."
 msgstr "Slutdatum måste vara efter startdatum."
@@ -2493,6 +3281,10 @@ msgstr "Filen blir ett utkast i redigeraren och ersätter nuvarande arbetsversio
 msgid "The file becomes a draft in the editor. Viewers see it only when you publish."
 msgstr "Filen blir ett utkast i redigeraren. Tittarna ser den först när du publicerar."
 
+#: src/views/projects/playerSettings.ts
+msgid "The file is empty."
+msgstr "Filen är tom."
+
 #: src/views/projects/VttImportDialog.tsx
 msgid "The file's times are counted from"
 msgstr "Filens tider räknas från"
@@ -2501,9 +3293,30 @@ msgstr "Filens tider räknas från"
 msgid "The history from the broadcast/test is kept for the archive, but the After review ends and the audience sees the Before message."
 msgstr "Historiken från sändningen/testet lämnas kvar för arkivet, men After-granskningen avslutas och publiken ser Before-meddelandet."
 
+#: src/views/projects/PlayerLinkField.tsx
+msgid "The iframe code is copied"
+msgstr "Iframe-koden kopierad"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "The image is shown in the player when no video is playing, e.g. before the broadcast and when the recording is not ready."
+msgstr "Bilden visas i spelaren när ingen video spelas, t.ex. före sändningen och när inspelningen inte är klar."
+
+#: src/views/projects/playerSettings.ts
+msgid "The image is too large. At most 5 MB."
+msgstr "Bilden är för stor. Högst 5 MB."
+
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/IngestInfoPanel.tsx
+msgid "The ingest resource is removed. To broadcast you need to create a new ingest and use a new stream key in the encoder."
+msgstr "Ingest-resursen tas bort. För att sända behöver du skapa en ny ingest och använda en ny stream key i enkodern."
+
 #: src/views/jobs/JobsView.tsx
 msgid "The job could not be canceled."
 msgstr "Jobbet kunde inte avbrytas."
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "The key is set per domain by an administrator. Without a key of its own, ungap's default key is used."
+msgstr "Nyckeln ställs in per domän av en administratör. Utan egen nyckel används ungaps standardnyckel."
 
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "The layout is already the same. Nothing is overwritten."
@@ -2537,6 +3350,10 @@ msgstr "Länken har gått ut eller har redan använts. Be om en ny inbjudan."
 #: src/app/CredentialLinkView.tsx
 msgid "The link has expired or has already been used. Ask for a new reset."
 msgstr "Länken har gått ut eller har redan använts. Be om en ny återställning."
+
+#: src/views/projects/PlayerLinkField.tsx
+msgid "The link is copied"
+msgstr "Länken kopierad"
 
 #: src/app/SharedDownloadsView.tsx
 msgid "The link is valid until {date}."
@@ -2578,6 +3395,39 @@ msgstr "Originalet publiceras aldrig direkt. Trimma det för att skapa en versio
 #: src/views/users/UsersView.tsx
 msgid "The PIN becomes valid only when the invitation has been sent"
 msgstr "PIN-koden blir giltig först när inbjudan är skickad"
+
+#: src/views/projects/OverviewShell.tsx
+msgid "The player"
+msgstr "Spelaren"
+
+#: src/views/projects/PlayerPreview.tsx
+msgid "The player as the viewers see it"
+msgstr "Spelaren som tittarna ser den"
+
+#: src/views/projects/PreviewOverlay.tsx
+msgid "The player in preview"
+msgstr "Spelaren i förhandsvisning"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "The player sends anonymous playback data (quality, buffering and errors) to Mux, to help with troubleshooting. No cookies are used and the viewers are not identified."
+msgstr "Spelaren skickar anonym uppspelningsdata (kvalitet, buffring och fel) till Mux, till hjälp vid felsökning. Inga cookies används och tittarna identifieras inte."
+
+#: src/views/projects/PlayerPreview.tsx
+#: src/views/projects/PreviewOverlay.tsx
+msgid "The preview is loading…"
+msgstr "Förhandsvisningen laddas…"
+
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "The preview shows the chosen placement with the text from the chosen tab."
+msgstr "Förhandsvisningen visar vald placering med texten från den valda fliken."
+
+#: src/views/projects/PreviewOverlay.tsx
+msgid "The preview shows the saved draft: trim, chapters and captions as they will be when you publish. Unsaved changes are not shown."
+msgstr "Förhandsvisningen visar det sparade utkastet: trim, kapitel och undertexter som de blir när du publicerar. Ändringar som inte är sparade syns inte."
+
+#: src/views/projects/PreviewOverlay.tsx
+msgid "The preview shows what the viewers see now. Test play-out is only available before the broadcast."
+msgstr "Förhandsvisningen visar det tittarna ser nu. Testutspelning finns bara före sändningen."
 
 #: src/app/Shell.tsx
 msgid "The processing for {name} failed."
@@ -2699,6 +3549,10 @@ msgstr "Den publicerade videons start ({start} i originalet)"
 msgid "The step “{stepLabel}” failed. The error message was shown as a notification. On demand has not been updated, so you can try again."
 msgstr "Steget ”{stepLabel}” misslyckades. Felmeddelandet visades som en notis. Ondemand är inte uppdaterat, så du kan försöka igen."
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "The text the viewers see in each mode. If a field is left empty, the player's default text is used, if there is one."
+msgstr "Texten som tittarna ser i respektive läge. Lämnas ett fält tomt används spelarens standardtext, om det finns någon."
+
 #: src/views/projects/forkLogic.ts
 msgid "The time is outside what can be chosen ({first}–{last})."
 msgstr "Tiden ligger utanför det som finns att välja ({first}–{last})."
@@ -2760,6 +3614,14 @@ msgstr "Videon är inte klar än."
 msgid "The video is trimmed in the After mode."
 msgstr "Videon trimmas i läget After."
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "The viewers can pause the live broadcast, rewind and jump to an earlier agenda item, and then go back to live. Only what was broadcast publicly can be watched afterwards."
+msgstr "Tittarna kan pausa livesändningen, spola tillbaka och hoppa till en tidigare dagordningspunkt, och sedan gå tillbaka till live. Bara det som sändes publikt går att se i efterhand."
+
+#: src/views/projects/PauseButton.tsx
+msgid "The viewers see the text over the video until you end the break. A marker is set in the chapter list."
+msgstr "Tittarna ser texten över videon tills du avslutar pausen. En markör sätts i kapitellistan."
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "The whole draft, with any unpublished changes, in the original recording's time."
 msgstr "Hela utkastet, med eventuella ändringar som inte är publicerade, i originalinspelningens tid."
@@ -2813,6 +3675,10 @@ msgstr "Den här versionen är publicerad. Kapitellistan är fryst och följer i
 msgid "Time"
 msgstr "Tid"
 
+#: src/views/projects/ProjectHeader.tsx
+msgid "Title"
+msgstr "Rubrik"
+
 #: src/app/CredentialLinkView.tsx
 msgid "To login"
 msgstr "Till inloggningen"
@@ -2829,6 +3695,7 @@ msgid "tomorrow"
 msgstr "imorgon"
 
 #: src/views/projects/layoutInherit.ts
+#: src/views/projects/playerSettings.ts
 msgid "Top edge"
 msgstr "Överkant"
 
@@ -2918,9 +3785,18 @@ msgstr "oanvänd {days} d"
 msgid "Unused lists"
 msgstr "Oanvända"
 
+#: src/views/projects/LiveWorkspace.tsx
+msgid "Update the text"
+msgstr "Uppdatera texten"
+
 #: src/views/projects/UploadPanel.tsx
 msgid "Upload"
 msgstr "Ladda upp"
+
+#: src/views/projects/projectJobLogic.ts
+msgctxt "job kind"
+msgid "Upload"
+msgstr "Uppladdning"
 
 #: src/app/jobActions.ts
 msgid "Upload · {name}"
@@ -3020,6 +3896,10 @@ msgstr "Synlighet"
 msgid "Wait"
 msgstr "Vänta"
 
+#: src/views/projects/PlayoutWorkOverlay.tsx
+msgid "Wait for reconnection"
+msgstr "Invänta återanslutning"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Wait until the recording is done before you trim and publish on demand."
 msgstr "Vänta tills inspelningen är klar innan du trimmar och publicerar ondemand."
@@ -3031,6 +3911,14 @@ msgstr "Vänta tills överföringen är klar"
 #: src/views/projects/PublishProgressDialog.tsx
 msgid "Waiting"
 msgstr "Väntar"
+
+#: src/views/projects/liveStatus.ts
+msgid "Waiting for signal"
+msgstr "Väntar på signal"
+
+#: src/views/projects/liveStatus.ts
+msgid "Waiting for the encoder to stop"
+msgstr "Väntar på att enkoder stoppar"
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "WebVTT chapters (.vtt)"
@@ -3068,6 +3956,10 @@ msgstr "Arbetar operativt inom sin domän."
 msgid "Write it down now — it is only shown once. You log in with {email} and this PIN."
 msgstr "Anteckna den nu — den visas bara en gång. Du loggar in med {email} och den här PIN-koden."
 
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Yes, play out events"
+msgstr "Ja, spela ut händelser"
+
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "You can link or change the agenda and name list at any time in the project."
 msgstr "Du kan koppla eller byta dagordning och namnlista när som helst i projektet."
@@ -3087,6 +3979,10 @@ msgstr "Din personliga PIN-kod:"
 #: src/app/App.tsx
 msgid "Your session has expired. Log in again and you will continue where you were."
 msgstr "Din session har gått ut. Logga in igen så fortsätter du där du var."
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Your user has no domain."
+msgstr "Din användare saknar en domän."
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "YouTube chapters"

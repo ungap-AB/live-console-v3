@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { MediaJob } from '../../data/types.ts'
 
 export interface ProjectJobIndicator {
@@ -29,5 +30,5 @@ export function jobKindIcon(kind: MediaJob['kind']): string {
 }
 
 export function jobKindLabel(kind: MediaJob['kind']): string {
-  return kind === 'download' ? 'Nedladdning' : kind === 'captions' ? 'Undertexter' : kind === 'speakers' ? 'Talarbyten' : 'Uppladdning'
+  return kind === 'download' ? t({ message: 'Download', context: 'job kind' }) : kind === 'captions' ? t`Captions` : kind === 'speakers' ? t`Speaker changes` : t({ message: 'Upload', context: 'job kind' })
 }

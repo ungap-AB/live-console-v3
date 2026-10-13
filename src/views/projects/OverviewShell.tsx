@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { ComponentChildren } from 'preact'
 import { PlayerPreview } from './PlayerPreview'
 import type { PlayerPreviewMode } from './PlayerPreview'
@@ -39,11 +40,11 @@ export function OverviewShell({ projectId, header, modes, children, player, work
       {header}
       <div class="ovs">
         <div class="ovs-cols">
-          <section class="ovs-col ovs-overview" aria-label="Översikt">
+          <section class="ovs-col ovs-overview" aria-label={t`Overview`}>
             {modes}
             {children}
           </section>
-          <section class="ovs-col ovs-player" aria-label="Spelaren">
+          <section class="ovs-col ovs-player" aria-label={t`The player`}>
             {player && !workOpen && <PlayerPreview projectId={projectId} url={player.url} version={player.version} preview={player.preview} footer={player.footer} />}
           </section>
         </div>

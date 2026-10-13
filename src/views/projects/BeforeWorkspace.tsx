@@ -1,3 +1,4 @@
+import { plural, t } from '@lingui/core/macro'
 import type { ComponentChildren } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { useIngestInfoRequest } from './useIngestInfoRequest'
@@ -91,7 +92,7 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
   }
 
   function statusValue(label: string, value: string) {
-    return notUsed.includes(label) ? 'Används ej' : value
+    return notUsed.includes(label) ? t({ message: 'Not used', context: 'preparation step' }) : value
   }
 
   function toggleMenu(label: string) {
@@ -114,7 +115,7 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
   // (koppla listan, skapa ingest eller visa ingest-info); övriga åtgärder ligger i ⋯-menyn.
   function preparationStep(n: number, label: string, title: string, value: string, ready: boolean, onClick: () => void, menu: ComponentChildren) {
     const status = statusValue(title, value)
-    return <FlowStep n={n} label={label} status={status} done={ready} title={`${title}: ${status}`} menu={menu} onClick={onClick} />
+    return <FlowStep n={n} label={label} status={status} done={ready} title={t`${title}: ${status}`} menu={menu} onClick={onClick} />
   }
 
   return (
@@ -122,7 +123,7 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
       projectId={p.id}
       header={header}
       modes={<ModeSelector project={p} actions={actions} />}
-      player={p.playerUrl ? { url: p.playerUrl, version: playerVersion, preview: { label: 'Preview (live)', variant: 'published', mode: 'live' }, footer: <PlayerFooter project={p} actions={actions} onSettings={() => setPlayerSettings('link')} /> } : null}
+      player={p.playerUrl ? { url: p.playerUrl, version: playerVersion, preview: { label: t`Preview (live)`, variant: 'published', mode: 'live' }, footer: <PlayerFooter project={p} actions={actions} onSettings={() => setPlayerSettings('link')} /> } : null}
       workOpen={playout.open}
       overlays={<>
         {picking && <ListPicker kind={picking} project={p} actions={actions} onClose={() => setPicking(null)} />}
@@ -138,13 +139,13 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
         )}
         {confirmTeardown && (
           <ConfirmModal
-            title="Riva ingest?"
-            confirmLabel="Riv ingest"
+            title={t`Tear down ingest?`}
+            confirmLabel={t`Tear down ingest`}
             danger
             onCancel={() => setConfirmTeardown(false)}
             onConfirm={() => void teardownIngest()}
           >
-            <p>Ingest-resursen tas bort. För att sända behöver du skapa en ny ingest och använda en ny stream key i enkodern.</p>
+            <p>{t`The ingest resource is removed. To broadcast you need to create a new ingest and use a new stream key in the encoder.`}</p>
           </ConfirmModal>
         )}
         {showMeeting && (
@@ -159,21 +160,21 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
       </>}
     >
       <div class="od-flow">
-        <ol class="od-flow-steps" aria-label="Förberedelser">
-          {preparationStep(1, p.agendaId ? 'Dagordning' : 'Koppla dagordning', 'Dagordning', p.agendaId ? withCount(linkedResourceLabel(agendaResource.data), agendaResource.data?.items.length, 'punkt', 'punkter') : 'Ej kopplad', !!p.agendaId, () => setPicking('agenda'), actionMenu('Dagordning', [
-            { label: 'Koppla…', onClick: () => { setOpenMenu(null); setPicking('agenda') } },
-            { label: 'Koppla till Meeting...', onClick: () => { setOpenMenu(null); setShowMeeting(true) } },
-            { label: 'Använd ej', onClick: () => { void actions.setAgenda(null); markNotUsed('Dagordning') } },
+        <ol class="od-flow-steps" aria-label={t`Preparations`}>
+          {preparationStep(1, p.agendaId ? t`Agenda` : t`Link agenda`, t`Agenda`, p.agendaId ? withItems(linkedResourceLabel(agendaResource.data), agendaResource.data?.items.length) : t`Not linked`, !!p.agendaId, () => setPicking('agenda'), actionMenu(t`Agenda`, [
+            { label: t`Link…`, onClick: () => { setOpenMenu(null); setPicking('agenda') } },
+            { label: t`Link to Meeting...`, onClick: () => { setOpenMenu(null); setShowMeeting(true) } },
+            { label: t`Do not use`, onClick: () => { void actions.setAgenda(null); markNotUsed(t`Agenda`) } },
           ]))}
-          {preparationStep(2, p.namelistId ? 'Namnlista' : 'Koppla namnlista', 'Namnlista', p.namelistId ? withCount(linkedResourceLabel(nameListResource.data), nameListResource.data?.people.length, 'namn', 'namn') : 'Ej kopplad', !!p.namelistId, () => setPicking('namelist'), actionMenu('Namnlista', [
-            { label: 'Koppla…', onClick: () => { setOpenMenu(null); setPicking('namelist') } },
-            { label: 'Använd ej', onClick: () => { actions.setNameList(null); markNotUsed('Namnlista') } },
+          {preparationStep(2, p.namelistId ? t`Name list` : t`Link name list`, t`Name list`, p.namelistId ? withNames(linkedResourceLabel(nameListResource.data), nameListResource.data?.people.length) : t`Not linked`, !!p.namelistId, () => setPicking('namelist'), actionMenu(t`Name list`, [
+            { label: t`Link…`, onClick: () => { setOpenMenu(null); setPicking('namelist') } },
+            { label: t`Do not use`, onClick: () => { actions.setNameList(null); markNotUsed(t`Name list`) } },
           ]))}
-          {preparationStep(3, hasIngest ? 'Ingest' : 'Skapa ingest', 'Ingest', receivingSignal ? 'Signal OK' : hasIngest ? 'Ingen signal' : 'Inte skapad', hasIngest, () => (hasIngest ? setPlayerSettings('ingest') : void createIngest()), actionMenu('Ingest', [
-            ...(!hasIngest ? [{ label: 'Skapa', onClick: () => void createIngest() }] : []),
+          {preparationStep(3, hasIngest ? t`Ingest` : t`Create ingest`, t`Ingest`, receivingSignal ? t`Signal OK` : hasIngest ? t`No signal` : t`Not created`, hasIngest, () => (hasIngest ? setPlayerSettings('ingest') : void createIngest()), actionMenu(t`Ingest`, [
+            ...(!hasIngest ? [{ label: t`Create`, onClick: () => void createIngest() }] : []),
             ...(hasIngest ? [
-              { label: 'Visa ingest-info…', onClick: () => { setOpenMenu(null); setPlayerSettings('ingest') } },
-              { label: 'Riv', onClick: () => { setOpenMenu(null); setConfirmTeardown(true) }, danger: true },
+              { label: t`Show ingest info…`, onClick: () => { setOpenMenu(null); setPlayerSettings('ingest') } },
+              { label: t`Tear down`, onClick: () => { setOpenMenu(null); setConfirmTeardown(true) }, danger: true },
             ] : []),
           ]))}
         </ol>
@@ -211,17 +212,17 @@ function ListPicker({ kind, project: p, actions, onClose }: ListPickerProps) {
 
   async function createNew() {
     if (kind === 'agenda') {
-      const created = await client.agendas.create({ name: p.name, description: 'Utkast' })
+      const created = await client.agendas.create({ name: p.name, description: t`Draft` })
       await actions.setAgenda(created.id)
     } else {
-      const created = await client.namelists.create({ name: p.name, description: 'Utkast' })
+      const created = await client.namelists.create({ name: p.name, description: t`Draft` })
       actions.setNameList(created.id)
     }
   }
 
   return (
     <PickerModal
-      title={kind === 'agenda' ? (currentId ? 'Byt dagordning' : 'Koppla dagordning') : (currentId ? 'Byt namnlista' : 'Koppla namnlista')}
+      title={kind === 'agenda' ? (currentId ? t`Change agenda` : t`Link agenda`) : (currentId ? t`Change name list` : t`Link name list`)}
       items={lists.data ?? []}
       selectedId={currentId}
       onPick={(id) => {
@@ -230,7 +231,7 @@ function ListPicker({ kind, project: p, actions, onClose }: ListPickerProps) {
         onClose()
       }}
       onCancel={onClose}
-      createNewLabel={kind === 'agenda' ? 'Ny dagordning' : 'Ny namnlista'}
+      createNewLabel={kind === 'agenda' ? t`New agenda` : t`New name list`}
       onCreateNew={() => {
         void createNew()
         onClose()
@@ -239,8 +240,12 @@ function ListPicker({ kind, project: p, actions, onClose }: ListPickerProps) {
   )
 }
 
-function withCount(label: string, count: number | undefined, one: string, many: string): string {
-  return count === undefined ? label : `${label} · ${count} ${count === 1 ? one : many}`
+function withItems(label: string, count: number | undefined): string {
+  return count === undefined ? label : plural(count, { one: `${label} · # item`, other: `${label} · # items` })
+}
+
+function withNames(label: string, count: number | undefined): string {
+  return count === undefined ? label : plural(count, { one: `${label} · # name`, other: `${label} · # names` })
 }
 
 interface BwMenuItem {
@@ -264,7 +269,7 @@ function BwMenu({ label, items, open, onToggle, onClose }: BwMenuProps) {
   useDismiss(open, ref, onClose)
   return (
     <div class="bw-menu-wrap" ref={ref}>
-      <button class="bw-menu-button" type="button" aria-label={`Åtgärder för ${label}`} aria-expanded={open} onClick={onToggle}>
+      <button class="bw-menu-button" type="button" aria-label={t`Actions for ${label}`} aria-expanded={open} onClick={onToggle}>
         <Icon name="more_horiz" size={20} />
       </button>
       {open && (

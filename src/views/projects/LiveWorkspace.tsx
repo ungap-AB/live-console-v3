@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { ComponentChildren } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import { useIngestInfoRequest } from './useIngestInfoRequest'
@@ -40,6 +41,14 @@ interface LiveWorkspaceProps {
 // Läget Live. UNG-269: översikt till vänster (lägesknapparna, signalens detaljer, det som är utspelat nu med Spela ut kapitel under och
 // övriga knappar längst ner), spelaren till höger med samma länk som tittarna; utspelningen sker i den överlagrade arbetsvyn, som
 // ersätter det expanderade läget (UNG-129/179) och öppnas bara med knappen. Sändningen avslutas med lägesknappen After.
+function failedStepsText(failed: number): string {
+  return t`${failed} cue errors, the test continues`
+}
+
+function pausedSinceText(since: string, duration: string): string {
+  return t`Paused since ${since} (${duration}). The viewers see the text below over the video.`
+}
+
 export function LiveWorkspace({ header, project: p, actions, channel, health, playout, streamKey, onForked, ingestInfoRequest = 0 }: LiveWorkspaceProps) {
   const testbed = usePlayoutTestbed(p, actions)
   // Testbädden är ett verktyg för oss (root admin), inte för operatörer.
@@ -103,25 +112,25 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
         )}
         {pause && !reminderDismissed && (
           <Modal
-            title="Paus pågår"
-            subtitle={`Pausad sedan ${formatLocalTime(pause.occurredAt)} (${pauseDurationText(pause.occurredAt, now)}). Tittarna ser texten nedan över videon.`}
+            title={t`Break in progress`}
+            subtitle={pausedSinceText(formatLocalTime(pause.occurredAt), pauseDurationText(pause.occurredAt, now))}
             onClose={() => setReminderDismissed(true)}
             footer={
               <>
-                <button class="btn btn-sm" type="button" onClick={() => setReminderDismissed(true)}>Stäng</button>
-                <button class="btn btn-sm" type="button" disabled={pauseDraft.trim() === pause.label || pauseDraft.trim() === ''} onClick={() => actions.pause(pauseDraft)}>Uppdatera texten</button>
-                <button class="btn btn-sm btn-primary" type="button" onClick={() => actions.resume()}>Avsluta paus</button>
+                <button class="btn btn-sm" type="button" onClick={() => setReminderDismissed(true)}>{t`Close`}</button>
+                <button class="btn btn-sm" type="button" disabled={pauseDraft.trim() === pause.label || pauseDraft.trim() === ''} onClick={() => actions.pause(pauseDraft)}>{t`Update the text`}</button>
+                <button class="btn btn-sm btn-primary" type="button" onClick={() => actions.resume()}>{t`End break`}</button>
               </>
             }
           >
             <p class="pause-reminder-note">
-              Pausen avslutas också när du spelar ut en punkt eller ett namn. Stänger du den här rutan fortsätter pausen tills du avslutar den.
+              {t`The break also ends when you play out an item or a name. If you close this box, the break continues until you end it.`}
             </p>
             <textarea
               class="pause-dialog-text"
               rows={3}
               maxLength={MAX_PAUSE_TEXT_LENGTH}
-              aria-label="Text som visas i spelaren"
+              aria-label={t`Text shown in the player`}
               value={pauseDraft}
               onInput={(event) => setPauseDraft(event.currentTarget.value)}
             />
@@ -147,13 +156,13 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
         <NowPanels project={p} actions={actions} showTime={false} />
       </div>
 
-      {isRootAdmin && <section class="lw-testbed" aria-label="Testbädd">
+      {isRootAdmin && <section class="lw-testbed" aria-label={t`Test bed`}>
         <div>
-          <strong>Testbädd</strong>
+          <strong>{t`Test bed`}</strong>
           {testbed.state.running ? (
             <span>{testbed.state.completedSteps}/{testbed.state.totalSteps} cues · {formatHms(testbed.state.durationSeconds)} · klar cirka {expectedEndAt ? formatLocalTime(expectedEndAt) : '–'}</span>
           ) : null}
-          {testbed.state.failedSteps > 0 && <small>{testbed.state.failedSteps} cue-fel, testet fortsätter</small>}
+          {testbed.state.failedSteps > 0 && <small>{failedStepsText(testbed.state.failedSteps)}</small>}
         </div>
         {testbed.state.running ? (
           <button class="btn btn-danger btn-sm" type="button" onClick={testbed.stop}>STOP TEST</button>

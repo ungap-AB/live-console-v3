@@ -1,7 +1,14 @@
+import { plural, t } from '@lingui/core/macro'
 import { Icon } from '../../components/Icon'
 import type { EncoderStatus } from './liveStatus'
+import { formatNumber } from '../../i18n'
 
 // Signalstatus och tittarantal som små märken. Används av projektets huvud och av utspelningsvyn i Live (UNG-179, UNG-269).
+function viewersText(count: number): string {
+  const viewers = formatNumber(count)
+  return plural(count, { one: `${viewers} viewer`, other: `${viewers} viewers` })
+}
+
 export function EncoderStatusChip({ status }: { status: EncoderStatus }) {
   return (
     <div class={`pv-encoder-status is-${status.tone}`} role="status">
@@ -13,9 +20,9 @@ export function EncoderStatusChip({ status }: { status: EncoderStatus }) {
 
 export function ViewersChip({ count }: { count: number }) {
   return (
-    <div class="pv-viewers" role="status" title="Samtidiga tittare enligt IVS. Siffran är en uppskattning med några sekunders fördröjning.">
+    <div class="pv-viewers" role="status" title={t`Concurrent viewers according to IVS. The number is an estimate with a few seconds' delay.`}>
       <Icon name="visibility" size={17} />
-      <span>{count.toLocaleString('sv-SE')} tittare</span>
+      <span>{viewersText(count)}</span>
     </div>
   )
 }

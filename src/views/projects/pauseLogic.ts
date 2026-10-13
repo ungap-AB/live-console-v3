@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import type { TimelineEvent } from '../../data/types.ts'
 
 // UNG-119. En paus är två händelser i tidslinjen: pauseIn (med texten som etikett) och pauseOut. Pausen pågår när den senaste
@@ -21,15 +22,15 @@ export function normalizePauseText(text: string): string {
 /** Förslag i dialogen: texten från senaste pausen, annars en standardtext. */
 export function suggestedPauseText(timeline: readonly TimelineEvent[]): string {
   const last = [...timeline].reverse().find((event) => event.kind === 'pauseIn')
-  return last && last.label !== DEFAULT_PAUSE_TEXT ? last.label : 'Ajournering. Sändningen fortsätter strax.'
+  return last && last.label !== DEFAULT_PAUSE_TEXT ? last.label : t`Adjournment. The broadcast continues shortly.`
 }
 
 /** Hur länge pausen pågått, i klartext: "just nu", "7 min", "1 h 5 min". */
 export function pauseDurationText(sinceIso: string, nowMs: number): string {
   const minutes = Math.max(0, Math.floor((nowMs - Date.parse(sinceIso)) / 60_000))
-  if (minutes < 1) return 'nyss'
-  if (minutes < 60) return `${minutes} min`
+  if (minutes < 1) return t`just now`
+  if (minutes < 60) return t`${minutes} min`
   const hours = Math.floor(minutes / 60)
   const rest = minutes % 60
-  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`
+  return rest === 0 ? t`${hours} h` : t`${hours} h ${rest} min`
 }
