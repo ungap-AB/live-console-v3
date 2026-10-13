@@ -16,6 +16,7 @@ import { PlayerSettingsDialog, type PlayerSettingsCategory } from './PlayerSetti
 import { type PlayoutAddress } from './PlayoutOverlay'
 import { consumeMeetingBindingRequest } from './meetingBindingRequest'
 import { linkedResourceLabel } from './preparationLabels'
+import { FlowStep } from './FlowStep'
 import { ForkButton } from './ForkButton'
 import { IngestInfoPanel } from './IngestInfoPanel'
 import { ModeSelector } from './ModeSelector'
@@ -58,7 +59,7 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
   const [notUsed, setNotUsed] = useState<string[]>([])
   // UNG-189: öppnas direkt när man valt "Koppla till Meeting" i skapa-dialogen.
   const [showMeeting, setShowMeeting] = useState(() => consumeMeetingBindingRequest(p.id))
-  // Spelarinställningarna och fliken de öppnas på (i-ikonen och Visa ingest-info öppnar fliken Ingest).
+  // Spelarinställningarna och fliken de öppnas på (Ingest-steget och Visa ingest-info öppnar fliken Ingest).
   const [playerSettings, setPlayerSettings] = useState<PlayerSettingsCategory | null>(null)
   useIngestInfoRequest(ingestInfoRequest, () => setPlayerSettings('ingest'))
   // Spelaren laddas om när det tittarna ser i Before ändras (från spelarinställningarna).
@@ -109,20 +110,11 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
     )
   }
 
-  function preparationCard(label: string, value: string, ready: boolean, menu: preact.ComponentChildren) {
-    return (
-      <li key={label} class={ready ? 'is-ready' : 'is-pending'}>
-        <Icon name={ready ? 'check_circle' : 'radio_button_unchecked'} size={20} />
-        <span class="bw-status-text">
-          <span class="bw-status-label">{label}</span>
-          <span class="bw-status-value">
-            {statusValue(label, value)}
-            <span class="sr-only">{ready ? ' – klart' : ' – inte klart'}</span>
-          </span>
-        </span>
-        {menu}
-      </li>
-    )
+  // Efter prod-provet 2026-10-13: förberedelserna är guidade steg (flödesknappar) som i After/Ondemand. Raden gör huvudåtgärden
+  // (koppla listan, skapa ingest eller visa ingest-info); övriga åtgärder ligger i ⋯-menyn.
+  function preparationStep(n: number, label: string, title: string, value: string, ready: boolean, onClick: () => void, menu: ComponentChildren) {
+    const status = statusValue(title, value)
+    return <FlowStep n={n} label={label} status={status} done={ready} title={`${title}: ${status}`} menu={menu} onClick={onClick} />
   }
 
   return (
@@ -166,42 +158,29 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
         )}
       </>}
     >
-      <ul class="bw-status" aria-label="Status för förberedelser">
-        {preparationCard('Dagordning', p.agendaId ? withCount(linkedResourceLabel(agendaResource.data), agendaResource.data?.items.length, 'punkt', 'punkter') : 'Ej kopplad', !!p.agendaId, actionMenu('Dagordning', [
-          { label: 'Koppla…', onClick: () => { setOpenMenu(null); setPicking('agenda') } },
-          { label: 'Koppla till Meeting...', onClick: () => { setOpenMenu(null); setShowMeeting(true) } },
-          { label: 'Använd ej', onClick: () => { void actions.setAgenda(null); markNotUsed('Dagordning') } },
-        ]))}
-        {preparationCard('Namnlista', p.namelistId ? withCount(linkedResourceLabel(nameListResource.data), nameListResource.data?.people.length, 'namn', 'namn') : 'Ej kopplad', !!p.namelistId, actionMenu('Namnlista', [
-          { label: 'Koppla…', onClick: () => { setOpenMenu(null); setPicking('namelist') } },
-          { label: 'Använd ej', onClick: () => { actions.setNameList(null); markNotUsed('Namnlista') } },
-        ]))}
-        {preparationCard('Ingest', receivingSignal ? 'Signal OK' : hasIngest ? 'Ingen signal' : 'Inte skapad', hasIngest, <>
-          {hasIngest && (
-            <button
-              class="bw-info-button"
-              type="button"
-              aria-label="Visa ingest-info"
-              title="Visa ingest-info"
-              onClick={() => setPlayerSettings('ingest')}
-            >
-              <Icon name="info" size={18} />
-            </button>
-          )}
-          {actionMenu('Ingest', [
-          ...(!hasIngest ? [{ label: 'Skapa', onClick: () => void createIngest() }] : []),
-          ...(hasIngest ? [
-            { label: 'Visa ingest-info…', onClick: () => { setOpenMenu(null); setPlayerSettings('ingest') } },
-            { label: 'Riv', onClick: () => { setOpenMenu(null); setConfirmTeardown(true) }, danger: true },
-          ] : []),
-          ])}
-        </>)}
+      <div class="od-flow">
+        <ol class="od-flow-steps" aria-label="Förberedelser">
+          {preparationStep(1, p.agendaId ? 'Dagordning' : 'Koppla dagordning', 'Dagordning', p.agendaId ? withCount(linkedResourceLabel(agendaResource.data), agendaResource.data?.items.length, 'punkt', 'punkter') : 'Ej kopplad', !!p.agendaId, () => setPicking('agenda'), actionMenu('Dagordning', [
+            { label: 'Koppla…', onClick: () => { setOpenMenu(null); setPicking('agenda') } },
+            { label: 'Koppla till Meeting...', onClick: () => { setOpenMenu(null); setShowMeeting(true) } },
+            { label: 'Använd ej', onClick: () => { void actions.setAgenda(null); markNotUsed('Dagordning') } },
+          ]))}
+          {preparationStep(2, p.namelistId ? 'Namnlista' : 'Koppla namnlista', 'Namnlista', p.namelistId ? withCount(linkedResourceLabel(nameListResource.data), nameListResource.data?.people.length, 'namn', 'namn') : 'Ej kopplad', !!p.namelistId, () => setPicking('namelist'), actionMenu('Namnlista', [
+            { label: 'Koppla…', onClick: () => { setOpenMenu(null); setPicking('namelist') } },
+            { label: 'Använd ej', onClick: () => { actions.setNameList(null); markNotUsed('Namnlista') } },
+          ]))}
+          {preparationStep(3, hasIngest ? 'Ingest' : 'Skapa ingest', 'Ingest', receivingSignal ? 'Signal OK' : hasIngest ? 'Ingen signal' : 'Inte skapad', hasIngest, () => (hasIngest ? setPlayerSettings('ingest') : void createIngest()), actionMenu('Ingest', [
+            ...(!hasIngest ? [{ label: 'Skapa', onClick: () => void createIngest() }] : []),
+            ...(hasIngest ? [
+              { label: 'Visa ingest-info…', onClick: () => { setOpenMenu(null); setPlayerSettings('ingest') } },
+              { label: 'Riv', onClick: () => { setOpenMenu(null); setConfirmTeardown(true) }, danger: true },
+            ] : []),
+          ]))}
+        </ol>
         {showIngestInfo && channel && (
-          <li class="bw-ingest-panel">
-            <IngestInfoPanel channel={channel} streamKey={streamKey} onClose={() => onShowIngestInfoChange(false)} onTeardown={teardownIngest} />
-          </li>
+          <IngestInfoPanel channel={channel} streamKey={streamKey} onClose={() => onShowIngestInfoChange(false)} onTeardown={teardownIngest} />
         )}
-      </ul>
+      </div>
 
       <button class="btn btn-primary ovs-wide" type="button" onClick={playout.openPlayout}>
         <Icon name="playlist_play" size={18} /> Spela ut kapitel

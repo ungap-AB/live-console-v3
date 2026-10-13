@@ -32,6 +32,7 @@ import { ForkButton } from './ForkButton'
 import { OverviewShell } from './OverviewShell'
 import { useModeChange } from './useModeChange'
 import { useLiveChannel } from './useLiveChannel'
+import { FlowStep } from './FlowStep'
 import './OndemandView.css'
 
 interface OndemandViewProps {
@@ -535,7 +536,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
   const guideSteps = (open: ((focus?: EditorFocus) => void) | null, entry: CaptionEntryState | null) => (
     <div class="od-flow">
       <ol class="od-flow-steps" aria-label="Gör klart för ondemand">
-        <GuideStep
+        <FlowStep
           n={1}
           label="Trimma video"
           status={externalVideo ? 'Extern video' : isTrimmed ? `Trimmad · ${formatHms(trimEnd - trimStart)}` : 'Hela inspelningen'}
@@ -546,7 +547,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
           title={externalVideo ? 'En extern video kan inte trimmas.' : trimOnlyInAfter ? 'Videon trimmas i läget After.' : undefined}
           onClick={() => open?.('trim')}
         />
-        <GuideStep
+        <FlowStep
           n={2}
           label="Redigera kapitel"
           status={chapterCount === 0 ? 'Inga kapitel' : `${chapterCount} kapitel`}
@@ -554,7 +555,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
           disabled={!open}
           onClick={() => open?.('chapters')}
         />
-        <GuideStep
+        <FlowStep
           n={3}
           label={entry?.kind === 'edit' ? 'Redigera undertexter' : 'Skapa undertexter'}
           status={!entry ? '' : entry.kind === 'progress' ? (entry.status ?? entry.label) : entry.kind === 'edit' ? (p.recording?.captions?.label ?? 'Finns') : 'Inga'}
@@ -565,7 +566,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
           onClick={() => open?.('captions')}
         />
         {published ? (
-          <GuideStep
+          <FlowStep
             n={4}
             label="Publicera ändringar"
             status={anyUnpublished ? 'Opublicerade ändringar' : 'Inga ändringar'}
@@ -574,7 +575,7 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
             onClick={() => void publishChangesOnly()}
           />
         ) : (
-          <GuideStep
+          <FlowStep
             n={4}
             label="Publicera ondemand"
             status=""
@@ -835,41 +836,6 @@ export function OndemandView({ project: p, actions, onBack, onForked }: Ondemand
             )}
 
     </OverviewShell>
-  )
-}
-
-interface GuideStepProps {
-  n: number
-  label: string
-  /** Kort läge till höger (t.ex. "3 kapitel"). */
-  status: string
-  done?: boolean
-  /** Momentet görs i ett annat läge (Trimma video i Ondemand): lås i stället för pil, och en kort förklaring i stället för läget. */
-  locked?: boolean
-  note?: string
-  /** Publiceringen, sista steget: publiceringsikon i stället för nummer och pil. */
-  publish?: boolean
-  /** UNG-278: något pågår (undertexter genereras): snurra i stället för numret, läget i accentfärg och inte avkortat. */
-  busy?: boolean
-  disabled?: boolean
-  title?: string
-  onClick: () => void
-}
-
-// Ett av de guidade stegen i After: en rad med nummer (bock när något är gjort), stegets namn, läget och en pil till momentet.
-function GuideStep({ n, label, status, done = false, busy = false, disabled = false, locked = false, note, publish = false, title, onClick }: GuideStepProps) {
-  const state = [busy ? 'is-busy' : done && !publish ? 'is-done' : '', locked ? 'is-locked' : '', publish ? 'is-publish' : ''].filter(Boolean).join(' ')
-  return (
-    <li class={state || undefined}>
-      <button class="od-flow-step" type="button" disabled={disabled || locked} title={title} onClick={onClick}>
-        <span class="od-flow-num" aria-hidden="true">
-          {busy ? <span class="od-flow-spinner" /> : publish ? <Icon name="publish" size={16} /> : done ? <Icon name="check" size={16} /> : n}
-        </span>
-        <span class="od-flow-label">{label}</span>
-        <span class="od-flow-status">{note ?? status}</span>
-        <Icon name={locked ? 'lock' : 'chevron_right'} size={18} />
-      </button>
-    </li>
   )
 }
 
