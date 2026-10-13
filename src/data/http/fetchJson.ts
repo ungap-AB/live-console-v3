@@ -2,6 +2,7 @@ import { t } from '@lingui/core/macro'
 // Liten fetch-wrapper mot live-server-v3. Se API-ENDPOINTS.md för
 // grundkonventioner: bas /api/v1, JSON, felformat { error: { code, message } }.
 
+import { serverLanguage } from '../../i18n'
 import { isSessionLost } from './sessionLogic'
 
 const BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/+$/, '')
@@ -75,7 +76,7 @@ function buildUrl(path: string, query?: RequestOptions['query']): string {
 }
 
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const headers: Record<string, string> = {}
+  const headers: Record<string, string> = { 'Accept-Language': serverLanguage() }
   if (options.body !== undefined && !(options.body instanceof FormData)) headers['Content-Type'] = 'application/json'
   const sentToken = authToken !== null
   if (authToken) headers['Authorization'] = `Bearer ${authToken}`
@@ -98,7 +99,7 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
 
 // Hämtar en fil bakom inloggning (en vanlig länk skickar ingen Authorization-header).
 export async function apiBlob(path: string): Promise<Blob> {
-  const headers: Record<string, string> = {}
+  const headers: Record<string, string> = { 'Accept-Language': serverLanguage() }
   const sentToken = authToken !== null
   if (authToken) headers['Authorization'] = `Bearer ${authToken}`
   const response = await fetch(buildUrl(path), { headers })

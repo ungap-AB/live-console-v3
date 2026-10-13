@@ -39,6 +39,11 @@ export function activateForTests(locale: 'sv'): void {
   i18n.loadAndActivate({ locale, locales: intlLocales[locale], messages: svMessages })
 }
 
+/** The UI language sent to the server as Accept-Language, so its error messages match the console. */
+export function serverLanguage(): 'sv' | 'en' {
+  return i18n.locale === 'sv' ? 'sv' : 'en'
+}
+
 /** Number in the UI language's format (sv: `1 240`, en: `1,240`). */
 export function formatNumber(value: number): string {
   return i18n.number(value)
