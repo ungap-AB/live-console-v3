@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useState } from 'preact/hooks'
 import { client } from '../../data'
 import { Modal } from '../../components/Modal'
@@ -11,12 +12,12 @@ interface InheritLayoutDialogProps {
   project: Project
   actions: ProjectActions
   onCancel: () => void
-  /** Anropas när layouten hämtats och sparats. */
+  /** Called when the layout has been fetched and saved. */
   onDone: () => void
 }
 
-// UNG-180: hämtar ett annat projekts spelarlayout till det här projektet. Layouten kopieras och ERSÄTTER alla layoutfält, så dialogen listar
-// exakt vad som skrivs över innan man bekräftar. Samma lista som i skapa-dialogen, med det senast skapade projektet förvalt.
+// UNG-180: fetches another project's player layout into this project. The layout is copied and REPLACES all layout fields, so the dialog lists
+// exactly what is overwritten before confirming. The same list as in the create dialog, with the most recently created project preselected.
 export function InheritLayoutDialog({ project, actions, onCancel, onDone }: InheritLayoutDialogProps) {
   const resource = useResource(() => client.projects.list(), [])
   const all = resource.data ?? []
@@ -39,23 +40,23 @@ export function InheritLayoutDialog({ project, actions, onCancel, onDone }: Inhe
 
   return (
     <Modal
-      title="Hämta layout från projekt"
-      subtitle="Ersätter spelarens texter, textplacering, Mux-inställning och posterbild med en kopia av det valda projektets."
+      title={t`Get layout from project`}
+      subtitle={t`Replaces the player's texts, text placement, Mux setting and poster image with a copy of the chosen project's.`}
       onClose={onCancel}
       footer={
         <>
-          <button class="btn btn-sm" type="button" onClick={onCancel}>Avbryt</button>
+          <button class="btn btn-sm" type="button" onClick={onCancel}>{t`Cancel`}</button>
           <button class="btn btn-sm btn-primary" type="button" disabled={!source || busy} onClick={() => void confirm()}>
-            {busy ? 'Hämtar…' : changes.length > 0 ? 'Hämta layout' : 'Hämta ändå'}
+            {busy ? t`Fetching…` : changes.length > 0 ? t`Get layout` : t`Get anyway`}
           </button>
         </>
       }
     >
-      {resource.loading && <p class="cp-note">Hämtar projekten…</p>}
-      {!resource.loading && options.length === 0 && <p class="cp-note">Det finns inga andra projekt att hämta layout från.</p>}
+      {resource.loading && <p class="cp-note">{t`Fetching the projects…`}</p>}
+      {!resource.loading && options.length === 0 && <p class="cp-note">{t`There are no other projects to get a layout from.`}</p>}
       {options.length > 0 && (
         <label class="cp-field">
-          <span>Projekt</span>
+          <span>{t`Project`}</span>
           <select value={sourceId ?? ''} onChange={(event) => setChosen(event.currentTarget.value)}>
             {options.map((option) => (
               <option key={option.id} value={option.id}>{option.label}</option>
@@ -65,10 +66,10 @@ export function InheritLayoutDialog({ project, actions, onCancel, onDone }: Inhe
       )}
       {source && (
         changes.length === 0 ? (
-          <p class="cp-note">Layouten är redan densamma. Inget skrivs över.</p>
+          <p class="cp-note">{t`The layout is already the same. Nothing is overwritten.`}</p>
         ) : (
           <div class="cp-changes">
-            <p class="cp-note">Det här ersätts:</p>
+            <p class="cp-note">{t`This is replaced:`}</p>
             <ul>
               {changes.map((change) => (
                 <li key={change.key}>
@@ -79,7 +80,7 @@ export function InheritLayoutDialog({ project, actions, onCancel, onDone }: Inhe
                 </li>
               ))}
             </ul>
-            <p class="cp-note">Osparade ändringar i spelarinställningarna går förlorade.</p>
+            <p class="cp-note">{t`Unsaved changes in the player settings are lost.`}</p>
           </div>
         )
       )}

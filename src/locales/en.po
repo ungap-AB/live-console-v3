@@ -11,6 +11,10 @@ msgstr ""
 msgid ", last {when}"
 msgstr ", last {when}"
 
+#: src/views/projects/layoutInherit.ts
+msgid "(empty)"
+msgstr "(empty)"
+
 #. placeholder {0}: items.length
 #: src/views/trash/TrashView.tsx
 msgid "{0, plural, one {{shown} of # item} other {{shown} of # items}}"
@@ -41,8 +45,10 @@ msgstr "{0, plural, one {# name} other {# names}}"
 msgid "{0, plural, one {The recording consists of # segment — the encoder lost the connection during the broadcast. Check the chapter offsets after trimming.} other {The recording consists of # segments — the encoder lost the connection during the broadcast. Check the chapter offsets after trimming.}}"
 msgstr "{0, plural, one {The recording consists of # segment — the encoder lost the connection during the broadcast. Check the chapter offsets after trimming.} other {The recording consists of # segments — the encoder lost the connection during the broadcast. Check the chapter offsets after trimming.}}"
 
+#. placeholder {0}: list.usedInProjects
 #. placeholder {0}: selected.usedInProjects
 #: src/views/agendas/AgendasView.tsx
+#: src/views/projects/ListPickerDialog.tsx
 msgid "{0, plural, one {Used in # project} other {Used in # projects}}"
 msgstr "{0, plural, one {Used in # project} other {Used in # projects}}"
 
@@ -94,9 +100,17 @@ msgstr "{hours, plural, one {# hour} other {# hours}}"
 msgid "{hours} h ago"
 msgstr "{hours} h ago"
 
+#: src/views/projects/ProjectsView.tsx
+msgid "{kind} in progress. Open Jobs."
+msgstr "{kind} in progress. Open Jobs."
+
 #: src/app/time.ts
 msgid "{minutes} min ago"
 msgstr "{minutes} min ago"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "{name} is moved to the trash. It can be restored from there before the retention period runs out."
+msgstr "{name} is moved to the trash. It can be restored from there before the retention period runs out."
 
 #: src/app/Shell.tsx
 msgid "{newFinished} done"
@@ -138,6 +152,10 @@ msgstr "{type} · {latencyMode} latency"
 #: src/views/users/UsersView.tsx
 msgid "+ New"
 msgstr "+ New"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "+ New project"
+msgstr "+ New project"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "A broadcast is in progress. Rotating the stream key breaks the encoder's connection. Continue?"
@@ -189,6 +207,7 @@ msgstr "Added manually"
 msgid "Administration"
 msgstr "Administration"
 
+#: src/views/projects/CreateProjectDialog.tsx
 #: src/views/trash/TrashView.tsx
 msgid "Agenda"
 msgstr "Agenda"
@@ -203,6 +222,8 @@ msgstr "Agenda item"
 msgid "Agendas"
 msgstr "Agendas"
 
+#: src/views/projects/ListPickerDialog.tsx
+#: src/views/projects/ProjectsView.tsx
 #: src/views/trash/TrashView.tsx
 msgid "All"
 msgstr "All"
@@ -227,6 +248,10 @@ msgstr "Ask the sender to share the files again."
 msgid "Auto"
 msgstr "Auto"
 
+#: src/views/projects/ListPickerDialog.tsx
+msgid "Back"
+msgstr "Back"
+
 #: src/app/LoginView.tsx
 msgid "Back to login"
 msgstr "Back to login"
@@ -234,6 +259,10 @@ msgstr "Back to login"
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Bitrate"
 msgstr "Bitrate"
+
+#: src/views/projects/layoutInherit.ts
+msgid "Bottom edge"
+msgstr "Bottom edge"
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Break"
@@ -264,9 +293,15 @@ msgid "Broadcasts made"
 msgstr "Broadcasts made"
 
 #: src/views/jobs/JobsView.tsx
+#: src/views/projects/CreateProjectDialog.tsx
+#: src/views/projects/InheritLayoutDialog.tsx
 #: src/views/users/UsersView.tsx
 msgid "Cancel"
 msgstr "Cancel"
+
+#: src/views/projects/projectMode.ts
+msgid "Cancel and go to Before?"
+msgstr "Cancel and go to Before?"
 
 #: src/views/jobs/JobsView.tsx
 msgid "Cancel the job"
@@ -280,9 +315,17 @@ msgstr "Cancel the job?"
 msgid "Canceled"
 msgstr "Canceled"
 
+#: src/views/projects/ProjectsView.tsx
+msgid "Cannot be deleted while a signal is being received"
+msgstr "Cannot be deleted while a signal is being received"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Cannot be torn down while a signal is being received"
 msgstr "Cannot be torn down while a signal is being received"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Captions"
+msgstr "Captions"
 
 #: src/app/jobActions.ts
 msgid "Captions · {name}"
@@ -314,6 +357,22 @@ msgstr "Check that you copied the whole link. Otherwise ask the sender to share 
 msgid "Checking the link…"
 msgstr "Checking the link…"
 
+#: src/views/projects/CreateProjectDialog.tsx
+msgid "Choose agenda"
+msgstr "Choose agenda"
+
+#: src/views/projects/CreateProjectDialog.tsx
+msgid "Choose another…"
+msgstr "Choose another…"
+
+#: src/views/projects/CreateProjectDialog.tsx
+msgid "Choose name list"
+msgstr "Choose name list"
+
+#: src/views/projects/createProjectLists.ts
+msgid "Chosen: {name}"
+msgstr "Chosen: {name}"
+
 #: src/app/CredentialLinkView.tsx
 msgid "Click the button to activate your account. You will then get your personal PIN."
 msgstr "Click the button to activate your account. You will then get your personal PIN."
@@ -335,6 +394,14 @@ msgstr "Clone to new agenda"
 #: src/views/users/UsersView.tsx
 msgid "Close"
 msgstr "Close"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Close the project before it is deleted"
+msgstr "Close the project before it is deleted"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Closed"
+msgstr "Closed"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Connection"
@@ -365,9 +432,17 @@ msgstr "Contract period to"
 msgid "Converting"
 msgstr "Converting"
 
+#: src/views/projects/CreateProjectDialog.tsx
+msgid "Copies the message texts, the text placement, the Mux setting and the poster image. More choices: mark a project as a template in the project list's ⋯ menu."
+msgstr "Copies the message texts, the text placement, the Mux setting and the poster image. More choices: mark a project as a template in the project list's ⋯ menu."
+
 #: src/app/jobPhase.ts
 msgid "Correcting and building captions"
 msgstr "Correcting and building captions"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Could not clear."
+msgstr "Could not clear."
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Could not create the resource."
@@ -377,9 +452,17 @@ msgstr "Could not create the resource."
 msgid "Could not create the user."
 msgstr "Could not create the user."
 
+#: src/views/projects/ProjectsView.tsx
+msgid "Could not end the break."
+msgstr "Could not end the break."
+
 #: src/app/LoginView.tsx
 msgid "Could not log in."
 msgstr "Could not log in."
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Could not play out."
+msgstr "Could not play out."
 
 #: src/views/users/UsersView.tsx
 msgid "Could not remove the domain."
@@ -396,10 +479,15 @@ msgstr "Could not rename."
 msgid "Could not send the invitation."
 msgstr "Could not send the invitation."
 
+#: src/views/projects/ProjectsView.tsx
+msgid "Could not start the break."
+msgstr "Could not start the break."
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Could not tear down the resource."
 msgstr "Could not tear down the resource."
 
+#: src/views/projects/CreateProjectDialog.tsx
 #: src/views/users/UsersView.tsx
 msgid "Create"
 msgstr "Create"
@@ -425,6 +513,10 @@ msgstr "Creating…"
 msgid "Dark"
 msgstr "Dark"
 
+#: src/views/projects/ProjectsView.tsx
+msgid "Date"
+msgstr "Date"
+
 #: src/views/users/UsersView.tsx
 msgid "Delete domain"
 msgstr "Delete domain"
@@ -432,6 +524,14 @@ msgstr "Delete domain"
 #: src/views/users/UsersView.tsx
 msgid "Delete domain?"
 msgstr "Delete domain?"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Delete project"
+msgstr "Delete project"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Delete project?"
+msgstr "Delete project?"
 
 #: src/views/trash/TrashView.tsx
 msgid "Deleted"
@@ -527,6 +627,7 @@ msgid "Duplicate"
 msgstr "Duplicate"
 
 #: src/views/archive/VideoArchiveView.tsx
+#: src/views/projects/ProjectsView.tsx
 msgid "Duration"
 msgstr "Duration"
 
@@ -551,6 +652,10 @@ msgstr "Email"
 #: src/views/users/UsersView.tsx
 msgid "Enable account"
 msgstr "Enable account"
+
+#: src/views/projects/projectMode.ts
+msgid "End the live broadcast?"
+msgstr "End the live broadcast?"
 
 #: src/views/users/UsersView.tsx
 msgid "Enter a valid domain name, for example example.com."
@@ -580,7 +685,13 @@ msgstr "Fetching downloads…"
 msgid "Fetching the audio"
 msgstr "Fetching the audio"
 
+#: src/views/projects/InheritLayoutDialog.tsx
+msgid "Fetching the projects…"
+msgstr "Fetching the projects…"
+
 #: src/app/SharedDownloadsView.tsx
+#: src/views/projects/InheritLayoutDialog.tsx
+#: src/views/projects/ListPickerDialog.tsx
 msgid "Fetching…"
 msgstr "Fetching…"
 
@@ -607,6 +718,38 @@ msgstr "Forgot PIN?"
 #: src/app/LoginView.tsx
 msgid "Forgot your PIN?"
 msgstr "Forgot your PIN?"
+
+#: src/views/projects/InheritLayoutDialog.tsx
+msgid "Get anyway"
+msgstr "Get anyway"
+
+#: src/views/projects/InheritLayoutDialog.tsx
+msgid "Get layout"
+msgstr "Get layout"
+
+#: src/views/projects/InheritLayoutDialog.tsx
+msgid "Get layout from project"
+msgstr "Get layout from project"
+
+#: src/views/projects/projectMode.ts
+msgid "Go back to Before?"
+msgstr "Go back to Before?"
+
+#: src/views/projects/projectMode.ts
+msgid "Go back to Live?"
+msgstr "Go back to Live?"
+
+#: src/views/projects/projectMode.ts
+msgid "Go to After"
+msgstr "Go to After"
+
+#: src/views/projects/projectMode.ts
+msgid "Go to Before"
+msgstr "Go to Before"
+
+#: src/views/projects/projectMode.ts
+msgid "Go to Live"
+msgstr "Go to Live"
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Go to project"
@@ -635,6 +778,10 @@ msgstr "Idle resources cost nothing but count against the account's channel limi
 #: src/app/LoginView.tsx
 msgid "If we have the address, we have sent an email with a link. The link is valid for one hour. Check your spam folder too."
 msgstr "If we have the address, we have sent an email with a link. The link is valid for one hour. Check your spam folder too."
+
+#: src/views/projects/layoutInherit.ts
+msgid "Image"
+msgstr "Image"
 
 #: src/views/agendas/AgendasView.tsx
 #: src/views/namelists/NameListsView.tsx
@@ -712,6 +859,14 @@ msgstr "Last used"
 msgid "Latest frame"
 msgstr "Latest frame"
 
+#: src/views/projects/layoutInherit.ts
+msgid "Latest project: {name}"
+msgstr "Latest project: {name}"
+
+#: src/views/projects/layoutInherit.ts
+msgid "Latest project: {name} (template)"
+msgstr "Latest project: {name} (template)"
+
 #: src/views/users/UsersView.tsx
 msgid "Leave empty for ungap's default key"
 msgstr "Leave empty for ungap's default key"
@@ -719,6 +874,10 @@ msgstr "Leave empty for ungap's default key"
 #: src/app/Shell.tsx
 msgid "Light"
 msgstr "Light"
+
+#: src/views/projects/createProjectLists.ts
+msgid "Link to Meeting"
+msgstr "Link to Meeting"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "linked"
@@ -733,6 +892,10 @@ msgctxt "navigation"
 msgid "Live"
 msgstr "Live"
 
+#: src/views/projects/ProjectsView.tsx
+msgid "Live only"
+msgstr "Live only"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Live resources"
 msgstr "Live resources"
@@ -741,6 +904,7 @@ msgstr "Live resources"
 #: src/views/agendas/AgendasView.tsx
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/namelists/NameListsView.tsx
+#: src/views/projects/ProjectsView.tsx
 #: src/views/resources/LiveResourcesView.tsx
 #: src/views/trash/TrashView.tsx
 #: src/views/users/UsersView.tsx
@@ -771,9 +935,26 @@ msgstr "Make template"
 msgid "Manages the whole installation and all domains."
 msgstr "Manages the whole installation and all domains."
 
+#: src/views/projects/ProjectsView.tsx
+msgid "Marked as live only"
+msgstr "Marked as live only"
+
+#: src/views/projects/layoutInherit.ts
+msgid "Middle"
+msgstr "Middle"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Mode"
+msgstr "Mode"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "More actions for {name}"
+msgstr "More actions for {name}"
+
 #: src/views/agendas/AgendasView.tsx
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/namelists/NameListsView.tsx
+#: src/views/projects/ProjectsView.tsx
 msgid "Move to trash"
 msgstr "Move to trash"
 
@@ -792,11 +973,13 @@ msgid "My account"
 msgstr "My account"
 
 #: src/app/Shell.tsx
+#: src/views/projects/CreateProjectDialog.tsx
 #: src/views/trash/TrashView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Name"
 msgstr "Name"
 
+#: src/views/projects/CreateProjectDialog.tsx
 #: src/views/trash/TrashView.tsx
 msgid "Name list"
 msgstr "Name list"
@@ -839,6 +1022,10 @@ msgstr "New name list"
 msgid "New person"
 msgstr "New person"
 
+#: src/views/projects/CreateProjectDialog.tsx
+msgid "New project"
+msgstr "New project"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "New resource"
 msgstr "New resource"
@@ -859,6 +1046,10 @@ msgstr "New video resource"
 msgid "No agenda yet."
 msgstr "No agenda yet."
 
+#: src/views/projects/createProjectLists.ts
+msgid "No agenda, I will link one later"
+msgstr "No agenda, I will link one later"
+
 #: src/views/projects/publishOutcome.ts
 msgid "No captions"
 msgstr "No captions"
@@ -866,6 +1057,10 @@ msgstr "No captions"
 #: src/views/jobs/JobsView.tsx
 msgid "No finished jobs."
 msgstr "No finished jobs."
+
+#: src/views/projects/layoutInherit.ts
+msgid "No image"
+msgstr "No image"
 
 #: src/views/trash/TrashView.tsx
 msgid "No item matches the filter."
@@ -883,9 +1078,21 @@ msgstr "No longer available"
 msgid "No name list yet."
 msgstr "No name list yet."
 
+#: src/views/projects/createProjectLists.ts
+msgid "No name list, I will link one later"
+msgstr "No name list, I will link one later"
+
 #: src/views/namelists/NameListsView.tsx
 msgid "No name matches the filter."
 msgstr "No name matches the filter."
+
+#: src/views/projects/ProjectsView.tsx
+msgid "No projects in the mode {mode}."
+msgstr "No projects in the mode {mode}."
+
+#: src/views/projects/ProjectsView.tsx
+msgid "No projects yet."
+msgstr "No projects yet."
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "No recording yet."
@@ -899,6 +1106,10 @@ msgstr "No resource yet."
 msgid "No signal. The resource is allocated and waiting for an encoder."
 msgstr "No signal. The resource is allocated and waiting for an encoder."
 
+#: src/views/projects/CreateProjectDialog.tsx
+msgid "None (empty texts and default values)"
+msgstr "None (empty texts and default values)"
+
 #: src/app/Shell.tsx
 #: src/views/users/UsersView.tsx
 msgid "Not invited"
@@ -908,13 +1119,33 @@ msgstr "Not invited"
 msgid "Not used"
 msgstr "Not used"
 
+#: src/views/projects/projectMode.ts
+msgid "Nothing (closed)"
+msgstr "Nothing (closed)"
+
+#: src/views/projects/ListPickerDialog.tsx
+msgid "Nothing matches."
+msgstr "Nothing matches."
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "off"
 msgstr "off"
 
+#: src/views/projects/layoutInherit.ts
+msgid "Off"
+msgstr "Off"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Offered as a layout when a new project is created"
+msgstr "Offered as a layout when a new project is created"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "on"
 msgstr "on"
+
+#: src/views/projects/layoutInherit.ts
+msgid "On"
+msgstr "On"
 
 #: src/views/projects/publishOutcome.ts
 msgid "On demand published"
@@ -923,6 +1154,10 @@ msgstr "On demand published"
 #: src/views/projects/publishOutcome.ts
 msgid "On demand updated"
 msgstr "On demand updated"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Open"
+msgstr "Open"
 
 #: src/app/Shell.tsx
 msgid "Open menu"
@@ -982,9 +1217,17 @@ msgstr "Permissions"
 msgid "PIN"
 msgstr "PIN"
 
+#: src/views/projects/layoutInherit.ts
+msgid "Playback measurement (Mux)"
+msgstr "Playback measurement (Mux)"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Playback URL"
 msgstr "Playback URL"
+
+#: src/views/projects/layoutInherit.ts
+msgid "Poster image"
+msgstr "Poster image"
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Prepare again"
@@ -1018,11 +1261,14 @@ msgstr "Processing failed."
 msgid "Processing the video is stopped and the uploaded file is removed from the project. You can upload it again."
 msgstr "Processing the video is stopped and the uploaded file is removed from the project. You can upload it again."
 
+#: src/views/projects/InheritLayoutDialog.tsx
+#: src/views/projects/ProjectsView.tsx
 #: src/views/trash/TrashView.tsx
 msgid "Project"
 msgstr "Project"
 
 #: src/app/Shell.tsx
+#: src/views/projects/ProjectsView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Projects"
 msgstr "Projects"
@@ -1109,6 +1355,10 @@ msgstr "Rename the resource"
 msgid "Rename the user"
 msgstr "Rename the user"
 
+#: src/views/projects/InheritLayoutDialog.tsx
+msgid "Replaces the player's texts, text placement, Mux setting and poster image with a copy of the chosen project's."
+msgstr "Replaces the player's texts, text placement, Mux setting and poster image with a copy of the chosen project's."
+
 #: src/views/users/UsersView.tsx
 msgid "Resend invitation"
 msgstr "Resend invitation"
@@ -1125,6 +1375,10 @@ msgstr "Reset your PIN"
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Resolution"
 msgstr "Resolution"
+
+#: src/views/projects/layoutInherit.ts
+msgid "Respect Do Not Track"
+msgstr "Respect Do Not Track"
 
 #: src/views/trash/TrashView.tsx
 msgid "Restore"
@@ -1162,6 +1416,10 @@ msgstr "Rotate stream key"
 msgid "Rotate stream key?"
 msgstr "Rotate stream key?"
 
+#: src/views/projects/createProjectLists.ts
+msgid "Same list as {project}: {list}"
+msgstr "Same list as {project}: {list}"
+
 #: src/app/Shell.tsx
 #: src/views/users/UsersView.tsx
 msgid "Save"
@@ -1175,6 +1433,10 @@ msgstr "Saving the result"
 #: src/views/users/UsersView.tsx
 msgid "Saving…"
 msgstr "Saving…"
+
+#: src/views/projects/ListPickerDialog.tsx
+msgid "Search by name"
+msgstr "Search by name"
 
 #: src/views/trash/TrashView.tsx
 msgid "Search the trash"
@@ -1253,6 +1515,14 @@ msgstr "Shared (ended)"
 msgid "Shared by {sharedBy} {sharedAt} · valid until {validUntil}"
 msgstr "Shared by {sharedBy} {sharedAt} · valid until {validUntil}"
 
+#: src/views/projects/ListPickerDialog.tsx
+msgid "Show"
+msgstr "Show"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Show all"
+msgstr "Show all"
+
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Show jobs"
 msgstr "Show jobs"
@@ -1260,6 +1530,10 @@ msgstr "Show jobs"
 #: src/app/CredentialLinkView.tsx
 msgid "Show my PIN"
 msgstr "Show my PIN"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Show projects in the mode"
+msgstr "Show projects in the mode"
 
 #: src/views/users/UsersView.tsx
 msgid "Sign-in"
@@ -1274,6 +1548,7 @@ msgid "Someone"
 msgstr "Someone"
 
 #: src/app/optimistic.ts
+#: src/views/projects/ProjectsView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Something went wrong."
 msgstr "Something went wrong."
@@ -1302,6 +1577,10 @@ msgstr "standalone"
 msgid "Standalone"
 msgstr "Standalone"
 
+#: src/views/projects/CreateProjectDialog.tsx
+msgid "Start from layout"
+msgstr "Start from layout"
+
 #: src/views/jobs/JobsView.tsx
 msgid "Started by"
 msgstr "Started by"
@@ -1314,6 +1593,10 @@ msgstr "Starting…"
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Status"
 msgstr "Status"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Stop using as template"
+msgstr "Stop using as template"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Tear down {teardownLabel}? The ingest server and stream key stop working. Recordings in the video archive are not affected."
@@ -1328,12 +1611,65 @@ msgid "Tear down resource?"
 msgstr "Tear down resource?"
 
 #: src/views/agendas/AgendasView.tsx
+#: src/views/projects/ProjectsView.tsx
 msgid "Template"
 msgstr "Template"
+
+#: src/views/projects/layoutInherit.ts
+msgid "Template: {name}"
+msgstr "Template: {name}"
 
 #: src/views/agendas/AgendasView.tsx
 msgid "Templates"
 msgstr "Templates"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Templates are offered under \"Start from layout\" when a new project is created."
+msgstr "Templates are offered under \"Start from layout\" when a new project is created."
+
+#: src/views/projects/layoutInherit.ts
+msgid "Text after the broadcast (After)"
+msgstr "Text after the broadcast (After)"
+
+#: src/views/projects/layoutInherit.ts
+msgid "Text before the broadcast (Before)"
+msgstr "Text before the broadcast (Before)"
+
+#: src/views/projects/layoutInherit.ts
+msgid "Text during the live broadcast (Live)"
+msgstr "Text during the live broadcast (Live)"
+
+#: src/views/projects/layoutInherit.ts
+msgid "Text for the recording (Ondemand)"
+msgstr "Text for the recording (Ondemand)"
+
+#: src/views/projects/layoutInherit.ts
+msgid "Text placement"
+msgstr "Text placement"
+
+#: src/views/projects/projectMode.ts
+msgid "The After message"
+msgstr "The After message"
+
+#: src/views/projects/projectMode.ts
+msgid "The audience sees the live broadcast again instead of the After message."
+msgstr "The audience sees the live broadcast again instead of the After message."
+
+#: src/views/projects/projectMode.ts
+msgid "The audience stops seeing the broadcast and sees the After message below instead."
+msgstr "The audience stops seeing the broadcast and sees the After message below instead."
+
+#: src/views/projects/ProjectsView.tsx
+msgid "The backend did not confirm the clearing."
+msgstr "The backend did not confirm the clearing."
+
+#: src/views/projects/ProjectsView.tsx
+msgid "The backend did not confirm the clicked item."
+msgstr "The backend did not confirm the clicked item."
+
+#: src/views/projects/projectMode.ts
+msgid "The Before message"
+msgstr "The Before message"
 
 #: src/app/Shell.tsx
 msgid "The caption draft for {name} is ready and waiting for review."
@@ -1385,9 +1721,17 @@ msgstr "The download of {name} is ready."
 msgid "The end date must be after the start date."
 msgstr "The end date must be after the start date."
 
+#: src/views/projects/projectMode.ts
+msgid "The history from the broadcast/test is kept for the archive, but the After review ends and the audience sees the Before message."
+msgstr "The history from the broadcast/test is kept for the archive, but the After review ends and the audience sees the Before message."
+
 #: src/views/jobs/JobsView.tsx
 msgid "The job could not be canceled."
 msgstr "The job could not be canceled."
+
+#: src/views/projects/InheritLayoutDialog.tsx
+msgid "The layout is already the same. Nothing is overwritten."
+msgstr "The layout is already the same. Nothing is overwritten."
 
 #: src/app/SharedDownloadsView.tsx
 msgid "The link could not be checked"
@@ -1426,6 +1770,10 @@ msgstr "The link is valid until {date}."
 msgid "The link stops working immediately for all recipients. A download that has already started can continue for up to 15 minutes."
 msgstr "The link stops working immediately for all recipients. A download that has already started can continue for up to 15 minutes."
 
+#: src/views/projects/projectMode.ts
+msgid "The live broadcast"
+msgstr "The live broadcast"
+
 #: src/views/jobs/JobsView.tsx
 msgid "The log could not be loaded."
 msgstr "The log could not be loaded."
@@ -1433,6 +1781,10 @@ msgstr "The log could not be loaded."
 #: src/views/jobs/JobsView.tsx
 msgid "The manuscript could not be created."
 msgstr "The manuscript could not be created."
+
+#: src/views/projects/projectMode.ts
+msgid "The ongoing broadcast is cut off for the audience, who see the Before message instead."
+msgstr "The ongoing broadcast is cut off for the audience, who see the Before message instead."
 
 #: src/views/users/UsersView.tsx
 msgid "The only active administrator on {adminHost}. Appoint another one before the role is removed."
@@ -1450,13 +1802,33 @@ msgstr "The PIN becomes valid only when the invitation has been sent"
 msgid "The processing for {name} failed."
 msgstr "The processing for {name} failed."
 
+#: src/views/projects/ProjectsView.tsx
+msgid "The project cannot be deleted right now"
+msgstr "The project cannot be deleted right now"
+
 #: src/app/Shell.tsx
 msgid "the recording"
 msgstr "the recording"
 
+#: src/views/projects/projectMode.ts
+msgid "The recording"
+msgstr "The recording"
+
 #: src/views/projects/publishOutcome.ts
 msgid "The recording is published, but the project is closed, so viewers cannot see it yet."
 msgstr "The recording is published, but the project is closed, so viewers cannot see it yet."
+
+#: src/views/projects/projectMode.ts
+msgid "The recording is removed from the player and the audience sees the Before message instead."
+msgstr "The recording is removed from the player and the audience sees the Before message instead."
+
+#: src/views/projects/projectMode.ts
+msgid "The recording is removed from the player and the audience sees the live broadcast instead."
+msgstr "The recording is removed from the player and the audience sees the live broadcast instead."
+
+#: src/views/projects/projectMode.ts
+msgid "The recording is removed from the player. The audience sees the After message below until you publish again."
+msgstr "The recording is removed from the player. The audience sees the After message below until you publish again."
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "The resource cannot be torn down while a signal is being received. Stop the encoder first."
@@ -1498,6 +1870,14 @@ msgstr "The trash is empty."
 msgid "The video for {name} is processed and waiting for review."
 msgstr "The video for {name} is processed and waiting for review."
 
+#: src/views/projects/InheritLayoutDialog.tsx
+msgid "There are no other projects to get a layout from."
+msgstr "There are no other projects to get a layout from."
+
+#: src/views/projects/InheritLayoutDialog.tsx
+msgid "This is replaced:"
+msgstr "This is replaced:"
+
 #: src/views/archive/VideoArchiveView.tsx
 msgid "This version is published. The chapter list is frozen and no longer follows the project's agenda."
 msgstr "This version is published. The chapter list is frozen and no longer follows the project's agenda."
@@ -1520,6 +1900,10 @@ msgstr "today"
 #: src/views/trash/TrashView.tsx
 msgid "tomorrow"
 msgstr "tomorrow"
+
+#: src/views/projects/layoutInherit.ts
+msgid "Top edge"
+msgstr "Top edge"
 
 #: src/app/jobPhase.ts
 msgid "Transcribing"
@@ -1550,17 +1934,45 @@ msgstr "Type"
 msgid "unknown recording"
 msgstr "unknown recording"
 
+#: src/views/projects/projectMode.ts
+msgid "Unpublish"
+msgstr "Unpublish"
+
+#: src/views/projects/projectMode.ts
+msgid "Unpublish the recording?"
+msgstr "Unpublish the recording?"
+
+#: src/views/projects/InheritLayoutDialog.tsx
+msgid "Unsaved changes in the player settings are lost."
+msgstr "Unsaved changes in the player settings are lost."
+
+#: src/views/projects/ListPickerDialog.tsx
+msgid "Unused"
+msgstr "Unused"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "unused {days} d"
 msgstr "unused {days} d"
+
+#: src/views/projects/ListPickerDialog.tsx
+msgid "Unused lists"
+msgstr "Unused lists"
 
 #: src/app/jobActions.ts
 msgid "Upload · {name}"
 msgstr "Upload · {name}"
 
+#: src/views/projects/ProjectsView.tsx
+msgid "Use as template"
+msgstr "Use as template"
+
 #: src/views/agendas/AgendasView.tsx
 msgid "Used in"
 msgstr "Used in"
+
+#: src/views/projects/ListPickerDialog.tsx
+msgid "Used lists"
+msgstr "Used lists"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "used today"
@@ -1591,6 +2003,10 @@ msgstr "Viewers can now see the changes."
 msgid "Viewers can now see the recording."
 msgstr "Viewers can now see the recording."
 
+#: src/views/projects/ProjectsView.tsx
+msgid "Visibility"
+msgstr "Visibility"
+
 #: src/app/CredentialLinkView.tsx
 msgid "Welcome, {name}!"
 msgstr "Welcome, {name}!"
@@ -1610,6 +2026,10 @@ msgstr "Works operationally within their domain."
 #: src/app/CredentialLinkView.tsx
 msgid "Write it down now — it is only shown once. You log in with {email} and this PIN."
 msgstr "Write it down now — it is only shown once. You log in with {email} and this PIN."
+
+#: src/views/projects/CreateProjectDialog.tsx
+msgid "You can link or change the agenda and name list at any time in the project."
+msgstr "You can link or change the agenda and name list at any time in the project."
 
 #: src/app/CredentialLinkView.tsx
 msgid "Your account is activated"

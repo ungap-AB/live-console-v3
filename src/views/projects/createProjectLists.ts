@@ -1,9 +1,12 @@
-// UNG-189: dagordning och namnlista i skapa-dialogen. Ingen spärr: "Skapa" kräver bara ett namn. Inget val att skapa en ny lista (det görs i
-// projektvyn eller under respektive funktion i vänstermenyn). Alternativen per fråga:
-//   * Dagordning: Senast skapade oanvända dagordning (förvald om den finns), Ingen (koppla senare).
-//   * Namnlista: Samma lista som föregående projekt (förvald om det har en), Ingen (koppla senare).
-//   * Meeting-kunder: "Koppla till Meeting" ligger bland alternativen och är förvald (en Meeting-koppling skapar båda listorna).
-// "Ingen" och "koppla senare" är likvärdiga och är därför ETT alternativ.
+import { i18n } from '@lingui/core'
+import { t } from '@lingui/core/macro'
+
+// UNG-189: agenda and name list in the create dialog. No gate: "Create" only needs a name. No choice to create a new list (that is done in
+// the project view or under the respective feature in the left menu). The options per question:
+//   * Agenda: the most recently created unused agenda (preselected if there is one), None (link later).
+//   * Name list: the same list as the previous project (preselected if it has one), None (link later).
+//   * Meeting customers: "Link to Meeting" is among the options and preselected (a Meeting link creates both lists).
+// "None" and "link later" are equivalent and therefore ONE option.
 
 export const NONE = 'none'
 export const MEETING = 'meeting'
@@ -33,12 +36,12 @@ interface ProjectLike {
   meetingBindingId?: string | null
 }
 
-/** En Meeting-kund: någon av domänens projekt är redan kopplat till ett Meeting-möte. */
+/** A Meeting customer: one of the domain's projects is already linked to a Meeting meeting. */
 export function isMeetingCustomer(projects: readonly Pick<ProjectLike, 'meetingBindingId'>[]): boolean {
   return projects.some((project) => Boolean(project.meetingBindingId))
 }
 
-/** Senast skapade (senast ändrade, tills dagordningen får en skapad-tid) oanvända dagordning. Mallar räknas inte. */
+/** The most recently created (most recently changed, until agendas get a created time) unused agenda. Templates do not count. */
 export function latestUnusedAgenda<T extends AgendaLike>(agendas: readonly T[]): T | null {
   const unused = agendas.filter((agenda) => agenda.usedInProjects === 0 && !agenda.isTemplate)
   unused.sort((left, right) => Date.parse(right.changedAt) - Date.parse(left.changedAt))
@@ -47,19 +50,21 @@ export function latestUnusedAgenda<T extends AgendaLike>(agendas: readonly T[]):
 
 export function agendaOptions(input: { agendas: readonly AgendaLike[]; meeting: boolean; picked?: string }): ListOption[] {
   const options: ListOption[] = []
-  if (input.meeting) options.push({ id: MEETING, label: 'Koppla till Meeting' })
+  if (input.meeting) options.push({ id: MEETING, label: t`Link to Meeting` })
   const latest = latestUnusedAgenda(input.agendas)
   if (latest) options.push({ id: latest.id, label: latest.name })
   pushPicked(options, input.agendas, input.picked)
-  options.push({ id: NONE, label: 'Ingen dagordning, jag kopplar senare' })
+  options.push({ id: NONE, label: t`No agenda, I will link one later` })
   return options
 }
 
-// UNG-287: en lista som valts i väljardialogen ("Välj annan…") blir ett eget alternativ, om den inte redan är ett.
+// UNG-287: a list chosen in the picker dialog ("Choose another…") becomes an option of its own, unless it already is one.
 function pushPicked(options: ListOption[], lists: readonly { id: string; name: string }[], picked: string | undefined) {
   if (!picked || options.some((option) => option.id === picked)) return
   const list = lists.find((candidate) => candidate.id === picked)
-  if (list) options.push({ id: list.id, label: `Vald: ${list.name}` })
+  if (!list) return
+  const name = list.name
+  options.push({ id: list.id, label: t`Chosen: ${name}` })
 }
 
 export type ListUsageFilter = 'all' | 'unused' | 'used'
@@ -72,32 +77,36 @@ export interface PickableList {
   isTemplate?: boolean
 }
 
-/** UNG-287: väljardialogens lista: sökning i namnet (skiftlägesokänslig), filter på använd/oanvänd, senast ändrade först. Mallar visas inte. */
+/** UNG-287: the picker dialog's list: search in the name (case-insensitive), filter on used/unused, most recently changed first. Templates are not shown. */
 export function filterLists<T extends PickableList>(lists: readonly T[], query: string, usage: ListUsageFilter): T[] {
-  const needle = query.trim().toLocaleLowerCase('sv')
+  const needle = query.trim().toLocaleLowerCase(i18n.locales)
   return lists
     .filter((list) => !list.isTemplate)
-    .filter((list) => !needle || list.name.toLocaleLowerCase('sv').includes(needle))
+    .filter((list) => !needle || list.name.toLocaleLowerCase(i18n.locales).includes(needle))
     .filter((list) => usage === 'all' || (usage === 'unused' ? list.usedInProjects === 0 : list.usedInProjects > 0))
     .sort((left, right) => Date.parse(right.changedAt) - Date.parse(left.changedAt))
 }
 
-/** Namnlistan som föregående projekt (det projekt layouten utgår från) har, om den finns kvar. */
+/** The name list that the previous project (the project the layout starts from) has, if it still exists. */
 export function previousNameList(source: ProjectLike | undefined, nameLists: readonly NameListLike[]): NameListLike | null {
   return source?.namelistId ? nameLists.find((list) => list.id === source.namelistId) ?? null : null
 }
 
 export function nameListOptions(input: { source: ProjectLike | undefined; nameLists: readonly NameListLike[]; meeting: boolean; picked?: string }): ListOption[] {
   const options: ListOption[] = []
-  if (input.meeting) options.push({ id: MEETING, label: 'Koppla till Meeting' })
+  if (input.meeting) options.push({ id: MEETING, label: t`Link to Meeting` })
   const previous = previousNameList(input.source, input.nameLists)
-  if (previous && input.source) options.push({ id: previous.id, label: `Samma lista som ${input.source.name}: ${previous.name}` })
+  if (previous && input.source) {
+    const project = input.source.name
+    const list = previous.name
+    options.push({ id: previous.id, label: t`Same list as ${project}: ${list}` })
+  }
   pushPicked(options, input.nameLists, input.picked)
-  options.push({ id: NONE, label: 'Ingen namnlista, jag kopplar senare' })
+  options.push({ id: NONE, label: t`No name list, I will link one later` })
   return options
 }
 
-/** Förvalet: det första alternativet (Meeting för Meeting-kunder, annars den föreslagna listan, annars Ingen). */
+/** The preselection: the first option (Meeting for Meeting customers, otherwise the suggested list, otherwise None). */
 export function defaultChoice(options: readonly ListOption[]): string {
   return options[0]?.id ?? NONE
 }
@@ -108,8 +117,8 @@ export interface ListChoices {
 }
 
 /**
- * Ett val i en av rullistorna. En Meeting-koppling skapar BÅDA listorna, så Meeting väljs i båda eller ingen: väljer man Meeting i den ena
- * följer den andra med, och väljer man något annat i den ena medan båda stod på Meeting går den andra tillbaka till sitt förval.
+ * A choice in one of the dropdowns. A Meeting link creates BOTH lists, so Meeting is chosen in both or neither: choosing Meeting in one
+ * makes the other follow, and choosing something else in one while both were on Meeting sends the other back to its preselection.
  */
 export function chooseList(
   current: ListChoices,
@@ -127,11 +136,11 @@ export function chooseList(
 export interface AttachPlan {
   agendaId: string | null
   namelistId: string | null
-  /** Öppna Meeting-kopplingen i det nya projektet (den skapar och kopplar båda listorna). */
+  /** Open the Meeting link in the new project (it creates and links both lists). */
   openMeeting: boolean
 }
 
-/** Vad som ska göras efter att projektet skapats. "Ingen" betyder ingen koppling alls. */
+/** What to do after the project is created. "None" means no link at all. */
 export function attachPlan(choices: ListChoices): AttachPlan {
   if (choices.agenda === MEETING || choices.namelist === MEETING) return { agendaId: null, namelistId: null, openMeeting: true }
   return {

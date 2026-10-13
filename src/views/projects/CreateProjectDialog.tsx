@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useState } from 'preact/hooks'
 import { client } from '../../data'
 import { Modal } from '../../components/Modal'
@@ -10,7 +11,7 @@ import type { Project } from '../../data/types'
 import './CreateProjectDialog.css'
 
 interface CreateProjectDialogProps {
-  /** Projekten i domänen, för "Utgå från layout" och för att veta vilken namnlista föregående projekt har. */
+  /** The projects in the domain, for "Start from layout" and to know which name list the previous project has. */
   projects: readonly Pick<Project, 'id' | 'name' | 'createdAt' | 'namelistId' | 'meetingBindingId' | 'isLayoutTemplate'>[]
   onCancel: () => void
   onCreate: (name: string, layoutSourceProjectId: string | null, lists: ListChoices) => void
@@ -18,10 +19,11 @@ interface CreateProjectDialogProps {
 
 const NONE = ''
 
-// UNG-180/189: skapa projekt. Namn, val av layoutkälla (senast skapade projektet förvalt) och, utan spärr, dagordning och namnlista:
-// den senast skapade oanvända dagordningen respektive föregående projekts namnlista föreslås, eller Ingen (koppla senare). Meeting-kunder
-// får "Koppla till Meeting" förvalt. Att skapa en ny lista erbjuds inte här: det görs i projektvyn eller under Dagordningar och Namnlistor.
-// UNG-287: layouten erbjuds från det senaste projektet och mallarna. En annan lista än förslaget väljs i en väljardialog (Välj annan…).
+// UNG-180/189: create a project. Name, choice of layout source (the most recently created project preselected) and, without a gate, agenda
+// and name list: the most recently created unused agenda and the previous project's name list are suggested, or None (link later). Meeting
+// customers get "Link to Meeting" preselected. Creating a new list is not offered here: that is done in the project view or under Agendas
+// and Name lists. UNG-287: the layout is offered from the latest project and the templates. A list other than the suggestion is chosen in a
+// picker dialog (Choose another…).
 export function CreateProjectDialog({ projects, onCancel, onCreate }: CreateProjectDialogProps) {
   const options = layoutSourceOptions(projects)
   const [name, setName] = useState('')
@@ -29,7 +31,7 @@ export function CreateProjectDialog({ projects, onCancel, onCreate }: CreateProj
   const agendas = useResource(() => client.agendas.list(), [])
   const nameLists = useResource(() => client.namelists.list(), [])
   const [chosen, setChosen] = useState<Partial<ListChoices>>({})
-  // Listor valda i väljardialogen, och vilken väljare som är öppen (dialogen ersätter skapa-dialogen så länge, så att Esc bara stänger den).
+  // Lists chosen in the picker dialog, and which picker is open (the dialog replaces the create dialog meanwhile, so Esc only closes it).
   const [picked, setPicked] = useState<Partial<ListChoices>>({})
   const [picking, setPicking] = useState<keyof ListChoices | null>(null)
   const trimmed = name.trim()
@@ -38,7 +40,7 @@ export function CreateProjectDialog({ projects, onCancel, onCreate }: CreateProj
   const sourceProject = projects.find((project) => project.id === source)
   const agendaChoices = agendaOptions({ agendas: agendas.data ?? [], meeting, picked: picked.agenda })
   const nameListChoices = nameListOptions({ source: sourceProject, nameLists: nameLists.data ?? [], meeting, picked: picked.namelist })
-  // Förvalen följer med tills man själv valt: namnlistan byter när man byter layoutkälla, tills man rört något av de två valen.
+  // The preselections follow along until the user chooses: the name list changes with the layout source until either choice is touched.
   const defaults: ListChoices = { agenda: defaultChoice(agendaChoices), namelist: defaultChoice(nameListChoices) }
   const lists: ListChoices = { agenda: chosen.agenda ?? defaults.agenda, namelist: chosen.namelist ?? defaults.namelist }
   const choose = (which: keyof ListChoices, value: string) => setChosen(chooseList(lists, which, value, defaults))
@@ -51,7 +53,7 @@ export function CreateProjectDialog({ projects, onCancel, onCreate }: CreateProj
     const agenda = picking === 'agenda'
     return (
       <ListPickerDialog
-        title={agenda ? 'Välj dagordning' : 'Välj namnlista'}
+        title={agenda ? t`Choose agenda` : t`Choose name list`}
         lists={(agenda ? agendas.data : nameLists.data) ?? []}
         loading={agenda ? agendas.loading : nameLists.loading}
         onCancel={() => setPicking(null)}
@@ -66,17 +68,17 @@ export function CreateProjectDialog({ projects, onCancel, onCreate }: CreateProj
 
   return (
     <Modal
-      title="Nytt projekt"
+      title={t`New project`}
       onClose={onCancel}
       footer={
         <>
-          <button class="btn btn-sm" type="button" onClick={onCancel}>Avbryt</button>
-          <button class="btn btn-sm btn-primary" type="button" disabled={!trimmed} onClick={submit}>Skapa</button>
+          <button class="btn btn-sm" type="button" onClick={onCancel}>{t`Cancel`}</button>
+          <button class="btn btn-sm btn-primary" type="button" disabled={!trimmed} onClick={submit}>{t`Create`}</button>
         </>
       }
     >
       <label class="cp-field">
-        <span>Namn</span>
+        <span>{t`Name`}</span>
         <input
           class="rename-input"
           value={name}
@@ -89,32 +91,32 @@ export function CreateProjectDialog({ projects, onCancel, onCreate }: CreateProj
       </label>
       {options.length > 0 && (
         <label class="cp-field">
-          <span>Utgå från layout</span>
+          <span>{t`Start from layout`}</span>
           <select value={source} onChange={(event) => setSource(event.currentTarget.value)}>
             {options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
-            <option value={NONE}>Ingen (tomma texter och standardvärden)</option>
+            <option value={NONE}>{t`None (empty texts and default values)`}</option>
           </select>
-          <small>Kopierar meddelandetexterna, textens placering, Mux-inställningen och posterbilden. Fler val: markera ett projekt som mall i projektlistans ⋯-meny.</small>
+          <small>{t`Copies the message texts, the text placement, the Mux setting and the poster image. More choices: mark a project as a template in the project list's ⋯ menu.`}</small>
         </label>
       )}
       <label class="cp-field">
-        <span>Dagordning</span>
+        <span>{t`Agenda`}</span>
         <div class="cp-row">
           <select value={lists.agenda} onChange={(event) => choose('agenda', event.currentTarget.value)}>
             {agendaChoices.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
           </select>
-          <button class="btn btn-sm" type="button" onClick={() => setPicking('agenda')}>Välj annan…</button>
+          <button class="btn btn-sm" type="button" onClick={() => setPicking('agenda')}>{t`Choose another…`}</button>
         </div>
       </label>
       <label class="cp-field">
-        <span>Namnlista</span>
+        <span>{t`Name list`}</span>
         <div class="cp-row">
           <select value={lists.namelist} onChange={(event) => choose('namelist', event.currentTarget.value)}>
             {nameListChoices.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
           </select>
-          <button class="btn btn-sm" type="button" onClick={() => setPicking('namelist')}>Välj annan…</button>
+          <button class="btn btn-sm" type="button" onClick={() => setPicking('namelist')}>{t`Choose another…`}</button>
         </div>
-        <small>Du kan koppla eller byta dagordning och namnlista när som helst i projektet.</small>
+        <small>{t`You can link or change the agenda and name list at any time in the project.`}</small>
       </label>
     </Modal>
   )

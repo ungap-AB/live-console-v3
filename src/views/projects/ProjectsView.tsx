@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
 import type { CueKind, ForkResult, PlayoutState, Project, PublicMode, TimelineEvent, Visibility } from '../../data/types'
@@ -67,15 +68,31 @@ function storeModeFilter(value: ModeFilter) {
   try {
     window.localStorage.setItem(MODE_FILTER_KEY, value)
   } catch {
-    // Utan lagring gäller filtret bara den här sessionen.
+    // Without storage the filter only applies to this session.
   }
 }
 
-// Samma spärrar som ProjectDetail tillämpar på "Radera projekt".
+function noProjectsInModeText(mode: string): string {
+  return t`No projects in the mode ${mode}.`
+}
+
+function jobInProgressText(kind: string): string {
+  return t`${kind} in progress. Open Jobs.`
+}
+
+function moreActionsText(name: string): string {
+  return t`More actions for ${name}`
+}
+
+function deleteText(name: string): string {
+  return t`${name} is moved to the trash. It can be restored from there before the retention period runs out.`
+}
+
+// The same gates that ProjectDetail applies to "Delete project".
 function deleteBlockedReason(p: Project): string | null {
-  if (p.visibility === 'open') return 'Stäng projektet innan det raderas'
-  if (p.technicalHealth.channelState === 'live') return 'Går inte att radera medan signal tas emot'
-  if (p.capabilities.teardownChannel.status !== 'allowed') return 'Projektet går inte att radera just nu'
+  if (p.visibility === 'open') return t`Close the project before it is deleted`
+  if (p.technicalHealth.channelState === 'live') return t`Cannot be deleted while a signal is being received`
+  if (p.capabilities.teardownChannel.status !== 'allowed') return t`The project cannot be deleted right now`
   return null
 }
 
@@ -256,7 +273,7 @@ export function ProjectsView({
       await fn()
       return true
     } catch (err) {
-      setToast(err instanceof Error ? err.message : 'Något gick fel.')
+      setToast(err instanceof Error ? err.message : t`Something went wrong.`)
       return false
     }
   }
@@ -306,7 +323,7 @@ export function ProjectsView({
       const updated = await client.projects.rename(project.id, project.name, { isLayoutTemplate: !project.isLayoutTemplate })
       setProjects((prev) => prev.map((p) => (p.id === updated.id ? { ...p, isLayoutTemplate: updated.isLayoutTemplate } : p)))
     } catch (err) {
-      setToast(err instanceof Error ? err.message : 'Något gick fel.')
+      setToast(err instanceof Error ? err.message : t`Something went wrong.`)
     }
   }
 
@@ -399,7 +416,7 @@ export function ProjectsView({
         replace(await client.projects.trim(selected.id, range))
         return true
       } catch (err) {
-        setToast(err instanceof Error ? err.message : 'Något gick fel.')
+        setToast(err instanceof Error ? err.message : t`Something went wrong.`)
         return false
       }
     },
@@ -473,14 +490,14 @@ export function ProjectsView({
         (realEvent) => {
           if (realEvent.kind !== kind || realEvent.refId !== refId) {
             updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => !isOptimistic(e))))
-            setToast('Backend bekräftade inte den klickade punkten.')
+            setToast(t`The backend did not confirm the clicked item.`)
             return
           }
           updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId ? realEvent : e))))
         },
         (err) => {
           updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => !isOptimistic(e))))
-          setToast(err instanceof Error ? err.message : 'Kunde inte spela ut.')
+          setToast(err instanceof Error ? err.message : t`Could not play out.`)
         },
       )
     },
@@ -500,7 +517,7 @@ export function ProjectsView({
         (realEvent) => updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId || e.id === realEvent.id ? realEvent : e)))),
         (err) => {
           updateProjectPlayout(project.id, () => derivePlayoutState(previousTimeline))
-          setToast(err instanceof Error ? err.message : 'Kunde inte starta pausen.')
+          setToast(err instanceof Error ? err.message : t`Could not start the break.`)
         },
       )
     },
@@ -520,7 +537,7 @@ export function ProjectsView({
             return
           }
           updateProjectPlayout(project.id, () => derivePlayoutState(previousTimeline))
-          setToast(err instanceof Error ? err.message : 'Kunde inte avsluta pausen.')
+          setToast(err instanceof Error ? err.message : t`Could not end the break.`)
         },
       )
     },
@@ -554,14 +571,14 @@ export function ProjectsView({
         (realEvent) => {
           if (realEvent.kind !== kind || realEvent.label !== 'Rensat') {
             updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => e.id !== tempId)))
-            setToast('Backend bekräftade inte rensningen.')
+            setToast(t`The backend did not confirm the clearing.`)
             return
           }
           updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId ? realEvent : e))))
         },
         (err) => {
           updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => e.id !== tempId)))
-          setToast(err instanceof Error ? err.message : 'Kunde inte rensa.')
+          setToast(err instanceof Error ? err.message : t`Could not clear.`)
         },
       )
     },
@@ -571,13 +588,13 @@ export function ProjectsView({
     <div class="view">
       <header class={`project-header${selected ? ' collapsed' : ''}`}>
         <div class="header-list-zone">
-          <h1>Projekt</h1>
+          <h1>{t`Projects`}</h1>
           <span class="spacer" />
           <button class="btn btn-sm" type="button" onClick={() => onCreatingChange(true)}>
-            + Nytt
+            {t`+ New project`}
           </button>
         </div>
-        <div class="project-filter" role="group" aria-label="Visa projekt i läget">
+        <div class="project-filter" role="group" aria-label={t`Show projects in the mode`}>
           {(['all', ...MODES] as ModeFilter[]).map((mode) => (
             <button
               key={mode}
@@ -586,7 +603,7 @@ export function ProjectsView({
               aria-pressed={modeFilter === mode}
               onClick={() => setModeFilter(mode)}
             >
-              {mode === 'all' ? 'Alla' : MODE_LABEL[mode]}
+              {mode === 'all' ? t`All` : MODE_LABEL[mode]}
               <span class="project-filter-count">{mode === 'all' ? projects.length : modeCounts[mode]}</span>
             </button>
           ))}
@@ -611,23 +628,23 @@ export function ProjectsView({
           />
         ) : (
           <div class="project-list">
-            {resource.loading && projects.length === 0 && <p class="project-list-empty">Laddar…</p>}
-            {!resource.loading && projects.length === 0 && <p class="project-list-empty">Inga projekt ännu.</p>}
+            {resource.loading && projects.length === 0 && <p class="project-list-empty">{t`Loading…`}</p>}
+            {!resource.loading && projects.length === 0 && <p class="project-list-empty">{t`No projects yet.`}</p>}
             {projects.length > 0 && sortedProjects.length === 0 && (
               <p class="project-list-empty">
-                Inga projekt i läget {modeFilter === 'all' ? '' : MODE_LABEL[modeFilter]}.{' '}
-                <button class="btn btn-sm" type="button" onClick={() => setModeFilter('all')}>Visa alla</button>
+                {noProjectsInModeText(modeFilter === 'all' ? '' : MODE_LABEL[modeFilter])}{' '}
+                <button class="btn btn-sm" type="button" onClick={() => setModeFilter('all')}>{t`Show all`}</button>
               </p>
             )}
             {sortedProjects.length > 0 && (
               <>
                 <div class="project-list-head" aria-hidden="true">
-                  <span class="col-name">Projekt</span>
-                  <span class="col-mode">Läge</span>
-                  <span class="col-date">Datum</span>
-                  <span class="col-duration">Längd</span>
-                  <span class="col-visibility">Synlighet</span>
-                  <span class="col-captions">Undertexter</span>
+                  <span class="col-name">{t`Project`}</span>
+                  <span class="col-mode">{t`Mode`}</span>
+                  <span class="col-date">{t`Date`}</span>
+                  <span class="col-duration">{t`Duration`}</span>
+                  <span class="col-visibility">{t`Visibility`}</span>
+                  <span class="col-captions">{t`Captions`}</span>
                   <span class="col-actions" />
                 </div>
                 <ul class="project-list-rows" ref={listRef}>
@@ -650,7 +667,7 @@ export function ProjectsView({
                           <button
                             class="project-row-job"
                             type="button"
-                            title={`${jobKindLabel(active.job.kind)} pågår. Öppna Jobb.`}
+                            title={jobInProgressText(jobKindLabel(active.job.kind))}
                             onClick={openJobsView}
                           >
                             <Icon name={jobKindIcon(active.job.kind)} size={16} />
@@ -661,14 +678,14 @@ export function ProjectsView({
                       })()}
                       <span class="col-mode">
                         <span class={`mode-chip mode-${MODE_TONE[p.publicMode]}`}>{MODE_LABEL[p.publicMode]}</span>
-                        {p.liveOnly && <span class="liveonly-chip" title="Markerat som endast live">Endast live</span>}
-                        {p.isLayoutTemplate && <span class="template-chip" title="Erbjuds som layout när ett nytt projekt skapas">Mall</span>}
+                        {p.liveOnly && <span class="liveonly-chip" title={t`Marked as live only`}>{t`Live only`}</span>}
+                        {p.isLayoutTemplate && <span class="template-chip" title={t`Offered as a layout when a new project is created`}>{t`Template`}</span>}
                       </span>
                       <span class="col-date">{formatShortDate(p.createdAt)}</span>
                       <span class="col-duration">{recordingDurationLabel(p.recording)}</span>
                       <span class={`col-visibility vis-${p.visibility}`}>
                         <Icon name={p.visibility === 'open' ? 'visibility' : 'visibility_off'} size={16} />
-                        {p.visibility === 'open' ? 'Öppen' : 'Stängd'}
+                        {p.visibility === 'open' ? t`Open` : t`Closed`}
                       </span>
                       <span class="col-captions">
                         {captionsListable(p) && (() => {
@@ -691,15 +708,15 @@ export function ProjectsView({
                       </span>
                       <span class="col-actions">
                         <OverflowMenu
-                          label={`Fler åtgärder för ${p.name}`}
+                          label={moreActionsText(p.name)}
                           items={[
                             {
-                              label: p.isLayoutTemplate ? 'Sluta använda som mall' : 'Använd som mall',
-                              title: 'Mallar erbjuds under "Utgå från layout" när ett nytt projekt skapas.',
+                              label: p.isLayoutTemplate ? t`Stop using as template` : t`Use as template`,
+                              title: t`Templates are offered under "Start from layout" when a new project is created.`,
                               onClick: () => void toggleLayoutTemplate(p),
                             },
                             {
-                              label: 'Flytta till papperskorgen',
+                              label: t`Move to trash`,
                               danger: true,
                               title: deleteBlockedReason(p) ?? undefined,
                               onClick: () => {
@@ -722,16 +739,13 @@ export function ProjectsView({
 
       {confirmDelete && (
         <ConfirmModal
-          title="Radera projekt?"
-          confirmLabel="Radera projekt"
+          title={t`Delete project?`}
+          confirmLabel={t`Delete project`}
           danger
           onCancel={() => setConfirmDelete(null)}
           onConfirm={() => deleteProject(confirmDelete)}
         >
-          <p>
-            {confirmDelete.name} flyttas till papperskorgen. Det går att återställa därifrån innan
-            gallringstiden löper ut.
-          </p>
+          <p>{deleteText(confirmDelete.name)}</p>
         </ConfirmModal>
       )}
 

@@ -1,7 +1,9 @@
+import { t } from '@lingui/core/macro'
 import type { AfterReason, PublicMode, Visibility } from '../../data/types'
 
 export const MODES: PublicMode[] = ['before', 'live', 'after', 'ondemand']
 
+// Mode names are product terms and the same in every language.
 export const MODE_LABEL: Record<PublicMode, string> = {
   before: 'Before',
   live: 'Live',
@@ -9,18 +11,18 @@ export const MODE_LABEL: Record<PublicMode, string> = {
   ondemand: 'Ondemand',
 }
 
-// Bekräftelse krävs när bytet tar bort eller ändrar något publiken redan ser.
-// Övriga byten (inklusive alla synlighetsbyten) går utan bekräftelse tills vidare.
+// Confirmation is required when the change removes or alters something the audience already sees.
+// Other changes (including all visibility changes) go through without confirmation for now.
 const CONFIRMED: ReadonlySet<string> = new Set([
   'live>after',
   'ondemand>after',
   'after>live',
   'ondemand>live',
-  // Live → Before är inte längre en tillåten övergång — ett avbrutet test
-  // ska alltid granskas i After först, se After → Before nedan.
+  // Live → Before is no longer an allowed transition — an aborted test
+  // must always be reviewed in After first, see After → Before below.
   'after>before',
-  // Inte i specen: att lämna Ondemand avpublicerar alltid inspelningen, så
-  // även Ondemand → Before kräver bekräftelse.
+  // Not in the spec: leaving Ondemand always unpublishes the recording, so
+  // Ondemand → Before also requires confirmation.
   'ondemand>before',
 ])
 
@@ -32,91 +34,91 @@ export interface ConfirmationCopy {
   title: string
   body: string
   confirmLabel: string
-  /** Målläget är After: dialogen visar After-meddelandet i ett redigerbart fält. */
+  /** The target mode is After: the dialog shows the After message in an editable field. */
   editsAfterText: boolean
   danger: boolean
 }
 
-// Texten säger konkret vad som händer för publiken — aldrig bara "Är du säker?".
+// The text says concretely what happens for the audience — never just "Are you sure?".
 export function confirmationCopy(from: PublicMode, to: PublicMode): ConfirmationCopy | null {
   if (!requiresConfirmation(from, to)) return null
   if (from === 'live' && to === 'after') {
     return {
-      title: 'Avsluta livesändningen?',
-      body: 'Publiken slutar se sändningen och ser i stället After-meddelandet nedan.',
-      confirmLabel: 'Gå till After',
+      title: t`End the live broadcast?`,
+      body: t`The audience stops seeing the broadcast and sees the After message below instead.`,
+      confirmLabel: t`Go to After`,
       editsAfterText: true,
       danger: false,
     }
   }
   if (from === 'ondemand' && to === 'after') {
     return {
-      title: 'Avpublicera inspelningen?',
-      body: 'Inspelningen tas bort från spelaren. Publiken ser After-meddelandet nedan tills du publicerar igen.',
-      confirmLabel: 'Avpublicera',
+      title: t`Unpublish the recording?`,
+      body: t`The recording is removed from the player. The audience sees the After message below until you publish again.`,
+      confirmLabel: t`Unpublish`,
       editsAfterText: true,
       danger: true,
     }
   }
   if (from === 'after' && to === 'live') {
     return {
-      title: 'Gå tillbaka till Live?',
-      body: 'Publiken ser åter livesändningen i stället för After-meddelandet.',
-      confirmLabel: 'Gå till Live',
+      title: t`Go back to Live?`,
+      body: t`The audience sees the live broadcast again instead of the After message.`,
+      confirmLabel: t`Go to Live`,
       editsAfterText: false,
       danger: false,
     }
   }
   if (from === 'ondemand' && to === 'live') {
     return {
-      title: 'Gå tillbaka till Live?',
-      body: 'Inspelningen tas bort från spelaren och publiken ser livesändningen i stället.',
-      confirmLabel: 'Gå till Live',
+      title: t`Go back to Live?`,
+      body: t`The recording is removed from the player and the audience sees the live broadcast instead.`,
+      confirmLabel: t`Go to Live`,
       editsAfterText: false,
       danger: true,
     }
   }
   if (from === 'ondemand' && to === 'before') {
     return {
-      title: 'Avpublicera inspelningen?',
-      body: 'Inspelningen tas bort från spelaren och publiken ser Before-meddelandet i stället.',
-      confirmLabel: 'Gå till Before',
+      title: t`Unpublish the recording?`,
+      body: t`The recording is removed from the player and the audience sees the Before message instead.`,
+      confirmLabel: t`Go to Before`,
       editsAfterText: false,
       danger: true,
     }
   }
   if (from === 'after' && to === 'before') {
     return {
-      title: 'Avbryt och gå till Before?',
-      body: 'Historiken från sändningen/testet lämnas kvar för arkivet, men After-granskningen avslutas och publiken ser Before-meddelandet.',
-      confirmLabel: 'Gå till Before',
+      title: t`Cancel and go to Before?`,
+      body: t`The history from the broadcast/test is kept for the archive, but the After review ends and the audience sees the Before message.`,
+      confirmLabel: t`Go to Before`,
       editsAfterText: false,
       danger: true,
     }
   }
   return {
-    title: 'Gå tillbaka till Before?',
-    body: 'Den pågående sändningen bryts för publiken, som i stället ser Before-meddelandet.',
-    confirmLabel: 'Gå till Before',
+    title: t`Go back to Before?`,
+    body: t`The ongoing broadcast is cut off for the audience, who see the Before message instead.`,
+    confirmLabel: t`Go to Before`,
     editsAfterText: false,
     danger: true,
   }
 }
 
-// Servern har egna vägar för publicering: PUT /public-mode byter bara läge,
-// medan publicera/avpublicera/återgå till live också hanterar inspelning,
-// kapitel och manifest. Därför avgör målet vilka steg som körs.
+// The server has its own routes for publishing: PUT /public-mode only changes mode,
+// while publish/unpublish/return to live also handle the recording, chapters and
+// manifest. So the target decides which steps run.
 export type ModeChangeStep = 'close' | 'publish' | 'unpublish' | 'returnToLive' | 'setMode'
 
 export function modeChangePlan(from: PublicMode, to: PublicMode, published = true): ModeChangeStep[] {
   if (from === to) return []
-  // Before → Ondemand är "jag har en färdig video": gå till Ondemand-vyn för
-  // att ladda upp/granska, publicera inte något (publiken ska inte se något
-  // förrän operatören trycker Publicera). Stängd spelare krävs för trimning.
+  // Before → Ondemand means "I have a finished video": go to the Ondemand view to
+  // upload/review, publish nothing (the audience must not see anything until the
+  // operator presses Publish). A closed player is required for trimming.
   if (from === 'before' && to === 'ondemand') return ['close', 'setMode']
   if (to === 'ondemand') return ['publish']
   if (from === 'ondemand') {
-    // Uppladdad video som aldrig publicerats: inget att avpublicera.
+    // Uploaded video that was never published: nothing to unpublish.
     if (to === 'before' && !published) return ['setMode']
     if (to === 'live') return ['returnToLive']
     if (to === 'after') return ['unpublish']
@@ -130,17 +132,17 @@ export function afterReasonFor(from: PublicMode, to: PublicMode): AfterReason | 
   return from === 'ondemand' ? 'ondemandUnpublished' : 'liveFinished'
 }
 
-// Vad publiken ser, härlett ur synlighet och läge.
+// What the audience sees, derived from visibility and mode.
 export function audienceSees(visibility: Visibility, mode: PublicMode): string {
-  if (visibility === 'closed') return 'Inget (stängd)'
+  if (visibility === 'closed') return t`Nothing (closed)`
   switch (mode) {
     case 'before':
-      return 'Before-meddelandet'
+      return t`The Before message`
     case 'live':
-      return 'Livesändningen'
+      return t`The live broadcast`
     case 'after':
-      return 'After-meddelandet'
+      return t`The After message`
     case 'ondemand':
-      return 'Inspelningen'
+      return t`The recording`
   }
 }
