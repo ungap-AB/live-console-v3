@@ -1,7 +1,7 @@
 import { t } from '@lingui/core/macro'
 import { useState } from 'preact/hooks'
 import { rememberedLocale } from '../i18n'
-import { LanguageSwitch } from './LanguageSwitch'
+import { LanguageSelect } from './LanguageSwitch'
 import { client } from '../data'
 import type { CurrentUser } from '../data/types'
 import logoLightUrl from '../images/ungap-presenter-2026-black.png'
@@ -103,19 +103,21 @@ export function LoginView({ onLogin, initialEmail = '', notice }: LoginViewProps
             </button>
           </>
         )}
-        <button
-          class="login-link"
-          type="button"
-          onClick={() => {
-            setResetting((value) => !value)
-            setResetSent(false)
-            setError(null)
-          }}
-        >
-          {resetting ? t`Back to login` : t`Forgot PIN?`}
-        </button>
+        <div class="login-footer">
+          <button
+            class="login-link"
+            type="button"
+            onClick={() => {
+              setResetting((value) => !value)
+              setResetSent(false)
+              setError(null)
+            }}
+          >
+            {resetting ? t`Back to login` : t`Forgot PIN?`}
+          </button>
+          <LanguageSelect class="login-lang" />
+        </div>
       </form>
-      <LanguageSwitch class="login-lang" />
     </div>
   )
 }

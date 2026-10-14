@@ -15,6 +15,29 @@ interface LanguageSwitchProps {
   onChange?: (locale: ChosenLocale) => void
 }
 
+/** The same choice as a compact dropdown (the login card, UNG-306). */
+export function LanguageSelect({ class: className, onChange }: LanguageSwitchProps) {
+  useUiLocale()
+  const active = currentLocale()
+  return (
+    <select
+      class={`lang-select${className ? ` ${className}` : ''}`}
+      aria-label={t`Language`}
+      value={active}
+      onChange={(e) => {
+        const value = e.currentTarget.value as ChosenLocale
+        if (value !== active) void switchLanguage(value).then(() => onChange?.(value))
+      }}
+    >
+      {LANGUAGES.map((language) => (
+        <option key={language.value} value={language.value} lang={language.lang}>
+          {language.label}
+        </option>
+      ))}
+    </select>
+  )
+}
+
 export function LanguageSwitch({ class: className, onChange }: LanguageSwitchProps) {
   useUiLocale()
   const active = currentLocale()
