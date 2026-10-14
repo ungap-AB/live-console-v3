@@ -89,6 +89,16 @@ msgstr "{0, plural, one {# recipient} other {# recipients}}"
 msgid "{0, plural, one {# removed} other {# removed}}"
 msgstr "{0, plural, one {# removed} other {# removed}}"
 
+#. placeholder {0}: group.toggle.count
+#: src/views/projects/CaptionEditor.tsx
+msgid "{0, plural, one {# speaker} other {# speakers}}"
+msgstr "{0, plural, one {# speaker} other {# speakers}}"
+
+#. placeholder {0}: badge.count
+#: src/views/projects/CaptionEditor.tsx
+msgid "{0, plural, one {# word} other {# words}}"
+msgstr "{0, plural, one {# word} other {# words}}"
+
 #. placeholder {0}: topics.length
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "{0, plural, one {Agenda (# item) and a name list for the meeting are linked.} other {Agenda (# items) and a name list for the meeting are linked.}}"
@@ -257,6 +267,10 @@ msgstr "{deleteOrganization} ({deleteHost}) is removed permanently. It cannot be
 #: src/views/projects/VttImportDialog.tsx
 msgid "{dirtyCount, plural, one {Your # unsaved change is saved first.} other {Your # unsaved changes are saved first.}}"
 msgstr "{dirtyCount, plural, one {Your # unsaved change is saved first.} other {Your # unsaved changes are saved first.}}"
+
+#: src/views/projects/LiveWorkspace.tsx
+msgid "{done}/{total} cues · {duration} · done around {endsAt}"
+msgstr "{done}/{total} cues · {duration} · done around {endsAt}"
 
 #: src/views/projects/LiveWorkspace.tsx
 msgid "{failed} cue errors, the test continues"
@@ -584,6 +598,10 @@ msgstr "Adjournment. The broadcast continues shortly."
 #: src/app/Shell.tsx
 msgid "Administration"
 msgstr "Administration"
+
+#: src/views/projects/ModeChangeDialog.tsx
+msgid "After message"
+msgstr "After message"
 
 #: src/views/projects/forkLogic.ts
 msgid "After the latest break ({time})"
@@ -2391,6 +2409,10 @@ msgstr "It can take a few minutes for long broadcasts. Leave this box open until
 msgid "Item"
 msgstr "Item"
 
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Items {items} · Names {names}"
+msgstr "Items {items} · Names {names}"
+
 #: src/views/trash/TrashView.tsx
 msgid "Items are purged automatically {period} after they were deleted. After that they cannot be restored."
 msgstr "Items are purged automatically {period} after they were deleted. After that they cannot be restored."
@@ -3385,6 +3407,11 @@ msgstr "Play out"
 msgid "Play out {name}"
 msgstr "Play out {name}"
 
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/LiveWorkspace.tsx
+msgid "Play out chapters"
+msgstr "Play out chapters"
+
 #: src/components/TrimBar.tsx
 msgid "Play the last seconds before the end"
 msgstr "Play the last seconds before the end"
@@ -4345,6 +4372,10 @@ msgstr "Switch broadcast"
 msgid "Switch broadcast…"
 msgstr "Switch broadcast…"
 
+#: src/views/projects/ModeSelector.tsx
+msgid "Switching to {mode}…"
+msgstr "Switching to {mode}…"
+
 #. placeholder {0}: formatHms(Math.round(position))
 #: src/views/projects/ChapterSyncTools.tsx
 msgid "Sync here · {0}"
@@ -5088,6 +5119,18 @@ msgstr "The project has no video yet."
 msgid "The project is published. Withdraw the publication if you want to change the video."
 msgstr "The project is published. Withdraw the publication if you want to change the video."
 
+#: src/views/projects/ProjectsView.tsx
+msgid "The project was created, but the agenda and the name list could not be attached. Attach them in the project."
+msgstr "The project was created, but the agenda and the name list could not be attached. Attach them in the project."
+
+#: src/views/projects/ProjectsView.tsx
+msgid "The project was created, but the agenda could not be attached. Attach it in the project."
+msgstr "The project was created, but the agenda could not be attached. Attach it in the project."
+
+#: src/views/projects/ProjectsView.tsx
+msgid "The project was created, but the name list could not be attached. Attach it in the project."
+msgstr "The project was created, but the name list could not be attached. Attach it in the project."
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "The published captions are in the published video's time."
 msgstr "The published captions are in the published video's time."
@@ -5425,6 +5468,10 @@ msgstr "This version is published. The chapter list is frozen and no longer foll
 msgid "Time"
 msgstr "Time"
 
+#: src/components/Clock.tsx
+msgid "Time / time since the signal started"
+msgstr "Time / time since the signal started"
+
 #. placeholder {0}: formatHms(Math.round(currentTime))
 #: src/views/projects/CaptionEditor.tsx
 msgid "Time here · {0}"
@@ -5540,6 +5587,7 @@ msgstr "Unlock all"
 msgid "Unlock the box"
 msgstr "Unlock the box"
 
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/projectMode.ts
 msgid "Unpublish"
 msgstr "Unpublish"

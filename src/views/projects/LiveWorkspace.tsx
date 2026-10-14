@@ -47,6 +47,10 @@ function failedStepsText(failed: number): string {
   return t`${failed} cue errors, the test continues`
 }
 
+function testbedProgressText(done: number, total: number, duration: string, endsAt: string): string {
+  return t`${done}/${total} cues · ${duration} · done around ${endsAt}`
+}
+
 function pausedSinceText(since: string, duration: string): string {
   return t`Paused since ${since} (${duration}). The viewers see the text below over the video.`
 }
@@ -142,16 +146,15 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
     >
       {phase === 'signalInterrupted' && <SignalInterrupt actions={actions} />}
 
-      {/* Sändningsläget och signalchippet står i rubriken; här bara sedan när och signalens detaljer. */}
-      {(health?.streamStartedAt || signalDetails) && (
+      {/* Sändningsläget och signalchippet står i rubriken, sändningstiden i klockan (UNG-308); här bara signalens detaljer. */}
+      {signalDetails && (
         <div class="lw-summary">
-          {health?.streamStartedAt && <span class="lw-summary-sub">Signal sedan {formatLocalTime(health.streamStartedAt)} · <Elapsed since={health.streamStartedAt} /></span>}
-          {signalDetails && <span class="lw-summary-sub">{signalDetails}</span>}
+          <span class="lw-summary-sub">{signalDetails}</span>
         </div>
       )}
 
       <button class="btn btn-primary ovs-wide" type="button" onClick={playout.openPlayout}>
-        <Icon name="playlist_play" size={18} /> Spela ut kapitel
+        <Icon name="playlist_play" size={18} /> {t`Play out chapters`}
       </button>
 
       <div class="lw-summary">
@@ -162,7 +165,7 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
         <div>
           <strong>{t`Test bed`}</strong>
           {testbed.state.running ? (
-            <span>{testbed.state.completedSteps}/{testbed.state.totalSteps} cues · {formatHms(testbed.state.durationSeconds)} · klar cirka {expectedEndAt ? formatLocalTime(expectedEndAt) : '–'}</span>
+            <span>{testbedProgressText(testbed.state.completedSteps, testbed.state.totalSteps, formatHms(testbed.state.durationSeconds), expectedEndAt ? formatLocalTime(expectedEndAt) : '–')}</span>
           ) : null}
           {testbed.state.failedSteps > 0 && <small>{failedStepsText(testbed.state.failedSteps)}</small>}
         </div>
@@ -187,12 +190,3 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
   )
 }
 
-// Sändningstiden, uppdaterad varje sekund.
-function Elapsed({ since }: { since: string }) {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000)
-    return () => window.clearInterval(timer)
-  }, [])
-  return <span class="lw-elapsed">{formatHms(Math.max(0, Math.floor((now - Date.parse(since)) / 1000)))}</span>
-}

@@ -1619,7 +1619,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
           ) : (
             <span class="ce-chrow-label" onDblClick={() => beginChapterEdit(chapter)}>{chapter.label}</span>
           )}
-          {group?.toggle && !group.toggle.open && <span class="ce-chrow-count">{group.toggle.count} talare</span>}
+          {group?.toggle && !group.toggle.open && <span class="ce-chrow-count">{plural(group.toggle.count, { one: '# speaker', other: '# speakers' })}</span>}
         </div>
         <span />
         <button
@@ -1852,7 +1852,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                 />
                 <p class="ce-trim-locked">
                   {t`The trimming is locked when the project is published. Unpublish to change it.`}
-                  <button class="btn btn-sm" type="button" onClick={unpublish}>Avpublicera</button>
+                  <button class="btn btn-sm" type="button" onClick={unpublish}>{t`Unpublish`}</button>
                 </p>
               </div>
             )}
@@ -2218,7 +2218,7 @@ export function CaptionEditor({ projectId, projectName, onClose, closeSignal, on
                           const badge = wordBadge(index)
                           return badge && (
                             <span class="ce-wordcount" aria-hidden="true">
-                              {badge.count} ord{badge.delta !== 0 && <b>{badge.delta > 0 ? ` +${badge.delta}` : ` −${-badge.delta}`}</b>}
+                              {plural(badge.count, { one: '# word', other: '# words' })}{badge.delta !== 0 && <b>{badge.delta > 0 ? ` +${badge.delta}` : ` −${-badge.delta}`}</b>}
                             </span>
                           )
                         })()}

@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro'
 import { useState } from 'preact/hooks'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import type { PublicMode } from '../../data/types'
@@ -28,7 +29,7 @@ export function ModeChangeDialog({ from, to, afterText, onCancel, onConfirm }: M
       <p>{copy.body}</p>
       {copy.editsAfterText && (
         <div class="mode-dialog-field">
-          <label for="mode-dialog-after-text">After-meddelande</label>
+          <label for="mode-dialog-after-text">{t`After message`}</label>
           <textarea
             id="mode-dialog-after-text"
             rows={3}

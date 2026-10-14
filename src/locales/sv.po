@@ -89,6 +89,16 @@ msgstr "{0, plural, one {# mottagare} other {# mottagare}}"
 msgid "{0, plural, one {# removed} other {# removed}}"
 msgstr "{0, plural, one {# borttagen} other {# borttagna}}"
 
+#. placeholder {0}: group.toggle.count
+#: src/views/projects/CaptionEditor.tsx
+msgid "{0, plural, one {# speaker} other {# speakers}}"
+msgstr "{0, plural, one {# talare} other {# talare}}"
+
+#. placeholder {0}: badge.count
+#: src/views/projects/CaptionEditor.tsx
+msgid "{0, plural, one {# word} other {# words}}"
+msgstr "{0, plural, one {# ord} other {# ord}}"
+
 #. placeholder {0}: topics.length
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "{0, plural, one {Agenda (# item) and a name list for the meeting are linked.} other {Agenda (# items) and a name list for the meeting are linked.}}"
@@ -257,6 +267,10 @@ msgstr "{deleteOrganization} ({deleteHost}) tas bort permanent. Det går inte at
 #: src/views/projects/VttImportDialog.tsx
 msgid "{dirtyCount, plural, one {Your # unsaved change is saved first.} other {Your # unsaved changes are saved first.}}"
 msgstr "{dirtyCount, plural, one {Dina # osparade ändringar sparas först.} other {Dina # osparade ändringar sparas först.}}"
+
+#: src/views/projects/LiveWorkspace.tsx
+msgid "{done}/{total} cues · {duration} · done around {endsAt}"
+msgstr "{done}/{total} cues · {duration} · klar cirka {endsAt}"
 
 #: src/views/projects/LiveWorkspace.tsx
 msgid "{failed} cue errors, the test continues"
@@ -584,6 +598,10 @@ msgstr "Ajournering. Sändningen fortsätter strax."
 #: src/app/Shell.tsx
 msgid "Administration"
 msgstr "Administration"
+
+#: src/views/projects/ModeChangeDialog.tsx
+msgid "After message"
+msgstr "After-meddelande"
 
 #: src/views/projects/forkLogic.ts
 msgid "After the latest break ({time})"
@@ -2391,6 +2409,10 @@ msgstr "Det kan ta några minuter för långa sändningar. Lämna den här rutan
 msgid "Item"
 msgstr "Punkt"
 
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Items {items} · Names {names}"
+msgstr "Punkter {items} · Namn {names}"
+
 #: src/views/trash/TrashView.tsx
 msgid "Items are purged automatically {period} after they were deleted. After that they cannot be restored."
 msgstr "Poster rensas automatiskt {period} efter att de tagits bort. Efter det går de inte att återställa."
@@ -3385,6 +3407,11 @@ msgstr "Spela ut"
 msgid "Play out {name}"
 msgstr "Spela ut {name}"
 
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/LiveWorkspace.tsx
+msgid "Play out chapters"
+msgstr "Spela ut kapitel"
+
 #: src/components/TrimBar.tsx
 msgid "Play the last seconds before the end"
 msgstr "Spela de sista sekunderna före slutet"
@@ -4345,6 +4372,10 @@ msgstr "Byt sändning"
 msgid "Switch broadcast…"
 msgstr "Byt sändning…"
 
+#: src/views/projects/ModeSelector.tsx
+msgid "Switching to {mode}…"
+msgstr "Byter till {mode}…"
+
 #. placeholder {0}: formatHms(Math.round(position))
 #: src/views/projects/ChapterSyncTools.tsx
 msgid "Sync here · {0}"
@@ -5088,6 +5119,18 @@ msgstr "Projektet har ingen video än."
 msgid "The project is published. Withdraw the publication if you want to change the video."
 msgstr "Projektet är publicerat. Ta tillbaka publiceringen om du vill byta video."
 
+#: src/views/projects/ProjectsView.tsx
+msgid "The project was created, but the agenda and the name list could not be attached. Attach them in the project."
+msgstr "Projektet skapades, men dagordningen och namnlistan kunde inte kopplas. Koppla dem i projektet."
+
+#: src/views/projects/ProjectsView.tsx
+msgid "The project was created, but the agenda could not be attached. Attach it in the project."
+msgstr "Projektet skapades, men dagordningen kunde inte kopplas. Koppla den i projektet."
+
+#: src/views/projects/ProjectsView.tsx
+msgid "The project was created, but the name list could not be attached. Attach it in the project."
+msgstr "Projektet skapades, men namnlistan kunde inte kopplas. Koppla den i projektet."
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "The published captions are in the published video's time."
 msgstr "De publicerade undertexterna är i den publicerade videons tid."
@@ -5425,6 +5468,10 @@ msgstr "Den här versionen är publicerad. Kapitellistan är fryst och följer i
 msgid "Time"
 msgstr "Tid"
 
+#: src/components/Clock.tsx
+msgid "Time / time since the signal started"
+msgstr "Klockan / tid sedan signalen startade"
+
 #. placeholder {0}: formatHms(Math.round(currentTime))
 #: src/views/projects/CaptionEditor.tsx
 msgid "Time here · {0}"
@@ -5540,6 +5587,7 @@ msgstr "Lås upp alla"
 msgid "Unlock the box"
 msgstr "Lås upp rutan"
 
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/projectMode.ts
 msgid "Unpublish"
 msgstr "Avpublicera"

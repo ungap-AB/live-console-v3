@@ -26,6 +26,11 @@ interface ProjectHeaderProps {
 // Gemensam för Livesändning och Ondemand. showIngestInfo ägs av föräldern; ingest-panelen och knappen som öppnar den ligger i
 // översiktens vänsterspalt (i Before under förberedelsen Ingest), och rubriken stänger panelen när signalen blir OK. Lägesknapparna
 // ligger också i vänsterspalten, spelarlänken och HLS-adresserna i spelarinställningarna (UI-finslipning omgång 1).
+/** UNG-308: the clock shows the broadcast duration while Live has a signal. */
+export function signalSince(p: Project, health: ChannelHealth | null): string | null {
+  return p.publicMode === 'live' && health?.streamStartedAt ? health.streamStartedAt : null
+}
+
 export function ProjectHeader({ project: p, actions, onBack, channel = null, health = null, showIngestInfo, onShowIngestInfoChange, onIngestInfo, onCreateIngest }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
@@ -84,9 +89,8 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
   return (
     <header class="pv-header">
       <div class="pv-row">
-        <button class="btn" type="button" onClick={onBack}>
+        <button class="btn" type="button" aria-label={t`Projects`} title={t`Projects`} onClick={onBack}>
           <Icon name="arrow_back" size={18} />
-          <span>{t`Projects`}</span>
         </button>
         {editingTitle ? (
           <form
@@ -115,7 +119,7 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
           </form>
         ) : (
           <>
-            <h1 class="pv-title">{p.name}</h1>
+            <h1 class="pv-title" title={p.name}>{p.name}</h1>
             {p.liveOnly && <span class="pv-liveonly" title={t`Marked as live only. It changes no behavior, and the marker is removed in the player settings.`}>{t`Live only`}</span>}
             <button
               class="pv-icon-btn"
@@ -143,7 +147,7 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
           </button>
         )}
         <span class="spacer" />
-        <span class="pv-clock"><Clock /></span>
+        <span class="pv-clock"><Clock since={signalSince(p, health)} /></span>
       </div>
 
       {confirmCreate && (

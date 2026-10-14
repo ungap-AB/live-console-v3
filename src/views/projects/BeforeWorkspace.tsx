@@ -184,7 +184,7 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
       </div>
 
       <button class="btn btn-primary ovs-wide" type="button" onClick={playout.openPlayout}>
-        <Icon name="playlist_play" size={18} /> Spela ut kapitel
+        <Icon name="playlist_play" size={18} /> {t`Play out chapters`}
       </button>
 
 

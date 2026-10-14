@@ -64,6 +64,10 @@ function playCountTitle(count: number): string {
   return t`${count} play-outs`
 }
 
+function searchCountText(items: number, names: number): string {
+  return t`Items ${items} · Names ${names}`
+}
+
 export function PlayoutColumns({ project: p, actions, live = false, openPicker = null, onPickerClosed, searchable = live }: PlayoutColumnsProps) {
   const agendaResource = useResource(
     () => (p.agendaId ? client.agendas.get(p.agendaId) : Promise.resolve(undefined)),
@@ -361,7 +365,7 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
             </button>
           )}
           <span class="pcols-search-count" role="status" aria-live="polite">
-            {searching ? `Punkter ${agendaHits.length} · Namn ${nameHits.length}` : ''}
+            {searching ? searchCountText(agendaHits.length, nameHits.length) : ''}
           </span>
         </div>
       )}

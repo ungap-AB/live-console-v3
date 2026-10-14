@@ -135,6 +135,13 @@ interface ProjectsViewProps {
   onCreatingChange: (creating: boolean) => void
 }
 
+function attachFailedText(failed: ('agenda' | 'namelist')[]): string {
+  if (failed.length > 1) return t`The project was created, but the agenda and the name list could not be attached. Attach them in the project.`
+  return failed[0] === 'agenda'
+    ? t`The project was created, but the agenda could not be attached. Attach it in the project.`
+    : t`The project was created, but the name list could not be attached. Attach it in the project.`
+}
+
 export function ProjectsView({
   meetingDomain,
   selectionScope,
@@ -294,19 +301,19 @@ export function ProjectsView({
     let created = await client.projects.create({ name, layoutSourceProjectId: layoutSourceProjectId ?? undefined })
     // UNG-189: valda listor kopplas efter skapandet. Misslyckas en koppling finns projektet kvar och ett meddelande säger vilken.
     const plan = attachPlan(lists)
-    const failed: string[] = []
+    const failed: ('agenda' | 'namelist')[] = []
     if (plan.agendaId) {
       try {
         created = await client.projects.setAgenda(created.id, plan.agendaId)
       } catch {
-        failed.push('dagordningen')
+        failed.push('agenda')
       }
     }
     if (plan.namelistId) {
       try {
         created = await client.projects.setNameList(created.id, plan.namelistId)
       } catch {
-        failed.push('namnlistan')
+        failed.push('namelist')
       }
     }
     if (plan.openMeeting) requestMeetingBinding(created.id)
@@ -314,7 +321,7 @@ export function ProjectsView({
     onSelectedIdChange(created.id)
     onScreenChange(screenForMode(created.publicMode))
     onCreatingChange(false)
-    if (failed.length > 0) setToast(`Projektet skapades, men ${failed.join(' och ')} kunde inte kopplas. Koppla ${failed.length > 1 ? 'dem' : 'den'} i projektet.`)
+    if (failed.length > 0) setToast(attachFailedText(failed))
   }
 
   // UNG-287: mallar erbjuds som "Utgå från layout" i Nytt projekt.

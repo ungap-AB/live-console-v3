@@ -6,6 +6,7 @@ import { formatLocalTime } from '../../app/time'
 import { Clock } from '../../components/Clock'
 import type { ProjectActions } from './actions'
 import { EncoderStatusChip, ViewersChip } from './LiveStatusBadges'
+import { signalSince } from './ProjectHeader'
 import { encoderStatusOf, viewerCountOf } from './liveStatus'
 import { ModeSelector } from './ModeSelector'
 import { PlayoutColumns } from './PlayoutColumns'
@@ -155,7 +156,7 @@ export function PlayoutWorkOverlay({ project: p, actions, channel, health, onClo
       </>}
       bar={<>
         {viewerCount !== null && <ViewersChip count={viewerCount} />}
-        <span class="pv-clock"><Clock /></span>
+        <span class="pv-clock"><Clock since={signalSince(p, health)} /></span>
       </>}
     >
       <div class="lw">

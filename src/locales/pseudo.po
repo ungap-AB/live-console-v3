@@ -89,6 +89,16 @@ msgstr ""
 msgid "{0, plural, one {# removed} other {# removed}}"
 msgstr ""
 
+#. placeholder {0}: group.toggle.count
+#: src/views/projects/CaptionEditor.tsx
+msgid "{0, plural, one {# speaker} other {# speakers}}"
+msgstr ""
+
+#. placeholder {0}: badge.count
+#: src/views/projects/CaptionEditor.tsx
+msgid "{0, plural, one {# word} other {# words}}"
+msgstr ""
+
 #. placeholder {0}: topics.length
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "{0, plural, one {Agenda (# item) and a name list for the meeting are linked.} other {Agenda (# items) and a name list for the meeting are linked.}}"
@@ -256,6 +266,10 @@ msgstr ""
 
 #: src/views/projects/VttImportDialog.tsx
 msgid "{dirtyCount, plural, one {Your # unsaved change is saved first.} other {Your # unsaved changes are saved first.}}"
+msgstr ""
+
+#: src/views/projects/LiveWorkspace.tsx
+msgid "{done}/{total} cues · {duration} · done around {endsAt}"
 msgstr ""
 
 #: src/views/projects/LiveWorkspace.tsx
@@ -581,6 +595,10 @@ msgstr ""
 
 #: src/app/Shell.tsx
 msgid "Administration"
+msgstr ""
+
+#: src/views/projects/ModeChangeDialog.tsx
+msgid "After message"
 msgstr ""
 
 #: src/views/projects/forkLogic.ts
@@ -2385,6 +2403,10 @@ msgstr ""
 msgid "Item"
 msgstr ""
 
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Items {items} · Names {names}"
+msgstr ""
+
 #: src/views/trash/TrashView.tsx
 msgid "Items are purged automatically {period} after they were deleted. After that they cannot be restored."
 msgstr ""
@@ -3379,6 +3401,11 @@ msgstr ""
 msgid "Play out {name}"
 msgstr ""
 
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/LiveWorkspace.tsx
+msgid "Play out chapters"
+msgstr ""
+
 #: src/components/TrimBar.tsx
 msgid "Play the last seconds before the end"
 msgstr ""
@@ -4339,6 +4366,10 @@ msgstr ""
 msgid "Switch broadcast…"
 msgstr ""
 
+#: src/views/projects/ModeSelector.tsx
+msgid "Switching to {mode}…"
+msgstr ""
+
 #. placeholder {0}: formatHms(Math.round(position))
 #: src/views/projects/ChapterSyncTools.tsx
 msgid "Sync here · {0}"
@@ -5082,6 +5113,18 @@ msgstr ""
 msgid "The project is published. Withdraw the publication if you want to change the video."
 msgstr ""
 
+#: src/views/projects/ProjectsView.tsx
+msgid "The project was created, but the agenda and the name list could not be attached. Attach them in the project."
+msgstr ""
+
+#: src/views/projects/ProjectsView.tsx
+msgid "The project was created, but the agenda could not be attached. Attach it in the project."
+msgstr ""
+
+#: src/views/projects/ProjectsView.tsx
+msgid "The project was created, but the name list could not be attached. Attach it in the project."
+msgstr ""
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "The published captions are in the published video's time."
 msgstr ""
@@ -5419,6 +5462,10 @@ msgstr ""
 msgid "Time"
 msgstr ""
 
+#: src/components/Clock.tsx
+msgid "Time / time since the signal started"
+msgstr ""
+
 #. placeholder {0}: formatHms(Math.round(currentTime))
 #: src/views/projects/CaptionEditor.tsx
 msgid "Time here · {0}"
@@ -5534,6 +5581,7 @@ msgstr ""
 msgid "Unlock the box"
 msgstr ""
 
+#: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/projectMode.ts
 msgid "Unpublish"
 msgstr ""

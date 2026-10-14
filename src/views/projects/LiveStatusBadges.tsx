@@ -20,9 +20,9 @@ export function EncoderStatusChip({ status }: { status: EncoderStatus }) {
 
 export function ViewersChip({ count }: { count: number }) {
   return (
-    <div class="pv-viewers" role="status" title={t`Concurrent viewers according to IVS. The number is an estimate with a few seconds' delay.`}>
+    <div class="pv-viewers" role="status" aria-label={viewersText(count)} title={t`Concurrent viewers according to IVS. The number is an estimate with a few seconds' delay.`}>
       <Icon name="visibility" size={17} />
-      <span>{viewersText(count)}</span>
+      <span aria-hidden="true">{formatNumber(count)}</span>
     </div>
   )
 }

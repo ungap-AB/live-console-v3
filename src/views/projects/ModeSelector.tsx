@@ -16,6 +16,10 @@ interface ModeSelectorProps {
 
 // Lägesknapparna (Before, Live, After, Ondemand) med paus-knappen direkt till höger om Live (UNG-119). Delas av projektets huvud och
 // utspelningsvyn i Live: lägesbyte, bekräftelsedialoger och bytesspinnern fungerar likadant på båda ställena.
+function switchingText(mode: string): string {
+  return t`Switching to ${mode}…`
+}
+
 export function ModeSelector({ project: p, actions, onModeSelect }: ModeSelectorProps) {
   const { selectMode, dialog: modeDialog } = useModeChange(p, actions)
   // UNG-107: läget som håller på att bytas till visas som valt direkt, med en snurra, tills servern har svarat.
@@ -50,7 +54,7 @@ export function ModeSelector({ project: p, actions, onModeSelect }: ModeSelector
           ))}
         </div>
         {/* Snurran i knappen räcker; bytet läses upp för skärmläsare. */}
-        {switchingTo !== null && <span class="sr-only" role="status">Byter till {MODE_LABEL[switchingTo]}…</span>}
+        {switchingTo !== null && <span class="sr-only" role="status">{switchingText(MODE_LABEL[switchingTo])}</span>}
       </div>
       {modeDialog}
     </>
