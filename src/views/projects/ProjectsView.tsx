@@ -708,7 +708,7 @@ export function ProjectsView({
                                 onScreenChange('ondemand')
                               }}
                             >
-                              <Icon name="closed_caption" size={16} /> {button.label}
+                              {button.label}
                             </button>
                           )
                         })()}
