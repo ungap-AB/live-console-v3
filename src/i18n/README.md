@@ -37,5 +37,13 @@ thing; otherwise give one of them a `context`.
 
 ## Language
 
-Swedish unless the URL has `?lang=en`, or `?lang=pseudo` in development (accented English, to find texts that
-are not yet translatable). The choice is read once at start. Tests run in Swedish (`scripts/test-setup.mjs`).
+The operator chooses Svenska/English on the login page and under My account (UNG-306). The choice is saved on the
+account (`PATCH /auth/me`) and remembered in the browser. Order: `?lang=en` / `?lang=sv` (override for test and
+support; `?lang=pseudo` in development gives accented English, to find texts that are not yet translatable) > the
+account's language after login > the language remembered in this browser > the browser's languages (en → English,
+sv/nb/nn/no/da → Swedish) > Swedish.
+
+Switching happens without a reload (a reload logs the operator out): `switchLanguage` activates the catalogue,
+`useUiLocale` re-renders, and the views under the shell are remounted (keyed on the language) so labels made in the
+data layer follow. The console sends its language to the server as `Accept-Language`. Tests run in Swedish
+(`scripts/test-setup.mjs`).

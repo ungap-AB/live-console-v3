@@ -157,11 +157,13 @@ let nextId = 100
 // Mock-inloggning: ingen riktig PIN-kontroll, bara att e-posten matchar en
 // fixturanvändare — håller bara i minnet, ingen persistens över omladdning.
 let mockLoggedInUserId: string | null = null
+// UNG-306: the accounts' languages (in memory, like everything in the mock).
+const mockLanguages = new Map<string, 'sv' | 'en'>()
 
 function toCurrentUser(user: UserAccount): CurrentUser {
   const domain = domains.find((d) => d.id === user.domainId)
   if (!domain) throw new Error(`Domän ${user.domainId} finns inte`)
-  return { id: user.id, name: user.name, email: user.email, domain, roles: user.roles }
+  return { id: user.id, name: user.name, email: user.email, domain, roles: user.roles, language: mockLanguages.get(user.id) ?? null }
 }
 
 export const mockClient: Client = {
@@ -176,10 +178,17 @@ export const mockClient: Client = {
       if (token === 'ogiltig') throw new Error('Länken är ogiltig, har gått ut eller har redan använts.')
       return delay({ pin: '482913', email: 'mock@example.test', kind: 'invite' as const })
     },
-    async login(email, _pin) {
+    async login(email, _pin, language) {
       const user = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase() && u.status === 'active')
       if (!user) throw new Error('Fel e-postadress eller PIN-kod.')
       mockLoggedInUserId = user.id
+      if (language && !mockLanguages.has(user.id)) mockLanguages.set(user.id, language)
+      return delay(toCurrentUser(user))
+    },
+    async setLanguage(language) {
+      const user = mockLoggedInUserId ? users.find((u) => u.id === mockLoggedInUserId) : undefined
+      if (!user) throw new Error('Inte inloggad.')
+      mockLanguages.set(user.id, language)
       return delay(toCurrentUser(user))
     },
     async me() {
@@ -721,6 +730,7 @@ export const mockClient: Client = {
         lastLoginAt: null,
         activity: [],
       }
+      if (input.language) mockLanguages.set(user.id, input.language)
       users = [...users, user]
       return delay(clone(user))
     },

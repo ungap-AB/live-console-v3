@@ -1,4 +1,5 @@
 import { t } from '@lingui/core/macro'
+import { LanguageSwitch } from './LanguageSwitch'
 import type { ComponentChildren } from 'preact'
 import { useCallback, useEffect, useState } from 'preact/hooks'
 import { client } from '../data'
@@ -372,6 +373,11 @@ function MyAccountDialog({ user, domain, onClose, onSaved }: MyAccountDialogProp
         <div class="v">
           {formatDate(domain?.contractStart)} – {formatDate(domain?.contractEnd)}
         </div>
+      </div>
+      <div class="block">
+        <h3>{t`Language`}</h3>
+        {/* UNG-306: saved on the account, so the console is in this language on every computer. */}
+        <LanguageSwitch onChange={(locale) => void client.auth.setLanguage(locale).catch(() => undefined)} />
       </div>
       <div class="block">
         <h3>{t`Appearance`}</h3>

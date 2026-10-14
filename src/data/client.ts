@@ -42,8 +42,11 @@ export interface NameListInput {
 // (se PLAN-byggordningen) — inga oanvända metoder i väntan på en vy.
 export interface Client {
   auth: {
-    login(email: string, pin: string): Promise<CurrentUser>
+    /** UNG-306: language = the language chosen on the login page; saved on the account if it has none. */
+    login(email: string, pin: string, language?: 'sv' | 'en'): Promise<CurrentUser>
     me(): Promise<CurrentUser>
+    /** UNG-306: saves the account's UI language (My account). */
+    setLanguage(language: 'sv' | 'en'): Promise<CurrentUser>
     logout(): Promise<void>
     /** "Glömt PIN?": ber servern skicka ett återställningsmejl. Svarar likadant oavsett om adressen finns. */
     requestPasswordReset(email: string): Promise<void>
@@ -171,7 +174,8 @@ export interface Client {
     /** muxEnvKey: tom sträng tar bort kundens egen nyckel (standardnyckeln gäller då); utelämnad lämnar den oförändrad. */
     update(id: string, input: { org: string; contractStart?: string; contractEnd?: string; muxEnvKey?: string }): Promise<Domain>
     remove(id: string): Promise<void>
-    createUser(domainId: string, input: { email: string; name: string; roles: Role[] }): Promise<UserAccount>
+    /** UNG-306: language = the new user's language (the invitation email and the first login). */
+    createUser(domainId: string, input: { email: string; name: string; roles: Role[]; language?: 'sv' | 'en' }): Promise<UserAccount>
   }
   users: {
     listByDomain(domainId: string, query?: string): Promise<UserAccount[]>

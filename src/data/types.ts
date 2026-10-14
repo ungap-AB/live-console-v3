@@ -36,6 +36,8 @@ export interface CurrentUser {
   email: string
   domain: DomainRef
   roles: Role[]
+  /** UNG-306: the account's UI language; null until chosen. */
+  language: 'sv' | 'en' | null
 }
 
 // ---- Dagordningar ----

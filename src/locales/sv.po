@@ -2422,6 +2422,12 @@ msgstr "Behåll tidigare — ignorera filen"
 msgid "Keep them and add the new ones"
 msgstr "Behåll dem och lägg till de nya"
 
+#: src/app/LanguageSwitch.tsx
+#: src/app/Shell.tsx
+#: src/views/users/UsersView.tsx
+msgid "Language"
+msgstr "Språk"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Last {when} by {actor}"
 msgstr "Senast {when} av {actor}"

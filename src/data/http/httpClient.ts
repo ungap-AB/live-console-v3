@@ -447,7 +447,8 @@ async function fetchUserDetail(id: string): Promise<UserAccount> {
 }
 
 function toCurrentUser(dto: ServerCurrentUser): CurrentUser {
-  return { id: dto.id, name: dto.name, email: dto.email, domain: dto.domain, roles: dto.roles as CurrentUser['roles'] }
+  const language = dto.language === 'sv' || dto.language === 'en' ? dto.language : null
+  return { id: dto.id, name: dto.name, email: dto.email, domain: dto.domain, roles: dto.roles as CurrentUser['roles'], language }
 }
 
 export const httpClient: Client = {
@@ -461,10 +462,13 @@ export const httpClient: Client = {
     async redeemCredentialLink(token) {
       return api<CredentialLinkRedeemed>(`/auth/credential-links/${encodeURIComponent(token)}/redeem`, { method: 'POST' })
     },
-    async login(email, pin) {
-      const dto = await api<ServerLoginResponse>('/auth/login', { method: 'POST', body: { email, pin } })
+    async login(email, pin, language) {
+      const dto = await api<ServerLoginResponse>('/auth/login', { method: 'POST', body: { email, pin, language } })
       setAuthToken(dto.token)
       return toCurrentUser(dto.user)
+    },
+    async setLanguage(language) {
+      return toCurrentUser(await api<ServerCurrentUser>('/auth/me', { method: 'PATCH', body: { language } }))
     },
     async me() {
       try {

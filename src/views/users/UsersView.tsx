@@ -3,6 +3,7 @@ import type { MessageDescriptor } from '@lingui/core'
 import { msg, t } from '@lingui/core/macro'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
+import { currentLocale, type ChosenLocale } from '../../i18n'
 import type { Domain, Role, UserAccount } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { StatusChip } from '../../components/StatusChip'
@@ -505,6 +506,8 @@ function CreateUserDialog({ domain, onCancel, onCreated }: CreateUserDialogProps
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [role, setRole] = useState<Role>('operator')
+  // UNG-306: the new user's language (the invitation email and the first login); default: the admin's own.
+  const [language, setLanguage] = useState<ChosenLocale>(currentLocale)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const canSave = isValidEmail(email) && name.trim().length > 0 && !saving
@@ -515,7 +518,7 @@ function CreateUserDialog({ domain, onCancel, onCreated }: CreateUserDialogProps
     setSaving(true)
     setError(null)
     try {
-      const user = await client.domains.createUser(domain.id, { email: email.trim(), name: name.trim(), roles: [role] })
+      const user = await client.domains.createUser(domain.id, { email: email.trim(), name: name.trim(), roles: [role], language })
       onCreated(user)
     } catch (err) {
       setError(err instanceof Error ? err.message : t`Could not create the user.`)
@@ -554,6 +557,13 @@ function CreateUserDialog({ domain, onCancel, onCreated }: CreateUserDialogProps
                 {roleLabel(r)}
               </option>
             ))}
+          </select>
+        </label>
+        <label>
+          {t`Language`}
+          <select class="rename-input" value={language} onChange={(e) => setLanguage(e.currentTarget.value as ChosenLocale)}>
+            <option value="sv" lang="sv">Svenska</option>
+            <option value="en" lang="en">English</option>
           </select>
         </label>
         {error && <p class="note warn">{error}</p>}

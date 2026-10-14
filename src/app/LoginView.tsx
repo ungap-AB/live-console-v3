@@ -1,5 +1,7 @@
 import { t } from '@lingui/core/macro'
 import { useState } from 'preact/hooks'
+import { rememberedLocale } from '../i18n'
+import { LanguageSwitch } from './LanguageSwitch'
 import { client } from '../data'
 import type { CurrentUser } from '../data/types'
 import logoLightUrl from '../images/ungap-presenter-2026-black.png'
@@ -36,7 +38,8 @@ export function LoginView({ onLogin, initialEmail = '', notice }: LoginViewProps
         setResetSent(true)
         return
       }
-      const user = await client.auth.login(email, pin)
+      // UNG-306: a language chosen on this browser is saved on an account that has none yet.
+      const user = await client.auth.login(email, pin, rememberedLocale() ?? undefined)
       onLogin(user)
     } catch (err) {
       setError(err instanceof Error ? err.message : t`Could not log in.`)
@@ -112,6 +115,7 @@ export function LoginView({ onLogin, initialEmail = '', notice }: LoginViewProps
           {resetting ? t`Back to login` : t`Forgot PIN?`}
         </button>
       </form>
+      <LanguageSwitch class="login-lang" />
     </div>
   )
 }

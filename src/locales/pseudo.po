@@ -2416,6 +2416,12 @@ msgstr ""
 msgid "Keep them and add the new ones"
 msgstr ""
 
+#: src/app/LanguageSwitch.tsx
+#: src/app/Shell.tsx
+#: src/views/users/UsersView.tsx
+msgid "Language"
+msgstr ""
+
 #: src/views/projects/OndemandView.tsx
 msgid "Last {when} by {actor}"
 msgstr ""

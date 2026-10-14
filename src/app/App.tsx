@@ -1,4 +1,5 @@
 import { t } from '@lingui/core/macro'
+import { Fragment } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../data'
 import { onSessionLost } from '../data/http/fetchJson'
@@ -9,6 +10,8 @@ import { Shell } from './Shell'
 import { CredentialLinkView } from './CredentialLinkView'
 import { SharedDownloadsView } from './SharedDownloadsView'
 import { LoginView } from './LoginView'
+import { useUiLocale } from './useUiLocale'
+import { hasLanguageOverride, switchLanguage } from '../i18n'
 import { ProjectsView, parseProjectScreen, type ProjectScreen } from '../views/projects/ProjectsView'
 import { AgendasView } from '../views/agendas/AgendasView'
 import { NameListsView } from '../views/namelists/NameListsView'
@@ -23,7 +26,14 @@ import { IsRootAdminContext } from './currentUserContext'
 
 type AuthState = { status: 'loading' } | { status: 'anon' } | { status: 'authed'; user: CurrentUser }
 
+// UNG-306: after login the account's language applies (unless ?lang= overrides it).
+function applyAccountLanguage(user: CurrentUser) {
+  if (user.language && !hasLanguageOverride(window.location.search)) void switchLanguage(user.language)
+}
+
 export function App() {
+  // UNG-306: a language switch re-renders the app; the views below the shell are remounted (keyed) so data labels follow.
+  const locale = useUiLocale()
   const route = useRoute()
   const credentialToken = useCredentialToken()
   const shareToken = useShareToken()
@@ -36,6 +46,7 @@ export function App() {
   useEffect(() => {
     client.auth.me().then(
       (user) => {
+        applyAccountLanguage(user)
         setActiveProjectId(readStoredSelection('project', user.domain.id))
         setProjectScreen(parseProjectScreen(readStoredSelection('project-screen', user.domain.id)))
         setAuth({ status: 'authed', user })
@@ -63,6 +74,7 @@ export function App() {
   )
 
   function login(user: CurrentUser) {
+    applyAccountLanguage(user)
     setSessionNotice('')
     // Ingen markering i listan efter inloggning: det senast öppnade gällde förra inloggningen (överlever annars en utloggning).
     setLastOpenedProjectId(null)
@@ -213,6 +225,7 @@ export function App() {
       currentUserId={auth.user.id}
       currentUserRoles={auth.user.roles}
     >
+      <Fragment key={locale}>
       {routeAllowed && route === 'projects' && (
         <ProjectsView
           meetingDomain={auth.user.domain.host}
@@ -248,6 +261,7 @@ export function App() {
       {routeAllowed && route === 'users' && isRootAdmin && (
         <UsersView currentDomainId={auth.user.domain.id} canManageDomains={isRootAdmin} />
       )}
+      </Fragment>
     </Shell>
     </IsRootAdminContext.Provider>
   )

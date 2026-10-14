@@ -3,8 +3,9 @@ import type { Messages } from '@lingui/core'
 import { messages as svMessages } from '../locales/sv.ts'
 
 // UNG-221: the UI language. English is the source in the code (`t\`Publish\``); Swedish comes from sv.po and is the
-// default. The choice is hidden until the language picker exists: only `?lang=en` (and `?lang=pseudo` in
-// development) changes it, read once at start.
+// default. UNG-306: the operator chooses it on the login page and under My account; it is saved on the account (and
+// remembered in this browser). Order: `?lang=` (override for test and support, `pseudo` only in development) > the
+// account's language after login > the language remembered in this browser > the browser's languages > Swedish.
 
 export type UiLocale = 'sv' | 'en' | 'pseudo'
 
@@ -26,12 +27,71 @@ async function loadMessages(locale: UiLocale): Promise<Messages> {
   return svMessages
 }
 
-/** Activates the language from the URL and sets `<html lang>`. Call before the first render. */
-export async function setupI18n(search: string): Promise<UiLocale> {
-  const locale = resolveLocale(search, import.meta.env.DEV)
+/** A language the operator can choose (pseudo is only a development override). */
+export type ChosenLocale = 'sv' | 'en'
+
+const STORAGE_KEY = 'ungap-console-language'
+
+/** True when `?lang=` overrides the language: then neither the account nor the browser decides. */
+export function hasLanguageOverride(search: string): boolean {
+  return new URLSearchParams(search).get('lang') !== null
+}
+
+/** The browser's languages with the player's rule: English → English, Scandinavian → Swedish, nothing matching → Swedish. */
+export function browserLocale(languages: readonly string[]): ChosenLocale {
+  for (const tag of languages) {
+    const lang = tag.trim().toLowerCase().split(/[-_]/)[0]
+    if (lang === 'en') return 'en'
+    if (['sv', 'nb', 'nn', 'no', 'da'].includes(lang)) return 'sv'
+  }
+  return 'sv'
+}
+
+/** The language the operator has chosen in this browser (login page or My account), if any. */
+export function rememberedLocale(): ChosenLocale | null {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored === 'en' || stored === 'sv' ? stored : null
+  } catch {
+    return null
+  }
+}
+
+function remember(locale: ChosenLocale) {
+  try {
+    localStorage.setItem(STORAGE_KEY, locale)
+  } catch {
+    // localStorage kan vara blockerat; valet gäller då bara tills sidan laddas om.
+  }
+}
+
+async function activate(locale: UiLocale) {
   i18n.loadAndActivate({ locale, locales: intlLocales[locale], messages: await loadMessages(locale) })
   document.documentElement.lang = locale === 'pseudo' ? 'en' : locale
+}
+
+/** Activates the start language (see the order above, before login) and sets `<html lang>`. Call before the first render. */
+export async function setupI18n(search: string): Promise<UiLocale> {
+  const locale = hasLanguageOverride(search)
+    ? resolveLocale(search, import.meta.env.DEV)
+    : rememberedLocale() ?? browserLocale(navigator.languages ?? [navigator.language])
+  await activate(locale)
   return locale
+}
+
+/** The active language as the operator's choice (pseudo counts as English). */
+export function currentLocale(): ChosenLocale {
+  return i18n.locale === 'sv' ? 'sv' : 'en'
+}
+
+/**
+ * Switches the UI language while the console runs (a reload would log the operator out) and remembers it in this browser.
+ * Components re-render through `useUiLocale`. A `?lang=` override keeps its language.
+ */
+export async function switchLanguage(locale: ChosenLocale): Promise<void> {
+  remember(locale)
+  if (hasLanguageOverride(window.location.search) || i18n.locale === locale) return
+  await activate(locale)
 }
 
 /** Tests run in Swedish (only the Swedish catalog is loaded synchronously). */
