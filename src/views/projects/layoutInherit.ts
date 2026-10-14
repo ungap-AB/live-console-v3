@@ -6,7 +6,9 @@ import type { Project } from '../../data/types.ts'
 // UNG-180: the player's layout as a value object in the console too. The field list is kept in step with the server's `PlayerLayout`
 // (Models/Projects/PlayerLayout.cs): a new layout attribute is added to both, and the test catches the list and the type drifting apart.
 
-export type LayoutKey = 'beforeText' | 'liveText' | 'afterText' | 'ondemandText' | 'textPlacement' | 'muxEnabled' | 'muxRespectDoNotTrack' | 'posterUrl'
+export type LayoutKey =
+  | 'beforeText' | 'liveText' | 'afterText' | 'ondemandText' | 'textPlacement' | 'muxEnabled' | 'muxRespectDoNotTrack'
+  | 'dvrEnabled' | 'exclamationsAsSpeakers' | 'liveOnly' | 'posterUrl'
 
 export const LAYOUT_FIELDS: { key: LayoutKey; label: MessageDescriptor }[] = [
   { key: 'beforeText', label: msg`Text before the broadcast (Before)` },
@@ -16,6 +18,9 @@ export const LAYOUT_FIELDS: { key: LayoutKey; label: MessageDescriptor }[] = [
   { key: 'textPlacement', label: msg`Text placement` },
   { key: 'muxEnabled', label: msg`Playback measurement (Mux)` },
   { key: 'muxRespectDoNotTrack', label: msg`Respect Do Not Track` },
+  { key: 'dvrEnabled', label: msg`Rewind in a live broadcast` },
+  { key: 'exclamationsAsSpeakers', label: msg`Speakers in the agenda` },
+  { key: 'liveOnly', label: msg`Live only` },
   // The poster image is copied as a file on the server; here we only compare whether the projects have an image (the addresses always differ).
   { key: 'posterUrl', label: msg`Poster image` },
 ]
@@ -31,6 +36,9 @@ export function layoutOf(project: LayoutFields): LayoutFields {
     textPlacement: project.textPlacement,
     muxEnabled: project.muxEnabled,
     muxRespectDoNotTrack: project.muxRespectDoNotTrack,
+    dvrEnabled: project.dvrEnabled,
+    exclamationsAsSpeakers: project.exclamationsAsSpeakers,
+    liveOnly: project.liveOnly,
     posterUrl: project.posterUrl ?? null,
   }
 }
@@ -84,7 +92,7 @@ export function describeLayoutValue(key: LayoutKey, value: LayoutFields[LayoutKe
     const label = PLACEMENT_LABEL[value as Project['textPlacement']]
     return label ? i18n._(label) : String(value)
   }
-  if (key === 'muxEnabled' || key === 'muxRespectDoNotTrack') return value ? t`On` : t`Off`
+  if (typeof value === 'boolean') return value ? t`On` : t`Off`
   if (key === 'posterUrl') return value ? t`Image` : t`No image`
   const text = String(value ?? '').trim()
   if (text === '') return t`(empty)`

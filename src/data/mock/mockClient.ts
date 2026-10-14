@@ -844,9 +844,9 @@ export const mockClient: Client = {
         textPlacement: layoutSource?.textPlacement ?? 'middle',
         muxEnabled: layoutSource?.muxEnabled ?? false,
         muxRespectDoNotTrack: layoutSource?.muxRespectDoNotTrack ?? false,
-        dvrEnabled: false,
-        exclamationsAsSpeakers: false,
-        liveOnly: false,
+        dvrEnabled: layoutSource?.dvrEnabled ?? false,
+        exclamationsAsSpeakers: layoutSource?.exclamationsAsSpeakers ?? false,
+        liveOnly: layoutSource?.liveOnly ?? false,
         posterUrl: layoutSource?.posterUrl ?? null,
         muxEnvKey: 'os3srhrpsr4mfcc3tdlv25lo3',
         visibility: 'closed',
@@ -880,6 +880,9 @@ export const mockClient: Client = {
       project.textPlacement = source.textPlacement
       project.muxEnabled = source.muxEnabled
       project.muxRespectDoNotTrack = source.muxRespectDoNotTrack
+      project.dvrEnabled = source.dvrEnabled
+      project.exclamationsAsSpeakers = source.exclamationsAsSpeakers
+      project.liveOnly = source.liveOnly
       project.posterUrl = source.posterUrl ?? null
       return delay(projectSnapshot(project))
     },

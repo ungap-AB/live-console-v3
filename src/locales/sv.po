@@ -1338,8 +1338,8 @@ msgid "Copied ✓"
 msgstr "Kopierat ✓"
 
 #: src/views/projects/CreateProjectDialog.tsx
-msgid "Copies the message texts, the text placement, the Mux setting and the poster image. More choices: mark a project as a template in the project list's ⋯ menu."
-msgstr "Kopierar meddelandetexterna, textens placering, Mux-inställningen och posterbilden. Fler val: markera ett projekt som mall i projektlistans ⋯-meny."
+msgid "Copies all the player settings and the poster image. More choices: mark a project as a template in the project list's ⋯ menu."
+msgstr "Kopierar alla spelarinställningar och posterbilden. Fler val: markera ett projekt som mall i projektlistans ⋯-meny."
 
 #: src/components/CopyField.tsx
 #: src/views/projects/ExportImportDialog.tsx
@@ -2110,6 +2110,10 @@ msgstr "Genererar…"
 msgid "Generating{percent}"
 msgstr "Genererar{percent}"
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Get all the player settings and the poster image from another project. They replace these settings, after confirmation."
+msgstr "Hämta alla spelarinställningar och posterbilden från ett annat projekt. De ersätter de här inställningarna, efter bekräftelse."
+
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "Get anyway"
 msgstr "Hämta ändå"
@@ -2129,10 +2133,6 @@ msgstr "Hämta layout från projekt…"
 #: src/views/projects/OndemandView.tsx
 msgid "Get ready for on demand"
 msgstr "Gör klart för ondemand"
-
-#: src/views/projects/PlayerSettingsDialog.tsx
-msgid "Get texts, text placement, Mux setting and poster image from another project. They replace these settings, after confirmation."
-msgstr "Hämta texter, textplacering, Mux-inställning och posterbild från ett annat projekt. De ersätter dessa inställningar, efter bekräftelse."
 
 #: src/views/projects/projectMode.ts
 msgid "Go back to Before?"
@@ -2596,6 +2596,7 @@ msgstr "Live"
 msgid "Live HLS (TV, player)"
 msgstr "Live-HLS (TV, uppspelare)"
 
+#: src/views/projects/layoutInherit.ts
 #: src/views/projects/PlayerSettingsDialog.tsx
 #: src/views/projects/ProjectHeader.tsx
 #: src/views/projects/ProjectsView.tsx
@@ -3824,8 +3825,8 @@ msgid "replaced {replaced}"
 msgstr "ersatte {replaced}"
 
 #: src/views/projects/InheritLayoutDialog.tsx
-msgid "Replaces the player's texts, text placement, Mux setting and poster image with a copy of the chosen project's."
-msgstr "Ersätter spelarens texter, textplacering, Mux-inställning och posterbild med en kopia av det valda projektets."
+msgid "Replaces all the player settings and the poster image with a copy of the chosen project's."
+msgstr "Ersätter alla spelarinställningar och posterbilden med en kopia av det valda projektets."
 
 #: src/views/users/UsersView.tsx
 msgid "Resend invitation"
@@ -3872,6 +3873,7 @@ msgstr "Återkallad"
 msgid "Revoked by {detail}"
 msgstr "Återkallades av {detail}"
 
+#: src/views/projects/layoutInherit.ts
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Rewind in a live broadcast"
 msgstr "Spola tillbaka i livesändning"
@@ -4266,6 +4268,7 @@ msgstr "Talarbyten som redan är analyserade behålls: de hör till ljudet, inte
 msgid "Speakers are played out directly from Meeting."
 msgstr "Talare spelas ut direkt från Meeting."
 
+#: src/views/projects/layoutInherit.ts
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Speakers in the agenda"
 msgstr "Talare i dagordningen"

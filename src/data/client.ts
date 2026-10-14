@@ -202,7 +202,7 @@ export interface Client {
     touchPlayout(id: string): Promise<void>
     /** layoutSourceProjectId: projektet vars spelarlayout kopieras till det nya (UNG-180). Utan det blir projektet som förut. */
     create(input: { name: string; layoutSourceProjectId?: string }): Promise<Project>
-    /** Ersätter projektets spelarlayout (texter, placering, Mux) med en kopia av ett annat projekts (UNG-180). */
+    /** Ersätter projektets spelarlayout (alla spelarinställningar och postern) med en kopia av ett annat projekts (UNG-180). */
     inheritLayout(id: string, sourceProjectId: string): Promise<Project>
     /** UNG-198: skapar ett nytt projekt (läget After, stängt) ur projektets pågående sändning eller avslutade inspelning. Källan och strömmen rörs inte. */
     forkWindow(id: string): Promise<import('./types').ForkWindow>

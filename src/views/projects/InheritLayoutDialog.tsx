@@ -41,7 +41,7 @@ export function InheritLayoutDialog({ project, actions, onCancel, onDone }: Inhe
   return (
     <Modal
       title={t`Get layout from project`}
-      subtitle={t`Replaces the player's texts, text placement, Mux setting and poster image with a copy of the chosen project's.`}
+      subtitle={t`Replaces all the player settings and the poster image with a copy of the chosen project's.`}
       onClose={onCancel}
       footer={
         <>

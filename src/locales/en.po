@@ -1338,8 +1338,8 @@ msgid "Copied ✓"
 msgstr "Copied ✓"
 
 #: src/views/projects/CreateProjectDialog.tsx
-msgid "Copies the message texts, the text placement, the Mux setting and the poster image. More choices: mark a project as a template in the project list's ⋯ menu."
-msgstr "Copies the message texts, the text placement, the Mux setting and the poster image. More choices: mark a project as a template in the project list's ⋯ menu."
+msgid "Copies all the player settings and the poster image. More choices: mark a project as a template in the project list's ⋯ menu."
+msgstr "Copies all the player settings and the poster image. More choices: mark a project as a template in the project list's ⋯ menu."
 
 #: src/components/CopyField.tsx
 #: src/views/projects/ExportImportDialog.tsx
@@ -2110,6 +2110,10 @@ msgstr "Generating…"
 msgid "Generating{percent}"
 msgstr "Generating{percent}"
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Get all the player settings and the poster image from another project. They replace these settings, after confirmation."
+msgstr "Get all the player settings and the poster image from another project. They replace these settings, after confirmation."
+
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "Get anyway"
 msgstr "Get anyway"
@@ -2129,10 +2133,6 @@ msgstr "Get layout from project…"
 #: src/views/projects/OndemandView.tsx
 msgid "Get ready for on demand"
 msgstr "Get ready for on demand"
-
-#: src/views/projects/PlayerSettingsDialog.tsx
-msgid "Get texts, text placement, Mux setting and poster image from another project. They replace these settings, after confirmation."
-msgstr "Get texts, text placement, Mux setting and poster image from another project. They replace these settings, after confirmation."
 
 #: src/views/projects/projectMode.ts
 msgid "Go back to Before?"
@@ -2596,6 +2596,7 @@ msgstr "Live"
 msgid "Live HLS (TV, player)"
 msgstr "Live HLS (TV, player)"
 
+#: src/views/projects/layoutInherit.ts
 #: src/views/projects/PlayerSettingsDialog.tsx
 #: src/views/projects/ProjectHeader.tsx
 #: src/views/projects/ProjectsView.tsx
@@ -3824,8 +3825,8 @@ msgid "replaced {replaced}"
 msgstr "replaced {replaced}"
 
 #: src/views/projects/InheritLayoutDialog.tsx
-msgid "Replaces the player's texts, text placement, Mux setting and poster image with a copy of the chosen project's."
-msgstr "Replaces the player's texts, text placement, Mux setting and poster image with a copy of the chosen project's."
+msgid "Replaces all the player settings and the poster image with a copy of the chosen project's."
+msgstr "Replaces all the player settings and the poster image with a copy of the chosen project's."
 
 #: src/views/users/UsersView.tsx
 msgid "Resend invitation"
@@ -3872,6 +3873,7 @@ msgstr "Revoked"
 msgid "Revoked by {detail}"
 msgstr "Revoked by {detail}"
 
+#: src/views/projects/layoutInherit.ts
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Rewind in a live broadcast"
 msgstr "Rewind in a live broadcast"
@@ -4266,6 +4268,7 @@ msgstr "Speaker changes that are already analyzed are kept: they belong to the a
 msgid "Speakers are played out directly from Meeting."
 msgstr "Speakers are played out directly from Meeting."
 
+#: src/views/projects/layoutInherit.ts
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Speakers in the agenda"
 msgstr "Speakers in the agenda"

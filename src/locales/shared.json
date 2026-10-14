@@ -150,5 +150,7 @@
   "Video": "Video",
   "{0, plural, one {Used in # project} other {Used in # projects}}": "{0, plural, one {Används i # projekt} other {Används i # projekt}}",
   "{count, plural, one {{cues} line} other {{cues} lines}}": "{count, plural, one {{cues} repliker} other {{cues} repliker}}",
-  "{trashUsedIn, plural, one {{trashName} is used in # project. Move to trash anyway?} other {{trashName} is used in # projects. Move to trash anyway?}}": "{trashUsedIn, plural, one {{trashName} används i # projekt. Flytta till papperskorgen ändå?} other {{trashName} används i # projekt. Flytta till papperskorgen ändå?}}"
+  "{trashUsedIn, plural, one {{trashName} is used in # project. Move to trash anyway?} other {{trashName} is used in # projects. Move to trash anyway?}}": "{trashUsedIn, plural, one {{trashName} används i # projekt. Flytta till papperskorgen ändå?} other {{trashName} används i # projekt. Flytta till papperskorgen ändå?}}",
+  "Rewind in a live broadcast": "Spola tillbaka i livesändning",
+  "Speakers in the agenda": "Talare i dagordningen"
 }

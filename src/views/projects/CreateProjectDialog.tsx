@@ -96,7 +96,7 @@ export function CreateProjectDialog({ projects, onCancel, onCreate }: CreateProj
             {options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
             <option value={NONE}>{t`None (empty texts and default values)`}</option>
           </select>
-          <small>{t`Copies the message texts, the text placement, the Mux setting and the poster image. More choices: mark a project as a template in the project list's ⋯ menu.`}</small>
+          <small>{t`Copies all the player settings and the poster image. More choices: mark a project as a template in the project list's ⋯ menu.`}</small>
         </label>
       )}
       <label class="cp-field">

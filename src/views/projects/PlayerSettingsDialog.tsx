@@ -193,7 +193,7 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
       <div class="ps-cat" role="tabpanel" id="ps-cat-look" aria-labelledby="ps-cat-tab-look" hidden={category !== 'look'}>
       <section class="ps-section">
         <h3>{t`Layout from another project`}</h3>
-        <p class="ps-help">{t`Get texts, text placement, Mux setting and poster image from another project. They replace these settings, after confirmation.`}</p>
+        <p class="ps-help">{t`Get all the player settings and the poster image from another project. They replace these settings, after confirmation.`}</p>
         <div class="ps-poster-actions">
           <button class="btn btn-sm" type="button" onClick={() => setInheriting(true)}>
             {t`Get layout from project…`}

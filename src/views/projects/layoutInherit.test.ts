@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { defaultLayoutSource, describeLayoutValue, LAYOUT_FIELDS, layoutDiff, layoutOf, layoutSourceOptions } from './layoutInherit.ts'
 import type { LayoutFields } from './layoutInherit.ts'
 
-const base: LayoutFields = { beforeText: '', liveText: '', afterText: '', ondemandText: '', textPlacement: 'middle', muxEnabled: false, muxRespectDoNotTrack: false, posterUrl: null }
+const base: LayoutFields = { beforeText: '', liveText: '', afterText: '', ondemandText: '', textPlacement: 'middle', muxEnabled: false, muxRespectDoNotTrack: false, dvrEnabled: false, exclamationsAsSpeakers: false, liveOnly: false, posterUrl: null }
 
 test('källorna är senast skapade först, och projektet som ska få layouten utelämnas', () => {
   const projects = [
@@ -75,4 +75,11 @@ test('posterbilden räknas som layout: den ersätts när någon av projekten har
   assert.deepEqual(layoutDiff(withPoster, base).map((c) => [c.key, c.from, c.to]), [['posterUrl', 'Bild', 'Ingen bild']])
   assert.deepEqual(layoutDiff(withPoster, otherPoster).map((c) => [c.key, c.from, c.to]), [['posterUrl', 'Bild', 'Bild']])
   assert.deepEqual(layoutDiff(base, base), [])
+})
+
+test('alla spelarinställningar räknas till layouten: spola tillbaka, talare i dagordningen och endast live', () => {
+  const source = { ...base, dvrEnabled: true, exclamationsAsSpeakers: true, liveOnly: true }
+  assert.deepEqual(layoutDiff(base, source).map((change) => [change.key, change.from, change.to]), [
+    ['dvrEnabled', 'Av', 'På'], ['exclamationsAsSpeakers', 'Av', 'På'], ['liveOnly', 'Av', 'På'],
+  ])
 })

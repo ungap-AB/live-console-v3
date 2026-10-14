@@ -1332,7 +1332,7 @@ msgid "Copied ✓"
 msgstr ""
 
 #: src/views/projects/CreateProjectDialog.tsx
-msgid "Copies the message texts, the text placement, the Mux setting and the poster image. More choices: mark a project as a template in the project list's ⋯ menu."
+msgid "Copies all the player settings and the poster image. More choices: mark a project as a template in the project list's ⋯ menu."
 msgstr ""
 
 #: src/components/CopyField.tsx
@@ -2104,6 +2104,10 @@ msgstr ""
 msgid "Generating{percent}"
 msgstr ""
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Get all the player settings and the poster image from another project. They replace these settings, after confirmation."
+msgstr ""
+
 #: src/views/projects/InheritLayoutDialog.tsx
 msgid "Get anyway"
 msgstr ""
@@ -2122,10 +2126,6 @@ msgstr ""
 
 #: src/views/projects/OndemandView.tsx
 msgid "Get ready for on demand"
-msgstr ""
-
-#: src/views/projects/PlayerSettingsDialog.tsx
-msgid "Get texts, text placement, Mux setting and poster image from another project. They replace these settings, after confirmation."
 msgstr ""
 
 #: src/views/projects/projectMode.ts
@@ -2590,6 +2590,7 @@ msgstr ""
 msgid "Live HLS (TV, player)"
 msgstr ""
 
+#: src/views/projects/layoutInherit.ts
 #: src/views/projects/PlayerSettingsDialog.tsx
 #: src/views/projects/ProjectHeader.tsx
 #: src/views/projects/ProjectsView.tsx
@@ -3818,7 +3819,7 @@ msgid "replaced {replaced}"
 msgstr ""
 
 #: src/views/projects/InheritLayoutDialog.tsx
-msgid "Replaces the player's texts, text placement, Mux setting and poster image with a copy of the chosen project's."
+msgid "Replaces all the player settings and the poster image with a copy of the chosen project's."
 msgstr ""
 
 #: src/views/users/UsersView.tsx
@@ -3866,6 +3867,7 @@ msgstr ""
 msgid "Revoked by {detail}"
 msgstr ""
 
+#: src/views/projects/layoutInherit.ts
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Rewind in a live broadcast"
 msgstr ""
@@ -4260,6 +4262,7 @@ msgstr ""
 msgid "Speakers are played out directly from Meeting."
 msgstr ""
 
+#: src/views/projects/layoutInherit.ts
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Speakers in the agenda"
 msgstr ""
