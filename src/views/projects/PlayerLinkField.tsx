@@ -40,7 +40,10 @@ export function PlayerLinkField({ project: p, actions, label = true }: PlayerLin
 
   async function copyIframe() {
     setShowIframeMenu(false)
-    const iframe = `<iframe src="${p.playerUrl}" title="${p.name.replaceAll('"', '&quot;')}" allow="autoplay; fullscreen" allowfullscreen></iframe>`
+    // No inline style: the iframe fills the host's container, which sets the size. frameborder is obsolete but the only
+    // attribute that removes the border.
+    const title = p.name.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;')
+    const iframe = `<iframe src="${p.playerUrl}" title="${title}" width="100%" height="100%" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>`
     try {
       await navigator.clipboard.writeText(iframe)
       setIframeCopied(true)
