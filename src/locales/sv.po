@@ -5868,9 +5868,9 @@ msgstr "Du kan använda Spåra ändringar i Word. Alla spårade ändringar läse
 msgid "You have unsaved changes. Save or undo them first."
 msgstr "Du har osparade ändringar. Spara eller ångra dem först."
 
-#: src/app/App.tsx
-msgid "You were logged out after 2 hours without activity. Log in again and you will continue where you were."
-msgstr "Du loggades ut efter 2 timmar utan aktivitet. Logga in igen så fortsätter du där du var."
+#: src/app/LoginView.tsx
+msgid "You were logged out, please log in again"
+msgstr "Du har loggats ut, logga in igen"
 
 #: src/app/InactivityWarning.tsx
 msgid "You will be logged out in {countdown} because there has been no activity in the console for almost 2 hours."
@@ -5900,10 +5900,6 @@ msgstr "En egen undertextfil ersätter arbetsversionen (den gamla finns kvar i v
 #: src/app/CredentialLinkView.tsx
 msgid "Your personal PIN:"
 msgstr "Din personliga PIN-kod:"
-
-#: src/app/App.tsx
-msgid "Your session has expired. Log in again and you will continue where you were."
-msgstr "Din session har gått ut. Logga in igen så fortsätter du där du var."
 
 #: src/data/http/fetchJson.ts
 msgid "Your session has expired. Log in again."

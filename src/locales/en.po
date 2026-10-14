@@ -5868,9 +5868,9 @@ msgstr "You can use Track Changes in Word. All tracked changes are read as if yo
 msgid "You have unsaved changes. Save or undo them first."
 msgstr "You have unsaved changes. Save or undo them first."
 
-#: src/app/App.tsx
-msgid "You were logged out after 2 hours without activity. Log in again and you will continue where you were."
-msgstr "You were logged out after 2 hours without activity. Log in again and you will continue where you were."
+#: src/app/LoginView.tsx
+msgid "You were logged out, please log in again"
+msgstr "You were logged out, please log in again"
 
 #: src/app/InactivityWarning.tsx
 msgid "You will be logged out in {countdown} because there has been no activity in the console for almost 2 hours."
@@ -5900,10 +5900,6 @@ msgstr "Your own caption file replaces the working version (the old one remains 
 #: src/app/CredentialLinkView.tsx
 msgid "Your personal PIN:"
 msgstr "Your personal PIN:"
-
-#: src/app/App.tsx
-msgid "Your session has expired. Log in again and you will continue where you were."
-msgstr "Your session has expired. Log in again and you will continue where you were."
 
 #: src/data/http/fetchJson.ts
 msgid "Your session has expired. Log in again."

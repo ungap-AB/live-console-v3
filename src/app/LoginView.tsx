@@ -11,11 +11,11 @@ import './LoginView.css'
 interface LoginViewProps {
   onLogin: (user: CurrentUser) => void
   initialEmail?: string
-  /** Förklaring ovanför formuläret, t.ex. att sessionen gått ut (så det inte ser ut som ett fel). */
-  notice?: string
+  /** The operator was logged out (expired session or inactivity): the subtitle says so instead of the welcome. */
+  loggedOut?: boolean
 }
 
-export function LoginView({ onLogin, initialEmail = '', notice }: LoginViewProps) {
+export function LoginView({ onLogin, initialEmail = '', loggedOut = false }: LoginViewProps) {
   const [email, setEmail] = useState(initialEmail)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -53,12 +53,9 @@ export function LoginView({ onLogin, initialEmail = '', notice }: LoginViewProps
       <form class="login-card" onSubmit={submit}>
         <img class="login-logo theme-light-only" src={logoLightUrl} alt="ungap" />
         <img class="login-logo theme-dark-only" src={logoDarkUrl} alt="ungap" />
-        <p class="login-sub">{resetting ? t`Forgot your PIN?` : t`Welcome, please log in`}</p>
-        {notice && !resetting && (
-          <p class="login-note" role="status">
-            {notice}
-          </p>
-        )}
+        <p class="login-sub" role={loggedOut && !resetting ? 'status' : undefined}>
+          {resetting ? t`Forgot your PIN?` : loggedOut ? t`You were logged out, please log in again` : t`Welcome, please log in`}
+        </p>
         <label class="login-field">
           {t`Email`}
           <input

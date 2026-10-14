@@ -59,7 +59,7 @@ export function App() {
 
   // UNG-128: ett ogiltigt token märks först vid ett anrop. Då visas inloggningen med en förklaring; valt projekt och vy
   // ligger kvar i tillståndet och lagrat urval, så operatören hamnar där hen var efter ny inloggning.
-  const [sessionNotice, setSessionNotice] = useState('')
+  const [loggedOut, setLoggedOut] = useState(false)
   const loggingOut = useRef(false)
   useEffect(
     () =>
@@ -68,7 +68,7 @@ export function App() {
         setAuth((current) => {
           if (current.status !== 'authed') return current
           setLoginEmail(current.user.email)
-          setSessionNotice(t`Your session has expired. Log in again and you will continue where you were.`)
+          setLoggedOut(true)
           return { status: 'anon' }
         })
       }),
@@ -84,14 +84,14 @@ export function App() {
     client.auth.logout().finally(() => {
       loggingOut.current = false
       setLoginEmail(email)
-      setSessionNotice(t`You were logged out after 2 hours without activity. Log in again and you will continue where you were.`)
+      setLoggedOut(true)
       setAuth({ status: 'anon' })
     })
   })
 
   function login(user: CurrentUser) {
     applyAccountLanguage(user)
-    setSessionNotice('')
+    setLoggedOut(false)
     // Ingen markering i listan efter inloggning: det senast öppnade gällde förra inloggningen (överlever annars en utloggning).
     setLastOpenedProjectId(null)
     setActiveProjectId(readStoredSelection('project', user.domain.id))
@@ -103,7 +103,7 @@ export function App() {
     loggingOut.current = true
     client.auth.logout().finally(() => {
       loggingOut.current = false
-      setSessionNotice('')
+      setLoggedOut(false)
       setActiveProjectId(null)
       setProjectScreen('livesandning')
       setAuth({ status: 'anon' })
@@ -217,7 +217,7 @@ export function App() {
     )
   }
   if (auth.status === 'loading') return <div class="login-screen">{t`Loading…`}</div>
-  if (auth.status === 'anon') return <LoginView onLogin={login} initialEmail={loginEmail ?? ''} notice={sessionNotice} />
+  if (auth.status === 'anon') return <LoginView onLogin={login} initialEmail={loginEmail ?? ''} loggedOut={loggedOut} />
 
   // UNG-186: projektraden i menyn har bara "+ Nytt", och den syns alltid. Från en annan sida går den först till Projekt-vyn och öppnar
   // sedan skapa-dialogen (tillståndet ligger här, så dialogen följer med när vyn monteras). Menyvalet "Projekt" går till listan med det
