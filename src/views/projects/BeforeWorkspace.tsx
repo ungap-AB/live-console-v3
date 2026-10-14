@@ -111,11 +111,11 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
     )
   }
 
-  // Efter prod-provet 2026-10-13: förberedelserna är guidade steg (flödesknappar) som i After/Ondemand. Raden gör huvudåtgärden
-  // (koppla listan, skapa ingest eller visa ingest-info); övriga åtgärder ligger i ⋯-menyn.
-  function preparationStep(n: number, label: string, title: string, value: string, ready: boolean, onClick: () => void, menu: ComponentChildren) {
+  // Efter prod-provet 2026-10-13: förberedelserna är guidade steg (flödesknappar) som i After/Ondemand. Klick på raden öppnar
+  // samma ⋯-meny som knappen till höger (prod 2026-10-14), så alla val för steget nås från raden.
+  function preparationStep(n: number, label: string, title: string, value: string, ready: boolean, menu: ComponentChildren) {
     const status = statusValue(title, value)
-    return <FlowStep n={n} label={label} status={status} done={ready} title={t`${title}: ${status}`} menu={menu} onClick={onClick} />
+    return <FlowStep n={n} label={label} status={status} done={ready} title={t`${title}: ${status}`} menu={menu} onClick={() => setOpenMenu(title)} />
   }
 
   return (
@@ -161,16 +161,16 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
     >
       <div class="od-flow">
         <ol class="od-flow-steps" aria-label={t`Preparations`}>
-          {preparationStep(1, p.agendaId ? t`Agenda` : t`Link agenda`, t`Agenda`, p.agendaId ? withItems(linkedResourceLabel(agendaResource.data), agendaResource.data?.items.length) : t`Not linked`, !!p.agendaId, () => setPicking('agenda'), actionMenu(t`Agenda`, [
+          {preparationStep(1, p.agendaId ? t`Agenda` : t`Link agenda`, t`Agenda`, p.agendaId ? withItems(linkedResourceLabel(agendaResource.data), agendaResource.data?.items.length) : t`Not linked`, !!p.agendaId, actionMenu(t`Agenda`, [
             { label: t`Link…`, onClick: () => { setOpenMenu(null); setPicking('agenda') } },
             { label: t`Link to Meeting...`, onClick: () => { setOpenMenu(null); setShowMeeting(true) } },
             { label: t`Do not use`, onClick: () => { void actions.setAgenda(null); markNotUsed(t`Agenda`) } },
           ]))}
-          {preparationStep(2, p.namelistId ? t`Name list` : t`Link name list`, t`Name list`, p.namelistId ? withNames(linkedResourceLabel(nameListResource.data), nameListResource.data?.people.length) : t`Not linked`, !!p.namelistId, () => setPicking('namelist'), actionMenu(t`Name list`, [
+          {preparationStep(2, p.namelistId ? t`Name list` : t`Link name list`, t`Name list`, p.namelistId ? withNames(linkedResourceLabel(nameListResource.data), nameListResource.data?.people.length) : t`Not linked`, !!p.namelistId, actionMenu(t`Name list`, [
             { label: t`Link…`, onClick: () => { setOpenMenu(null); setPicking('namelist') } },
             { label: t`Do not use`, onClick: () => { actions.setNameList(null); markNotUsed(t`Name list`) } },
           ]))}
-          {preparationStep(3, hasIngest ? t`Ingest` : t`Create ingest`, t`Ingest`, receivingSignal ? t`Signal OK` : hasIngest ? t`No signal` : t`Not created`, hasIngest, () => (hasIngest ? setPlayerSettings('ingest') : void createIngest()), actionMenu(t`Ingest`, [
+          {preparationStep(3, hasIngest ? t`Ingest` : t`Create ingest`, t`Ingest`, receivingSignal ? t`Signal OK` : hasIngest ? t`No signal` : t`Not created`, hasIngest, actionMenu(t`Ingest`, [
             ...(!hasIngest ? [{ label: t`Create`, onClick: () => void createIngest() }] : []),
             ...(hasIngest ? [
               { label: t`Show ingest info…`, onClick: () => { setOpenMenu(null); setPlayerSettings('ingest') } },

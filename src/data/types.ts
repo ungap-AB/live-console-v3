@@ -7,6 +7,8 @@ export interface DomainRef {
   id: string
   host: string
   org: string
+  /** Set on the logged-in user's domain: the server has the domain in Meeting:Domains, so projects can be linked to Meeting. */
+  meetingEnabled?: boolean
 }
 
 export interface Domain extends DomainRef {

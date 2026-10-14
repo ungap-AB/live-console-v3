@@ -41,12 +41,18 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  container: project-list / inline-size;
 }
 
-/* Sidan står still; rubrikraden ligger fast och bara raderna under den skrollar. */
+/* Sidan står still; rubrikraden ligger fast och bara raderna under den skrollar.
+   One grid for the whole list: the head and every row are subgrids, so the columns line up and size to their content.
+   The name column always stays; when the list gets narrow, date, duration and captions are dropped in that order. */
 .project-list {
-  display: flex;
-  flex-direction: column;
+  --project-list-columns: minmax(160px, 1fr) auto auto auto auto auto auto;
+  display: grid;
+  grid-template-columns: var(--project-list-columns);
+  grid-template-rows: auto minmax(0, 1fr);
+  column-gap: 16px;
   flex: 0 1 auto;
   min-height: 0;
   overflow: hidden;
@@ -60,12 +66,33 @@
   background: none;
 }
 
+.project-list > * {
+  grid-column: 1 / -1;
+}
+
+.project-list-head,
+.project-list-rows,
+.project-row {
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: center;
+}
+
 .project-list-head,
 .project-row {
+  padding: 0 6px 0 14px;
+}
+
+.project-list-head > *,
+.project-row > * {
+  white-space: nowrap;
+}
+
+.project-list .col-name {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 0 6px 0 14px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .project-list-head {
@@ -78,10 +105,6 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-3);
-}
-
-.project-list-head .col-name {
-  flex: 1 1 0;
 }
 
 .project-list .project-list-head span {
@@ -130,7 +153,7 @@
 }
 
 .project-row-name {
-  flex: 1 1 0;
+  flex: 0 1 auto;
   min-width: 0;
   border: 0;
   background: none;
@@ -179,40 +202,27 @@
 }
 
 .project-list .col-date {
-  width: 70px;
-  flex: none;
   font-size: 13px;
   color: var(--ink-2);
 }
 
 .project-list .col-duration {
-  width: 76px; /* hh:mm:ss, tabellsiffror så att kolumnen linjerar */
-  flex: none;
-  text-align: right;
+  text-align: right; /* hh:mm:ss, tabellsiffror så att kolumnen linjerar */
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   color: var(--ink-2);
 }
 
 .project-list .col-mode {
-  width: 150px;
-  flex: none;
   display: flex;
   align-items: center;
 }
 
 .project-list .col-visibility {
-  width: 110px;
-  flex: none;
   display: flex;
   align-items: center;
   gap: 7px;
   font-size: 13px;
-}
-
-.project-list .col-captions {
-  width: 130px;
-  flex: none;
 }
 
 .project-list .caption-list-button {
@@ -240,8 +250,7 @@
 }
 
 .project-list .col-actions {
-  width: 44px; /* bara ...-menyn (UNG-188) */
-  flex: none;
+  min-width: 32px; /* bara ...-menyn (UNG-188) */
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -297,11 +306,32 @@
   color: var(--ink-2);
 }
 
-@media (max-width: 900px) {
-  .project-list .col-date,
-  .project-list-head .col-date,
-  .project-list .col-duration,
-  .project-list-head .col-duration {
+@container project-list (max-width: 840px) {
+  .project-list {
+    --project-list-columns: minmax(160px, 1fr) auto auto auto auto auto;
+  }
+
+  .project-list .col-date {
+    display: none;
+  }
+}
+
+@container project-list (max-width: 760px) {
+  .project-list {
+    --project-list-columns: minmax(160px, 1fr) auto auto auto auto;
+  }
+
+  .project-list .col-duration {
+    display: none;
+  }
+}
+
+@container project-list (max-width: 660px) {
+  .project-list {
+    --project-list-columns: minmax(160px, 1fr) auto auto auto;
+  }
+
+  .project-list .col-captions {
     display: none;
   }
 }

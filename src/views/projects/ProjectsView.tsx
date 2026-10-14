@@ -123,6 +123,8 @@ function captionsListable(project: Project): boolean {
 
 interface ProjectsViewProps {
   meetingDomain: string
+  /** The domain can link projects to Meeting (from the server), so the create dialog offers "Link to Meeting". */
+  meetingEnabled: boolean
   selectionScope: string
   selectedId: string | null
   /** Projektet som senast var öppet (UNG-183): markeras och scrollas fram när listan visas. */
@@ -144,6 +146,7 @@ function attachFailedText(failed: ('agenda' | 'namelist')[]): string {
 
 export function ProjectsView({
   meetingDomain,
+  meetingEnabled,
   selectionScope,
   selectedId,
   lastOpenedId = null,
@@ -657,6 +660,7 @@ export function ProjectsView({
                 <ul class="project-list-rows" ref={listRef}>
                   {sortedProjects.map((p) => (
                     <li key={p.id} class={`project-row${p.id === lastOpenedId ? ' is-last-opened' : ''}`} data-project-id={p.id} aria-current={p.id === lastOpenedId ? 'true' : undefined}>
+                      <span class="col-name">
                       <button
                         class="project-row-name"
                         type="button"
@@ -683,6 +687,7 @@ export function ProjectsView({
                           </button>
                         )
                       })()}
+                      </span>
                       <span class="col-mode">
                         <span class={`mode-chip mode-${MODE_TONE[p.publicMode]}`}>{MODE_LABEL[p.publicMode]}</span>
                         {p.liveOnly && <span class="liveonly-chip" title={t`Marked as live only`}>{t`Live only`}</span>}
@@ -757,7 +762,7 @@ export function ProjectsView({
       )}
 
       {creating && (
-        <CreateProjectDialog projects={projects} onCancel={() => onCreatingChange(false)} onCreate={(name, source, lists) => void createProject(name, source, lists)} />
+        <CreateProjectDialog projects={projects} meetingEnabled={meetingEnabled} onCancel={() => onCreatingChange(false)} onCreate={(name, source, lists) => void createProject(name, source, lists)} />
       )}
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}

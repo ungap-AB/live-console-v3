@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { agendaOptions, attachPlan, chooseList, defaultChoice, filterLists, isMeetingCustomer, latestUnusedAgenda, MEETING, nameListOptions, NONE, previousNameList } from './createProjectLists.ts'
+import { agendaOptions, attachPlan, chooseList, defaultChoice, filterLists, latestUnusedAgenda, MEETING, nameListOptions, NONE, previousNameList } from './createProjectLists.ts'
 
 const agenda = (id: string, usedInProjects: number, changedAt: string, isTemplate = false) => ({ id, name: `Dagordning ${id}`, usedInProjects, changedAt, isTemplate })
 
@@ -31,8 +31,6 @@ test('namnlista: samma lista som föregående projekt om den finns kvar, annars 
 })
 
 test('Meeting-kunder: Koppla till Meeting ligger först och är förvald, i båda listorna', () => {
-  assert.equal(isMeetingCustomer([{ meetingBindingId: null }, { meetingBindingId: 'b1' }]), true)
-  assert.equal(isMeetingCustomer([{ meetingBindingId: null }, {}]), false)
   const agendas = agendaOptions({ agendas: [agenda('c', 0, '2026-03-01T00:00:00Z')], meeting: true })
   assert.deepEqual(agendas.map((o) => o.id), [MEETING, 'c', NONE])
   assert.equal(defaultChoice(agendas), MEETING)

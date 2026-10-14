@@ -367,6 +367,7 @@ export interface ServerDomainRef {
   id: string
   host: string
   org: string
+  meetingEnabled?: boolean
 }
 
 export interface ServerCurrentUser {

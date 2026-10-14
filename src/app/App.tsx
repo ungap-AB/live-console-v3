@@ -245,6 +245,7 @@ export function App() {
       {routeAllowed && route === 'projects' && (
         <ProjectsView
           meetingDomain={auth.user.domain.host}
+          meetingEnabled={auth.user.domain.meetingEnabled ?? false}
           selectionScope={auth.user.domain.id}
           selectedId={activeProjectId}
           lastOpenedId={lastOpenedProjectId}

@@ -4,7 +4,7 @@ import { client } from '../../data'
 import { Modal } from '../../components/Modal'
 import { useResource } from '../../app/useResource'
 import { defaultLayoutSource, layoutSourceOptions } from './layoutInherit'
-import { agendaOptions, chooseList, defaultChoice, isMeetingCustomer, nameListOptions } from './createProjectLists'
+import { agendaOptions, chooseList, defaultChoice, nameListOptions } from './createProjectLists'
 import { ListPickerDialog } from './ListPickerDialog'
 import type { ListChoices } from './createProjectLists'
 import type { Project } from '../../data/types'
@@ -12,7 +12,9 @@ import './CreateProjectDialog.css'
 
 interface CreateProjectDialogProps {
   /** The projects in the domain, for "Start from layout" and to know which name list the previous project has. */
-  projects: readonly Pick<Project, 'id' | 'name' | 'createdAt' | 'namelistId' | 'meetingBindingId' | 'isLayoutTemplate'>[]
+  projects: readonly Pick<Project, 'id' | 'name' | 'createdAt' | 'namelistId' | 'isLayoutTemplate'>[]
+  /** The domain can link projects to Meeting: "Link to Meeting" is offered and preselected. */
+  meetingEnabled: boolean
   onCancel: () => void
   onCreate: (name: string, layoutSourceProjectId: string | null, lists: ListChoices) => void
 }
@@ -21,10 +23,10 @@ const NONE = ''
 
 // UNG-180/189: create a project. Name, choice of layout source (the most recently created project preselected) and, without a gate, agenda
 // and name list: the most recently created unused agenda and the previous project's name list are suggested, or None (link later). Meeting
-// customers get "Link to Meeting" preselected. Creating a new list is not offered here: that is done in the project view or under Agendas
+// domains (the server says so) get "Link to Meeting" preselected. Creating a new list is not offered here: that is done in the project view or under Agendas
 // and Name lists. UNG-287: the layout is offered from the latest project and the templates. A list other than the suggestion is chosen in a
 // picker dialog (Choose another…).
-export function CreateProjectDialog({ projects, onCancel, onCreate }: CreateProjectDialogProps) {
+export function CreateProjectDialog({ projects, meetingEnabled, onCancel, onCreate }: CreateProjectDialogProps) {
   const options = layoutSourceOptions(projects)
   const [name, setName] = useState('')
   const [source, setSource] = useState<string>(defaultLayoutSource(options) ?? NONE)
@@ -36,7 +38,7 @@ export function CreateProjectDialog({ projects, onCancel, onCreate }: CreateProj
   const [picking, setPicking] = useState<keyof ListChoices | null>(null)
   const trimmed = name.trim()
 
-  const meeting = isMeetingCustomer(projects)
+  const meeting = meetingEnabled
   const sourceProject = projects.find((project) => project.id === source)
   const agendaChoices = agendaOptions({ agendas: agendas.data ?? [], meeting, picked: picked.agenda })
   const nameListChoices = nameListOptions({ source: sourceProject, nameLists: nameLists.data ?? [], meeting, picked: picked.namelist })

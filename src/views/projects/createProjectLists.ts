@@ -33,12 +33,6 @@ interface ProjectLike {
   id: string
   name: string
   namelistId?: string | null
-  meetingBindingId?: string | null
-}
-
-/** A Meeting customer: one of the domain's projects is already linked to a Meeting meeting. */
-export function isMeetingCustomer(projects: readonly Pick<ProjectLike, 'meetingBindingId'>[]): boolean {
-  return projects.some((project) => Boolean(project.meetingBindingId))
 }
 
 /** The most recently created (most recently changed, until agendas get a created time) unused agenda. Templates do not count. */
