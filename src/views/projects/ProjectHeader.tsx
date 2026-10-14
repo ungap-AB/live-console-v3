@@ -2,6 +2,7 @@ import { t } from '@lingui/core/macro'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
 import { ConfirmModal } from '../../components/ConfirmModal'
+import { RenameModal } from '../../components/RenameModal'
 import { Clock } from '../../components/Clock'
 import type { Channel, ChannelHealth, Project } from '../../data/types'
 import type { ProjectActions } from './actions'
@@ -33,14 +34,12 @@ export function signalSince(p: Project, health: ChannelHealth | null): string | 
 
 export function ProjectHeader({ project: p, actions, onBack, channel = null, health = null, showIngestInfo, onShowIngestInfoChange, onIngestInfo, onCreateIngest }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
-  const [titleDraft, setTitleDraft] = useState(p.name)
   const [confirmTeardown, setConfirmTeardown] = useState(false)
   const [confirmCreate, setConfirmCreate] = useState(false)
   const [creating, setCreating] = useState(false)
   const wasStoppedInAfter = useRef(false)
 
-  async function saveTitle() {
-    const name = titleDraft.trim()
+  async function saveTitle(name: string) {
     setEditingTitle(false)
     if (name && name !== p.name) await actions.rename(name)
   }
@@ -92,47 +91,14 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
         <button class="btn" type="button" aria-label={t`Projects`} title={t`Projects`} onClick={onBack}>
           <Icon name="arrow_back" size={18} />
         </button>
-        {editingTitle ? (
-          <form
-            class="pv-title-form"
-            onSubmit={(e) => {
-              e.preventDefault()
-              void saveTitle()
-            }}
-          >
-            <input
-              class="pv-title-input"
-              aria-label={t`Title`}
-              value={titleDraft}
-              autoFocus
-              onInput={(e) => setTitleDraft((e.target as HTMLInputElement).value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') setEditingTitle(false)
-              }}
-            />
-            <button class="btn btn-primary" type="submit">
-              {t`Save`}
-            </button>
-            <button class="btn" type="button" onClick={() => setEditingTitle(false)}>
-              {t`Cancel`}
-            </button>
-          </form>
-        ) : (
-          <>
-            <h1 class="pv-title" title={p.name}>{p.name}</h1>
-            {p.liveOnly && <span class="pv-liveonly" title={t`Marked as live only. It changes no behavior, and the marker is removed in the player settings.`}>{t`Live only`}</span>}
-            <button
-              class="pv-icon-btn"
-              type="button"
-              aria-label={t`Edit title`}
-              onClick={() => {
-                setTitleDraft(p.name)
-                setEditingTitle(true)
-              }}
-            >
-              <Icon name="edit" size={18} />
-            </button>
-          </>
+        <h1 class="pv-title" title={p.name}>{p.name}</h1>
+        {p.liveOnly && <span class="pv-liveonly" title={t`Marked as live only. It changes no behavior, and the marker is removed in the player settings.`}>{t`Live only`}</span>}
+        <button class="pv-icon-btn" type="button" aria-label={t`Edit title`} onClick={() => setEditingTitle(true)}>
+          <Icon name="edit" size={18} />
+        </button>
+        {/* UNG-308: the title is edited in a dialog; inline it got too cramped with long titles. */}
+        {editingTitle && (
+          <RenameModal title={t`Edit title`} initialValue={p.name} onCancel={() => setEditingTitle(false)} onSave={(name) => void saveTitle(name)} />
         )}
         <span class="spacer" />
         <EncoderStatusChip status={encoderStatus} />

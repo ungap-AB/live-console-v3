@@ -858,7 +858,6 @@ msgstr "Kan redigeras när inspelningen är klar"
 #: src/views/projects/OndemandView.tsx
 #: src/views/projects/PauseButton.tsx
 #: src/views/projects/PlayerSettingsDialog.tsx
-#: src/views/projects/ProjectHeader.tsx
 #: src/views/projects/UploadPanel.tsx
 #: src/views/projects/VttImportDialog.tsx
 #: src/views/projects/WordImportDialog.tsx
@@ -3902,7 +3901,6 @@ msgstr "Samma lista som {project}: {list}"
 #: src/components/RenameModal.tsx
 #: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/PlayerSettingsDialog.tsx
-#: src/views/projects/ProjectHeader.tsx
 #: src/views/users/UsersView.tsx
 msgid "Save"
 msgstr "Spara"
@@ -5476,10 +5474,6 @@ msgstr "Klockan / tid sedan signalen startade"
 #: src/views/projects/CaptionEditor.tsx
 msgid "Time here · {0}"
 msgstr "Tid här · {0}"
-
-#: src/views/projects/ProjectHeader.tsx
-msgid "Title"
-msgstr "Rubrik"
 
 #: src/app/CredentialLinkView.tsx
 msgid "To login"

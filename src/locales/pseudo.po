@@ -854,7 +854,6 @@ msgstr ""
 #: src/views/projects/OndemandView.tsx
 #: src/views/projects/PauseButton.tsx
 #: src/views/projects/PlayerSettingsDialog.tsx
-#: src/views/projects/ProjectHeader.tsx
 #: src/views/projects/UploadPanel.tsx
 #: src/views/projects/VttImportDialog.tsx
 #: src/views/projects/WordImportDialog.tsx
@@ -3896,7 +3895,6 @@ msgstr ""
 #: src/components/RenameModal.tsx
 #: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/PlayerSettingsDialog.tsx
-#: src/views/projects/ProjectHeader.tsx
 #: src/views/users/UsersView.tsx
 msgid "Save"
 msgstr ""
@@ -5469,10 +5467,6 @@ msgstr ""
 #. placeholder {0}: formatHms(Math.round(currentTime))
 #: src/views/projects/CaptionEditor.tsx
 msgid "Time here · {0}"
-msgstr ""
-
-#: src/views/projects/ProjectHeader.tsx
-msgid "Title"
 msgstr ""
 
 #: src/app/CredentialLinkView.tsx

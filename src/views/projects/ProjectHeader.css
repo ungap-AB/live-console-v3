@@ -92,20 +92,7 @@
   white-space: nowrap;
 }
 
-.pv-title-form {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 4 1 240px;
-  min-width: 0;
-}
 
-.pv-title-input {
-  flex: 1;
-  min-width: 0;
-  font-size: 18px;
-  font-weight: 600;
-}
 
 .pv-icon-btn {
   display: inline-grid;
