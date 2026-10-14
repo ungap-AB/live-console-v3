@@ -11,6 +11,7 @@ jobs:
     environment: test
     env:
       VITE_API_BASE: ${{ vars.VITE_API_BASE }}
+      VITE_INACTIVITY_MINUTES: ${{ vars.VITE_INACTIVITY_MINUTES }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4

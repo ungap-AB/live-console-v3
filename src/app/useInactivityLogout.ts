@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { renewAuthTokenIfDue, setRenewalGuard } from '../data/http/fetchJson'
-import { inactivityPhase, type InactivityPhase } from '../data/http/sessionLogic'
+import { INACTIVITY_LIMIT_MS, inactivityPhase, type InactivityPhase } from '../data/http/sessionLogic'
 import { lastActivity, markActivity } from './activity'
+
+// A shorter limit for trying the warning in test (GitHub variable VITE_INACTIVITY_MINUTES in the test environment only).
+const configuredMinutes = Number(import.meta.env.VITE_INACTIVITY_MINUTES)
+const LIMIT_MS = configuredMinutes > 0 ? configuredMinutes * 60_000 : INACTIVITY_LIMIT_MS
 
 const ACTIVITY_EVENTS = ['keydown', 'pointerdown', 'pointermove', 'wheel', 'touchstart'] as const
 // Every second, so the warning can count down; hidden tabs are throttled by the browser, which is fine.
@@ -23,7 +27,7 @@ export function useInactivityLogout(enabled: boolean, onExpired: () => void): In
       return
     }
     markActivity()
-    const current = () => inactivityPhase(lastActivity(), Date.now())
+    const current = () => inactivityPhase(lastActivity(), Date.now(), LIMIT_MS)
     setRenewalGuard(() => current().phase !== 'expired')
 
     let expired = false
