@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { client } from '../../data'
+import { holdActivity, markActivity } from '../../app/activity'
 import type { ForkResult, Project } from '../../data/types'
 import type { ProjectActions } from './actions'
 import { BeforeWorkspace } from './BeforeWorkspace'
 import { LiveWorkspace } from './LiveWorkspace'
-import { ProjectHeader } from './ProjectHeader'
+import { ProjectHeader, signalSince } from './ProjectHeader'
 import { usePlayoutAddress } from './PlayoutOverlay'
 import { PlayoutWorkOverlay } from './PlayoutWorkOverlay'
 import { useLiveChannel } from './useLiveChannel'
@@ -50,6 +51,18 @@ export function Livesandning({ project: p, actions, meetingDomain, onBack, onFor
       window.clearInterval(interval)
     }
   }, [p.id])
+
+  // UNG-312: the open project's broadcast counts as activity (no logout for inactivity in the middle of it): Live with a
+  // signal, and new chapters from Meeting or the playout. The polling above does not count by itself.
+  const broadcasting = signalSince(p, live.health) !== null
+  useEffect(() => (broadcasting ? holdActivity() : undefined), [broadcasting])
+  const latestChapterAt = (p.playout?.timeline ?? []).reduce<string | null>((latest, event) => (latest === null || event.occurredAt > latest ? event.occurredAt : latest), null)
+  const seenChapterAt = useRef(latestChapterAt)
+  useEffect(() => {
+    if (latestChapterAt === seenChapterAt.current) return
+    seenChapterAt.current = latestChapterAt
+    if (latestChapterAt) markActivity()
+  }, [latestChapterAt])
 
   // After/Ondemand hör till Ondemand-vyn; vyn byts av ProjectsView när läget ändrats.
   if (p.publicMode !== 'before' && p.publicMode !== 'live') return null

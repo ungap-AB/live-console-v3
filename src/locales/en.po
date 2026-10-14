@@ -726,6 +726,10 @@ msgstr "Approve or ignore the uploaded video first."
 msgid "Approve uploaded video"
 msgstr "Approve uploaded video"
 
+#: src/app/InactivityWarning.tsx
+msgid "Are you still there?"
+msgstr "Are you still there?"
+
 #: src/app/SharedDownloadsView.tsx
 msgid "Ask the sender to share the files again."
 msgstr "Ask the sender to share the files again."
@@ -4342,6 +4346,10 @@ msgstr "Starting…"
 msgid "Status"
 msgstr "Status"
 
+#: src/app/InactivityWarning.tsx
+msgid "Stay logged in"
+msgstr "Stay logged in"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Stop the encoder to publish on demand."
 msgstr "Stop the encoder to publish on demand."
@@ -5856,6 +5864,14 @@ msgstr "You can use Track Changes in Word. All tracked changes are read as if yo
 #: src/views/projects/WordImportDialog.tsx
 msgid "You have unsaved changes. Save or undo them first."
 msgstr "You have unsaved changes. Save or undo them first."
+
+#: src/app/App.tsx
+msgid "You were logged out after 2 hours without activity. Log in again and you will continue where you were."
+msgstr "You were logged out after 2 hours without activity. Log in again and you will continue where you were."
+
+#: src/app/InactivityWarning.tsx
+msgid "You will be logged out in {countdown} because there has been no activity in the console for almost 2 hours."
+msgstr "You will be logged out in {countdown} because there has been no activity in the console for almost 2 hours."
 
 #: src/app/CredentialLinkView.tsx
 msgid "Your account is activated"

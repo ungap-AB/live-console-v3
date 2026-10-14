@@ -726,6 +726,10 @@ msgstr "Godkänn eller ignorera den uppladdade videon först."
 msgid "Approve uploaded video"
 msgstr "Godkänn uppladdad video"
 
+#: src/app/InactivityWarning.tsx
+msgid "Are you still there?"
+msgstr "Är du kvar?"
+
 #: src/app/SharedDownloadsView.tsx
 msgid "Ask the sender to share the files again."
 msgstr "Be avsändaren att dela filerna på nytt."
@@ -4342,6 +4346,10 @@ msgstr "Startar…"
 msgid "Status"
 msgstr "Status"
 
+#: src/app/InactivityWarning.tsx
+msgid "Stay logged in"
+msgstr "Fortsätt vara inloggad"
+
 #: src/views/projects/OndemandView.tsx
 msgid "Stop the encoder to publish on demand."
 msgstr "Stoppa enkodern för att publicera ondemand."
@@ -5856,6 +5864,14 @@ msgstr "Du kan använda Spåra ändringar i Word. Alla spårade ändringar läse
 #: src/views/projects/WordImportDialog.tsx
 msgid "You have unsaved changes. Save or undo them first."
 msgstr "Du har osparade ändringar. Spara eller ångra dem först."
+
+#: src/app/App.tsx
+msgid "You were logged out after 2 hours without activity. Log in again and you will continue where you were."
+msgstr "Du loggades ut efter 2 timmar utan aktivitet. Logga in igen så fortsätter du där du var."
+
+#: src/app/InactivityWarning.tsx
+msgid "You will be logged out in {countdown} because there has been no activity in the console for almost 2 hours."
+msgstr "Du loggas ut om {countdown} eftersom inget har hänt i konsolen på snart 2 timmar."
 
 #: src/app/CredentialLinkView.tsx
 msgid "Your account is activated"

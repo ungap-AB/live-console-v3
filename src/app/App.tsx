@@ -10,6 +10,8 @@ import { Shell } from './Shell'
 import { CredentialLinkView } from './CredentialLinkView'
 import { SharedDownloadsView } from './SharedDownloadsView'
 import { LoginView } from './LoginView'
+import { InactivityWarning } from './InactivityWarning'
+import { useInactivityLogout } from './useInactivityLogout'
 import { useUiLocale } from './useUiLocale'
 import { hasLanguageOverride, switchLanguage } from '../i18n'
 import { ProjectsView, parseProjectScreen, type ProjectScreen } from '../views/projects/ProjectsView'
@@ -42,7 +44,7 @@ export function App() {
   const [auth, setAuth] = useState<AuthState>({ status: 'loading' })
 
   // Försök återuppta en aktiv session — misslyckas tyst till anon om ingen
-  // giltig token finns i minnet eller sessionen gått ut.
+  // giltig token finns i fliklagringen (UNG-312) eller sessionen gått ut.
   useEffect(() => {
     client.auth.me().then(
       (user) => {
@@ -72,6 +74,20 @@ export function App() {
       }),
     [],
   )
+
+  // UNG-312: logged out after 2 h without activity. Like an expired session (UNG-128) the selected project and view are
+  // kept, so the operator continues where they were after logging in again.
+  const inactivity = useInactivityLogout(auth.status === 'authed', () => {
+    if (auth.status !== 'authed') return
+    const email = auth.user.email
+    loggingOut.current = true
+    client.auth.logout().finally(() => {
+      loggingOut.current = false
+      setLoginEmail(email)
+      setSessionNotice(t`You were logged out after 2 hours without activity. Log in again and you will continue where you were.`)
+      setAuth({ status: 'anon' })
+    })
+  })
 
   function login(user: CurrentUser) {
     applyAccountLanguage(user)
@@ -262,6 +278,7 @@ export function App() {
         <UsersView currentDomainId={auth.user.domain.id} canManageDomains={isRootAdmin} />
       )}
       </Fragment>
+      {inactivity.phase === 'warning' && <InactivityWarning remainingMs={inactivity.remainingMs} />}
     </Shell>
     </IsRootAdminContext.Provider>
   )

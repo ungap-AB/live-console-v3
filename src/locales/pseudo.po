@@ -722,6 +722,10 @@ msgstr ""
 msgid "Approve uploaded video"
 msgstr ""
 
+#: src/app/InactivityWarning.tsx
+msgid "Are you still there?"
+msgstr ""
+
 #: src/app/SharedDownloadsView.tsx
 msgid "Ask the sender to share the files again."
 msgstr ""
@@ -4336,6 +4340,10 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
+#: src/app/InactivityWarning.tsx
+msgid "Stay logged in"
+msgstr ""
+
 #: src/views/projects/OndemandView.tsx
 msgid "Stop the encoder to publish on demand."
 msgstr ""
@@ -5849,6 +5857,14 @@ msgstr ""
 
 #: src/views/projects/WordImportDialog.tsx
 msgid "You have unsaved changes. Save or undo them first."
+msgstr ""
+
+#: src/app/App.tsx
+msgid "You were logged out after 2 hours without activity. Log in again and you will continue where you were."
+msgstr ""
+
+#: src/app/InactivityWarning.tsx
+msgid "You will be logged out in {countdown} because there has been no activity in the console for almost 2 hours."
 msgstr ""
 
 #: src/app/CredentialLinkView.tsx
