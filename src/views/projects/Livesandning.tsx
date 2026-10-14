@@ -29,6 +29,12 @@ export function Livesandning({ project: p, actions, meetingDomain, onBack, onFor
   // Rubrikens Ingest info-knapp: räknaren ökar vid varje klick och arbetsvyn öppnar spelarinställningarnas flik Ingest.
   const [ingestInfoRequest, setIngestInfoRequest] = useState(0)
 
+  // UNG-305: an ingest can also be created in Live (header button and the Ingest tab of the player settings).
+  async function createIngest() {
+    await actions.createChannel()
+    await live.refresh()
+  }
+
   // Samma pollning som Playout: håller utspelningsläget i synk mellan operatörer.
   useEffect(() => {
     let cancelled = false
@@ -58,6 +64,7 @@ export function Livesandning({ project: p, actions, meetingDomain, onBack, onFor
       showIngestInfo={showIngestInfo}
       onShowIngestInfoChange={setShowIngestInfo}
       onIngestInfo={() => setIngestInfoRequest((count) => count + 1)}
+      onCreateIngest={p.publicMode === 'live' ? createIngest : undefined}
     />
   )
 
@@ -90,6 +97,7 @@ export function Livesandning({ project: p, actions, meetingDomain, onBack, onFor
       streamKey={live.streamKey}
       onForked={onForked}
       ingestInfoRequest={ingestInfoRequest}
+      onCreateIngest={createIngest}
     />
   )
 

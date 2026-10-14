@@ -35,8 +35,8 @@ interface PlayerSettingsDialogProps {
   actions: ProjectActions
   /** Kanalens live-HLS-adress, när projektet har en ingest. */
   liveHlsUrl?: string | null
-  /** Ingesten (fliken Ingest): kanalen, stream key och rivningen. Saknas den säger fliken att ingen ingest finns. */
-  ingest?: { channel: Channel; streamKey: string | null; onTeardown: () => Promise<void> | void } | null
+  /** The ingest (Ingest tab): channel, stream key, creating and tearing down (UNG-305). Without a channel the tab offers Create ingest when onCreate is given. */
+  ingest?: { channel: Channel | null; streamKey: string | null; onCreate?: () => Promise<void>; onTeardown: () => Promise<void> | void } | null
   /** Fliken som dialogen öppnas på (knappen Ingest info öppnar Ingest). */
   initialCategory?: PlayerSettingsCategory
   onClose: () => void
@@ -58,6 +58,17 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
   const [posterRemoved, setPosterRemoved] = useState(false)
   const [posterError, setPosterError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [creatingIngest, setCreatingIngest] = useState(false)
+
+  async function createIngest() {
+    if (!ingest?.onCreate) return
+    setCreatingIngest(true)
+    try {
+      await ingest.onCreate()
+    } finally {
+      setCreatingIngest(false)
+    }
+  }
   // UNG-180: hämta layouten från ett annat projekt. Efteråt är dialogens lokala värden inaktuella, så den stängs.
   const [inheriting, setInheriting] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
@@ -162,9 +173,20 @@ export function PlayerSettingsDialog({ project, actions, liveHlsUrl = null, inge
       <section class="ps-section">
         <h3>{t`Ingest`}</h3>
         <p class="ps-help">{t`The details the encoder sends to. The live HLS address is under the Link tab.`}</p>
-        {ingest
+        {ingest?.channel
           ? <IngestInfoPanel channel={ingest.channel} streamKey={ingest.streamKey} onTeardown={ingest.onTeardown} />
-          : <p class="ps-help">{t`No ingest created. It is created in Before, under the Ingest preparation.`}</p>}
+          : ingest && (project.channel || creatingIngest)
+            ? <p class="ps-help">{t`Loading the ingest…`}</p>
+            : (
+              <>
+                <p class="ps-help">{t`No ingest created.`}</p>
+                {ingest?.onCreate && (
+                  <button class="btn btn-primary" type="button" onClick={() => void createIngest()}>
+                    {t`Create ingest`}
+                  </button>
+                )}
+              </>
+            )}
       </section>
       </div>
 

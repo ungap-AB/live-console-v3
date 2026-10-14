@@ -480,6 +480,10 @@ msgstr "A new video is waiting for your approval"
 msgid "A reset email has been sent to {email}. The link is valid for one hour."
 msgstr "A reset email has been sent to {email}. The link is valid for one hour."
 
+#: src/views/projects/ProjectHeader.tsx
+msgid "A streaming server (the ingest) is created for the project. Its details are shown when it is ready."
+msgstr "A streaming server (the ingest) is created for the project. Its details are shown when it is ready."
+
 #: src/views/projects/OndemandView.tsx
 msgid "A video is being processed or waiting for your approval. Finish that first."
 msgstr "A video is being processed or waiting for your approval. Finish that first."
@@ -1472,8 +1476,14 @@ msgid "Create captions first."
 msgstr "Create captions first."
 
 #: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/PlayerSettingsDialog.tsx
+#: src/views/projects/ProjectHeader.tsx
 msgid "Create ingest"
 msgstr "Create ingest"
+
+#: src/views/projects/ProjectHeader.tsx
+msgid "Create ingest?"
+msgstr "Create ingest?"
 
 #: src/views/projects/ForkDialog.tsx
 msgid "Create on-demand project"
@@ -1523,6 +1533,10 @@ msgstr "Creates projects, broadcasts and publishes on demand."
 #: src/views/jobs/JobsView.tsx
 msgid "Creating captions is stopped and no draft is saved. You can start it again at any time."
 msgstr "Creating captions is stopped and no draft is saved. You can start it again at any time."
+
+#: src/views/projects/ProjectHeader.tsx
+msgid "Creating ingest…"
+msgstr "Creating ingest…"
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Creating the document…"
@@ -2561,6 +2575,10 @@ msgstr "Live only"
 msgid "Live resources"
 msgstr "Live resources"
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Loading the ingest…"
+msgstr "Loading the ingest…"
+
 #: src/components/PdfAttachments.tsx
 #: src/components/PdfAttachmentsModal.tsx
 msgid "Loading..."
@@ -2924,8 +2942,8 @@ msgid "No ingest"
 msgstr "No ingest"
 
 #: src/views/projects/PlayerSettingsDialog.tsx
-msgid "No ingest created. It is created in Before, under the Ingest preparation."
-msgstr "No ingest created. It is created in Before, under the Ingest preparation."
+msgid "No ingest created."
+msgstr "No ingest created."
 
 #: src/views/trash/TrashView.tsx
 msgid "No item matches the filter."

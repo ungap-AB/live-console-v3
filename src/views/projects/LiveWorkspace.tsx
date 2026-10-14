@@ -36,6 +36,8 @@ interface LiveWorkspaceProps {
   onForked?: (result: ForkResult) => void
   /** Ökar när rubrikens Ingest info klickas: öppnar spelarinställningarnas flik Ingest. */
   ingestInfoRequest?: number
+  /** UNG-305: creates the ingest from the Ingest tab of the player settings. */
+  onCreateIngest: () => Promise<void>
 }
 
 // Läget Live. UNG-269: översikt till vänster (lägesknapparna, signalens detaljer, det som är utspelat nu med Spela ut kapitel under och
@@ -49,7 +51,7 @@ function pausedSinceText(since: string, duration: string): string {
   return t`Paused since ${since} (${duration}). The viewers see the text below over the video.`
 }
 
-export function LiveWorkspace({ header, project: p, actions, channel, health, playout, streamKey, onForked, ingestInfoRequest = 0 }: LiveWorkspaceProps) {
+export function LiveWorkspace({ header, project: p, actions, channel, health, playout, streamKey, onForked, ingestInfoRequest = 0, onCreateIngest }: LiveWorkspaceProps) {
   const testbed = usePlayoutTestbed(p, actions)
   // Testbädden är ett verktyg för oss (root admin), inte för operatörer.
   const isRootAdmin = useIsRootAdmin()
@@ -105,7 +107,7 @@ export function LiveWorkspace({ header, project: p, actions, channel, health, pl
             project={p}
             actions={actions}
             liveHlsUrl={channel?.playbackUrl ?? null}
-            ingest={channel ? { channel, streamKey, onTeardown: () => actions.teardownChannel() } : null}
+            ingest={{ channel, streamKey, onCreate: onCreateIngest, onTeardown: () => actions.teardownChannel() }}
             initialCategory={playerSettings}
             onClose={() => setPlayerSettings(null)}
           />

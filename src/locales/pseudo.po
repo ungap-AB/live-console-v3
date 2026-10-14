@@ -478,6 +478,10 @@ msgstr ""
 msgid "A reset email has been sent to {email}. The link is valid for one hour."
 msgstr ""
 
+#: src/views/projects/ProjectHeader.tsx
+msgid "A streaming server (the ingest) is created for the project. Its details are shown when it is ready."
+msgstr ""
+
 #: src/views/projects/OndemandView.tsx
 msgid "A video is being processed or waiting for your approval. Finish that first."
 msgstr ""
@@ -1466,7 +1470,13 @@ msgid "Create captions first."
 msgstr ""
 
 #: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/PlayerSettingsDialog.tsx
+#: src/views/projects/ProjectHeader.tsx
 msgid "Create ingest"
+msgstr ""
+
+#: src/views/projects/ProjectHeader.tsx
+msgid "Create ingest?"
 msgstr ""
 
 #: src/views/projects/ForkDialog.tsx
@@ -1516,6 +1526,10 @@ msgstr ""
 
 #: src/views/jobs/JobsView.tsx
 msgid "Creating captions is stopped and no draft is saved. You can start it again at any time."
+msgstr ""
+
+#: src/views/projects/ProjectHeader.tsx
+msgid "Creating ingest…"
 msgstr ""
 
 #: src/views/projects/ExportImportDialog.tsx
@@ -2555,6 +2569,10 @@ msgstr ""
 msgid "Live resources"
 msgstr ""
 
+#: src/views/projects/PlayerSettingsDialog.tsx
+msgid "Loading the ingest…"
+msgstr ""
+
 #: src/components/PdfAttachments.tsx
 #: src/components/PdfAttachmentsModal.tsx
 msgid "Loading..."
@@ -2918,7 +2936,7 @@ msgid "No ingest"
 msgstr ""
 
 #: src/views/projects/PlayerSettingsDialog.tsx
-msgid "No ingest created. It is created in Before, under the Ingest preparation."
+msgid "No ingest created."
 msgstr ""
 
 #: src/views/trash/TrashView.tsx

@@ -19,21 +19,37 @@ interface ProjectHeaderProps {
   onShowIngestInfoChange: (show: boolean) => void
   /** Knappen Ingest info i rubriken: öppnar spelarinställningarnas flik Ingest. */
   onIngestInfo?: () => void
+  /** UNG-305: in Live without an ingest the button becomes Create ingest (after a short confirmation, then Ingest info opens). */
+  onCreateIngest?: () => Promise<void>
 }
 
 // Gemensam för Livesändning och Ondemand. showIngestInfo ägs av föräldern; ingest-panelen och knappen som öppnar den ligger i
 // översiktens vänsterspalt (i Before under förberedelsen Ingest), och rubriken stänger panelen när signalen blir OK. Lägesknapparna
 // ligger också i vänsterspalten, spelarlänken och HLS-adresserna i spelarinställningarna (UI-finslipning omgång 1).
-export function ProjectHeader({ project: p, actions, onBack, channel = null, health = null, showIngestInfo, onShowIngestInfoChange, onIngestInfo }: ProjectHeaderProps) {
+export function ProjectHeader({ project: p, actions, onBack, channel = null, health = null, showIngestInfo, onShowIngestInfoChange, onIngestInfo, onCreateIngest }: ProjectHeaderProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState(p.name)
   const [confirmTeardown, setConfirmTeardown] = useState(false)
+  const [confirmCreate, setConfirmCreate] = useState(false)
+  const [creating, setCreating] = useState(false)
   const wasStoppedInAfter = useRef(false)
 
   async function saveTitle() {
     const name = titleDraft.trim()
     setEditingTitle(false)
     if (name && name !== p.name) await actions.rename(name)
+  }
+
+  async function createIngest() {
+    if (!onCreateIngest) return
+    setConfirmCreate(false)
+    setCreating(true)
+    try {
+      await onCreateIngest()
+    } finally {
+      setCreating(false)
+    }
+    onIngestInfo?.()
   }
 
   async function teardownIngest() {
@@ -117,7 +133,11 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
         <span class="spacer" />
         <EncoderStatusChip status={encoderStatus} />
         {viewerCount !== null && <ViewersChip count={viewerCount} />}
-        {onIngestInfo && (
+        {onCreateIngest && !channel && !p.channel ? (
+          <button class="btn btn-sm" type="button" disabled={creating} onClick={() => setConfirmCreate(true)}>
+            <Icon name="add" size={18} /> {creating ? t`Creating ingest…` : t`Create ingest`}
+          </button>
+        ) : onIngestInfo && (
           <button class="btn btn-sm" type="button" disabled={!channel} onClick={onIngestInfo}>
             <Icon name="info" size={18} /> {t`Ingest info`}
           </button>
@@ -125,6 +145,17 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
         <span class="spacer" />
         <span class="pv-clock"><Clock /></span>
       </div>
+
+      {confirmCreate && (
+        <ConfirmModal
+          title={t`Create ingest?`}
+          confirmLabel={t`Create ingest`}
+          onCancel={() => setConfirmCreate(false)}
+          onConfirm={() => void createIngest()}
+        >
+          <p>{t`A streaming server (the ingest) is created for the project. Its details are shown when it is ready.`}</p>
+        </ConfirmModal>
+      )}
 
       {confirmTeardown && (
         <ConfirmModal

@@ -132,7 +132,7 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
             project={p}
             actions={actions}
             liveHlsUrl={channel?.playbackUrl ?? null}
-            ingest={channel ? { channel, streamKey, onTeardown: teardownIngest } : null}
+            ingest={{ channel, streamKey, onCreate: async () => { await actions.createChannel(); await refresh() }, onTeardown: teardownIngest }}
             initialCategory={playerSettings}
             onClose={() => setPlayerSettings(null)}
           />
