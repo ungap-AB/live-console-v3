@@ -1,10 +1,12 @@
 # Handover till code-läget: projektflöde och vyer i live-console-v3
 
-Det här dokumentet är skrivet till den Claude-session som ska implementera. Det är ett uppdrag och en spec, inte en bakgrundstext. Bakgrunden och motiveringarna finns i `docs/projektfloede.md`.
+> **Status 2026-10-15: historical.** This was the implementation brief from September 2026 and has been carried out. It is not a current spec. Current decisions live in Linear (see UNG-238 for the publishing model). The original reference to `docs/projektfloede.md` pointed to a file that never existed in the repo; it now points to `presenter-projektfloede-sammanfattning.md`.
+
+Det här dokumentet är skrivet till den Claude-session som ska implementera. Det är ett uppdrag och en spec, inte en bakgrundstext. Bakgrunden och motiveringarna finns i `docs/presenter-projektfloede-sammanfattning.md`.
 
 ## Läs först
 
-1. `docs/projektfloede.md` – besluten och varför de togs. Om något i det här dokumentet är oklart avgör den filen.
+1. `docs/presenter-projektfloede-sammanfattning.md` – besluten och varför de togs. Om något i det här dokumentet är oklart avgör den filen.
 2. `docs/design/` – sju skärmar: Projektlista, Livesändning i Before, Livesändning i Live, Ondemand i After, Ondemand i Ondemand, samt bekräftelserna Live → After och Ondemand → After.
 3. Dagens kod för projektvyn och Playout-vyn. Det här dokumentet är skrivet utan insyn i repot. Kartlägg därför först vilka komponenter, routes, stores och API-anrop som finns, och redovisa kartläggningen innan du ändrar något.
 

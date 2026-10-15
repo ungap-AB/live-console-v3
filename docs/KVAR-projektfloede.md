@@ -1,6 +1,8 @@
 # Kvar att göra: projektflöde och vyer
 
-Status efter steg 8 i `docs/HANDOVER-projektfloede.md`. Bakgrund och beslut finns i `docs/projektfloede.md`.
+> **Status 2026-10-15: outdated.** This list describes the state after step 8 in September 2026 (mock only, nothing committed). Since then everything has been committed, tested against the real backend and rolled out to test and prod. Do not use it as a todo list; remaining work lives in Linear.
+
+Status efter steg 8 i `docs/HANDOVER-projektfloede.md`. Bakgrund och beslut finns i `docs/presenter-projektfloede-sammanfattning.md`.
 
 ## Klart
 

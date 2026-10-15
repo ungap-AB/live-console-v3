@@ -1,5 +1,7 @@
 # ungap Presenter – projektflöde och vyer
 
+> **Status 2026-10-15: background reasoning from 21 September 2026.** The mode/visibility model still applies. **Superseded:** the statement under "Ändringar i publicerad ondemand" that no draft or version handling is needed was replaced in October by a shared server draft with "Publicera ändringar" (UNG-238, https://linear.app/ungap-ab/issue/UNG-238).
+
 Sammanfattning av resonemang, 21 september 2026. Dokumentet beskriver beslut och öppna frågor i ord. Det innehåller ingen design.
 
 ## Utgångspunkt
@@ -112,7 +114,7 @@ En plats som nås från headern i båda vyerna. Idag rymmer den lite, till exemp
 - **Små ändringar** görs on-the-fly och stänger inte den publicerade sändningen.
 - **Större ändringar** – grova fel i videoströmmen, grova felstavningar av namn, många kapitel helt ur synk – kräver att man avpublicerar, det vill säga går tillbaka till After med ett passande meddelande.
 
-Operatören avgör själv var gränsen går. Systemet klassificerar inte ändringar och tvingar inte fram avpublicering. Det behövs ingen utkast- eller versionshantering.
+Operatören avgör själv var gränsen går. Systemet klassificerar inte ändringar och tvingar inte fram avpublicering. Det behövs ingen utkast- eller versionshantering. *(Superseded 2026-10 by UNG-238: shared draft + "Publicera ändringar".)*
 
 ## Övervägda och bortvalda flöden
 
