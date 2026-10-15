@@ -36,6 +36,15 @@ export interface SetThemeMessage {
   payload: { theme: ShellTheme }
 }
 
+/**
+ * Shell → service: show another surface in the same frame (the shell keeps one frame per service and moves it between
+ * the destinations that use it). Not a reload: the service switches view and keeps its state.
+ */
+export interface SetSurfaceMessage {
+  type: 'setSurface'
+  payload: { surface: string; layout: ShellLayout }
+}
+
 /** Shell → service: the user logs out in the shell. The service ends its session and answers `loggedOut`. */
 export interface LogoutMessage {
   type: 'logout'
@@ -48,7 +57,14 @@ export interface LoggedOutMessage {
   replyTo: string
 }
 
-export type ShellMessage = ReadyMessage | InitMessage | SetLocaleMessage | SetThemeMessage | LogoutMessage | LoggedOutMessage
+export type ShellMessage =
+  | ReadyMessage
+  | InitMessage
+  | SetLocaleMessage
+  | SetThemeMessage
+  | SetSurfaceMessage
+  | LogoutMessage
+  | LoggedOutMessage
 
 type Envelope<M> = M & { protocol: typeof SHELL_PROTOCOL }
 
@@ -93,6 +109,8 @@ export function parseShellMessage(data: unknown): ShellMessage | null {
       return isLocale(payload.locale) ? { type: 'setLocale', payload: { locale: payload.locale } } : null
     case 'setTheme':
       return isTheme(payload.theme) ? { type: 'setTheme', payload: { theme: payload.theme } } : null
+    case 'setSurface':
+      return isString(payload.surface) && isLayout(payload.layout) ? { type: 'setSurface', payload: { surface: payload.surface, layout: payload.layout } } : null
     case 'logout':
       return isString(data.id) ? { type: 'logout', id: data.id } : null
     case 'loggedOut':

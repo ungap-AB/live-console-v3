@@ -49,6 +49,8 @@ export interface ShellClientHandlers {
   onInit: (payload: InitMessage['payload']) => void
   onLocale: (locale: ShellLocale) => void
   onTheme: (theme: ShellTheme) => void
+  /** The shell moved this frame to another surface (one frame per service): switch view, keep state. */
+  onSurface: (surface: string) => void
   /** Ends the console's session; the shell is answered when the returned promise settles. */
   onLogout: () => Promise<unknown>
 }
@@ -97,6 +99,7 @@ export class ShellClient {
     if (!this.connected) return
     if (message.type === 'setLocale') this.handlers.onLocale(message.payload.locale)
     else if (message.type === 'setTheme') this.handlers.onTheme(message.payload.theme)
+    else if (message.type === 'setSurface') this.handlers.onSurface(message.payload.surface)
     else if (message.type === 'logout') {
       const replyTo = message.id
       void this.handlers.onLogout().finally(() => this.send({ type: 'loggedOut', replyTo }))

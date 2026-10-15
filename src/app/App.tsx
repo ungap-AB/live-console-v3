@@ -14,7 +14,7 @@ import { InactivityWarning } from './InactivityWarning'
 import { useInactivityLogout } from './useInactivityLogout'
 import { useUiLocale } from './useUiLocale'
 import { applyShellLanguage, hasLanguageOverride, switchLanguage } from '../i18n'
-import { ShellClient, type EmbedContext } from './embed'
+import { ShellClient, surfaceStartHash, type EmbedContext } from './embed'
 import { applyThemePreference } from './theme'
 import { ProjectsView, parseProjectScreen, type ProjectScreen } from '../views/projects/ProjectsView'
 import { AgendasView } from '../views/agendas/AgendasView'
@@ -121,14 +121,24 @@ export function App({ embed }: AppProps) {
   // UNG-321/322: the shell API in embed mode. Set up once; the ref always holds the logout of the current session, which
   // the shell asks for when the user logs out in the shell.
   const shellLogout = useRef<() => Promise<unknown>>(() => Promise.resolve())
+  // The shell keeps one console frame and moves it between its destinations: the surface changes without a reload.
+  const [surface, setSurface] = useState(embed?.surface ?? '')
+  function showSurface(next: string) {
+    setSurface(next)
+    // replace, not a new entry: a framed page's history entries would end up in the shell's back button.
+    const hash = surfaceStartHash(next, window.location.hash)
+    if (hash) window.location.replace(hash)
+  }
   shellLogout.current = auth.status === 'authed' ? logout : () => Promise.resolve()
   useEffect(() => {
     if (!embed) return
     const shellClient = new ShellClient(window.parent, embed, {
-      onInit: ({ locale, theme }) => {
+      onInit: ({ locale, theme, surface }) => {
         applyThemePreference(theme)
         void applyShellLanguage(locale)
+        showSurface(surface)
       },
+      onSurface: showSurface,
       onLocale: (locale) => void applyShellLanguage(locale),
       onTheme: applyThemePreference,
       onLogout: () => shellLogout.current(),
@@ -236,7 +246,7 @@ export function App({ embed }: AppProps) {
   if (shareToken) return <SharedDownloadsView token={shareToken} />
 
   // UNG-322: the status strip for Combined view is not built yet; until then the surface shows where it will be.
-  if (embed && embed.surface === 'status') return <div class="embed-status-placeholder">{t`ungap Presenter · status strip (coming in UNG-322)`}</div>
+  if (embed && surface === 'status') return <div class="embed-status-placeholder">{t`ungap Presenter · status strip (coming in UNG-322)`}</div>
 
   // Engångslänk från ett mejl (inbjudan/återställning) går före allt annat, även när någon är inloggad.
   if (credentialToken) {

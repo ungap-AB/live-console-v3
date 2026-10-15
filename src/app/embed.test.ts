@@ -41,6 +41,7 @@ function setup() {
     onInit: (payload) => calls.push(`init:${payload.locale}:${payload.theme}:${payload.layout}`),
     onLocale: (locale) => calls.push(`locale:${locale}`),
     onTheme: (theme) => calls.push(`theme:${theme}`),
+    onSurface: (surface) => calls.push(`surface:${surface}`),
     onLogout: () => new Promise<void>((resolve) => { calls.push('logout'); finishLogout = resolve }),
   }
   const client = new ShellClient(shell, { shellOrigin: SHELL, surface: 'projects' }, handlers)
@@ -87,8 +88,9 @@ test('språk, tema och utloggning tas bara emot efter handskakningen', () => {
   receive(init(shell.sent[0].message.id))
   receive({ protocol: 'ungap-shell', type: 'setLocale', payload: { locale: 'sv' } })
   receive({ protocol: 'ungap-shell', type: 'setTheme', payload: { theme: 'auto' } })
+  receive({ protocol: 'ungap-shell', type: 'setSurface', payload: { surface: 'status', layout: 'combined' } })
   receive({ protocol: 'ungap-shell', type: 'navigate', payload: { to: 'x' } })
-  assert.deepEqual(calls, ['init:en:light:single', 'locale:sv', 'theme:auto'])
+  assert.deepEqual(calls, ['init:en:light:single', 'locale:sv', 'theme:auto', 'surface:status'])
 })
 
 test('logout besvaras med loggedOut först när sessionen avslutats', async () => {

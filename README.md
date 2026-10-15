@@ -29,6 +29,7 @@ in its address (`/?surface=projects&shell=https://…`) is allowed: `VITE_SHELL_
 plus `https://localhost:5180` in development. A build without the variable (test and prod today) never embeds.
 
 Embedded, the console hides its menu and account box, starts on the surface's view (`projects`, `jobs`; `status` is a
-placeholder for Combined view's status strip) and takes language and theme from the shell without remembering them. It
+placeholder for Combined view's status strip), switches surface without a reload when the shell moves its one console
+frame between destinations (`setSurface`) and takes language and theme from the shell without remembering them. It
 talks to the shell through the shell API: `src/app/shellProtocol.ts` (a copy of ungap-shell's, keep them identical) and
 `src/app/embed.ts`; the protocol is documented in `ungap-shell/docs/shell-api.md`.
