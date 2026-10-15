@@ -22,7 +22,7 @@ import { OndemandView } from './OndemandView'
 import { MODES, MODE_LABEL } from './projectMode'
 import { listCaptionButton, requestCaptionStudio } from './captionEntryLogic'
 import { currentPauseFromTimeline, normalizePauseText } from './pauseLogic'
-import { applyRehearsalCue, isRehearsal, isRehearsalEvent, rehearsalReceipt } from './rehearsalLogic'
+import { applyRehearsalCue, isRehearsal, isRehearsalEvent } from './rehearsalLogic'
 import { activeJobsByProject, jobKindIcon, jobKindLabel } from './projectJobLogic'
 import { needsScroll, revealTarget } from './projectListFocus'
 import { openJobsView } from '../../app/jobsBus'
@@ -263,19 +263,15 @@ export function ProjectsView({
     setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, playout: update(p.playout) } : p)))
   }
 
-  // UNG-333: utspelning i Before är en provkörning. Markeringen flyttas optimistiskt, servern sparar ingenting på tidslinjen
-  // och operatören får ett kvitto. Vid fel återställs markeringen.
-  // Kvittot följer serverns svar, inte konsolens kanske föråldrade läge: har någon annan redan bytt läge spelades cuen ut på
-  // riktigt. Vid fel eller lägesskillnad hämtas utspelningen om från servern i stället för att en gammal ögonblicksbild återställs.
+  // UNG-333: utspelning i Before är en provkörning. Markeringen flyttas optimistiskt och servern sparar ingenting på tidslinjen.
+  // Ingen toast: provkörningsrutan ovanför listorna och "(provkörning)" i Nu-panelerna säger redan det (Anders 2026-10-15).
+  // Serverns svar avgör, inte konsolens kanske föråldrade läge: har någon annan redan bytt läge spelades cuen ut på riktigt.
+  // Vid fel eller lägesskillnad hämtas utspelningen om från servern i stället för att en gammal ögonblicksbild återställs.
   function rehearse(project: Project, kind: CueKind, refId: string | null, label: string | null, send: () => Promise<TimelineEvent>) {
     updateProjectPlayout(project.id, (playout) => applyRehearsalCue(playout, kind, refId, label ?? 'Rensat'))
     send().then(
       (event) => {
-        if (isRehearsalEvent(event)) {
-          setToast(rehearsalReceipt(kind, label))
-          return
-        }
-        void resyncPlayout(project.id)
+        if (!isRehearsalEvent(event)) void resyncPlayout(project.id)
       },
       (err) => {
         void resyncPlayout(project.id)
@@ -284,11 +280,10 @@ export function ProjectsView({
     )
   }
 
-  // Servern provkörde en cue som konsolen trodde var skarp (läget har bytts till Before någon annanstans): hämta om läget och kvittera.
-  function confirmLiveCue(projectId: string, event: TimelineEvent, kind: CueKind, label: string | null): boolean {
+  // Servern provkörde en cue som konsolen trodde var skarp (läget har bytts till Before någon annanstans): hämta om läget.
+  function confirmLiveCue(projectId: string, event: TimelineEvent): boolean {
     if (!isRehearsalEvent(event)) return false
     void resyncPlayout(projectId)
-    setToast(rehearsalReceipt(kind, label))
     return true
   }
 
@@ -541,7 +536,7 @@ export function ProjectsView({
 
       client.projects.cue(project.id, kind, refId, label).then(
         (realEvent) => {
-          if (confirmLiveCue(project.id, realEvent, kind, label)) return
+          if (confirmLiveCue(project.id, realEvent)) return
           if (realEvent.kind !== kind || realEvent.refId !== refId) {
             updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => !isOptimistic(e))))
             setToast(t`The backend did not confirm the clicked item.`)
@@ -572,7 +567,7 @@ export function ProjectsView({
         ? playout.timeline.map((e) => (e.id === running.id ? { ...e, label } : e))
         : [...playout.timeline, { id: tempId, kind: 'pauseIn', refId: null, label, occurredAt: new Date().toISOString(), offsetSeconds: null }]))
       client.projects.pause(project.id, label).then(
-        (realEvent) => confirmLiveCue(project.id, realEvent, 'pauseIn', label) || updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId || e.id === realEvent.id ? realEvent : e)))),
+        (realEvent) => confirmLiveCue(project.id, realEvent) || updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId || e.id === realEvent.id ? realEvent : e)))),
         (err) => {
           updateProjectPlayout(project.id, () => derivePlayoutState(previousTimeline))
           setToast(err instanceof Error ? err.message : t`Could not start the break.`)
@@ -591,7 +586,7 @@ export function ProjectsView({
       const previousTimeline = project.playout.timeline
       updateProjectPlayout(project.id, (playout) => derivePlayoutState([...playout.timeline, { id: tempId, kind: 'pauseOut', refId: null, label: 'Paus slut', occurredAt: new Date().toISOString(), offsetSeconds: null }]))
       client.projects.resume(project.id).then(
-        (realEvent) => confirmLiveCue(project.id, realEvent, 'pauseOut', null) || updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId ? realEvent : e)))),
+        (realEvent) => confirmLiveCue(project.id, realEvent) || updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId ? realEvent : e)))),
         (err) => {
           // Någon annan hann före (409 not_paused): läget är ändå "ingen paus". Annars rullas vi tillbaka.
           if (err instanceof ApiError && err.code === 'not_paused') {
@@ -635,7 +630,7 @@ export function ProjectsView({
 
       client.projects.clear(project.id, kind).then(
         (realEvent) => {
-          if (confirmLiveCue(project.id, realEvent, kind, null)) return
+          if (confirmLiveCue(project.id, realEvent)) return
           if (realEvent.kind !== kind || realEvent.label !== 'Rensat') {
             updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => e.id !== tempId)))
             setToast(t`The backend did not confirm the clearing.`)

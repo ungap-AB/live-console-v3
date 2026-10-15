@@ -3736,18 +3736,6 @@ msgstr ""
 msgid "Rehearsal"
 msgstr ""
 
-#: src/views/projects/rehearsalLogic.ts
-msgid "Rehearsal cleared. Nothing was shown to viewers."
-msgstr ""
-
-#: src/views/projects/rehearsalLogic.ts
-msgid "Rehearsal: {label}. Not shown to viewers and not saved."
-msgstr ""
-
-#: src/views/projects/rehearsalLogic.ts
-msgid "Rehearsal: not shown to viewers and not saved."
-msgstr ""
-
 #: src/views/projects/CaptionEditor.tsx
 msgid "Reload (your changes will be lost)"
 msgstr ""

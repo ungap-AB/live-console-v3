@@ -3742,18 +3742,6 @@ msgstr "Inspelningar kopplade till ett projekt kan bara tas bort där."
 msgid "Rehearsal"
 msgstr "Provkörning"
 
-#: src/views/projects/rehearsalLogic.ts
-msgid "Rehearsal cleared. Nothing was shown to viewers."
-msgstr "Provkörningen rensad. Inget visades för tittarna."
-
-#: src/views/projects/rehearsalLogic.ts
-msgid "Rehearsal: {label}. Not shown to viewers and not saved."
-msgstr "Provkört: {label}. Visas inte för tittarna och sparas inte."
-
-#: src/views/projects/rehearsalLogic.ts
-msgid "Rehearsal: not shown to viewers and not saved."
-msgstr "Provkört. Visas inte för tittarna och sparas inte."
-
 #: src/views/projects/CaptionEditor.tsx
 msgid "Reload (your changes will be lost)"
 msgstr "Ladda om (dina ändringar går förlorade)"

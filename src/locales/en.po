@@ -3742,18 +3742,6 @@ msgstr "Recordings linked to a project can only be removed there."
 msgid "Rehearsal"
 msgstr "Rehearsal"
 
-#: src/views/projects/rehearsalLogic.ts
-msgid "Rehearsal cleared. Nothing was shown to viewers."
-msgstr "Rehearsal cleared. Nothing was shown to viewers."
-
-#: src/views/projects/rehearsalLogic.ts
-msgid "Rehearsal: {label}. Not shown to viewers and not saved."
-msgstr "Rehearsal: {label}. Not shown to viewers and not saved."
-
-#: src/views/projects/rehearsalLogic.ts
-msgid "Rehearsal: not shown to viewers and not saved."
-msgstr "Rehearsal: not shown to viewers and not saved."
-
 #: src/views/projects/CaptionEditor.tsx
 msgid "Reload (your changes will be lost)"
 msgstr "Reload (your changes will be lost)"

@@ -1,4 +1,3 @@
-import { t } from '@lingui/core/macro'
 import type { CueKind, PlayoutState, PublicMode, TimelineEvent } from '../../data/types.ts'
 
 // UNG-333. Before is a rehearsal mode: a play-out moves the current item/name (shown as a marking in the console only) but is
@@ -25,10 +24,4 @@ export function applyRehearsalCue(playout: PlayoutState, kind: CueKind, refId: s
     return { ...playout, rehearsal: true, currentPersonId: refId, currentPerson: event }
   }
   return { ...playout, rehearsal: true }
-}
-
-/** The receipt the operator gets for a rehearsal play-out. */
-export function rehearsalReceipt(kind: CueKind, label: string | null): string {
-  if (kind === 'pauseIn' || kind === 'pauseOut' || kind === 'exclamation') return t`Rehearsal: not shown to viewers and not saved.`
-  return label ? t`Rehearsal: ${label}. Not shown to viewers and not saved.` : t`Rehearsal cleared. Nothing was shown to viewers.`
 }
