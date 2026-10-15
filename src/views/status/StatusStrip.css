@@ -1,0 +1,119 @@
+/* UNG-322: the status strip fills its frame at the top of Combined view in ungap Shell (128 px high). Nothing in it may change
+   height when something is cued, cleared or paused, so the meeting below never moves. */
+.ss-strip {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 100vh;
+  padding: 0 16px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.ss-note {
+  justify-content: center;
+  color: var(--ink-2);
+  font-size: 13px;
+  text-align: center;
+}
+
+.ss-status {
+  /* The status takes the room left over; what is on screen now keeps most of its width when the frame is narrow. */
+  flex: 1 1 300px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ss-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ss-mode {
+  flex: none;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ss-mode.is-live {
+  border-color: var(--mode-live-bg);
+  background: var(--mode-live-bg);
+  color: var(--mode-live-fg);
+}
+
+.ss-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The break row and the error share one line of fixed height. */
+.ss-pause,
+.ss-error {
+  height: 28px;
+  font-size: 13px;
+}
+
+.ss-pause {
+  padding: 0 4px 0 8px;
+  border: 1px solid var(--warn-line);
+  border-radius: 6px;
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.ss-pause-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ss-error {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  color: var(--danger);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ss-now {
+  flex: 0 1 640px;
+  min-width: 0;
+}
+
+.ss-now .lw-now {
+  flex-wrap: nowrap;
+}
+
+.ss-now .lw-now-panel {
+  flex: 1 1 0;
+}
+
+.ss-now .lw-now-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ss-strip .pv-clock {
+  flex: none;
+  min-width: 0;
+  white-space: nowrap;
+}

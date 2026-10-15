@@ -16,7 +16,8 @@ import './LiveWorkspace.css'
 
 interface NowPanelsProps {
   project: Project
-  actions: ProjectActions
+  /** Only clearing; the status strip (UNG-322) passes its own. */
+  actions: Pick<ProjectActions, 'clear'>
   /** Tidsstämpeln visas inte i utspelningsvyn (UNG-179), för att spara höjd. */
   showTime: boolean
 }

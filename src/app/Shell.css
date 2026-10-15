@@ -276,14 +276,3 @@
 .shell.embedded .outlet {
   padding-top: 0;
 }
-
-.embed-status-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--line);
-  color: var(--ink-2);
-  font-size: 13px;
-}

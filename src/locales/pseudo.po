@@ -809,6 +809,10 @@ msgstr ""
 msgid "Break is only possible in the Live mode"
 msgstr ""
 
+#: src/views/status/StatusStrip.tsx
+msgid "Break since {since} ({duration})"
+msgstr ""
+
 #: src/app/Shell.tsx
 #: src/views/projects/OndemandView.tsx
 msgid "Broadcast"
@@ -1390,6 +1394,7 @@ msgid "Corrections from Word"
 msgstr ""
 
 #: src/views/projects/ProjectsView.tsx
+#: src/views/status/useStatusProject.ts
 msgid "Could not clear."
 msgstr ""
 
@@ -1402,6 +1407,7 @@ msgid "Could not create the user."
 msgstr ""
 
 #: src/views/projects/ProjectsView.tsx
+#: src/views/status/useStatusProject.ts
 msgid "Could not end the break."
 msgstr ""
 
@@ -1872,6 +1878,7 @@ msgid "End"
 msgstr ""
 
 #: src/views/projects/LiveWorkspace.tsx
+#: src/views/status/StatusStrip.tsx
 msgid "End break"
 msgstr ""
 
@@ -2617,6 +2624,7 @@ msgstr ""
 #: src/views/projects/PlayoutColumns.tsx
 #: src/views/projects/ProjectsView.tsx
 #: src/views/resources/LiveResourcesView.tsx
+#: src/views/status/StatusStrip.tsx
 #: src/views/trash/TrashView.tsx
 #: src/views/users/UsersView.tsx
 msgid "Loading…"
@@ -2636,6 +2644,10 @@ msgstr ""
 
 #: src/app/LoginView.tsx
 msgid "Log in"
+msgstr ""
+
+#: src/views/status/StatusStrip.tsx
+msgid "Log in to ungap Presenter under Projects to see the broadcast status here."
 msgstr ""
 
 #: src/app/Shell.tsx
@@ -3210,6 +3222,10 @@ msgstr ""
 
 #: src/views/projects/ProjectsView.tsx
 msgid "Open"
+msgstr ""
+
+#: src/views/status/StatusStrip.tsx
+msgid "Open a project under Projects to see its broadcast status here."
 msgstr ""
 
 #: src/views/projects/PlayerLinkField.tsx
@@ -5118,6 +5134,10 @@ msgstr ""
 msgid "The project has no video yet."
 msgstr ""
 
+#: src/views/status/StatusStrip.tsx
+msgid "The project is no longer available. Open a project under Projects."
+msgstr ""
+
 #: src/views/projects/OndemandView.tsx
 msgid "The project is published. Withdraw the publication if you want to change the video."
 msgstr ""
@@ -5567,10 +5587,6 @@ msgstr ""
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "ungap Chapters (.json)"
-msgstr ""
-
-#: src/app/App.tsx
-msgid "ungap Presenter · status strip (coming in UNG-322)"
 msgstr ""
 
 #: src/views/projects/CaptionStudio.tsx

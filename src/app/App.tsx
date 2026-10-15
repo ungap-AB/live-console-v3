@@ -15,6 +15,7 @@ import { useInactivityLogout } from './useInactivityLogout'
 import { useUiLocale } from './useUiLocale'
 import { applyShellLanguage, hasLanguageOverride, switchLanguage } from '../i18n'
 import { ShellClient, surfaceStartHash, type EmbedContext } from './embed'
+import { StatusStrip } from '../views/status/StatusStrip'
 import { applyThemePreference } from './theme'
 import { ProjectsView, parseProjectScreen, type ProjectScreen } from '../views/projects/ProjectsView'
 import { AgendasView } from '../views/agendas/AgendasView'
@@ -245,8 +246,14 @@ export function App({ embed }: AppProps) {
   // Delningslänk (UNG-80 steg 4): publik sida utan inloggning, även om en operatör råkar vara inloggad i webbläsaren.
   if (shareToken) return <SharedDownloadsView token={shareToken} />
 
-  // UNG-322: the status strip for Combined view is not built yet; until then the surface shows where it will be.
-  if (embed && surface === 'status') return <div class="embed-status-placeholder">{t`ungap Presenter · status strip (coming in UNG-322)`}</div>
+  // UNG-322: the status strip at the top of Combined view. Same console instance as Projects, so it follows the open project.
+  if (embed && surface === 'status') {
+    return (
+      <Fragment key={locale}>
+        <StatusStrip auth={auth.status} projectId={activeProjectId} inactivityRemainingMs={inactivity.phase === 'warning' ? inactivity.remainingMs : null} />
+      </Fragment>
+    )
+  }
 
   // Engångslänk från ett mejl (inbjudan/återställning) går före allt annat, även när någon är inloggad.
   if (credentialToken) {
