@@ -1284,6 +1284,10 @@ msgstr ""
 msgid "Closed"
 msgstr ""
 
+#: src/views/projects/ProjectHeader.tsx
+msgid "Combined view"
+msgstr ""
+
 #: src/views/projects/LiveStatusBadges.tsx
 msgid "Concurrent viewers according to IVS. The number is an estimate with a few seconds' delay."
 msgstr ""
@@ -2577,6 +2581,10 @@ msgstr ""
 msgid "Link name list…"
 msgstr ""
 
+#: src/views/status/StatusStrip.tsx
+msgid "Link the project to a meeting in Before to let the meeting drive the graphics in {projectName}."
+msgstr ""
+
 #: src/views/projects/createProjectLists.ts
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "Link to Meeting"
@@ -3039,6 +3047,10 @@ msgstr ""
 msgid "No longer available"
 msgstr ""
 
+#: src/views/status/StatusStrip.tsx
+msgid "No meeting open"
+msgstr ""
+
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "No meetings were found for the domain."
 msgstr ""
@@ -3272,6 +3284,10 @@ msgstr ""
 msgid "Open Jobs"
 msgstr ""
 
+#: src/views/status/StatusStrip.tsx
+msgid "Open linked meeting"
+msgstr ""
+
 #: src/app/Shell.tsx
 msgid "Open menu"
 msgstr ""
@@ -3287,6 +3303,10 @@ msgstr ""
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Open the editor…"
+msgstr ""
+
+#: src/views/status/StatusStrip.tsx
+msgid "Open the linked meeting to drive the graphics in {projectName}."
 msgstr ""
 
 #: src/views/projects/MeetingLinkDialog.tsx
@@ -5101,6 +5121,30 @@ msgstr ""
 msgid "The manuscript is made from the saved version. Your unsaved changes are not included."
 msgstr ""
 
+#: src/views/status/StatusStrip.tsx
+msgid "The meeting “{title}” does not drive the graphics in {projectName}: the project is not linked to a meeting. Link it in Before."
+msgstr ""
+
+#: src/views/status/StatusStrip.tsx
+msgid "The meeting “{title}” does not drive the graphics in {projectName}. Only the linked meeting does."
+msgstr ""
+
+#: src/views/status/StatusStrip.tsx
+msgid "The meeting “{title}” drives the graphics in {projectName}."
+msgstr ""
+
+#: src/views/status/StatusStrip.tsx
+msgid "The meeting below does not drive the graphics"
+msgstr ""
+
+#: src/views/status/StatusStrip.tsx
+msgid "The meeting below does not drive the graphics: the project is not linked"
+msgstr ""
+
+#: src/views/status/StatusStrip.tsx
+msgid "The meeting below drives the graphics"
+msgstr ""
+
 #: src/views/projects/MeetingLinkDialog.tsx
 msgid "The meeting's agenda items and speakers are played out in this project when the secretary opens an item or gives the floor in ungap Meeting."
 msgstr ""
@@ -5196,6 +5240,10 @@ msgstr ""
 
 #: src/views/status/StatusStrip.tsx
 msgid "The project is no longer available. Open a project under Projects."
+msgstr ""
+
+#: src/views/status/StatusStrip.tsx
+msgid "The project is not linked to a meeting"
 msgstr ""
 
 #: src/views/projects/OndemandView.tsx
@@ -5651,6 +5699,14 @@ msgstr ""
 
 #: src/views/projects/BeforeWorkspace.tsx
 msgid "ungap Meeting"
+msgstr ""
+
+#: src/views/status/StatusStrip.tsx
+msgid "ungap Meeting is not connected"
+msgstr ""
+
+#: src/views/status/StatusStrip.tsx
+msgid "ungap Meeting is not connected to your organisation. Meetings do not drive the graphics in {projectName}."
 msgstr ""
 
 #: src/views/projects/CaptionStudio.tsx

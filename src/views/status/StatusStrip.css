@@ -117,3 +117,48 @@
   min-width: 0;
   white-space: nowrap;
 }
+
+/* UNG-332: whether the meeting below drives this project's graphics. Shares the chips' row, so the strip keeps its height. */
+.ss-meeting {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 4px 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.ss-meeting.is-ok {
+  border-color: var(--live-line);
+  background: var(--live-bg);
+  color: var(--live);
+}
+
+.ss-meeting.is-warn {
+  border-color: var(--warn-line);
+  background: var(--warn-bg);
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.ss-meeting-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ss-meeting .btn {
+  flex: none;
+}
+
+/* On its own (third) row: no growing in the column's direction. */
+.ss-status > .ss-meeting {
+  flex: none;
+}

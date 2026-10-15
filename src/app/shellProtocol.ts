@@ -1,5 +1,5 @@
 // Shell API v1 (UNG-321): the postMessage protocol between ungap Shell and the services it frames. This file is COPIED,
-// not shared, into every party (ungap-shell, live-console-v3, later meeting-web); keep the copies identical.
+// not shared, into every party (ungap-shell, live-console-v3, meeting-web); keep the copies identical.
 // The protocol is documented in ungap-shell/docs/shell-api.md.
 
 export const SHELL_PROTOCOL = 'ungap-shell'
@@ -57,6 +57,38 @@ export interface LoggedOutMessage {
   replyTo: string
 }
 
+/** A meeting open in ungap Meeting, as the shell passes it on (UNG-332). */
+export interface ShellMeeting {
+  id: string
+  title: string
+}
+
+/**
+ * Service → shell: open Combined view with this meeting (UNG-332). Presenter sends it from a project, with the meeting
+ * the project is linked to (null: the project has none). The shell switches destination and tells the frame that shows
+ * meetings with `showMeeting`; the shell never looks the link up itself.
+ */
+export interface OpenCombinedMessage {
+  type: 'openCombined'
+  payload: { meetingId: string | null }
+}
+
+/** Shell → service: open this meeting (null: the meeting list). Sent to Meeting's frame after `openCombined`. */
+export interface ShowMeetingMessage {
+  type: 'showMeeting'
+  payload: { meetingId: string | null }
+}
+
+/**
+ * Both directions (UNG-332). Service → shell: the meeting now open in this frame (null: none). Shell → service: the same,
+ * passed on to the other frames, and sent again after their handshake, so the status strip can say whether the open
+ * meeting is the one that drives the project's graphics.
+ */
+export interface MeetingContextMessage {
+  type: 'meetingContext'
+  payload: { meeting: ShellMeeting | null }
+}
+
 export type ShellMessage =
   | ReadyMessage
   | InitMessage
@@ -65,6 +97,9 @@ export type ShellMessage =
   | SetSurfaceMessage
   | LogoutMessage
   | LoggedOutMessage
+  | OpenCombinedMessage
+  | ShowMeetingMessage
+  | MeetingContextMessage
 
 type Envelope<M> = M & { protocol: typeof SHELL_PROTOCOL }
 
@@ -79,6 +114,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 const isString = (value: unknown): value is string => typeof value === 'string' && value.length > 0
 const isLocale = (value: unknown): value is ShellLocale => value === 'sv' || value === 'en'
 const isTheme = (value: unknown): value is ShellTheme => value === 'light' || value === 'dark' || value === 'auto'
+const isMeetingId = (value: unknown): value is string | null => value === null || isString(value)
 const isLayout = (value: unknown): value is ShellLayout => value === 'single' || value === 'combined'
 
 /**
@@ -115,6 +151,16 @@ export function parseShellMessage(data: unknown): ShellMessage | null {
       return isString(data.id) ? { type: 'logout', id: data.id } : null
     case 'loggedOut':
       return isString(data.replyTo) ? { type: 'loggedOut', replyTo: data.replyTo } : null
+    case 'openCombined':
+      return isMeetingId(payload.meetingId) ? { type: 'openCombined', payload: { meetingId: payload.meetingId } } : null
+    case 'showMeeting':
+      return isMeetingId(payload.meetingId) ? { type: 'showMeeting', payload: { meetingId: payload.meetingId } } : null
+    case 'meetingContext': {
+      if (payload.meeting === null) return { type: 'meetingContext', payload: { meeting: null } }
+      const meeting = isRecord(payload.meeting) ? payload.meeting : null
+      if (!meeting || !isString(meeting.id) || typeof meeting.title !== 'string') return null
+      return { type: 'meetingContext', payload: { meeting: { id: meeting.id, title: meeting.title } } }
+    }
     default:
       return null
   }

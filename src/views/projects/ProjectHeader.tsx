@@ -9,6 +9,8 @@ import type { ProjectActions } from './actions'
 import { EncoderStatusChip, ViewersChip } from './LiveStatusBadges'
 import { encoderStatusOf, viewerCountOf } from './liveStatus'
 import './ProjectHeader.css'
+import { client } from '../../data'
+import { canOpenCombined, openCombined } from '../../app/embed'
 
 interface ProjectHeaderProps {
   project: Project
@@ -30,6 +32,26 @@ interface ProjectHeaderProps {
 /** UNG-308: the clock shows the broadcast duration while Live has a signal. */
 export function signalSince(p: Project, health: ChannelHealth | null): string | null {
   return p.publicMode === 'live' && health?.streamStartedAt ? health.streamStartedAt : null
+}
+
+// UNG-332: in ungap Shell, Combined view opens from the project: the status strip shows this project and Meeting opens the
+// meeting the project is linked to (Before), so the meeting below is the one that drives the graphics.
+function CombinedViewButton({ projectId }: { projectId: string }) {
+  const [opening, setOpening] = useState(false)
+  async function open() {
+    setOpening(true)
+    try {
+      const state = await client.projects.getMeetingLink(projectId).catch(() => null)
+      openCombined(state?.link?.meetingId ?? null)
+    } finally {
+      setOpening(false)
+    }
+  }
+  return (
+    <button class="btn btn-sm" type="button" disabled={opening} onClick={() => void open()}>
+      <Icon name="view_agenda" size={18} /> {t`Combined view`}
+    </button>
+  )
 }
 
 export function ProjectHeader({ project: p, actions, onBack, channel = null, health = null, showIngestInfo, onShowIngestInfoChange, onIngestInfo, onCreateIngest }: ProjectHeaderProps) {
@@ -100,6 +122,7 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
         {editingTitle && (
           <RenameModal title={t`Edit title`} initialValue={p.name} onCancel={() => setEditingTitle(false)} onSave={(name) => void saveTitle(name)} />
         )}
+        {canOpenCombined() && <CombinedViewButton projectId={p.id} />}
         <span class="spacer" />
         <EncoderStatusChip status={encoderStatus} />
         {viewerCount !== null && <ViewersChip count={viewerCount} />}

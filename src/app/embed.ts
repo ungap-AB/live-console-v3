@@ -1,4 +1,4 @@
-import { envelope, nextMessageId, parseShellMessage, SUPPORTED_VERSIONS, type InitMessage, type ShellLocale, type ShellMessage, type ShellTheme } from './shellProtocol.ts'
+import { envelope, nextMessageId, parseShellMessage, SUPPORTED_VERSIONS, type InitMessage, type ShellLocale, type ShellMeeting, type ShellMessage, type ShellTheme } from './shellProtocol.ts'
 import type { RouteKey } from './router.tsx'
 
 // Embed mode (UNG-322): the console framed by ungap Shell. The shell frames `/?surface=<surface>&shell=<shell origin>`;
@@ -53,6 +53,21 @@ export interface ShellClientHandlers {
   onSurface: (surface: string) => void
   /** Ends the console's session; the shell is answered when the returned promise settles. */
   onLogout: () => Promise<unknown>
+  /** UNG-332: the meeting open in Meeting's frame (null: none), passed on by the shell. */
+  onMeetingContext: (meeting: ShellMeeting | null) => void
+}
+
+// UNG-332: a project opens Combined view with its linked meeting. Set while the console is embedded and connected to the
+// shell; the project header shows its button only then.
+let combinedOpener: ((meetingId: string | null) => void) | null = null
+export function setCombinedOpener(opener: ((meetingId: string | null) => void) | null): void {
+  combinedOpener = opener
+}
+export function canOpenCombined(): boolean {
+  return combinedOpener !== null
+}
+export function openCombined(meetingId: string | null): void {
+  combinedOpener?.(meetingId)
 }
 
 export interface ShellWindow {
@@ -100,10 +115,16 @@ export class ShellClient {
     if (message.type === 'setLocale') this.handlers.onLocale(message.payload.locale)
     else if (message.type === 'setTheme') this.handlers.onTheme(message.payload.theme)
     else if (message.type === 'setSurface') this.handlers.onSurface(message.payload.surface)
+    else if (message.type === 'meetingContext') this.handlers.onMeetingContext(message.payload.meeting)
     else if (message.type === 'logout') {
       const replyTo = message.id
       void this.handlers.onLogout().finally(() => this.send({ type: 'loggedOut', replyTo }))
     }
+  }
+
+  /** Asks the shell for Combined view with this meeting open below (null: the meeting list). Only once connected. */
+  openCombined(meetingId: string | null): void {
+    if (this.connected) this.send({ type: 'openCombined', payload: { meetingId } })
   }
 
   private send(message: ShellMessage): void {

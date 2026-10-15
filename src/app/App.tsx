@@ -14,7 +14,8 @@ import { InactivityWarning } from './InactivityWarning'
 import { useInactivityLogout } from './useInactivityLogout'
 import { useUiLocale } from './useUiLocale'
 import { applyShellLanguage, hasLanguageOverride, switchLanguage } from '../i18n'
-import { ShellClient, surfaceStartHash, type EmbedContext } from './embed'
+import { setCombinedOpener, ShellClient, surfaceStartHash, type EmbedContext } from './embed'
+import type { ShellMeeting } from './shellProtocol'
 import { StatusStrip } from '../views/status/StatusStrip'
 import { applyThemePreference } from './theme'
 import { ProjectsView, parseProjectScreen, type ProjectScreen } from '../views/projects/ProjectsView'
@@ -124,6 +125,8 @@ export function App({ embed }: AppProps) {
   const shellLogout = useRef<() => Promise<unknown>>(() => Promise.resolve())
   // The shell keeps one console frame and moves it between its destinations: the surface changes without a reload.
   const [surface, setSurface] = useState(embed?.surface ?? '')
+  // UNG-332: the meeting open in Meeting's frame, for the status strip.
+  const [shellMeeting, setShellMeeting] = useState<ShellMeeting | null>(null)
   function showSurface(next: string) {
     setSurface(next)
     // replace, not a new entry: a framed page's history entries would end up in the shell's back button.
@@ -138,7 +141,9 @@ export function App({ embed }: AppProps) {
         applyThemePreference(theme)
         void applyShellLanguage(locale)
         showSurface(surface)
+        setCombinedOpener((meetingId) => shellClient.openCombined(meetingId))
       },
+      onMeetingContext: setShellMeeting,
       onSurface: showSurface,
       onLocale: (locale) => void applyShellLanguage(locale),
       onTheme: applyThemePreference,
@@ -147,7 +152,10 @@ export function App({ embed }: AppProps) {
     const onMessage = (event: MessageEvent) => shellClient.handleMessage(event)
     window.addEventListener('message', onMessage)
     shellClient.ready()
-    return () => window.removeEventListener('message', onMessage)
+    return () => {
+      window.removeEventListener('message', onMessage)
+      setCombinedOpener(null)
+    }
     // embed is fixed for the page's lifetime
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -250,7 +258,7 @@ export function App({ embed }: AppProps) {
   if (embed && surface === 'status') {
     return (
       <Fragment key={locale}>
-        <StatusStrip auth={auth.status} projectId={activeProjectId} inactivityRemainingMs={inactivity.phase === 'warning' ? inactivity.remainingMs : null} />
+        <StatusStrip auth={auth.status} projectId={activeProjectId} meeting={shellMeeting} inactivityRemainingMs={inactivity.phase === 'warning' ? inactivity.remainingMs : null} />
       </Fragment>
     )
   }

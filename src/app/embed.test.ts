@@ -43,6 +43,7 @@ function setup() {
     onTheme: (theme) => calls.push(`theme:${theme}`),
     onSurface: (surface) => calls.push(`surface:${surface}`),
     onLogout: () => new Promise<void>((resolve) => { calls.push('logout'); finishLogout = resolve }),
+    onMeetingContext: (meeting) => calls.push(`meeting:${meeting ? `${meeting.id}:${meeting.title}` : 'none'}`),
   }
   const client = new ShellClient(shell, { shellOrigin: SHELL, surface: 'projects' }, handlers)
   const receive = (data: unknown, origin = SHELL, source: unknown = shell) => client.handleMessage({ origin, source, data })
@@ -104,4 +105,19 @@ test('logout besvaras med loggedOut först när sessionen avslutats', async () =
   finishLogout()
   await new Promise((resolve) => setTimeout(resolve, 0))
   assert.deepEqual(shell.sent[1], { targetOrigin: SHELL, message: { protocol: 'ungap-shell', type: 'loggedOut', replyTo: 'L1' } })
+})
+
+// UNG-332: Combined view opened from a project, and the open meeting from Meeting through the shell.
+test('openCombined is sent only once connected, and meetingContext only after the handshake', () => {
+  const { shell, client, calls, receive } = setup()
+  client.ready()
+  client.openCombined('m-1')
+  receive({ protocol: 'ungap-shell', type: 'meetingContext', payload: { meeting: { id: 'm-0', title: 'X' } } })
+  receive(init(shell.sent[0].message.id))
+  client.openCombined('m-1')
+  receive({ protocol: 'ungap-shell', type: 'meetingContext', payload: { meeting: { id: 'm-1', title: 'KF' } } })
+  receive({ protocol: 'ungap-shell', type: 'meetingContext', payload: { meeting: null } })
+  assert.deepEqual(shell.sent.map((s) => s.message.type), ['ready', 'openCombined'])
+  assert.deepEqual(shell.sent[1], { targetOrigin: SHELL, message: { protocol: 'ungap-shell', type: 'openCombined', payload: { meetingId: 'm-1' } } })
+  assert.deepEqual(calls, ['init:en:light:single', 'meeting:m-1:KF', 'meeting:none'])
 })
