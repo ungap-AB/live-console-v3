@@ -1576,7 +1576,15 @@ msgid "Current item"
 msgstr ""
 
 #: src/views/projects/PlayoutWorkOverlay.tsx
+msgid "Current item (rehearsal)"
+msgstr ""
+
+#: src/views/projects/PlayoutWorkOverlay.tsx
 msgid "Current speaker"
+msgstr ""
+
+#: src/views/projects/PlayoutWorkOverlay.tsx
+msgid "Current speaker (rehearsal)"
 msgstr ""
 
 #: src/app/Shell.tsx
@@ -3724,6 +3732,22 @@ msgstr ""
 msgid "Recordings linked to a project can only be removed there."
 msgstr ""
 
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Rehearsal"
+msgstr ""
+
+#: src/views/projects/rehearsalLogic.ts
+msgid "Rehearsal cleared. Nothing was shown to viewers."
+msgstr ""
+
+#: src/views/projects/rehearsalLogic.ts
+msgid "Rehearsal: {label}. Not shown to viewers and not saved."
+msgstr ""
+
+#: src/views/projects/rehearsalLogic.ts
+msgid "Rehearsal: not shown to viewers and not saved."
+msgstr ""
+
 #: src/views/projects/CaptionEditor.tsx
 msgid "Reload (your changes will be lost)"
 msgstr ""
@@ -5844,6 +5868,10 @@ msgstr ""
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "What do you want to import"
+msgstr ""
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "What you play out in Before is shown only here: not to viewers, and it is not saved. The item marked when you go Live becomes the first item of the broadcast."
 msgstr ""
 
 #: src/views/projects/CaptionEditor.tsx

@@ -247,3 +247,26 @@
 .pcols.is-live .sortable-list li.active .in-picture {
   color: var(--danger);
 }
+
+/* UNG-333: provkörning i Before. Markeringen är streckad och neutral, så den inte kan förväxlas med "i bild" i Live. */
+.pcols-rehearsal {
+  flex: none;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.pcols-rehearsal + .pcols {
+  height: max(260px, calc(100vh - 420px));
+}
+
+.pcols.is-rehearsal .sortable-list li.active {
+  background: var(--panel);
+  border-color: var(--ink-3);
+  border-style: dashed;
+  box-shadow: none;
+}

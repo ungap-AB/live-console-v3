@@ -312,6 +312,7 @@ async function fetchPlayout(id: string) {
     currentExclamation: dto.currentExclamation ? toTimelineEvent(dto.currentExclamation) : null,
     currentPause: dto.currentPause ? toTimelineEvent(dto.currentPause) : null,
     timeline,
+    rehearsal: dto.rehearsal ?? false,
   }
 }
 

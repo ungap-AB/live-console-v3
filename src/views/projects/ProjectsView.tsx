@@ -22,6 +22,7 @@ import { OndemandView } from './OndemandView'
 import { MODES, MODE_LABEL } from './projectMode'
 import { listCaptionButton, requestCaptionStudio } from './captionEntryLogic'
 import { currentPauseFromTimeline, normalizePauseText } from './pauseLogic'
+import { applyRehearsalCue, isRehearsal, isRehearsalEvent, rehearsalReceipt } from './rehearsalLogic'
 import { activeJobsByProject, jobKindIcon, jobKindLabel } from './projectJobLogic'
 import { needsScroll, revealTarget } from './projectListFocus'
 import { openJobsView } from '../../app/jobsBus'
@@ -262,6 +263,44 @@ export function ProjectsView({
     setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, playout: update(p.playout) } : p)))
   }
 
+  // UNG-333: utspelning i Before är en provkörning. Markeringen flyttas optimistiskt, servern sparar ingenting på tidslinjen
+  // och operatören får ett kvitto. Vid fel återställs markeringen.
+  // Kvittot följer serverns svar, inte konsolens kanske föråldrade läge: har någon annan redan bytt läge spelades cuen ut på
+  // riktigt. Vid fel eller lägesskillnad hämtas utspelningen om från servern i stället för att en gammal ögonblicksbild återställs.
+  function rehearse(project: Project, kind: CueKind, refId: string | null, label: string | null, send: () => Promise<TimelineEvent>) {
+    updateProjectPlayout(project.id, (playout) => applyRehearsalCue(playout, kind, refId, label ?? 'Rensat'))
+    send().then(
+      (event) => {
+        if (isRehearsalEvent(event)) {
+          setToast(rehearsalReceipt(kind, label))
+          return
+        }
+        void resyncPlayout(project.id)
+      },
+      (err) => {
+        void resyncPlayout(project.id)
+        setToast(err instanceof Error ? err.message : t`Could not play out.`)
+      },
+    )
+  }
+
+  // Servern provkörde en cue som konsolen trodde var skarp (läget har bytts till Before någon annanstans): hämta om läget och kvittera.
+  function confirmLiveCue(projectId: string, event: TimelineEvent, kind: CueKind, label: string | null): boolean {
+    if (!isRehearsalEvent(event)) return false
+    void resyncPlayout(projectId)
+    setToast(rehearsalReceipt(kind, label))
+    return true
+  }
+
+  async function resyncPlayout(projectId: string) {
+    try {
+      const playout = await client.projects.playout(projectId)
+      updateProjectPlayout(projectId, () => playout)
+    } catch {
+      // Nästa ordinarie hämtning rättar läget.
+    }
+  }
+
   // client.projects.list() ger bara en lätt sammanfattning (tom playout) —
   // hämta hela projektet (med riktig tidslinje) när ett projekt väljs, annars
   // ser Playout ut som om inget någonsin spelats ut på tidigare besökta projekt.
@@ -458,6 +497,10 @@ export function ProjectsView({
     cue: (kind: CueKind, refId: string, label: string) => {
       if (!selected) return
       const project = selected
+      if (isRehearsal(project.publicMode)) {
+        rehearse(project, kind, refId, label, () => client.projects.cue(project.id, kind, refId, label))
+        return
+      }
       const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
       const live = project.channel?.state === 'live'
       const offsetSeconds =
@@ -498,6 +541,7 @@ export function ProjectsView({
 
       client.projects.cue(project.id, kind, refId, label).then(
         (realEvent) => {
+          if (confirmLiveCue(project.id, realEvent, kind, label)) return
           if (realEvent.kind !== kind || realEvent.refId !== refId) {
             updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => !isOptimistic(e))))
             setToast(t`The backend did not confirm the clicked item.`)
@@ -516,6 +560,10 @@ export function ProjectsView({
       if (!selected) return
       const project = selected
       const label = normalizePauseText(text)
+      if (isRehearsal(project.publicMode)) {
+        rehearse(project, 'pauseIn', null, label, () => client.projects.pause(project.id, label))
+        return
+      }
       const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
       const running = project.playout.currentPause
       const previousTimeline = project.playout.timeline
@@ -524,7 +572,7 @@ export function ProjectsView({
         ? playout.timeline.map((e) => (e.id === running.id ? { ...e, label } : e))
         : [...playout.timeline, { id: tempId, kind: 'pauseIn', refId: null, label, occurredAt: new Date().toISOString(), offsetSeconds: null }]))
       client.projects.pause(project.id, label).then(
-        (realEvent) => updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId || e.id === realEvent.id ? realEvent : e)))),
+        (realEvent) => confirmLiveCue(project.id, realEvent, 'pauseIn', label) || updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId || e.id === realEvent.id ? realEvent : e)))),
         (err) => {
           updateProjectPlayout(project.id, () => derivePlayoutState(previousTimeline))
           setToast(err instanceof Error ? err.message : t`Could not start the break.`)
@@ -534,12 +582,16 @@ export function ProjectsView({
     resume: () => {
       if (!selected) return
       const project = selected
+      if (isRehearsal(project.publicMode)) {
+        rehearse(project, 'pauseOut', null, null, () => client.projects.resume(project.id))
+        return
+      }
       if (!project.playout.currentPause) return
       const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
       const previousTimeline = project.playout.timeline
       updateProjectPlayout(project.id, (playout) => derivePlayoutState([...playout.timeline, { id: tempId, kind: 'pauseOut', refId: null, label: 'Paus slut', occurredAt: new Date().toISOString(), offsetSeconds: null }]))
       client.projects.resume(project.id).then(
-        (realEvent) => updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId ? realEvent : e)))),
+        (realEvent) => confirmLiveCue(project.id, realEvent, 'pauseOut', null) || updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.map((e) => (e.id === tempId ? realEvent : e)))),
         (err) => {
           // Någon annan hann före (409 not_paused): läget är ändå "ingen paus". Annars rullas vi tillbaka.
           if (err instanceof ApiError && err.code === 'not_paused') {
@@ -554,6 +606,10 @@ export function ProjectsView({
     clear: (kind: CueKind) => {
       if (!selected) return
       const project = selected
+      if (isRehearsal(project.publicMode)) {
+        rehearse(project, kind, null, null, () => client.projects.clear(project.id, kind))
+        return
+      }
       const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
       const live = project.channel?.state === 'live'
       const offsetSeconds =
@@ -579,6 +635,7 @@ export function ProjectsView({
 
       client.projects.clear(project.id, kind).then(
         (realEvent) => {
+          if (confirmLiveCue(project.id, realEvent, kind, null)) return
           if (realEvent.kind !== kind || realEvent.label !== 'Rensat') {
             updateProjectPlayout(project.id, (playout) => derivePlayoutState(playout.timeline.filter((e) => e.id !== tempId)))
             setToast(t`The backend did not confirm the clearing.`)

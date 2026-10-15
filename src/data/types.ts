@@ -287,6 +287,8 @@ export interface PlayoutState {
   currentExclamation?: TimelineEvent | null
   /** Den pauseIn som pågår just nu (UNG-119), annars null. */
   currentPause?: TimelineEvent | null
+  /** UNG-333: projektet är i Before. Aktuell punkt/aktuellt namn är en provkörning och tidslinjen är tom. */
+  rehearsal?: boolean
 }
 
 // ---- Live-resurser (IVS-kanaler) ----

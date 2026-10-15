@@ -1582,8 +1582,16 @@ msgid "Current item"
 msgstr "Aktuell punkt"
 
 #: src/views/projects/PlayoutWorkOverlay.tsx
+msgid "Current item (rehearsal)"
+msgstr "Aktuell punkt (provkörning)"
+
+#: src/views/projects/PlayoutWorkOverlay.tsx
 msgid "Current speaker"
 msgstr "Aktuell talare"
+
+#: src/views/projects/PlayoutWorkOverlay.tsx
+msgid "Current speaker (rehearsal)"
+msgstr "Aktuell talare (provkörning)"
 
 #: src/app/Shell.tsx
 msgid "Dark"
@@ -3730,6 +3738,22 @@ msgstr "Inspelningar"
 msgid "Recordings linked to a project can only be removed there."
 msgstr "Inspelningar kopplade till ett projekt kan bara tas bort där."
 
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Rehearsal"
+msgstr "Provkörning"
+
+#: src/views/projects/rehearsalLogic.ts
+msgid "Rehearsal cleared. Nothing was shown to viewers."
+msgstr "Provkörningen rensad. Inget visades för tittarna."
+
+#: src/views/projects/rehearsalLogic.ts
+msgid "Rehearsal: {label}. Not shown to viewers and not saved."
+msgstr "Provkört: {label}. Visas inte för tittarna och sparas inte."
+
+#: src/views/projects/rehearsalLogic.ts
+msgid "Rehearsal: not shown to viewers and not saved."
+msgstr "Provkört. Visas inte för tittarna och sparas inte."
+
 #: src/views/projects/CaptionEditor.tsx
 msgid "Reload (your changes will be lost)"
 msgstr "Ladda om (dina ändringar går förlorade)"
@@ -5851,6 +5875,10 @@ msgstr "Vad vill du exportera"
 #: src/views/projects/ExportImportDialog.tsx
 msgid "What do you want to import"
 msgstr "Vad vill du läsa in"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "What you play out in Before is shown only here: not to viewers, and it is not saved. The item marked when you go Live becomes the first item of the broadcast."
+msgstr "Det du spelar ut i Before syns bara här, inte för tittarna, och sparas inte. Punkten som är markerad när du går till Live blir sändningens första punkt."
 
 #: src/views/projects/CaptionEditor.tsx
 msgid "Which part of the video should the manuscript cover? You can import the corrected manuscript here again whatever you choose."

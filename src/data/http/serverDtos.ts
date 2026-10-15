@@ -184,6 +184,8 @@ export interface ServerPlayout {
   currentExclamation: ServerTimelineEvent | null
   currentPause?: ServerTimelineEvent | null
   timeline: ServerTimelineEvent[]
+  /** UNG-333: Before, so current item/person are a rehearsal marking and the timeline is empty. */
+  rehearsal?: boolean
 }
 
 export interface ServerReviewLink {

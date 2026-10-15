@@ -4,6 +4,7 @@ import type {
   AgendaItem,
   Channel,
   ChannelState,
+  CueKind,
   CurrentUser,
   Domain,
   MeetingSummary,
@@ -984,6 +985,15 @@ export const mockClient: Client = {
         }
         p.visibility = 'closed'
       }
+      // UNG-333: som servern. Provkörningen följer inte med ut ur Before, utom att den markerade punkten blir första händelsen i Live.
+      if (p.publicMode === 'before' && publicMode !== 'before') {
+        const item = p.playout.rehearsal && p.playout.currentAgendaItem ? p.playout.currentAgendaItem : null
+        p.playout = { currentAgendaItemId: null, currentPersonId: null, timeline: [] }
+        if (publicMode === 'live' && item) {
+          const event: TimelineEvent = { ...item, id: `ev${nextId++}`, occurredAt: new Date().toISOString(), offsetSeconds: null }
+          p.playout = { currentAgendaItemId: item.refId, currentPersonId: null, currentAgendaItem: event, timeline: [event] }
+        }
+      }
       p.publicMode = publicMode
       if (publicMode === 'after') p.visibility = 'closed'
       p.afterReason = publicMode === 'after' ? afterReason ?? 'liveFinished' : null
@@ -1230,6 +1240,8 @@ export const mockClient: Client = {
     async cue(id, kind, refId, label) {
       const p = findProject(id)
       if (p.publication.state === 'published') throw new Error('Sändningen är publicerad. Utspelning är avstängd.')
+      // UNG-333: som servern, utspelning i Before är en provkörning som aldrig hamnar på tidslinjen.
+      if (p.publicMode === 'before') return delay(clone(rehearseMock(p, kind, refId, label)))
       // Utspelning fungerar även offline — mötet ska kunna dokumenteras trots
       // enkoderstrul. offsetSeconds blir null tills sändningen är igång igen.
       const live = p.channel?.state === 'live'
@@ -1262,6 +1274,7 @@ export const mockClient: Client = {
     async clear(id, kind) {
       const p = findProject(id)
       if (p.publication.state === 'published') throw new Error('Sändningen är publicerad. Utspelning är avstängd.')
+      if (p.publicMode === 'before') return delay(clone(rehearseMock(p, kind, null, 'Rensat')))
       const live = p.channel?.state === 'live'
       const offsetSeconds = live
         ? Math.round(
@@ -1284,6 +1297,7 @@ export const mockClient: Client = {
     },
     async pause(id, text) {
       const p = findProject(id)
+      if (p.publicMode === 'before') return delay(clone(rehearseMock(p, 'pauseIn', null, text.trim() || 'Paus')))
       const running = p.playout.currentPause
       const label = text.trim() || 'Paus'
       if (running) {
@@ -1299,6 +1313,7 @@ export const mockClient: Client = {
     },
     async resume(id) {
       const p = findProject(id)
+      if (p.publicMode === 'before') return delay(clone(rehearseMock(p, 'pauseOut', null, 'Paus slut')))
       if (!p.playout.currentPause) throw new Error('Ingen paus pågår.')
       const event: TimelineEvent = { id: `ev${nextId++}`, kind: 'pauseOut', refId: null, label: 'Paus slut', occurredAt: new Date().toISOString(), offsetSeconds: null }
       p.playout.timeline = [...p.playout.timeline, event]
@@ -1407,6 +1422,15 @@ export const mockClient: Client = {
 }
 
 const mockPreviewPlayouts = new Map<string, import('../types').PreviewPlayout>()
+
+// UNG-333: som ProjectStore.RehearseCue. Flyttar bara markeringen; kvittot sparas inte.
+function rehearseMock(p: Project, kind: CueKind, refId: string | null, label: string): TimelineEvent {
+  const event: TimelineEvent = { id: `rh${Date.now()}`, kind, refId, label, occurredAt: new Date().toISOString(), offsetSeconds: null }
+  const marked = refId ? event : null
+  if (kind === 'agendaItem') p.playout = { ...p.playout, rehearsal: true, currentAgendaItemId: refId, currentAgendaItem: marked, currentPersonId: null, currentPerson: null }
+  else if (kind === 'person') p.playout = { ...p.playout, rehearsal: true, currentPersonId: refId, currentPerson: marked }
+  return event
+}
 
 function findProject(id: string): Project {
   const project = projects.find((p) => p.id === id)

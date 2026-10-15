@@ -1582,8 +1582,16 @@ msgid "Current item"
 msgstr "Current item"
 
 #: src/views/projects/PlayoutWorkOverlay.tsx
+msgid "Current item (rehearsal)"
+msgstr "Current item (rehearsal)"
+
+#: src/views/projects/PlayoutWorkOverlay.tsx
 msgid "Current speaker"
 msgstr "Current speaker"
+
+#: src/views/projects/PlayoutWorkOverlay.tsx
+msgid "Current speaker (rehearsal)"
+msgstr "Current speaker (rehearsal)"
 
 #: src/app/Shell.tsx
 msgid "Dark"
@@ -3730,6 +3738,22 @@ msgstr "Recordings"
 msgid "Recordings linked to a project can only be removed there."
 msgstr "Recordings linked to a project can only be removed there."
 
+#: src/views/projects/PlayoutColumns.tsx
+msgid "Rehearsal"
+msgstr "Rehearsal"
+
+#: src/views/projects/rehearsalLogic.ts
+msgid "Rehearsal cleared. Nothing was shown to viewers."
+msgstr "Rehearsal cleared. Nothing was shown to viewers."
+
+#: src/views/projects/rehearsalLogic.ts
+msgid "Rehearsal: {label}. Not shown to viewers and not saved."
+msgstr "Rehearsal: {label}. Not shown to viewers and not saved."
+
+#: src/views/projects/rehearsalLogic.ts
+msgid "Rehearsal: not shown to viewers and not saved."
+msgstr "Rehearsal: not shown to viewers and not saved."
+
 #: src/views/projects/CaptionEditor.tsx
 msgid "Reload (your changes will be lost)"
 msgstr "Reload (your changes will be lost)"
@@ -5851,6 +5875,10 @@ msgstr "What do you want to export"
 #: src/views/projects/ExportImportDialog.tsx
 msgid "What do you want to import"
 msgstr "What do you want to import"
+
+#: src/views/projects/PlayoutColumns.tsx
+msgid "What you play out in Before is shown only here: not to viewers, and it is not saved. The item marked when you go Live becomes the first item of the broadcast."
+msgstr "What you play out in Before is shown only here: not to viewers, and it is not saved. The item marked when you go Live becomes the first item of the broadcast."
 
 #: src/views/projects/CaptionEditor.tsx
 msgid "Which part of the video should the manuscript cover? You can import the corrected manuscript here again whatever you choose."

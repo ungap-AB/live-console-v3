@@ -12,6 +12,7 @@ import { ModeSelector } from './ModeSelector'
 import { PlayoutColumns } from './PlayoutColumns'
 import { PlayoutOverlay } from './PlayoutOverlay'
 import { useNameList } from './useNameList'
+import { isRehearsal } from './rehearsalLogic'
 import './LiveWorkspace.css'
 
 interface NowPanelsProps {
@@ -45,11 +46,13 @@ export function NowPanels({ project: p, actions, showTime }: NowPanelsProps) {
   const currentAgendaEvent = latestEvent('agendaItem', p.playout.currentAgendaItemId)
   const currentPersonEvent = latestEvent('person', p.playout.currentPersonId)
 
+  // UNG-333: i Before är det utspelade en provkörning som bara syns här.
+  const rehearsal = isRehearsal(p.publicMode)
   const panels: { key: string; label: string; value: string | null; occurredAt: string | null; clearLabel: string; onClear: () => void }[] = [
-    { key: 'item', label: t`Current item`, value: nowItem, occurredAt: currentAgendaEvent?.occurredAt ?? null, clearLabel: t`Clear agenda item on screen`, onClear: () => actions.clear('agendaItem') },
+    { key: 'item', label: rehearsal ? t`Current item (rehearsal)` : t`Current item`, value: nowItem, occurredAt: currentAgendaEvent?.occurredAt ?? null, clearLabel: t`Clear agenda item on screen`, onClear: () => actions.clear('agendaItem') },
     {
       key: 'person',
-      label: t`Current speaker`,
+      label: rehearsal ? t`Current speaker (rehearsal)` : t`Current speaker`,
       // Tillfällig talare (exclamation-cue) är momentan och visas i samma ruta
       // istället för en egen — den vinner medan den är aktiv, annars faller
       // vi tillbaka till den ordinarie aktuella talaren.

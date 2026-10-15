@@ -18,6 +18,7 @@ import { useNameList } from './useNameList'
 import { personSortOptions, IDLE_REORDER_MS, orderPeople, parsePersonSort, resolveShown, type PersonSort } from './personOrder'
 import { useFlip } from './useFlip'
 import { highlight, markedHit, matches, moveActive, queryTokens, shouldActivateSearch, type Hit } from './playoutSearchLogic'
+import { isRehearsal } from './rehearsalLogic'
 import './PlayoutColumns.css'
 
 interface PlayoutColumnsProps {
@@ -99,6 +100,8 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
   // Utspelning ska fungera även offline — mötet måste dokumenteras trots
   // enkoderstrul. Bara en publicerad (fryst) tidslinje är låst.
   const canPlay = p.publication.state !== 'published'
+  // UNG-333: i Before är utspelningen en provkörning. Markeringen visas, men inget blir klart och inget räknas.
+  const rehearsal = live && isRehearsal(p.publicMode)
 
   function lastPlayedOffset(itemId: string): number | null {
     const events = p.playout.timeline.filter((e) => e.kind === 'agendaItem' && e.refId === itemId)
@@ -369,7 +372,14 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
           </span>
         </div>
       )}
-      <div class={`pcols${live ? ' is-live' : ''}`}>
+      {rehearsal && (
+        <p class="pcols-rehearsal" role="note">
+          <strong>{t`Rehearsal`}</strong>
+          {' '}
+          {t`What you play out in Before is shown only here: not to viewers, and it is not saved. The item marked when you go Live becomes the first item of the broadcast.`}
+        </p>
+      )}
+      <div class={`pcols${live ? ' is-live' : ''}${rehearsal ? ' is-rehearsal' : ''}`}>
         <section class="pcol">
           <div class="pcol-head">
             <h2>{t`Agenda`}</h2>
@@ -540,9 +550,11 @@ export function PlayoutColumns({ project: p, actions, live = false, openPicker =
                   const active = p.playout.currentPersonId === person.id
                   return (
                     <>
-                      <span class="play-count" title={playCountTitle(speakerPlayCount(person.id))}>
-                        {speakerPlayCount(person.id)}
-                      </span>
+                      {!rehearsal && (
+                        <span class="play-count" title={playCountTitle(speakerPlayCount(person.id))}>
+                          {speakerPlayCount(person.id)}
+                        </span>
+                      )}
                       <button
                         class="play"
                         type="button"
