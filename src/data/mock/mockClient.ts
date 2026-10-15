@@ -160,6 +160,8 @@ let nextId = 100
 let mockLoggedInUserId: string | null = null
 // UNG-306: the accounts' languages (in memory, like everything in the mock).
 const mockLanguages = new Map<string, 'sv' | 'en'>()
+// UNG-338: project id → its ungap Meeting link.
+const mockMeetingLinks = new Map<string, { meetingId: string; createdAt: string }>()
 
 function toCurrentUser(user: UserAccount): CurrentUser {
   const domain = domains.find((d) => d.id === user.domainId)
@@ -1023,6 +1025,21 @@ export const mockClient: Client = {
       p.meetingDomain = undefined
       p.meetingId = undefined
       return delay(projectSnapshot(p))
+    },
+    async getMeetingLink(id) {
+      findProject(id)
+      return delay({ available: true, link: mockMeetingLinks.get(id) ?? null })
+    },
+    async setMeetingLink(id, meetingId) {
+      findProject(id)
+      const link = { meetingId: meetingId.trim().toLowerCase(), createdAt: new Date().toISOString() }
+      mockMeetingLinks.set(id, link)
+      return delay({ available: true, link })
+    },
+    async clearMeetingLink(id) {
+      findProject(id)
+      mockMeetingLinks.delete(id)
+      await delay(undefined)
     },
     async createChannel(id) {
       const p = findProject(id)

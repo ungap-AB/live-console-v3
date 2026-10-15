@@ -618,6 +618,10 @@ msgstr "Dagordning"
 msgid "Agenda item"
 msgstr "Ärende"
 
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Agenda items and speakers from the meeting are no longer played out in this project."
+msgstr "Dagordningspunkter och talare från mötet spelas inte längre ut i det här projektet."
+
 #: src/views/projects/PlayoutColumns.tsx
 msgid "Agenda options"
 msgstr "Dagordningsalternativ"
@@ -863,6 +867,7 @@ msgstr "Kan redigeras när inspelningen är klar"
 #: src/views/projects/ForkDialog.tsx
 #: src/views/projects/InheritLayoutDialog.tsx
 #: src/views/projects/MeetingBindingModal.tsx
+#: src/views/projects/MeetingLinkDialog.tsx
 #: src/views/projects/OndemandView.tsx
 #: src/views/projects/PauseButton.tsx
 #: src/views/projects/PlayerSettingsDialog.tsx
@@ -975,6 +980,10 @@ msgstr "Byt dagordning"
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Change image…"
 msgstr "Byt bild…"
+
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Change meeting…"
+msgstr "Byt möte…"
 
 #: src/views/projects/BeforeWorkspace.tsx
 #: src/views/projects/PlayoutColumns.tsx
@@ -2422,6 +2431,10 @@ msgstr "Är det här rätt fil?"
 msgid "It can take a few minutes for long broadcasts. Leave this box open until publishing is done."
 msgstr "Det kan ta några minuter för långa sändningar. Lämna den här rutan öppen tills publiceringen är klar."
 
+#: src/views/projects/MeetingLinkDialog.tsx
+msgid "It can take up to half a minute after linking before ungap Meeting starts sending."
+msgstr "Det kan ta upp till en halv minut efter kopplingen innan ungap Meeting börjar skicka."
+
 #: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/chapterRows.ts
 msgid "Item"
@@ -2534,6 +2547,7 @@ msgid "Lines"
 msgstr "Repliker"
 
 #: src/components/ShareDialog.tsx
+#: src/views/projects/MeetingLinkDialog.tsx
 #: src/views/projects/PlayerSettingsDialog.tsx
 msgid "Link"
 msgstr "Länk"
@@ -2579,6 +2593,11 @@ msgid "Link to Meeting..."
 msgstr "Koppla till Meeting..."
 
 #: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/MeetingLinkDialog.tsx
+msgid "Link ungap Meeting"
+msgstr "Koppla ungap Meeting"
+
+#: src/views/projects/BeforeWorkspace.tsx
 msgid "Link…"
 msgstr "Koppla…"
 
@@ -2586,6 +2605,7 @@ msgstr "Koppla…"
 msgid "linked"
 msgstr "kopplad"
 
+#: src/views/projects/BeforeWorkspace.tsx
 #: src/views/projects/preparationLabels.ts
 msgid "Linked"
 msgstr "Kopplad"
@@ -2597,6 +2617,10 @@ msgstr "Kopplad till Meeting"
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Linked to project"
 msgstr "Kopplad till projekt"
+
+#: src/views/projects/MeetingLinkDialog.tsx
+msgid "Linking…"
+msgstr "Kopplar…"
 
 #: src/views/projects/personOrder.ts
 msgid "List order"
@@ -2745,6 +2769,10 @@ msgstr "Meeting-domän: {meetingDomain}"
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "Meeting ID {meetingId}"
 msgstr "Meeting-ID {meetingId}"
+
+#: src/views/projects/MeetingLinkDialog.tsx
+msgid "Meeting ID or address"
+msgstr "Mötets id eller adress"
 
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "Meeting linked"
@@ -3267,6 +3295,10 @@ msgstr "Öppna PDF-dokument för {title}"
 msgid "Open the editor…"
 msgstr "Öppna redigeraren…"
 
+#: src/views/projects/MeetingLinkDialog.tsx
+msgid "Open the meeting in ungap Meeting and copy the address, or the ID at the end of it."
+msgstr "Öppna mötet i ungap Meeting och kopiera adressen, eller id:t i slutet av den."
+
 #: src/views/projects/PlayerLinkField.tsx
 msgid "Open the player in a new tab"
 msgstr "Öppna spelaren i ny flik"
@@ -3353,6 +3385,10 @@ msgstr "Klistra in minst en rad, en person per rad."
 #: src/views/projects/ChapterImportDialog.tsx
 msgid "Paste list"
 msgstr "Klistra in lista"
+
+#: src/views/projects/MeetingLinkDialog.tsx
+msgid "Paste the meeting's ID or the address of the meeting in ungap Meeting."
+msgstr "Klistra in mötets id eller mötets adress i ungap Meeting."
 
 #: src/components/VideoPositionControls.tsx
 #: src/views/projects/CaptionEditor.tsx
@@ -3770,6 +3806,10 @@ msgstr "Ta bort {removeName} helt? Historiken visar hädanefter bara namnet, uta
 msgid "Remove captions"
 msgstr "Ta bort undertexter"
 
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Remove link"
+msgstr "Ta bort kopplingen"
+
 #: src/components/PdfAttachments.tsx
 #: src/components/PdfAttachmentsModal.tsx
 msgid "Remove PDF"
@@ -3786,6 +3826,10 @@ msgstr "Ta bort undertexterna?"
 #: src/views/projects/CaptionEditor.tsx
 msgid "Remove the line"
 msgstr "Ta bort repliken"
+
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "Remove the link to ungap Meeting?"
+msgstr "Ta bort kopplingen till ungap Meeting?"
 
 #: src/views/users/UsersView.tsx
 msgid "Remove user?"
@@ -5063,6 +5107,10 @@ msgstr "Manuset kunde inte skapas."
 msgid "The manuscript is made from the saved version. Your unsaved changes are not included."
 msgstr "Manuset är gjort av den sparade versionen. Dina osparade ändringar ingår inte."
 
+#: src/views/projects/MeetingLinkDialog.tsx
+msgid "The meeting's agenda items and speakers are played out in this project when the secretary opens an item or gives the floor in ungap Meeting."
+msgstr "Mötets dagordningspunkter och talare spelas ut i det här projektet när sekreteraren öppnar en punkt eller ger ordet i ungap Meeting."
+
 #: src/views/projects/ChapterImportDialog.tsx
 msgid "The new chapters are added after the current ones."
 msgstr "De nya kapitlen läggs efter de nuvarande."
@@ -5606,6 +5654,10 @@ msgstr "Ångra förra"
 #: src/views/projects/ExportImportDialog.tsx
 msgid "ungap Chapters (.json)"
 msgstr "ungap Chapters (.json)"
+
+#: src/views/projects/BeforeWorkspace.tsx
+msgid "ungap Meeting"
+msgstr "ungap Meeting"
 
 #: src/views/projects/CaptionStudio.tsx
 #: src/views/projects/speakersLogic.ts

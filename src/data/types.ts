@@ -170,6 +170,13 @@ export interface ProjectTechnicalHealth {
   recordingState: RecordingState | null
 }
 
+/** UNG-338: the project's link to a meeting in ungap Meeting. available: the organisation has an ungap Meeting to link to. */
+export interface MeetingLinkState {
+  available: boolean
+  // Absent (the server leaves out nulls) or null when the project is not linked.
+  link?: { meetingId: string; createdAt: string } | null
+}
+
 export interface Project {
   id: string
   name: string

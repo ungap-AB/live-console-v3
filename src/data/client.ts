@@ -10,6 +10,7 @@ import type {
   Domain,
   NameList,
   NameListPerson,
+  MeetingLinkState,
   MeetingSummary,
   MeetingTopic,
   Project,
@@ -253,6 +254,10 @@ export interface Client {
     setNameList(id: string, namelistId: string | null): Promise<Project>
     setMeetingBinding(id: string, meetingDomain: string, meetingId: string, eventsEnabled?: boolean): Promise<Project>
     clearMeetingBinding(id: string): Promise<Project>
+    /** UNG-338: link to a meeting in ungap Meeting (its cues reach the project through Presenter). */
+    getMeetingLink(id: string): Promise<MeetingLinkState>
+    setMeetingLink(id: string, meetingId: string): Promise<MeetingLinkState>
+    clearMeetingLink(id: string): Promise<void>
     createChannel(id: string): Promise<Project>
     teardownChannel(id: string): Promise<Project>
     /** Mockup-bara: simulerar att enkodern startar/stoppar sändning. */

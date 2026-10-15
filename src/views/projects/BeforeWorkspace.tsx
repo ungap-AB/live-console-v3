@@ -12,6 +12,7 @@ import { PlayerFooter } from './PlayerLinkField'
 import { PickerModal } from '../../components/PickerModal'
 import type { ProjectActions } from './actions'
 import { MeetingBindingModal } from './MeetingBindingModal'
+import { MeetingLinkDialog } from './MeetingLinkDialog'
 import { OverviewShell } from './OverviewShell'
 import { PlayerSettingsDialog, type PlayerSettingsCategory } from './PlayerSettingsDialog'
 import { type PlayoutAddress } from './PlayoutOverlay'
@@ -54,6 +55,23 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
     [p.agendaId],
   )
   const nameListResource = useNameList(p)
+  // UNG-338: ungap Meeting's link. The step is only shown when the organisation has an ungap Meeting to link to.
+  const meetingLink = useResource(() => client.projects.getMeetingLink(p.id), [p.id])
+  const [linkingMeeting, setLinkingMeeting] = useState(false)
+  const [confirmUnlink, setConfirmUnlink] = useState(false)
+  const [unlinkError, setUnlinkError] = useState('')
+
+  async function unlinkMeeting() {
+    setUnlinkError('')
+    try {
+      await client.projects.clearMeetingLink(p.id)
+      setConfirmUnlink(false)
+    } catch (e) {
+      // Kopplingen ligger kvar: dialogen står kvar med felet, så ingen tror att cues har slutat komma.
+      setUnlinkError(e instanceof Error ? e.message : String(e))
+    }
+    meetingLink.reload()
+  }
   const [confirmTeardown, setConfirmTeardown] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [picking, setPicking] = useState<'agenda' | 'namelist' | null>(null)
@@ -148,6 +166,26 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
             <p>{t`The ingest resource is removed. To broadcast you need to create a new ingest and use a new stream key in the encoder.`}</p>
           </ConfirmModal>
         )}
+        {linkingMeeting && (
+          <MeetingLinkDialog
+            projectId={p.id}
+            current={meetingLink.data?.link?.meetingId ?? null}
+            onLinked={() => { setLinkingMeeting(false); meetingLink.reload() }}
+            onClose={() => setLinkingMeeting(false)}
+          />
+        )}
+        {confirmUnlink && (
+          <ConfirmModal
+            title={t`Remove the link to ungap Meeting?`}
+            confirmLabel={t`Remove link`}
+            danger
+            onCancel={() => { setConfirmUnlink(false); setUnlinkError('') }}
+            onConfirm={() => void unlinkMeeting()}
+          >
+            <p>{t`Agenda items and speakers from the meeting are no longer played out in this project.`}</p>
+            {unlinkError && <p class="form-error" role="alert">{unlinkError}</p>}
+          </ConfirmModal>
+        )}
         {showMeeting && (
           <MeetingBindingModal
             projectName={p.name}
@@ -176,6 +214,10 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
               { label: t`Show ingest info…`, onClick: () => { setOpenMenu(null); setPlayerSettings('ingest') } },
               { label: t`Tear down`, onClick: () => { setOpenMenu(null); setConfirmTeardown(true) }, danger: true },
             ] : []),
+          ]))}
+          {meetingLink.data?.available && preparationStep(4, meetingLink.data.link ? t`ungap Meeting` : t`Link ungap Meeting`, t`ungap Meeting`, meetingLink.data.link ? t`Linked` : t`Not linked`, !!meetingLink.data.link, actionMenu(t`ungap Meeting`, [
+            { label: meetingLink.data.link ? t`Change meeting…` : t`Link…`, onClick: () => { setOpenMenu(null); setLinkingMeeting(true) } },
+            ...(meetingLink.data.link ? [{ label: t`Remove link`, onClick: () => { setOpenMenu(null); setConfirmUnlink(true) }, danger: true }] : []),
           ]))}
         </ol>
         {showIngestInfo && channel && (

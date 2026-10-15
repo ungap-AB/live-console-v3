@@ -3,6 +3,7 @@ import type { Client } from '../client'
 import type {
   Agenda,
   Channel,
+  MeetingLinkState,
   ChannelHealth,
   ChannelState,
   Chapter,
@@ -975,6 +976,15 @@ export const httpClient: Client = {
     async clearMeetingBinding(id) {
       await api<void>(`/projects/${id}/meeting-binding`, { method: 'DELETE' })
       return fetchProject(id)
+    },
+    async getMeetingLink(id) {
+      return api<MeetingLinkState>(`/projects/${id}/meeting-link`)
+    },
+    async setMeetingLink(id, meetingId) {
+      return api<MeetingLinkState>(`/projects/${id}/meeting-link`, { method: 'PUT', body: { meetingId } })
+    },
+    async clearMeetingLink(id) {
+      await api<void>(`/projects/${id}/meeting-link`, { method: 'DELETE' })
     },
     async createChannel(id) {
       const project = await api<ServerProject>(`/projects/${id}`)
