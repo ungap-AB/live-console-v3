@@ -5569,6 +5569,10 @@ msgstr ""
 msgid "ungap Chapters (.json)"
 msgstr ""
 
+#: src/app/App.tsx
+msgid "ungap Presenter · status strip (coming in UNG-322)"
+msgstr ""
+
 #: src/views/projects/CaptionStudio.tsx
 #: src/views/projects/speakersLogic.ts
 msgid "unknown error."

@@ -94,6 +94,15 @@ export async function switchLanguage(locale: ChosenLocale): Promise<void> {
   await activate(locale)
 }
 
+/**
+ * Embed mode (UNG-322): the shell decides the language. Switches without remembering it in this browser, so the
+ * standalone console keeps the operator's own choice. A `?lang=` override keeps its language.
+ */
+export async function applyShellLanguage(locale: ChosenLocale): Promise<void> {
+  if (hasLanguageOverride(window.location.search) || i18n.locale === locale) return
+  await activate(locale)
+}
+
 /** Tests run in Swedish (only the Swedish catalog is loaded synchronously). */
 export function activateForTests(locale: 'sv'): void {
   i18n.loadAndActivate({ locale, locales: intlLocales[locale], messages: svMessages })

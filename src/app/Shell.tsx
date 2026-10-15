@@ -73,6 +73,8 @@ interface ShellProps {
   currentUserId: string
   currentUserRoles: Role[]
   contentLocked?: boolean
+  /** UNG-322: framed by ungap Shell, which owns the menu, the account and logging out; only the content is shown. */
+  embedded?: boolean
 }
 
 interface ShellToast {
@@ -81,7 +83,7 @@ interface ShellToast {
   onAction?: () => void
 }
 
-export function Shell({ active, children, projectsNavAction, onLogout, onOpenProject, onOpenProjectList, currentUserId, currentUserRoles, contentLocked = false }: ShellProps) {
+export function Shell({ active, children, projectsNavAction, onLogout, onOpenProject, onOpenProjectList, currentUserId, currentUserRoles, contentLocked = false, embedded = false }: ShellProps) {
   const [navOpen, setNavOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null)
   const [currentDomain, setCurrentDomain] = useState<Domain | null>(null)
@@ -135,7 +137,9 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
   }
 
   return (
-    <div class="shell">
+    <div class={`shell${embedded ? ' embedded' : ''}`}>
+      {!embedded && (
+      <>
       <button
         class="nav-toggle"
         aria-label={t`Open menu`}
@@ -218,6 +222,8 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
           </div>
         </div>
       </nav>
+      </>
+      )}
 
       {showAccount && currentUser && (
         <MyAccountDialog

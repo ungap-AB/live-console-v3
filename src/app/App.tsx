@@ -13,7 +13,9 @@ import { LoginView } from './LoginView'
 import { InactivityWarning } from './InactivityWarning'
 import { useInactivityLogout } from './useInactivityLogout'
 import { useUiLocale } from './useUiLocale'
-import { hasLanguageOverride, switchLanguage } from '../i18n'
+import { applyShellLanguage, hasLanguageOverride, switchLanguage } from '../i18n'
+import { ShellClient, type EmbedContext } from './embed'
+import { applyThemePreference } from './theme'
 import { ProjectsView, parseProjectScreen, type ProjectScreen } from '../views/projects/ProjectsView'
 import { AgendasView } from '../views/agendas/AgendasView'
 import { NameListsView } from '../views/namelists/NameListsView'
@@ -33,7 +35,12 @@ function applyAccountLanguage(user: CurrentUser) {
   if (user.language && !hasLanguageOverride(window.location.search)) void switchLanguage(user.language)
 }
 
-export function App() {
+interface AppProps {
+  /** UNG-322: set when ungap Shell frames the console (see main.tsx); null standalone. */
+  embed: EmbedContext | null
+}
+
+export function App({ embed }: AppProps) {
   // UNG-306: a language switch re-renders the app; the views below the shell are remounted (keyed) so data labels follow.
   const locale = useUiLocale()
   const route = useRoute()
@@ -48,7 +55,8 @@ export function App() {
   useEffect(() => {
     client.auth.me().then(
       (user) => {
-        applyAccountLanguage(user)
+        // Embedded, the shell decides the language (UNG-322).
+        if (!embed) applyAccountLanguage(user)
         setActiveProjectId(readStoredSelection('project', user.domain.id))
         setProjectScreen(parseProjectScreen(readStoredSelection('project-screen', user.domain.id)))
         setAuth({ status: 'authed', user })
@@ -90,7 +98,7 @@ export function App() {
   })
 
   function login(user: CurrentUser) {
-    applyAccountLanguage(user)
+    if (!embed) applyAccountLanguage(user)
     setLoggedOut(false)
     // Ingen markering i listan efter inloggning: det senast öppnade gällde förra inloggningen (överlever annars en utloggning).
     setLastOpenedProjectId(null)
@@ -99,9 +107,9 @@ export function App() {
     setAuth({ status: 'authed', user })
   }
 
-  function logout() {
+  function logout(): Promise<void> {
     loggingOut.current = true
-    client.auth.logout().finally(() => {
+    return client.auth.logout().finally(() => {
       loggingOut.current = false
       setLoggedOut(false)
       setActiveProjectId(null)
@@ -109,6 +117,29 @@ export function App() {
       setAuth({ status: 'anon' })
     })
   }
+
+  // UNG-321/322: the shell API in embed mode. Set up once; the ref always holds the logout of the current session, which
+  // the shell asks for when the user logs out in the shell.
+  const shellLogout = useRef<() => Promise<unknown>>(() => Promise.resolve())
+  shellLogout.current = auth.status === 'authed' ? logout : () => Promise.resolve()
+  useEffect(() => {
+    if (!embed) return
+    const shellClient = new ShellClient(window.parent, embed, {
+      onInit: ({ locale, theme }) => {
+        applyThemePreference(theme)
+        void applyShellLanguage(locale)
+      },
+      onLocale: (locale) => void applyShellLanguage(locale),
+      onTheme: applyThemePreference,
+      onLogout: () => shellLogout.current(),
+    })
+    const onMessage = (event: MessageEvent) => shellClient.handleMessage(event)
+    window.addEventListener('message', onMessage)
+    shellClient.ready()
+    return () => window.removeEventListener('message', onMessage)
+    // embed is fixed for the page's lifetime
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Lyft upp ur ProjectsView så att vilket projekt/vy som senast visades
   // överlever att man navigerar bort och tillbaka — det är vad som gör
@@ -204,6 +235,9 @@ export function App() {
   // Delningslänk (UNG-80 steg 4): publik sida utan inloggning, även om en operatör råkar vara inloggad i webbläsaren.
   if (shareToken) return <SharedDownloadsView token={shareToken} />
 
+  // UNG-322: the status strip for Combined view is not built yet; until then the surface shows where it will be.
+  if (embed && embed.surface === 'status') return <div class="embed-status-placeholder">{t`ungap Presenter · status strip (coming in UNG-322)`}</div>
+
   // Engångslänk från ett mejl (inbjudan/återställning) går före allt annat, även när någon är inloggad.
   if (credentialToken) {
     return (
@@ -233,6 +267,7 @@ export function App() {
   return (
     <IsRootAdminContext.Provider value={isRootAdmin}>
     <Shell
+      embedded={embed !== null}
       active={route}
       projectsNavAction={projectsNavAction}
       onLogout={logout}

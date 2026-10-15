@@ -271,3 +271,19 @@
   background: var(--accent-soft);
   color: var(--ink);
 }
+
+/* UNG-322: framed by ungap Shell — no menu of its own, so the content needs no room for the menu button. */
+.shell.embedded .outlet {
+  padding-top: 0;
+}
+
+.embed-status-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-2);
+  font-size: 13px;
+}

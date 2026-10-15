@@ -5575,6 +5575,10 @@ msgstr "Undo previous"
 msgid "ungap Chapters (.json)"
 msgstr "ungap Chapters (.json)"
 
+#: src/app/App.tsx
+msgid "ungap Presenter · status strip (coming in UNG-322)"
+msgstr "ungap Presenter · status strip (coming in UNG-322)"
+
 #: src/views/projects/CaptionStudio.tsx
 #: src/views/projects/speakersLogic.ts
 msgid "unknown error."
