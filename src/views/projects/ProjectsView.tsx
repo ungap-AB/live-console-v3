@@ -7,9 +7,9 @@ import { OverflowMenu } from '../../components/OverflowMenu'
 import { Icon } from '../../components/Icon'
 import { JobProgress } from '../../components/JobProgress'
 import { JobsContext } from '../../app/jobsContext'
-import { CreateProjectDialog } from './CreateProjectDialog'
+import { CreateProjectDialog, type NewBroadcastMeeting } from './CreateProjectDialog'
+import { createBroadcast, type CreateStepFailure } from './createBroadcast'
 import { recordingDurationLabel } from './recordingDuration'
-import { attachPlan } from './createProjectLists'
 import { forkWarningText } from './forkLogic'
 import type { ListChoices } from './createProjectLists'
 import { requestMeetingBinding } from './meetingBindingRequest'
@@ -29,6 +29,8 @@ import { openJobsView } from '../../app/jobsBus'
 import type { ProjectActions } from './actions'
 import { ApiError } from '../../data/http/fetchJson'
 import { storeSelection } from '../../app/selectionStorage'
+import { canNavigate, navigate } from '../../app/embed'
+import { meetingLabel } from '../playouts/projectPlayoutsLogic'
 import './ProjectsView.css'
 
 // Ett projekt öppnas i Livesändning (Before, Live) eller Ondemand (After, Ondemand).
@@ -45,7 +47,7 @@ export function screenForMode(mode: PublicMode): ProjectScreen {
 }
 
 // Rött är reserverat för Live, grönt för Ondemand/Öppen.
-const MODE_TONE: Record<PublicMode, string> = {
+export const MODE_TONE: Record<PublicMode, string> = {
   before: 'neutral',
   live: 'live',
   after: 'after',
@@ -138,11 +140,20 @@ interface ProjectsViewProps {
   onCreatingChange: (creating: boolean) => void
 }
 
-function attachFailedText(failed: ('agenda' | 'namelist')[]): string {
+function attachFailedText(failed: CreateStepFailure[], meetingError: string | null = null): string {
+  // flows-and-views.md: the connection to the meeting comes first; the lists are Presenter's own.
+  if (failed.includes('meeting')) return createdNotConnectedText(meetingError)
   if (failed.length > 1) return t`The project was created, but the agenda and the name list could not be attached. Attach them in the project.`
   return failed[0] === 'agenda'
     ? t`The project was created, but the agenda could not be attached. Attach it in the project.`
     : t`The project was created, but the name list could not be attached. Attach it in the project.`
+}
+
+/** The broadcast was created but not connected to its meeting (so it is not a project yet). */
+export function createdNotConnectedText(error: string | null): string {
+  return error
+    ? t`The broadcast was created, but it could not be connected to the meeting: ${error} Connect it in Before (ungap Meeting).`
+    : t`The broadcast was created, but it could not be connected to the meeting. Connect it in Before (ungap Meeting).`
 }
 
 export function ProjectsView({
@@ -158,6 +169,9 @@ export function ProjectsView({
   onCreatingChange,
 }: ProjectsViewProps) {
   const resource = useResource(() => client.projects.list(), [])
+  // flows-and-views.md: in ungap Shell a broadcast connected to a meeting is a project; the row says so and links there.
+  const meetingLinks = useResource(() => (canNavigate() ? client.projects.listMeetingLinks() : Promise.resolve([])), [])
+  const linkByProject = new Map((meetingLinks.data ?? []).map((link) => [link.projectId, link]))
   const [projects, setProjects] = useState<Project[]>([])
   const [toast, setToast] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Project | null>(null)
@@ -334,31 +348,16 @@ export function ProjectsView({
     setToast(`Projektet skapades. Trimma, skapa undertexter och publicera det som ondemand.${result.warnings.length > 0 ? ` ${forkWarningText(result.warnings)}` : ''}`)
   }
 
-  async function createProject(name: string, layoutSourceProjectId: string | null, lists: ListChoices) {
-    let created = await client.projects.create({ name, layoutSourceProjectId: layoutSourceProjectId ?? undefined })
+  async function createProject(name: string, layoutSourceProjectId: string | null, lists: ListChoices, meeting: NewBroadcastMeeting | null) {
     // UNG-189: valda listor kopplas efter skapandet. Misslyckas en koppling finns projektet kvar och ett meddelande säger vilken.
-    const plan = attachPlan(lists)
-    const failed: ('agenda' | 'namelist')[] = []
-    if (plan.agendaId) {
-      try {
-        created = await client.projects.setAgenda(created.id, plan.agendaId)
-      } catch {
-        failed.push('agenda')
-      }
-    }
-    if (plan.namelistId) {
-      try {
-        created = await client.projects.setNameList(created.id, plan.namelistId)
-      } catch {
-        failed.push('namelist')
-      }
-    }
-    if (plan.openMeeting) requestMeetingBinding(created.id)
+    const { created, failed, openMeetingBinding, meetingError } = await createBroadcast(name, layoutSourceProjectId, lists, meeting)
+    if (openMeetingBinding) requestMeetingBinding(created.id)
     setProjects((prev) => [created, ...prev])
     onSelectedIdChange(created.id)
     onScreenChange(screenForMode(created.publicMode))
     onCreatingChange(false)
-    if (failed.length > 0) setToast(attachFailedText(failed))
+    if (meeting && !failed.includes('meeting')) meetingLinks.reload()
+    if (failed.length > 0) setToast(attachFailedText(failed, meetingError))
   }
 
   // UNG-287: mallar erbjuds som "Utgå från layout" i Nytt projekt.
@@ -650,7 +649,8 @@ export function ProjectsView({
     <div class="view">
       <header class={`project-header${selected ? ' collapsed' : ''}`}>
         <div class="header-list-zone">
-          <h1>{t`Projects`}</h1>
+          {/* UNG-332: in ungap Shell this list is "Broadcasts"; "Projects" there are broadcasts connected to a meeting. */}
+          <h1>{canNavigate() ? t`Broadcasts` : t`Projects`}</h1>
           <span class="spacer" />
           <button class="btn btn-sm" type="button" onClick={() => onCreatingChange(true)}>
             {t`+ New project`}
@@ -723,6 +723,16 @@ export function ProjectsView({
                       >
                         {p.name}
                       </button>
+                      {(() => {
+                        const link = linkByProject.get(p.id)
+                        if (!link) return null
+                        return (
+                          <button class="meeting-chip" type="button" title={t`Connected to the meeting ${meetingLabel(link)}. Go to the project.`} onClick={() => navigate('projects', p.id)}>
+                            <Icon name="forum" size={14} />
+                            {meetingLabel(link)}
+                          </button>
+                        )
+                      })()}
                       {(() => {
                         const active = activeJobs.get(p.id)
                         if (!active) return null
@@ -814,7 +824,13 @@ export function ProjectsView({
       )}
 
       {creating && (
-        <CreateProjectDialog projects={projects} meetingEnabled={meetingEnabled} onCancel={() => onCreatingChange(false)} onCreate={(name, source, lists) => void createProject(name, source, lists)} />
+        <CreateProjectDialog
+          projects={projects}
+          meetingEnabled={meetingEnabled}
+          meetingStep={canNavigate() ? 'optional' : undefined}
+          onCancel={() => onCreatingChange(false)}
+          onCreate={(name, source, lists, meeting) => void createProject(name, source, lists, meeting)}
+        />
       )}
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}

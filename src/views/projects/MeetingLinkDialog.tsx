@@ -8,14 +8,17 @@ import { parseMeetingId } from './meetingLink'
 interface MeetingLinkDialogProps {
   projectId: string
   current: string | null
+  /** UNG-332: the meeting's title as typed at connect time (shown in the shell's project list). */
+  currentTitle: string | null
   onLinked: (state: MeetingLinkState) => void
   onClose: () => void
 }
 
 // UNG-338: link the project to a meeting in ungap Meeting by its id. Until Presenter can list the organisation's meetings
 // (shared login), the id is pasted from the secretary view.
-export function MeetingLinkDialog({ projectId, current, onLinked, onClose }: MeetingLinkDialogProps) {
+export function MeetingLinkDialog({ projectId, current, currentTitle, onLinked, onClose }: MeetingLinkDialogProps) {
   const [input, setInput] = useState(current ?? '')
+  const [title, setTitle] = useState(currentTitle ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const meetingId = parseMeetingId(input)
@@ -29,7 +32,7 @@ export function MeetingLinkDialog({ projectId, current, onLinked, onClose }: Mee
     setBusy(true)
     setError('')
     try {
-      onLinked(await client.projects.setMeetingLink(projectId, meetingId))
+      onLinked(await client.projects.setMeetingLink(projectId, meetingId, title.trim() || undefined))
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
       setBusy(false)
@@ -62,6 +65,18 @@ export function MeetingLinkDialog({ projectId, current, onLinked, onClose }: Mee
           onKeyDown={(event) => { if (event.key === 'Enter') void save() }}
         />
         <span class="fk-help">{t`Open the meeting in ungap Meeting and copy the address, or the ID at the end of it.`}</span>
+      </label>
+      <label class="fk-field">
+        <span>{t`Meeting title`}</span>
+        <input
+          type="text"
+          value={title}
+          maxLength={200}
+          placeholder={t`E.g. Municipal council 16 October`}
+          onInput={(event) => setTitle(event.currentTarget.value)}
+          onKeyDown={(event) => { if (event.key === 'Enter') void save() }}
+        />
+        <span class="fk-help">{t`Shown in the project list. Copy it from ungap Meeting; it is not updated if the meeting is renamed.`}</span>
       </label>
       {error && <p class="form-error" role="alert">{error}</p>}
     </Modal>

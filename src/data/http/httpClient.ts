@@ -4,6 +4,7 @@ import type {
   Agenda,
   Channel,
   MeetingLinkState,
+  ProjectMeetingLink,
   ChannelHealth,
   ChannelState,
   Chapter,
@@ -980,8 +981,11 @@ export const httpClient: Client = {
     async getMeetingLink(id) {
       return api<MeetingLinkState>(`/projects/${id}/meeting-link`)
     },
-    async setMeetingLink(id, meetingId) {
-      return api<MeetingLinkState>(`/projects/${id}/meeting-link`, { method: 'PUT', body: { meetingId } })
+    async setMeetingLink(id, meetingId, meetingTitle) {
+      return api<MeetingLinkState>(`/projects/${id}/meeting-link`, { method: 'PUT', body: { meetingId, meetingTitle } })
+    },
+    async listMeetingLinks() {
+      return api<ProjectMeetingLink[]>('/project-meeting-links')
     },
     async clearMeetingLink(id) {
       await api<void>(`/projects/${id}/meeting-link`, { method: 'DELETE' })

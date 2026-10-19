@@ -13,6 +13,7 @@ import { PickerModal } from '../../components/PickerModal'
 import type { ProjectActions } from './actions'
 import { MeetingBindingModal } from './MeetingBindingModal'
 import { MeetingLinkDialog } from './MeetingLinkDialog'
+import { canNavigate, navigate } from '../../app/embed'
 import { OverviewShell } from './OverviewShell'
 import { PlayerSettingsDialog, type PlayerSettingsCategory } from './PlayerSettingsDialog'
 import { type PlayoutAddress } from './PlayoutOverlay'
@@ -170,6 +171,7 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
           <MeetingLinkDialog
             projectId={p.id}
             current={meetingLink.data?.link?.meetingId ?? null}
+            currentTitle={meetingLink.data?.link?.meetingTitle ?? null}
             onLinked={() => { setLinkingMeeting(false); meetingLink.reload() }}
             onClose={() => setLinkingMeeting(false)}
           />
@@ -215,8 +217,10 @@ export function BeforeWorkspace({ header, project: p, actions, channel, health, 
               { label: t`Tear down`, onClick: () => { setOpenMenu(null); setConfirmTeardown(true) }, danger: true },
             ] : []),
           ]))}
-          {meetingLink.data?.available && preparationStep(4, meetingLink.data.link ? t`ungap Meeting` : t`Link ungap Meeting`, t`ungap Meeting`, meetingLink.data.link ? t`Linked` : t`Not linked`, !!meetingLink.data.link, actionMenu(t`ungap Meeting`, [
+          {meetingLink.data?.available && preparationStep(4, meetingLink.data.link ? t`ungap Meeting` : t`Link ungap Meeting`, t`ungap Meeting`, meetingLink.data.link ? (meetingLink.data.link.meetingTitle || t`Linked`) : t`Not linked`, !!meetingLink.data.link, actionMenu(t`ungap Meeting`, [
             { label: meetingLink.data.link ? t`Change meeting…` : t`Link…`, onClick: () => { setOpenMenu(null); setLinkingMeeting(true) } },
+            // flows-and-views.md: connected, the broadcast is a project; in ungap Shell, go to its combined playout view.
+            ...(meetingLink.data.link && canNavigate() ? [{ label: t`Go to the project`, onClick: () => { setOpenMenu(null); navigate('projects', p.id) } }] : []),
             ...(meetingLink.data.link ? [{ label: t`Remove link`, onClick: () => { setOpenMenu(null); setConfirmUnlink(true) }, danger: true }] : []),
           ]))}
         </ol>

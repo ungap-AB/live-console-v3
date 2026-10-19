@@ -174,7 +174,15 @@ export interface ProjectTechnicalHealth {
 export interface MeetingLinkState {
   available: boolean
   // Absent (the server leaves out nulls) or null when the project is not linked.
-  link?: { meetingId: string; createdAt: string } | null
+  link?: { meetingId: string; meetingTitle?: string | null; createdAt: string } | null
+}
+
+/** UNG-332: a project = a broadcast connected to a meeting. meetingTitle is the operator's snapshot from connect time. */
+export interface ProjectMeetingLink {
+  projectId: string
+  meetingId: string
+  meetingTitle?: string | null
+  createdAt: string
 }
 
 export interface Project {

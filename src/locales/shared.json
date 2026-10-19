@@ -157,5 +157,12 @@
   "{count, plural, one {{cues} line} other {{cues} lines}}": "{count, plural, one {{cues} repliker} other {{cues} repliker}}",
   "{trashUsedIn, plural, one {{trashName} is used in # project. Move to trash anyway?} other {{trashName} is used in # projects. Move to trash anyway?}}": "{trashUsedIn, plural, one {{trashName} används i # projekt. Flytta till papperskorgen ändå?} other {{trashName} används i # projekt. Flytta till papperskorgen ändå?}}",
   "Rewind in a live broadcast": "Spola tillbaka i livesändning",
-  "Speakers in the agenda": "Talare i dagordningen"
+  "Speakers in the agenda": "Talare i dagordningen",
+  "Go to the project": "Gå till projektet",
+  "+ New project": "+ Nytt",
+  "E.g. Municipal council 16 October": "T.ex. Kommunfullmäktige 16 oktober",
+  "Meeting ID or address": "Mötets id eller adress",
+  "Meeting title": "Mötets titel",
+  "Open the meeting in ungap Meeting and copy the address, or the ID at the end of it.": "Öppna mötet i ungap Meeting och kopiera adressen, eller id:t i slutet av den.",
+  "Paste the meeting's ID or the address of the meeting in ungap Meeting.": "Klistra in mötets id eller mötets adress i ungap Meeting."
 }

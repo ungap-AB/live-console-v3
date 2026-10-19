@@ -41,7 +41,7 @@ function setup() {
     onInit: (payload) => calls.push(`init:${payload.locale}:${payload.theme}:${payload.layout}`),
     onLocale: (locale) => calls.push(`locale:${locale}`),
     onTheme: (theme) => calls.push(`theme:${theme}`),
-    onSurface: (surface) => calls.push(`surface:${surface}`),
+    onSurface: (surface, id) => calls.push(id ? `surface:${surface}:${id}` : `surface:${surface}`),
     onLogout: () => new Promise<void>((resolve) => { calls.push('logout'); finishLogout = resolve }),
     onMeetingContext: (meeting) => calls.push(`meeting:${meeting ? `${meeting.id}:${meeting.title}` : 'none'}`),
   }
@@ -107,17 +107,29 @@ test('logout besvaras med loggedOut först när sessionen avslutats', async () =
   assert.deepEqual(shell.sent[1], { targetOrigin: SHELL, message: { protocol: 'ungap-shell', type: 'loggedOut', replyTo: 'L1' } })
 })
 
-// UNG-332: Combined view opened from a project, and the open meeting from Meeting through the shell.
-test('openCombined is sent only once connected, and meetingContext only after the handshake', () => {
+// UNG-332 / flows-and-views.md: navigation through the shell, and the project's meeting for the combined view.
+test('navigate and projectMeeting are sent only once connected, and meetingContext only after the handshake', () => {
   const { shell, client, calls, receive } = setup()
   client.ready()
-  client.openCombined('m-1')
+  client.navigate('projects', 'p1')
   receive({ protocol: 'ungap-shell', type: 'meetingContext', payload: { meeting: { id: 'm-0', title: 'X' } } })
   receive(init(shell.sent[0].message.id))
-  client.openCombined('m-1')
+  client.navigate('projects', 'p1')
+  client.projectMeeting('m-1')
   receive({ protocol: 'ungap-shell', type: 'meetingContext', payload: { meeting: { id: 'm-1', title: 'KF' } } })
   receive({ protocol: 'ungap-shell', type: 'meetingContext', payload: { meeting: null } })
-  assert.deepEqual(shell.sent.map((s) => s.message.type), ['ready', 'openCombined'])
-  assert.deepEqual(shell.sent[1], { targetOrigin: SHELL, message: { protocol: 'ungap-shell', type: 'openCombined', payload: { meetingId: 'm-1' } } })
+  assert.deepEqual(shell.sent.slice(1).map((s) => [s.targetOrigin, s.message.type, s.message.payload]), [
+    [SHELL, 'navigate', { destination: 'projects', id: 'p1' }],
+    [SHELL, 'projectMeeting', { meetingId: 'm-1' }],
+  ])
   assert.deepEqual(calls, ['init:en:light:single', 'meeting:m-1:KF', 'meeting:none'])
+})
+
+test('setSurface carries the object in the shell address', () => {
+  const { shell, client, calls, receive } = setup()
+  client.ready()
+  receive(init(shell.sent[0].message.id))
+  receive({ protocol: 'ungap-shell', type: 'setSurface', payload: { surface: 'status', layout: 'combined', id: 'p1' } })
+  receive({ protocol: 'ungap-shell', type: 'setSurface', payload: { surface: 'projects', layout: 'single' } })
+  assert.deepEqual(calls.slice(1), ['surface:status:p1', 'surface:projects'])
 })

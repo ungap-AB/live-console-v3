@@ -1,0 +1,16 @@
+/* UNG-332: the shell's project list, on the Projects list's grid: broadcast, meeting, mode, date. */
+.pp-list {
+  --project-list-columns: minmax(160px, 1fr) minmax(120px, 1fr) auto auto;
+}
+
+.pp-meeting {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink-2);
+}
+
+/* Four columns only: the Projects list's narrow-width rules (which drop the date) do not apply here. */
+.pp-list .col-date {
+  display: block;
+}

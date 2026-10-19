@@ -8,15 +8,27 @@ import { agendaOptions, chooseList, defaultChoice, nameListOptions } from './cre
 import { ListPickerDialog } from './ListPickerDialog'
 import type { ListChoices } from './createProjectLists'
 import type { Project } from '../../data/types'
+import { parseMeetingId } from './meetingLink'
 import './CreateProjectDialog.css'
+
+/** flows-and-views.md: the meeting the new broadcast belongs to (a project = a broadcast connected to a meeting). */
+export interface NewBroadcastMeeting {
+  meetingId: string
+  title: string
+}
 
 interface CreateProjectDialogProps {
   /** The projects in the domain, for "Start from layout" and to know which name list the previous project has. */
   projects: readonly Pick<Project, 'id' | 'name' | 'createdAt' | 'namelistId' | 'isLayoutTemplate'>[]
   /** The domain can link projects to Meeting: "Link to Meeting" is offered and preselected. */
   meetingEnabled: boolean
+  /**
+   * In ungap Shell: the step "Belongs to meeting". `optional` under Broadcasts; `required` under Projects, where "+ New"
+   * creates the broadcast and its connection, i.e. a project. Absent standalone.
+   */
+  meetingStep?: 'optional' | 'required'
   onCancel: () => void
-  onCreate: (name: string, layoutSourceProjectId: string | null, lists: ListChoices) => void
+  onCreate: (name: string, layoutSourceProjectId: string | null, lists: ListChoices, meeting: NewBroadcastMeeting | null) => void
 }
 
 const NONE = ''
@@ -26,7 +38,7 @@ const NONE = ''
 // domains (the server says so) get "Link to Meeting" preselected. Creating a new list is not offered here: that is done in the project view or under Agendas
 // and Name lists. UNG-287: the layout is offered from the latest project and the templates. A list other than the suggestion is chosen in a
 // picker dialog (Choose another…).
-export function CreateProjectDialog({ projects, meetingEnabled, onCancel, onCreate }: CreateProjectDialogProps) {
+export function CreateProjectDialog({ projects, meetingEnabled, meetingStep, onCancel, onCreate }: CreateProjectDialogProps) {
   const options = layoutSourceOptions(projects)
   const [name, setName] = useState('')
   const [source, setSource] = useState<string>(defaultLayoutSource(options) ?? NONE)
@@ -37,6 +49,11 @@ export function CreateProjectDialog({ projects, meetingEnabled, onCancel, onCrea
   const [picked, setPicked] = useState<Partial<ListChoices>>({})
   const [picking, setPicking] = useState<keyof ListChoices | null>(null)
   const trimmed = name.trim()
+  const [meetingInput, setMeetingInput] = useState('')
+  const [meetingTitle, setMeetingTitle] = useState('')
+  const [meetingError, setMeetingError] = useState('')
+  const meetingId = parseMeetingId(meetingInput)
+  const meetingMissing = meetingStep === 'required' && !meetingId
 
   const meeting = meetingEnabled
   const sourceProject = projects.find((project) => project.id === source)
@@ -48,7 +65,13 @@ export function CreateProjectDialog({ projects, meetingEnabled, onCancel, onCrea
   const choose = (which: keyof ListChoices, value: string) => setChosen(chooseList(lists, which, value, defaults))
 
   const submit = () => {
-    if (trimmed) onCreate(trimmed, source === NONE ? null : source, lists)
+    if (!trimmed || meetingMissing) return
+    // An id typed but not recognised is an error even where the step is optional: the user meant to connect.
+    if (meetingStep && meetingInput.trim() && !meetingId) {
+      setMeetingError(t`Paste the meeting's ID or the address of the meeting in ungap Meeting.`)
+      return
+    }
+    onCreate(trimmed, source === NONE ? null : source, lists, meetingId ? { meetingId, title: meetingTitle.trim() } : null)
   }
 
   if (picking) {
@@ -70,12 +93,12 @@ export function CreateProjectDialog({ projects, meetingEnabled, onCancel, onCrea
 
   return (
     <Modal
-      title={t`New project`}
+      title={meetingStep ? t`New broadcast` : t`New project`}
       onClose={onCancel}
       footer={
         <>
           <button class="btn btn-sm" type="button" onClick={onCancel}>{t`Cancel`}</button>
-          <button class="btn btn-sm btn-primary" type="button" disabled={!trimmed} onClick={submit}>{t`Create`}</button>
+          <button class="btn btn-sm btn-primary" type="button" disabled={!trimmed || meetingMissing} onClick={submit}>{t`Create`}</button>
         </>
       }
     >
@@ -91,6 +114,33 @@ export function CreateProjectDialog({ projects, meetingEnabled, onCancel, onCrea
           }}
         />
       </label>
+      {meetingStep && (
+        <fieldset class="cp-meeting">
+          <legend>{meetingStep === 'required' ? t`Belongs to meeting` : t`Belongs to meeting (optional)`}</legend>
+          {meetingStep === 'required' && <p class="cp-note">{t`A project is a broadcast connected to a meeting. The broadcast is created and connected in one step.`}</p>}
+          <label class="cp-field">
+            <span>{t`Meeting ID or address`}</span>
+            <input
+              class="rename-input"
+              value={meetingInput}
+              placeholder="https://…/#meeting/…"
+              onInput={(event) => { setMeetingInput(event.currentTarget.value); setMeetingError('') }}
+            />
+            <small>{t`Open the meeting in ungap Meeting and copy the address, or the ID at the end of it.`}</small>
+          </label>
+          <label class="cp-field">
+            <span>{t`Meeting title`}</span>
+            <input
+              class="rename-input"
+              value={meetingTitle}
+              maxLength={200}
+              placeholder={t`E.g. Municipal council 16 October`}
+              onInput={(event) => setMeetingTitle(event.currentTarget.value)}
+            />
+          </label>
+          {meetingError && <p class="form-error" role="alert">{meetingError}</p>}
+        </fieldset>
+      )}
       {options.length > 0 && (
         <label class="cp-field">
           <span>{t`Start from layout`}</span>

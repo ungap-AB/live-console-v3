@@ -10,7 +10,8 @@ import { EncoderStatusChip, ViewersChip } from './LiveStatusBadges'
 import { encoderStatusOf, viewerCountOf } from './liveStatus'
 import './ProjectHeader.css'
 import { client } from '../../data'
-import { canOpenCombined, openCombined } from '../../app/embed'
+import { canNavigate, navigate } from '../../app/embed'
+import { useResource } from '../../app/useResource'
 
 interface ProjectHeaderProps {
   project: Project
@@ -34,22 +35,14 @@ export function signalSince(p: Project, health: ChannelHealth | null): string | 
   return p.publicMode === 'live' && health?.streamStartedAt ? health.streamStartedAt : null
 }
 
-// UNG-332: in ungap Shell, Combined view opens from the project: the status strip shows this project and Meeting opens the
-// meeting the project is linked to (Before), so the meeting below is the one that drives the graphics.
-function CombinedViewButton({ projectId }: { projectId: string }) {
-  const [opening, setOpening] = useState(false)
-  async function open() {
-    setOpening(true)
-    try {
-      const state = await client.projects.getMeetingLink(projectId).catch(() => null)
-      openCombined(state?.link?.meetingId ?? null)
-    } finally {
-      setOpening(false)
-    }
-  }
+// UNG-332 / flows-and-views.md: in ungap Shell, a broadcast connected to a meeting is a project; this goes to it (the
+// combined playout view) through the shell. Not shown for a broadcast without a meeting.
+function GoToProjectButton({ projectId }: { projectId: string }) {
+  const link = useResource(() => client.projects.getMeetingLink(projectId), [projectId])
+  if (!link.data?.link) return null
   return (
-    <button class="btn btn-sm" type="button" disabled={opening} onClick={() => void open()}>
-      <Icon name="view_agenda" size={18} /> {t`Combined view`}
+    <button class="btn btn-sm" type="button" onClick={() => navigate('projects', projectId)}>
+      <Icon name="view_agenda" size={18} /> {t`Go to the project`}
     </button>
   )
 }
@@ -122,7 +115,7 @@ export function ProjectHeader({ project: p, actions, onBack, channel = null, hea
         {editingTitle && (
           <RenameModal title={t`Edit title`} initialValue={p.name} onCancel={() => setEditingTitle(false)} onSave={(name) => void saveTitle(name)} />
         )}
-        {canOpenCombined() && <CombinedViewButton projectId={p.id} />}
+        {canNavigate() && <GoToProjectButton projectId={p.id} />}
         <span class="spacer" />
         <EncoderStatusChip status={encoderStatus} />
         {viewerCount !== null && <ViewersChip count={viewerCount} />}

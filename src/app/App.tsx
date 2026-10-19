@@ -14,7 +14,8 @@ import { InactivityWarning } from './InactivityWarning'
 import { useInactivityLogout } from './useInactivityLogout'
 import { useUiLocale } from './useUiLocale'
 import { applyShellLanguage, hasLanguageOverride, switchLanguage } from '../i18n'
-import { setCombinedOpener, ShellClient, surfaceStartHash, type EmbedContext } from './embed'
+import { navigate, setShellActions, ShellClient, surfaceStartHash, type EmbedContext } from './embed'
+import { ProjectPlayoutsView } from '../views/playouts/ProjectPlayoutsView'
 import type { ShellMeeting } from './shellProtocol'
 import { StatusStrip } from '../views/status/StatusStrip'
 import { applyThemePreference } from './theme'
@@ -127,8 +128,14 @@ export function App({ embed }: AppProps) {
   const [surface, setSurface] = useState(embed?.surface ?? '')
   // UNG-332: the meeting open in Meeting's frame, for the status strip.
   const [shellMeeting, setShellMeeting] = useState<ShellMeeting | null>(null)
-  function showSurface(next: string) {
+  // The project in the combined view, from the shell's address (#/projects/<id>). Kept apart from the project open under
+  // Broadcasts, so opening a project does not change what Broadcasts shows.
+  const [statusProjectId, setStatusProjectId] = useState<string | null>(null)
+  function showSurface(next: string, id: string | null = null) {
     setSurface(next)
+    if (next === 'status') setStatusProjectId(id)
+    // #/broadcasts/<id>: that broadcast's admin. Without an id, Broadcasts keeps what it showed.
+    if (next === 'projects' && id) openProject(id)
     // replace, not a new entry: a framed page's history entries would end up in the shell's back button.
     const hash = surfaceStartHash(next, window.location.hash)
     if (hash) window.location.replace(hash)
@@ -137,11 +144,14 @@ export function App({ embed }: AppProps) {
   useEffect(() => {
     if (!embed) return
     const shellClient = new ShellClient(window.parent, embed, {
-      onInit: ({ locale, theme, surface }) => {
+      onInit: ({ locale, theme, surface, id }) => {
         applyThemePreference(theme)
         void applyShellLanguage(locale)
-        showSurface(surface)
-        setCombinedOpener((meetingId) => shellClient.openCombined(meetingId))
+        showSurface(surface, id)
+        setShellActions({
+          navigate: (destination, target) => shellClient.navigate(destination, target),
+          projectMeeting: (meetingId) => shellClient.projectMeeting(meetingId),
+        })
       },
       onMeetingContext: setShellMeeting,
       onSurface: showSurface,
@@ -154,7 +164,7 @@ export function App({ embed }: AppProps) {
     shellClient.ready()
     return () => {
       window.removeEventListener('message', onMessage)
-      setCombinedOpener(null)
+      setShellActions(null)
     }
     // embed is fixed for the page's lifetime
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -258,7 +268,7 @@ export function App({ embed }: AppProps) {
   if (embed && surface === 'status') {
     return (
       <Fragment key={locale}>
-        <StatusStrip auth={auth.status} projectId={activeProjectId} meeting={shellMeeting} inactivityRemainingMs={inactivity.phase === 'warning' ? inactivity.remainingMs : null} />
+        <StatusStrip auth={auth.status} projectId={statusProjectId} meeting={shellMeeting} inactivityRemainingMs={inactivity.phase === 'warning' ? inactivity.remainingMs : null} />
       </Fragment>
     )
   }
@@ -277,6 +287,19 @@ export function App({ embed }: AppProps) {
   }
   if (auth.status === 'loading') return <div class="login-screen">{t`Loading…`}</div>
   if (auth.status === 'anon') return <LoginView onLogin={login} initialEmail={loginEmail ?? ''} loggedOut={loggedOut} />
+
+  // UNG-332: "Projects" in ungap Shell, the connected broadcasts. Opening one makes it the console's open project (so the
+  // status strip above the meeting shows it) and asks the shell for the combined view with its meeting.
+  if (embed && surface === 'playouts') {
+    return (
+      <Fragment key={locale}>
+        <ProjectPlayoutsView
+          onOpen={({ project }) => navigate('projects', project.id)}
+          meetingEnabled={auth.user.domain.meetingEnabled ?? false}
+        />
+      </Fragment>
+    )
+  }
 
   // UNG-186: projektraden i menyn har bara "+ Nytt", och den syns alltid. Från en annan sida går den först till Projekt-vyn och öppnar
   // sedan skapa-dialogen (tillståndet ligger här, så dialogen följer med när vyn monteras). Menyvalet "Projekt" går till listan med det

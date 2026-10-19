@@ -21,7 +21,7 @@ export interface ReadyMessage {
 export interface InitMessage {
   type: 'init'
   replyTo: string
-  payload: { version: number; surface: string; layout: ShellLayout; locale: ShellLocale; theme: ShellTheme }
+  payload: { version: number; surface: string; layout: ShellLayout; locale: ShellLocale; theme: ShellTheme; id: string | null }
 }
 
 /** Shell → service: the user changed language in the shell. */
@@ -42,7 +42,8 @@ export interface SetThemeMessage {
  */
 export interface SetSurfaceMessage {
   type: 'setSurface'
-  payload: { surface: string; layout: ShellLayout }
+  /** id: the object the surface shows (from the shell's address, e.g. `#/broadcasts/<id>`), or null for its list. */
+  payload: { surface: string; layout: ShellLayout; id: string | null }
 }
 
 /** Shell → service: the user logs out in the shell. The service ends its session and answers `loggedOut`. */
@@ -63,17 +64,29 @@ export interface ShellMeeting {
   title: string
 }
 
+/** Where `navigate` can go. The shell owns the addresses: `#/<destination>/<id>`. */
+export type ShellDestination = 'projects' | 'broadcasts' | 'meetings' | 'namelists' | 'jobs'
+export const SHELL_DESTINATIONS: readonly ShellDestination[] = ['projects', 'broadcasts', 'meetings', 'namelists', 'jobs']
+
 /**
- * Service → shell: open Combined view with this meeting (UNG-332). Presenter sends it from a project, with the meeting
- * the project is linked to (null: the project has none). The shell switches destination and tells the frame that shows
- * meetings with `showMeeting`; the shell never looks the link up itself.
+ * Service → shell: go to a destination, optionally one object in it (flows-and-views.md). A service never opens another
+ * service's address itself. `projects` + a project id opens the combined playout view for that project.
  */
-export interface OpenCombinedMessage {
-  type: 'openCombined'
+export interface NavigateMessage {
+  type: 'navigate'
+  payload: { destination: ShellDestination; id: string | null }
+}
+
+/**
+ * Service → shell: the project shown in this frame uses this meeting (null: it has none). Presenter sends it for the
+ * combined view's project; the shell answers by sending `showMeeting` to Meeting's frame. The shell never looks it up.
+ */
+export interface ProjectMeetingMessage {
+  type: 'projectMeeting'
   payload: { meetingId: string | null }
 }
 
-/** Shell → service: open this meeting (null: the meeting list). Sent to Meeting's frame after `openCombined`. */
+/** Shell → service: open this meeting (null: the meeting list). Sent to Meeting's frame after `projectMeeting`. */
 export interface ShowMeetingMessage {
   type: 'showMeeting'
   payload: { meetingId: string | null }
@@ -97,7 +110,8 @@ export type ShellMessage =
   | SetSurfaceMessage
   | LogoutMessage
   | LoggedOutMessage
-  | OpenCombinedMessage
+  | NavigateMessage
+  | ProjectMeetingMessage
   | ShowMeetingMessage
   | MeetingContextMessage
 
@@ -114,6 +128,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 const isString = (value: unknown): value is string => typeof value === 'string' && value.length > 0
 const isLocale = (value: unknown): value is ShellLocale => value === 'sv' || value === 'en'
 const isTheme = (value: unknown): value is ShellTheme => value === 'light' || value === 'dark' || value === 'auto'
+/** An object id from an address: absent, null or a short string without path or query characters. */
+const isOptionalId = (value: unknown): value is string | null | undefined =>
+  value === undefined || value === null || (isString(value) && value.length <= 100 && /^[A-Za-z0-9_-]+$/.test(value))
 const isMeetingId = (value: unknown): value is string | null => value === null || isString(value)
 const isLayout = (value: unknown): value is ShellLayout => value === 'single' || value === 'combined'
 
@@ -135,24 +152,29 @@ export function parseShellMessage(data: unknown): ShellMessage | null {
       }
     case 'init':
       if (!isString(data.replyTo) || !Number.isInteger(payload.version) || !isString(payload.surface)) return null
-      if (!isLayout(payload.layout) || !isLocale(payload.locale) || !isTheme(payload.theme)) return null
+      if (!isLayout(payload.layout) || !isLocale(payload.locale) || !isTheme(payload.theme) || !isOptionalId(payload.id)) return null
       return {
         type: 'init',
         replyTo: data.replyTo,
-        payload: { version: payload.version as number, surface: payload.surface, layout: payload.layout, locale: payload.locale, theme: payload.theme },
+        payload: { version: payload.version as number, surface: payload.surface, layout: payload.layout, locale: payload.locale, theme: payload.theme, id: payload.id ?? null },
       }
     case 'setLocale':
       return isLocale(payload.locale) ? { type: 'setLocale', payload: { locale: payload.locale } } : null
     case 'setTheme':
       return isTheme(payload.theme) ? { type: 'setTheme', payload: { theme: payload.theme } } : null
     case 'setSurface':
-      return isString(payload.surface) && isLayout(payload.layout) ? { type: 'setSurface', payload: { surface: payload.surface, layout: payload.layout } } : null
+      return isString(payload.surface) && isLayout(payload.layout) && isOptionalId(payload.id)
+        ? { type: 'setSurface', payload: { surface: payload.surface, layout: payload.layout, id: payload.id ?? null } }
+        : null
     case 'logout':
       return isString(data.id) ? { type: 'logout', id: data.id } : null
     case 'loggedOut':
       return isString(data.replyTo) ? { type: 'loggedOut', replyTo: data.replyTo } : null
-    case 'openCombined':
-      return isMeetingId(payload.meetingId) ? { type: 'openCombined', payload: { meetingId: payload.meetingId } } : null
+    case 'navigate':
+      if (!SHELL_DESTINATIONS.includes(payload.destination as ShellDestination) || !isOptionalId(payload.id)) return null
+      return { type: 'navigate', payload: { destination: payload.destination as ShellDestination, id: payload.id ?? null } }
+    case 'projectMeeting':
+      return isMeetingId(payload.meetingId) ? { type: 'projectMeeting', payload: { meetingId: payload.meetingId } } : null
     case 'showMeeting':
       return isMeetingId(payload.meetingId) ? { type: 'showMeeting', payload: { meetingId: payload.meetingId } } : null
     case 'meetingContext': {

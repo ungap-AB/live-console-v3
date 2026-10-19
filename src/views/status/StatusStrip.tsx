@@ -13,7 +13,8 @@ import { pauseDurationText } from '../projects/pauseLogic'
 import type { TimelineEvent } from '../../data/types'
 import { meetingLinkStatus, statusStripView, type MeetingLinkStatus } from './statusStripLogic'
 import { client } from '../../data'
-import { openCombined } from '../../app/embed'
+import { navigate, reportProjectMeeting } from '../../app/embed'
+import { Icon } from '../../components/Icon'
 import type { ShellMeeting } from '../../app/shellProtocol'
 import { useStatusProject } from './useStatusProject'
 import '../projects/ProjectHeader.css'
@@ -71,6 +72,12 @@ function useMeetingLink(projectId: string): { available: boolean; meetingId: str
 
 function ProjectStatus({ projectId, meeting }: { projectId: string; meeting: ShellMeeting | null }) {
   const link = useMeetingLink(projectId)
+  // The project's meeting goes to the shell, which opens it in Meeting's frame below. Once per project (and when the
+  // connection changes), so a secretary who opens another meeting below is not pulled back by the next poll.
+  const linkedMeetingId = link === null ? undefined : link.meetingId
+  useEffect(() => {
+    if (linkedMeetingId !== undefined) reportProjectMeeting(linkedMeetingId)
+  }, [projectId, linkedMeetingId])
   const { project: p, health, missing, error, clear, resume } = useStatusProject(projectId)
   // UNG-312, as in Livesandning: the open project's broadcast counts as activity, so an operator watching Combined view is not
   // logged out for inactivity in the middle of it. Live with a signal, and new chapters from Meeting or the playout.
@@ -99,6 +106,15 @@ function ProjectStatus({ projectId, meeting }: { projectId: string; meeting: She
         <div class="ss-row">
           <span class={`ss-mode is-${p.publicMode}`}>{MODE_LABEL[p.publicMode]}</span>
           <h1 class="ss-title" title={p.name}>{p.name}</h1>
+          {/* flows-and-views.md: from the project to the broadcast's and the meeting's own views, through the shell. */}
+          <button class="pv-icon-btn" type="button" title={t`Open the broadcast`} aria-label={t`Open the broadcast`} onClick={() => navigate('broadcasts', projectId)}>
+            <Icon name="live_tv" size={18} />
+          </button>
+          {link?.meetingId && (
+            <button class="pv-icon-btn" type="button" title={t`Open the meeting`} aria-label={t`Open the meeting`} onClick={() => navigate('meetings', link.meetingId)}>
+              <Icon name="forum" size={18} />
+            </button>
+          )}
           <span class="pv-clock"><Clock since={signalSince(p, health)} /></span>
         </div>
         <div class="ss-row">
@@ -122,7 +138,7 @@ function MeetingLinkNote({ status, meeting, projectName, linkedMeetingId }: { st
   if (status === 'unknown') return null
   const title = meeting?.title ?? ''
   const openLinked = (
-    <button class="btn btn-sm" type="button" onClick={() => openCombined(linkedMeetingId)}>
+    <button class="btn btn-sm" type="button" onClick={() => reportProjectMeeting(linkedMeetingId)}>
       {t`Open linked meeting`}
     </button>
   )

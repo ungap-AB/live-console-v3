@@ -429,6 +429,7 @@ msgstr "{who} has saved the captions since you opened the editor."
 msgid "+ New"
 msgstr "+ New"
 
+#: src/views/playouts/ProjectPlayoutsView.tsx
 #: src/views/projects/ProjectsView.tsx
 msgid "+ New project"
 msgstr "+ New project"
@@ -489,6 +490,10 @@ msgstr "A new project is created from the recording. This project is not affecte
 #: src/views/projects/VideoStatusRow.tsx
 msgid "A new video is waiting for your approval"
 msgstr "A new video is waiting for your approval"
+
+#: src/views/projects/CreateProjectDialog.tsx
+msgid "A project is a broadcast connected to a meeting. The broadcast is created and connected in one step."
+msgstr "A project is a broadcast connected to a meeting. The broadcast is created and connected in one step."
 
 #: src/views/users/UsersView.tsx
 msgid "A reset email has been sent to {email}. The link is valid for one hour."
@@ -781,6 +786,14 @@ msgstr "Before the latest break ({time})"
 msgid "Before: “{0}”"
 msgstr "Before: “{0}”"
 
+#: src/views/projects/CreateProjectDialog.tsx
+msgid "Belongs to meeting"
+msgstr "Belongs to meeting"
+
+#: src/views/projects/CreateProjectDialog.tsx
+msgid "Belongs to meeting (optional)"
+msgstr "Belongs to meeting (optional)"
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Bitrate"
 msgstr "Bitrate"
@@ -822,6 +835,7 @@ msgid "Break since {since} ({duration})"
 msgstr "Break since {since} ({duration})"
 
 #: src/app/Shell.tsx
+#: src/views/playouts/ProjectPlayoutsView.tsx
 #: src/views/projects/OndemandView.tsx
 msgid "Broadcast"
 msgstr "Broadcast"
@@ -841,6 +855,10 @@ msgstr "broadcasting now"
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Broadcasting since"
 msgstr "Broadcasting since"
+
+#: src/views/projects/ProjectsView.tsx
+msgid "Broadcasts"
+msgstr "Broadcasts"
 
 #: src/views/users/UsersView.tsx
 msgid "Broadcasts made"
@@ -1290,10 +1308,6 @@ msgstr "Close, continue in the background"
 msgid "Closed"
 msgstr "Closed"
 
-#: src/views/projects/ProjectHeader.tsx
-msgid "Combined view"
-msgstr "Combined view"
-
 #: src/views/projects/LiveStatusBadges.tsx
 msgid "Concurrent viewers according to IVS. The number is an estimate with a few seconds' delay."
 msgstr "Concurrent viewers according to IVS. The number is an estimate with a few seconds' delay."
@@ -1315,6 +1329,11 @@ msgstr "Conflict"
 #: src/views/projects/WordReviewBar.tsx
 msgid "Conflict: in Word “{0}” was changed to “{1}”, but the box is also changed here. The box has kept its current text, so change it by hand if the Word version is to apply."
 msgstr "Conflict: in Word “{0}” was changed to “{1}”, but the box is also changed here. The box has kept its current text, so change it by hand if the Word version is to apply."
+
+#. placeholder {0}: meetingLabel(link)
+#: src/views/projects/ProjectsView.tsx
+msgid "Connected to the meeting {0}. Go to the project."
+msgstr "Connected to the meeting {0}. Go to the project."
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Connection"
@@ -1610,6 +1629,7 @@ msgstr "Current speaker (rehearsal)"
 msgid "Dark"
 msgstr "Dark"
 
+#: src/views/playouts/ProjectPlayoutsView.tsx
 #: src/views/projects/ChapterImportDialog.tsx
 #: src/views/projects/ProjectsView.tsx
 msgid "Date"
@@ -1836,6 +1856,11 @@ msgstr "e.g. Example Municipality"
 #: src/views/users/UsersView.tsx
 msgid "e.g. example.com"
 msgstr "e.g. example.com"
+
+#: src/views/projects/CreateProjectDialog.tsx
+#: src/views/projects/MeetingLinkDialog.tsx
+msgid "E.g. Municipal council 16 October"
+msgstr "E.g. Municipal council 16 October"
 
 #: src/components/EditableItemList.tsx
 #: src/views/projects/CaptionEntry.tsx
@@ -2193,6 +2218,11 @@ msgstr "Go to Live"
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Go to project"
 msgstr "Go to project"
+
+#: src/views/projects/BeforeWorkspace.tsx
+#: src/views/projects/ProjectHeader.tsx
+msgid "Go to the project"
+msgstr "Go to the project"
 
 #: src/views/projects/CaptionEditor.tsx
 msgid "Goes back to what is published (captions and chapters)"
@@ -2667,6 +2697,7 @@ msgstr "Loading..."
 #: src/views/agendas/AgendasView.tsx
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/namelists/NameListsView.tsx
+#: src/views/playouts/ProjectPlayoutsView.tsx
 #: src/views/projects/PlayoutColumns.tsx
 #: src/views/projects/ProjectsView.tsx
 #: src/views/resources/LiveResourcesView.tsx
@@ -2766,6 +2797,10 @@ msgstr "Measure playback with Mux"
 msgid "Measurement"
 msgstr "Measurement"
 
+#: src/views/playouts/ProjectPlayoutsView.tsx
+msgid "Meeting"
+msgstr "Meeting"
+
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "Meeting domain"
 msgstr "Meeting domain"
@@ -2778,6 +2813,7 @@ msgstr "Meeting domain: {meetingDomain}"
 msgid "Meeting ID {meetingId}"
 msgstr "Meeting ID {meetingId}"
 
+#: src/views/projects/CreateProjectDialog.tsx
 #: src/views/projects/MeetingLinkDialog.tsx
 msgid "Meeting ID or address"
 msgstr "Meeting ID or address"
@@ -2785,6 +2821,11 @@ msgstr "Meeting ID or address"
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "Meeting linked"
 msgstr "Meeting linked"
+
+#: src/views/projects/CreateProjectDialog.tsx
+#: src/views/projects/MeetingLinkDialog.tsx
+msgid "Meeting title"
+msgstr "Meeting title"
 
 #: src/views/projects/CaptionEditor.tsx
 msgid "Merge anyway"
@@ -2807,6 +2848,7 @@ msgstr "Message (optional)"
 msgid "Middle"
 msgstr "Middle"
 
+#: src/views/playouts/ProjectPlayoutsView.tsx
 #: src/views/projects/ModeSelector.tsx
 #: src/views/projects/ProjectsView.tsx
 msgid "Mode"
@@ -2918,6 +2960,10 @@ msgstr "never used"
 #: src/views/projects/BeforeWorkspace.tsx
 msgid "New agenda"
 msgstr "New agenda"
+
+#: src/views/projects/CreateProjectDialog.tsx
+msgid "New broadcast"
+msgstr "New broadcast"
 
 #: src/views/users/UsersView.tsx
 msgid "New domain"
@@ -3096,6 +3142,10 @@ msgstr "No projects in the mode {mode}."
 #: src/views/projects/ProjectsView.tsx
 msgid "No projects yet."
 msgstr "No projects yet."
+
+#: src/views/playouts/ProjectPlayoutsView.tsx
+msgid "No projects yet. Create one with + New, or connect a broadcast to a meeting under Broadcasts."
+msgstr "No projects yet. Create one with + New, or connect a broadcast to a meeting under Broadcasts."
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "No recording yet."
@@ -3307,6 +3357,10 @@ msgstr "Open or close the player to the public (takes effect immediately), copy 
 msgid "Open PDF documents for {title}"
 msgstr "Open PDF documents for {title}"
 
+#: src/views/status/StatusStrip.tsx
+msgid "Open the broadcast"
+msgstr "Open the broadcast"
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Open the editor…"
 msgstr "Open the editor…"
@@ -3315,6 +3369,11 @@ msgstr "Open the editor…"
 msgid "Open the linked meeting to drive the graphics in {projectName}."
 msgstr "Open the linked meeting to drive the graphics in {projectName}."
 
+#: src/views/status/StatusStrip.tsx
+msgid "Open the meeting"
+msgstr "Open the meeting"
+
+#: src/views/projects/CreateProjectDialog.tsx
 #: src/views/projects/MeetingLinkDialog.tsx
 msgid "Open the meeting in ungap Meeting and copy the address, or the ID at the end of it."
 msgstr "Open the meeting in ungap Meeting and copy the address, or the ID at the end of it."
@@ -3406,6 +3465,7 @@ msgstr "Paste at least one line, one person per line."
 msgid "Paste list"
 msgstr "Paste list"
 
+#: src/views/projects/CreateProjectDialog.tsx
 #: src/views/projects/MeetingLinkDialog.tsx
 msgid "Paste the meeting's ID or the address of the meeting in ungap Meeting."
 msgstr "Paste the meeting's ID or the address of the meeting in ungap Meeting."
@@ -3668,6 +3728,7 @@ msgid "Project: {projectName}"
 msgstr "Project: {projectName}"
 
 #: src/app/Shell.tsx
+#: src/views/playouts/ProjectPlayoutsView.tsx
 #: src/views/projects/ProjectHeader.tsx
 #: src/views/projects/ProjectsView.tsx
 #: src/views/users/UsersView.tsx
@@ -4260,6 +4321,10 @@ msgstr "Shown in the Live mode while the video is not yet playing, e.g. when the
 msgid "Shown in the Ondemand mode while the recording cannot be played."
 msgstr "Shown in the Ondemand mode while the recording cannot be played."
 
+#: src/views/projects/MeetingLinkDialog.tsx
+msgid "Shown in the project list. Copy it from ungap Meeting; it is not updated if the meeting is renamed."
+msgstr "Shown in the project list. Copy it from ungap Meeting; it is not updated if the meeting is renamed."
+
 #: src/views/projects/playerSettings.ts
 msgid "Shown when the broadcast has ended and no recording is playing."
 msgstr "Shown when the broadcast has ended and no recording is playing."
@@ -4306,6 +4371,7 @@ msgid "Someone else has saved the captions since you opened the editor."
 msgstr "Someone else has saved the captions since you opened the editor."
 
 #: src/app/optimistic.ts
+#: src/views/playouts/ProjectPlayoutsView.tsx
 #: src/views/projects/OndemandView.tsx
 #: src/views/projects/ProjectsView.tsx
 #: src/views/users/UsersView.tsx
@@ -4697,6 +4763,14 @@ msgstr "The broadcast has not started yet."
 #: src/views/projects/OndemandView.tsx
 msgid "The broadcast is set to Ondemand mode and everything below becomes visible to the viewers."
 msgstr "The broadcast is set to Ondemand mode and everything below becomes visible to the viewers."
+
+#: src/views/projects/ProjectsView.tsx
+msgid "The broadcast was created, but it could not be connected to the meeting: {error} Connect it in Before (ungap Meeting)."
+msgstr "The broadcast was created, but it could not be connected to the meeting: {error} Connect it in Before (ungap Meeting)."
+
+#: src/views/projects/ProjectsView.tsx
+msgid "The broadcast was created, but it could not be connected to the meeting. Connect it in Before (ungap Meeting)."
+msgstr "The broadcast was created, but it could not be connected to the meeting. Connect it in Before (ungap Meeting)."
 
 #: src/app/Shell.tsx
 msgid "The caption draft for {name} is ready and waiting for review."

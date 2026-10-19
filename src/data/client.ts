@@ -11,6 +11,7 @@ import type {
   NameList,
   NameListPerson,
   MeetingLinkState,
+  ProjectMeetingLink,
   MeetingSummary,
   MeetingTopic,
   Project,
@@ -256,7 +257,9 @@ export interface Client {
     clearMeetingBinding(id: string): Promise<Project>
     /** UNG-338: link to a meeting in ungap Meeting (its cues reach the project through Presenter). */
     getMeetingLink(id: string): Promise<MeetingLinkState>
-    setMeetingLink(id: string, meetingId: string): Promise<MeetingLinkState>
+    setMeetingLink(id: string, meetingId: string, meetingTitle?: string): Promise<MeetingLinkState>
+    /** UNG-332: every project in the organisation that is connected to a meeting. */
+    listMeetingLinks(): Promise<ProjectMeetingLink[]>
     clearMeetingLink(id: string): Promise<void>
     createChannel(id: string): Promise<Project>
     teardownChannel(id: string): Promise<Project>

@@ -432,3 +432,27 @@
   background: var(--panel);
   border-color: var(--line);
 }
+
+/* flows-and-views.md: the broadcast is part of a project (connected to a meeting); links to the project in ungap Shell. */
+.meeting-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 220px;
+  padding: 1px 7px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.meeting-chip:hover {
+  color: var(--ink);
+}
