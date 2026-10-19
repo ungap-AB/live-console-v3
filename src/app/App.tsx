@@ -14,7 +14,7 @@ import { InactivityWarning } from './InactivityWarning'
 import { useInactivityLogout } from './useInactivityLogout'
 import { useUiLocale } from './useUiLocale'
 import { applyShellLanguage, hasLanguageOverride, switchLanguage } from '../i18n'
-import { navigate, setShellActions, ShellClient, surfaceStartHash, type EmbedContext } from './embed'
+import { navigate, reportProjectMeeting, setCurrentSurface, setShellActions, ShellClient, surfaceStartHash, type EmbedContext } from './embed'
 import { ProjectPlayoutsView } from '../views/playouts/ProjectPlayoutsView'
 import type { ShellMeeting } from './shellProtocol'
 import { StatusStrip } from '../views/status/StatusStrip'
@@ -131,15 +131,20 @@ export function App({ embed }: AppProps) {
   // The project in the combined view, from the shell's address (#/projects/<id>). Kept apart from the project open under
   // Broadcasts, so opening a project does not change what Broadcasts shows.
   const [statusProjectId, setStatusProjectId] = useState<string | null>(null)
+  // ungap Presenter spike B1: the project whose playout the `playout` surface shows (its meeting goes to the shell).
+  const [playoutProjectId, setPlayoutProjectId] = useState<string | null>(null)
   function showSurface(next: string, id: string | null = null) {
     setSurface(next)
+    setCurrentSurface(next)
     if (next === 'status') setStatusProjectId(id)
+    setPlayoutProjectId(next === 'playout' ? id : null)
     // #/broadcasts/<id>: that broadcast's admin. Without an id, Broadcasts keeps what it showed.
     if (next === 'projects' && id) openProject(id)
     // replace, not a new entry: a framed page's history entries would end up in the shell's back button.
-    const hash = surfaceStartHash(next, window.location.hash)
+    const hash = surfaceStartHash(next, window.location.hash, id)
     if (hash) window.location.replace(hash)
   }
+  useReportPlayoutMeeting(auth.status === 'authed' ? playoutProjectId : null)
   shellLogout.current = auth.status === 'authed' ? logout : () => Promise.resolve()
   useEffect(() => {
     if (!embed) return
@@ -366,4 +371,36 @@ export function App({ embed }: AppProps) {
     </Shell>
     </IsRootAdminContext.Provider>
   )
+}
+
+const PLAYOUT_LINK_POLL_MS = 10_000
+
+/**
+ * ungap Presenter spike B1: the `playout` surface tells the shell which meeting its project is linked to (as the status
+ * strip does), so the shell shows that meeting below, or Live alone when there is none. Polled, reported on change.
+ */
+function useReportPlayoutMeeting(projectId: string | null) {
+  useEffect(() => {
+    if (!projectId) return
+    let cancelled = false
+    let reported: string | null | undefined
+    const load = () =>
+      client.projects.getMeetingLink(projectId).then(
+        (state) => {
+          const meetingId = state.link?.meetingId ?? null
+          if (cancelled || meetingId === reported) return
+          reported = meetingId
+          reportProjectMeeting(meetingId)
+        },
+        () => {
+          // The next poll tries again.
+        },
+      )
+    void load()
+    const timer = window.setInterval(() => void load(), PLAYOUT_LINK_POLL_MS)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [projectId])
 }

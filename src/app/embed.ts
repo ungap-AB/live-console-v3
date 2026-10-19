@@ -1,5 +1,6 @@
 import { envelope, nextMessageId, parseShellMessage, SUPPORTED_VERSIONS, type InitMessage, type ShellDestination, type ShellLocale, type ShellMeeting, type ShellMessage, type ShellTheme } from './shellProtocol.ts'
 import type { RouteKey } from './router.tsx'
+import { parsePlayoutLink, playoutHref } from './projectLink.ts'
 
 // Embed mode (UNG-322): the console framed by ungap Shell. The shell frames `/?surface=<surface>&shell=<shell origin>`;
 // the console is embedded only when it really is framed AND the shell origin is on the allowlist. Then it hides its own
@@ -32,13 +33,17 @@ export function detectEmbed(search: string, framed: boolean, allowed: readonly s
 
 /** The console view a surface opens; null for surfaces that are not a console view (the status strip). */
 export function surfaceRoute(surface: string): RouteKey | null {
-  if (surface === 'projects') return 'projects'
+  // ungap Presenter spike B1: `playout` + a project id is that project's playout (UNG-268's view), above the meeting.
+  if (surface === 'projects' || surface === 'playout') return 'projects'
   if (surface === 'jobs') return 'jobs'
   return null
 }
 
 /** The hash to start on for a surface, or null to keep the current one (a deep link into the surface's view stays). */
-export function surfaceStartHash(surface: string, hash: string): string | null {
+export function surfaceStartHash(surface: string, hash: string, id: string | null = null): string | null {
+  if (surface === 'playout' && id) return parsePlayoutLink(hash) === id ? null : playoutHref(id)
+  // Leaving the playout surface: its address must not keep the playout open under Broadcasts.
+  if (surface === 'projects' && parsePlayoutLink(hash)) return '#/projects'
   const route = surfaceRoute(surface)
   if (!route) return null
   const current = hash.slice(1).split('/').filter(Boolean)[0]
@@ -66,6 +71,14 @@ export function setShellActions(actions: typeof shellActions): void {
 }
 export function canNavigate(): boolean {
   return shellActions !== null
+}
+// The surface the shell shows this frame as (spike B1: the playout's Close goes back to the broadcast through the shell).
+let currentSurface = ''
+export function setCurrentSurface(surface: string): void {
+  currentSurface = surface
+}
+export function isPlayoutSurface(): boolean {
+  return shellActions !== null && currentSurface === 'playout'
 }
 /** Asks the shell to go to a destination (or one object in it): `navigate('projects', id)` opens the combined view. */
 export function navigate(destination: ShellDestination, id: string | null = null): void {

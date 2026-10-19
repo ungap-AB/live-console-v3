@@ -24,6 +24,10 @@ test('ytan väljer startvy men behåller en djuplänk i samma vy', () => {
   assert.equal(surfaceStartHash('jobs', '#/projects'), '#/jobs')
   assert.equal(surfaceStartHash('projects', '#/projects/p1/editor'), null)
   assert.equal(surfaceStartHash('status', ''), null)
+  // ungap Presenter spike B1: the playout surface opens one project's playout; Broadcasts leaves it.
+  assert.equal(surfaceStartHash('playout', '#/projects', 'p1'), '#/projects/p1/playout')
+  assert.equal(surfaceStartHash('playout', '#/projects/p1/playout', 'p1'), null)
+  assert.equal(surfaceStartHash('projects', '#/projects/p1/playout'), '#/projects')
 })
 
 class FakeShell {

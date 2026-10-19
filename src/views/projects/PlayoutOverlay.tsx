@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon'
 import { parsePlayoutLink, playoutHref } from '../../app/projectLink'
 import { routeHref } from '../../app/router'
+import { isPlayoutSurface, navigate } from '../../app/embed'
 import './PlayoutOverlay.css'
 
 // UNG-268: utspelningsvyns öppna läge följer adressen #/projects/{id}/playout (mönstret från editorn, UNG-250): öppna pushar adressen,
@@ -37,6 +38,11 @@ export function usePlayoutAddress(projectId: string) {
   }, [projectId])
 
   function close() {
+    // ungap Presenter spike B1: framed as the broadcast's playout, Close goes to the broadcast through the shell.
+    if (isPlayoutSurface()) {
+      navigate('broadcasts', projectId)
+      return
+    }
     openRef.current = false
     setOpen(false)
     if (!atPlayout()) return
