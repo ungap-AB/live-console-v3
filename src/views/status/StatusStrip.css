@@ -162,3 +162,16 @@
 .ss-status > .ss-meeting {
   flex: none;
 }
+
+/* ungap Presenter spike B1: Go live in the strip, in the Live colour. */
+.ss-golive {
+  flex: none;
+  border-color: var(--mode-live-bg);
+  background: var(--mode-live-bg);
+  color: var(--mode-live-fg);
+}
+
+.ss-golive:hover:not(:disabled) {
+  background: var(--mode-live-bg);
+  filter: brightness(1.08);
+}

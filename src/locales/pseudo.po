@@ -1425,6 +1425,10 @@ msgstr ""
 msgid "Corrections from Word"
 msgstr ""
 
+#: src/views/status/useStatusProject.ts
+msgid "Could not change the mode."
+msgstr ""
+
 #: src/views/projects/ProjectsView.tsx
 #: src/views/status/useStatusProject.ts
 msgid "Could not clear."
@@ -1932,6 +1936,10 @@ msgstr ""
 msgid "End break (paused since {since}, {duration})"
 msgstr ""
 
+#: src/views/status/StatusStrip.tsx
+msgid "End broadcast"
+msgstr ""
+
 #: src/components/PositionScrubber.tsx
 msgid "End here"
 msgstr ""
@@ -2187,6 +2195,10 @@ msgstr ""
 
 #: src/views/projects/projectMode.ts
 msgid "Go back to Live?"
+msgstr ""
+
+#: src/views/status/StatusStrip.tsx
+msgid "Go live"
 msgstr ""
 
 #: src/views/projects/projectMode.ts
@@ -4535,6 +4547,10 @@ msgstr ""
 
 #: src/views/projects/ModeSelector.tsx
 msgid "Switching to {mode}…"
+msgstr ""
+
+#: src/views/status/StatusStrip.tsx
+msgid "Switching…"
 msgstr ""
 
 #. placeholder {0}: formatHms(Math.round(position))

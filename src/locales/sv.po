@@ -1431,6 +1431,10 @@ msgstr "Rättningar"
 msgid "Corrections from Word"
 msgstr "Rättningar från Word"
 
+#: src/views/status/useStatusProject.ts
+msgid "Could not change the mode."
+msgstr "Kunde inte byta läge."
+
 #: src/views/projects/ProjectsView.tsx
 #: src/views/status/useStatusProject.ts
 msgid "Could not clear."
@@ -1938,6 +1942,10 @@ msgstr "Avsluta paus"
 msgid "End break (paused since {since}, {duration})"
 msgstr "Avsluta paus (pausad sedan {since}, {duration})"
 
+#: src/views/status/StatusStrip.tsx
+msgid "End broadcast"
+msgstr "Avsluta sändningen"
+
 #: src/components/PositionScrubber.tsx
 msgid "End here"
 msgstr "Slut här"
@@ -2194,6 +2202,10 @@ msgstr "Gå tillbaka till Before?"
 #: src/views/projects/projectMode.ts
 msgid "Go back to Live?"
 msgstr "Gå tillbaka till Live?"
+
+#: src/views/status/StatusStrip.tsx
+msgid "Go live"
+msgstr "Gå Live"
 
 #: src/views/projects/projectMode.ts
 msgid "Go to After"
@@ -4542,6 +4554,10 @@ msgstr "Byt sändning…"
 #: src/views/projects/ModeSelector.tsx
 msgid "Switching to {mode}…"
 msgstr "Byter till {mode}…"
+
+#: src/views/status/StatusStrip.tsx
+msgid "Switching…"
+msgstr "Byter…"
 
 #. placeholder {0}: formatHms(Math.round(position))
 #: src/views/projects/ChapterSyncTools.tsx

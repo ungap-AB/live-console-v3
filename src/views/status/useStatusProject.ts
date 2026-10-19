@@ -2,7 +2,9 @@ import { t } from '@lingui/core/macro'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
 import { ApiError } from '../../data/http/fetchJson'
-import type { ChannelHealth, CueKind, Project } from '../../data/types'
+import type { ChannelHealth, CueKind, Project, PublicMode } from '../../data/types'
+import { beginModeSwitch, endModeSwitch } from '../projects/modeSwitch'
+import { afterReasonFor } from '../projects/projectMode'
 
 const PLAYOUT_POLL_MS = 2000
 const PROJECT_POLL_MS = 5000
@@ -15,6 +17,13 @@ export interface StatusProject {
   error: string | null
   clear: (kind: CueKind) => void
   resume: () => void
+  /**
+   * ungap Presenter spike B1: Before → Live and Live → After from the strip (the caller confirms Live → After, as the
+   * mode selector does). afterText: the After message to save with the switch.
+   */
+  setMode: (to: PublicMode, afterText?: string) => void
+  /** A mode switch is under way (the button shows it and stays disabled). */
+  switching: boolean
 }
 
 /**
@@ -100,11 +109,30 @@ export function useStatusProject(projectId: string): StatusProject {
     }
   }
 
+  const [switching, setSwitching] = useState(false)
+  async function setMode(to: PublicMode, afterText?: string) {
+    if (!project || project.publicMode === to || !beginModeSwitch(projectId, to)) return
+    setSwitching(true)
+    setError(null)
+    try {
+      if (afterText !== undefined && afterText !== project.afterText) await client.projects.rename(projectId, project.name, { afterText })
+      const updated = await client.projects.setPublicMode(projectId, to, afterReasonFor(project.publicMode, to))
+      setProject((current) => (current ? { ...updated, playout: current.playout } : updated))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t`Could not change the mode.`)
+    } finally {
+      endModeSwitch(projectId)
+      setSwitching(false)
+    }
+  }
+
   return {
     project,
     health,
     missing,
     error,
+    switching,
+    setMode: (to, afterText) => void setMode(to, afterText),
     clear: (kind) => void run(() => client.projects.clear(projectId, kind), t`Could not clear.`),
     resume: () => void run(() => client.projects.resume(projectId), t`Could not end the break.`),
   }

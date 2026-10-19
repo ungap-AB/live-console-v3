@@ -17,6 +17,8 @@ import { navigate, reportProjectMeeting } from '../../app/embed'
 import { Icon } from '../../components/Icon'
 import type { ShellMeeting } from '../../app/shellProtocol'
 import { useStatusProject } from './useStatusProject'
+import { ModeChangeDialog } from '../projects/ModeChangeDialog'
+import type { PublicMode } from '../../data/types'
 import '../projects/ProjectHeader.css'
 import '../projects/LiveWorkspace.css'
 import './StatusStrip.css'
@@ -78,7 +80,8 @@ function ProjectStatus({ projectId, meeting }: { projectId: string; meeting: She
   useEffect(() => {
     if (linkedMeetingId !== undefined) reportProjectMeeting(linkedMeetingId)
   }, [projectId, linkedMeetingId])
-  const { project: p, health, missing, error, clear, resume } = useStatusProject(projectId)
+  const { project: p, health, missing, error, clear, resume, setMode, switching } = useStatusProject(projectId)
+  const [confirming, setConfirming] = useState<PublicMode | null>(null)
   // UNG-312, as in Livesandning: the open project's broadcast counts as activity, so an operator watching Combined view is not
   // logged out for inactivity in the middle of it. Live with a signal, and new chapters from Meeting or the playout.
   const broadcasting = p !== null && signalSince(p, health) !== null
@@ -105,6 +108,17 @@ function ProjectStatus({ projectId, meeting }: { projectId: string; meeting: She
       <div class="ss-status">
         <div class="ss-row">
           <span class={`ss-mode is-${p.publicMode}`}>{MODE_LABEL[p.publicMode]}</span>
+          {/* ungap Presenter spike B1: the controls in the combined view switch Before → Live → After themselves. */}
+          {p.publicMode === 'before' && (
+            <button class="btn btn-sm ss-golive" type="button" disabled={switching} onClick={() => setMode('live')}>
+              {switching ? t`Switching…` : t`Go live`}
+            </button>
+          )}
+          {p.publicMode === 'live' && (
+            <button class="btn btn-sm" type="button" disabled={switching} onClick={() => setConfirming('after')}>
+              {switching ? t`Switching…` : t`End broadcast`}
+            </button>
+          )}
           <h1 class="ss-title" title={p.name}>{p.name}</h1>
           {/* flows-and-views.md: from the project to the broadcast's and the meeting's own views, through the shell. */}
           <button class="pv-icon-btn" type="button" title={t`Open the broadcast`} aria-label={t`Open the broadcast`} onClick={() => navigate('broadcasts', projectId)}>
@@ -127,6 +141,18 @@ function ProjectStatus({ projectId, meeting }: { projectId: string; meeting: She
       <div class="ss-now">
         <NowPanels project={p} actions={{ clear }} showTime={false} />
       </div>
+      {confirming && (
+        <ModeChangeDialog
+          from={p.publicMode}
+          to={confirming}
+          afterText={p.afterText}
+          onCancel={() => setConfirming(null)}
+          onConfirm={(afterText) => {
+            setConfirming(null)
+            setMode(confirming, afterText)
+          }}
+        />
+      )}
     </div>
   )
 }
