@@ -5821,6 +5821,10 @@ msgstr "ungap Meeting is not connected"
 msgid "ungap Meeting is not connected to your organisation. Meetings do not drive the graphics in {projectName}."
 msgstr "ungap Meeting is not connected to your organisation. Meetings do not drive the graphics in {projectName}."
 
+#: src/app/LoginView.tsx
+msgid "ungap's access service cannot be reached, so you cannot log in with an ungap account right now. Try again later."
+msgstr "ungap's access service cannot be reached, so you cannot log in with an ungap account right now. Try again later."
+
 #: src/views/projects/CaptionStudio.tsx
 #: src/views/projects/speakersLogic.ts
 msgid "unknown error."

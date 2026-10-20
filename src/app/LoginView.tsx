@@ -28,6 +28,8 @@ export function ssoErrorMessage(code: string): string {
       return t`Your organisation does not log in with an ungap account yet. Log in with your PIN.`
     case 'several_organisations':
       return t`Your ungap account belongs to several organisations, which ungap Live does not support yet. Contact ungap.`
+    case 'access_unavailable':
+      return t`ungap's access service cannot be reached, so you cannot log in with an ungap account right now. Try again later.`
     case 'account_conflict':
       return t`Your ungap account cannot be connected to a user in ungap Live. Contact ungap.`
     default:
