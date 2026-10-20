@@ -41,6 +41,11 @@ export function setAuthToken(token: string | null) {
   }
 }
 
+/** The absolute address of an API path, for full-page navigation (step A3: the ungap login). */
+export function apiUrl(path: string): string {
+  return new URL(BASE + path, window.location.origin).toString()
+}
+
 export function getAuthToken(): string | null {
   return authToken
 }

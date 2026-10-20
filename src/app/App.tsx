@@ -5,11 +5,11 @@ import { client } from '../data'
 import { onSessionLost } from '../data/http/fetchJson'
 import type { CurrentUser } from '../data/types'
 import { parseEditorLink, parsePlayoutLink, parseProjectLink } from './projectLink'
-import { routeHref, useCredentialToken, useRoute, useShareToken } from './router'
+import { readSsoReturn, routeHref, useCredentialToken, useRoute, useShareToken } from './router'
 import { Shell } from './Shell'
 import { CredentialLinkView } from './CredentialLinkView'
 import { SharedDownloadsView } from './SharedDownloadsView'
-import { LoginView } from './LoginView'
+import { LoginView, ssoErrorMessage } from './LoginView'
 import { InactivityWarning } from './InactivityWarning'
 import { useInactivityLogout } from './useInactivityLogout'
 import { useUiLocale } from './useUiLocale'
@@ -52,10 +52,21 @@ export function App({ embed }: AppProps) {
   // E-posten från en aktiverad inbjudan/återställning förifylls på inloggningen.
   const [loginEmail, setLoginEmail] = useState<string | null>(null)
   const [auth, setAuth] = useState<AuthState>({ status: 'loading' })
+  // Step A3: the ungap login returns to #/sso?code=… (or ?error=…); read once, then the address is cleaned.
+  const [ssoReturn] = useState(readSsoReturn)
+  const [ssoError, setSsoError] = useState<string | null>(ssoReturn?.error ? ssoErrorMessage(ssoReturn.error) : null)
 
   // Försök återuppta en aktiv session — misslyckas tyst till anon om ingen
   // giltig token finns i fliklagringen (UNG-312) eller sessionen gått ut.
   useEffect(() => {
+    if (ssoReturn) window.history.replaceState(null, '', window.location.pathname + window.location.search + routeHref('projects'))
+    if (ssoReturn?.code) {
+      client.auth.exchangeSsoCode(ssoReturn.code).then(login, (err: unknown) => {
+        setSsoError(err instanceof Error ? err.message : ssoErrorMessage('login_failed'))
+        setAuth({ status: 'anon' })
+      })
+      return
+    }
     client.auth.me().then(
       (user) => {
         // Embedded, the shell decides the language (UNG-322).
@@ -103,6 +114,7 @@ export function App({ embed }: AppProps) {
   function login(user: CurrentUser) {
     if (!embed) applyAccountLanguage(user)
     setLoggedOut(false)
+    setSsoError(null)
     // Ingen markering i listan efter inloggning: det senast öppnade gällde förra inloggningen (överlever annars en utloggning).
     setLastOpenedProjectId(null)
     setActiveProjectId(readStoredSelection('project', user.domain.id))
@@ -112,7 +124,13 @@ export function App({ embed }: AppProps) {
 
   function logout(): Promise<void> {
     loggingOut.current = true
+    // Step A3: after an ungap login, logging out also ends that login (Keycloak), which returns to the console.
+    const ssoLogout = auth.status === 'authed' && auth.user.loginMethod === 'sso' && !embed ? client.auth.ssoLogoutUrl() : null
     return client.auth.logout().finally(() => {
+      if (ssoLogout) {
+        window.location.assign(ssoLogout)
+        return
+      }
       loggingOut.current = false
       setLoggedOut(false)
       setActiveProjectId(null)
@@ -291,7 +309,8 @@ export function App({ embed }: AppProps) {
     )
   }
   if (auth.status === 'loading') return <div class="login-screen">{t`Loading…`}</div>
-  if (auth.status === 'anon') return <LoginView onLogin={login} initialEmail={loginEmail ?? ''} loggedOut={loggedOut} />
+  if (auth.status === 'anon')
+    return <LoginView onLogin={login} initialEmail={loginEmail ?? ''} loggedOut={loggedOut} ssoError={ssoError} onSso={client.auth.ssoAvailable() ? () => client.auth.startSso() : null} />
 
   // UNG-332: "Projects" in ungap Shell, the connected broadcasts. Opening one makes it the console's open project (so the
   // status strip above the meeting shows it) and asks the shell for the combined view with its meeting.

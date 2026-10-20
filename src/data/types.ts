@@ -40,6 +40,8 @@ export interface CurrentUser {
   roles: Role[]
   /** UNG-306: the account's UI language; null until chosen. */
   language: 'sv' | 'en' | null
+  /** Step A3: how this session logged in; 'sso' = with an ungap account (logout also ends that login). */
+  loginMethod: 'pin' | 'sso'
 }
 
 // ---- Dagordningar ----

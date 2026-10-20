@@ -13,9 +13,29 @@ interface LoginViewProps {
   initialEmail?: string
   /** The operator was logged out (expired session or inactivity): the subtitle says so instead of the welcome. */
   loggedOut?: boolean
+  /** Step A3: why the ungap login did not complete, shown above the form. */
+  ssoError?: string | null
+  /** Step A3: starts "Log in with ungap account"; null hides the button (mock). */
+  onSso?: (() => void) | null
 }
 
-export function LoginView({ onLogin, initialEmail = '', loggedOut = false }: LoginViewProps) {
+/** Step A3: the error codes the server's ungap login returns with (#/sso?error=…). */
+export function ssoErrorMessage(code: string): string {
+  switch (code) {
+    case 'no_access':
+      return t`Your ungap account has no access to ungap Live. Contact your administrator.`
+    case 'sso_not_enabled':
+      return t`Your organisation does not log in with an ungap account yet. Log in with your PIN.`
+    case 'several_organisations':
+      return t`Your ungap account belongs to several organisations, which ungap Live does not support yet. Contact ungap.`
+    case 'account_conflict':
+      return t`Your ungap account cannot be connected to a user in ungap Live. Contact ungap.`
+    default:
+      return t`The login with your ungap account did not complete. Try again.`
+  }
+}
+
+export function LoginView({ onLogin, initialEmail = '', loggedOut = false, ssoError = null, onSso = null }: LoginViewProps) {
   const [email, setEmail] = useState(initialEmail)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -56,6 +76,11 @@ export function LoginView({ onLogin, initialEmail = '', loggedOut = false }: Log
         <p class="login-sub" role={loggedOut && !resetting ? 'status' : undefined}>
           {resetting ? t`Forgot your PIN?` : loggedOut ? t`You were logged out, please log in again` : t`Welcome, please log in`}
         </p>
+        {ssoError && !resetting && (
+          <div class="login-error" role="alert">
+            {ssoError}
+          </div>
+        )}
         <label class="login-field">
           {t`Email`}
           <input
@@ -98,6 +123,11 @@ export function LoginView({ onLogin, initialEmail = '', loggedOut = false }: Log
             <button class="btn btn-primary login-submit" type="submit" disabled={loading || !email || !pin}>
               {loading ? t`Logging in…` : t`Log in`}
             </button>
+            {onSso && (
+              <button class="btn login-submit" type="button" onClick={onSso}>
+                {t`Log in with ungap account`}
+              </button>
+            )}
           </>
         )}
         <div class="login-footer">

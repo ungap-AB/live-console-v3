@@ -167,7 +167,7 @@ function toCurrentUser(user: UserAccount): CurrentUser {
   const domain = domains.find((d) => d.id === user.domainId)
   if (!domain) throw new Error(`Domän ${user.domainId} finns inte`)
   const meetingEnabled = Boolean(meetingFixtures[domain.host.toLowerCase()])
-  return { id: user.id, name: user.name, email: user.email, domain: { ...domain, meetingEnabled }, roles: user.roles, language: mockLanguages.get(user.id) ?? null }
+  return { id: user.id, name: user.name, email: user.email, domain: { ...domain, meetingEnabled }, roles: user.roles, language: mockLanguages.get(user.id) ?? null, loginMethod: 'pin' }
 }
 
 export const mockClient: Client = {
@@ -203,6 +203,17 @@ export const mockClient: Client = {
     async logout() {
       mockLoggedInUserId = null
       return delay(undefined)
+    },
+    // Step A3: the mock has no ungap login.
+    ssoAvailable() {
+      return false
+    },
+    startSso() {},
+    async exchangeSsoCode() {
+      throw new Error('The mock has no ungap login.')
+    },
+    ssoLogoutUrl() {
+      return null
     },
   },
   agendas: {

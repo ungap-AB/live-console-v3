@@ -805,6 +805,8 @@ function UserDetail({
   onRename,
 }: UserDetailProps) {
   const adminHost = domain?.host ?? ''
+  // Step A3: a user linked to an ungap account is administered in ungap Backoffice; here it is read-only.
+  const managed = u.ssoEnabled
   return (
     <>
       <div class="head">
@@ -813,12 +815,15 @@ function UserDetail({
           <div>
             <h2>
               {u.name}
-              <button class="ib" type="button" title={t`Rename the user`} aria-label={t`Rename the user`} onClick={onRename}>
-                <EditIcon />
-              </button>
+              {!managed && (
+                <button class="ib" type="button" title={t`Rename the user`} aria-label={t`Rename the user`} onClick={onRename}>
+                  <EditIcon />
+                </button>
+              )}
             </h2>
             <div class="mail">{u.email}</div>
           </div>
+          {!managed && (
           <span class="head-actions">
             <OverflowMenu
               items={[
@@ -840,6 +845,7 @@ function UserDetail({
               ]}
             />
           </span>
+          )}
         </div>
         <div class="facts">
           <span>
@@ -857,6 +863,9 @@ function UserDetail({
             </StatusChip>
           ))}
         </div>
+        {managed ? (
+          <p class="note">{t`Managed in ungap Backoffice: the user logs in with an ungap account, and name, roles and access are changed there.`}</p>
+        ) : (
         <div class="tools">
           {u.status === 'notinvited' ? (
             <button class="btn btn-sm btn-primary" type="button" onClick={onInvite}>
@@ -872,6 +881,7 @@ function UserDetail({
             </button>
           )}
         </div>
+        )}
       </div>
 
       <div class="body">
@@ -886,7 +896,7 @@ function UserDetail({
           </div>
           <div>
             <div class="k">{t`Sign-in`}</div>
-            <div class="v">{u.ssoEnabled ? 'SSO' : t`email`}</div>
+            <div class="v">{u.ssoEnabled ? t`ungap account` : t`email`}</div>
           </div>
           <div>
             <div class="k">{t`Domain`}</div>
@@ -907,7 +917,7 @@ function UserDetail({
             ) : (
               ROLE_ORDER.map((role) => {
                 const on = u.roles.includes(role)
-                const lock = role === 'domainAdmin' && lastAdmin
+                const lock = managed || (role === 'domainAdmin' && lastAdmin)
                 return (
                   <label key={role} class={`role ${on ? 'on' : ''}`}>
                     <input

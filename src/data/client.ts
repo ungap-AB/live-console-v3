@@ -50,6 +50,14 @@ export interface Client {
     /** UNG-306: saves the account's UI language (My account). */
     setLanguage(language: 'sv' | 'en'): Promise<CurrentUser>
     logout(): Promise<void>
+    /** Step A3: whether "Log in with ungap account" exists (not in the mock). */
+    ssoAvailable(): boolean
+    /** Step A3: leaves the page for the ungap login (OIDC on the server), bound to this tab by a random state. */
+    startSso(): void
+    /** Step A3: exchanges the single-use code the ungap login returns with (#/sso?code=…) for a session, in this tab only. */
+    exchangeSsoCode(code: string): Promise<CurrentUser>
+    /** Step A3: where logout continues after an ungap login, to end that login too (Keycloak). Null in the mock. */
+    ssoLogoutUrl(): string | null
     /** "Glömt PIN?": ber servern skicka ett återställningsmejl. Svarar likadant oavsett om adressen finns. */
     requestPasswordReset(email: string): Promise<void>
     /** Engångslänken i ett inbjudnings-/återställningsmejl. Ändrar inget — är bara en kontroll av att länken fortfarande gäller. */

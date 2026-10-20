@@ -2739,6 +2739,10 @@ msgstr "Log in"
 msgid "Log in to ungap Presenter under Projects to see the broadcast status here."
 msgstr "Log in to ungap Presenter under Projects to see the broadcast status here."
 
+#: src/app/LoginView.tsx
+msgid "Log in with ungap account"
+msgstr "Log in with ungap account"
+
 #: src/app/Shell.tsx
 msgid "Log out"
 msgstr "Log out"
@@ -2772,6 +2776,10 @@ msgstr "Make template"
 #: src/views/projects/WordReviewBar.tsx
 msgid "Makes all boxes editable"
 msgstr "Makes all boxes editable"
+
+#: src/views/users/UsersView.tsx
+msgid "Managed in ungap Backoffice: the user logs in with an ungap account, and name, roles and access are changed there."
+msgstr "Managed in ungap Backoffice: the user logs in with an ungap account, and name, roles and access are changed there."
 
 #: src/views/users/UsersView.tsx
 msgid "Manages the whole installation and all domains."
@@ -5207,6 +5215,10 @@ msgstr "The live broadcast continues unchanged"
 msgid "The log could not be loaded."
 msgstr "The log could not be loaded."
 
+#: src/app/LoginView.tsx
+msgid "The login with your ungap account did not complete. Try again."
+msgstr "The login with your ungap account did not complete. Try again."
+
 #: src/views/jobs/JobsView.tsx
 #: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/ExportImportDialog.tsx
@@ -5789,6 +5801,10 @@ msgstr "Type"
 msgid "Undo previous"
 msgstr "Undo previous"
 
+#: src/views/users/UsersView.tsx
+msgid "ungap account"
+msgstr "ungap account"
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "ungap Chapters (.json)"
 msgstr "ungap Chapters (.json)"
@@ -6123,6 +6139,10 @@ msgstr "Your corrections ({0})"
 msgid "Your new PIN"
 msgstr "Your new PIN"
 
+#: src/app/LoginView.tsx
+msgid "Your organisation does not log in with an ungap account yet. Log in with your PIN."
+msgstr "Your organisation does not log in with an ungap account yet. Log in with your PIN."
+
 #: src/views/projects/CaptionEditor.tsx
 msgid "Your own caption file becomes the captions' draft."
 msgstr "Your own caption file becomes the captions' draft."
@@ -6138,6 +6158,18 @@ msgstr "Your personal PIN:"
 #: src/data/http/fetchJson.ts
 msgid "Your session has expired. Log in again."
 msgstr "Your session has expired. Log in again."
+
+#: src/app/LoginView.tsx
+msgid "Your ungap account belongs to several organisations, which ungap Live does not support yet. Contact ungap."
+msgstr "Your ungap account belongs to several organisations, which ungap Live does not support yet. Contact ungap."
+
+#: src/app/LoginView.tsx
+msgid "Your ungap account cannot be connected to a user in ungap Live. Contact ungap."
+msgstr "Your ungap account cannot be connected to a user in ungap Live. Contact ungap."
+
+#: src/app/LoginView.tsx
+msgid "Your ungap account has no access to ungap Live. Contact your administrator."
+msgstr "Your ungap account has no access to ungap Live. Contact your administrator."
 
 #: src/views/projects/CaptionEditor.tsx
 msgid "Your unsaved changes are saved first."

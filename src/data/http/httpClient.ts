@@ -44,7 +44,7 @@ import type {
 import { toTextPlacement } from '../textPlacement'
 import { toCaptionStatus } from '../captionStatus'
 import { decodeBase64 } from './base64'
-import { ApiError, api, apiBlob, setAuthToken } from './fetchJson'
+import { ApiError, api, apiBlob, apiUrl, setAuthToken } from './fetchJson'
 import type {
   ServerAgenda,
   ServerAgendaListItem,
@@ -449,9 +449,19 @@ async function fetchUserDetail(id: string): Promise<UserAccount> {
   return { ...toUserSummary(dto), activity }
 }
 
+// Step A3: the ungap login's state for this tab: the server only accepts the returning code together with it, so a code
+// from someone else's login (a link with #/sso?code=…) cannot log this tab in.
+const SSO_STATE_KEY = 'ungap-live-sso-state'
+
+function randomState(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(24))
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
 function toCurrentUser(dto: ServerCurrentUser): CurrentUser {
   const language = dto.language === 'sv' || dto.language === 'en' ? dto.language : null
-  return { id: dto.id, name: dto.name, email: dto.email, domain: dto.domain, roles: dto.roles as CurrentUser['roles'], language }
+  const loginMethod = dto.loginMethod === 'sso' ? 'sso' : 'pin'
+  return { id: dto.id, name: dto.name, email: dto.email, domain: dto.domain, roles: dto.roles as CurrentUser['roles'], language, loginMethod }
 }
 
 export const httpClient: Client = {
@@ -472,6 +482,33 @@ export const httpClient: Client = {
     },
     async setLanguage(language) {
       return toCurrentUser(await api<ServerCurrentUser>('/auth/me', { method: 'PATCH', body: { language } }))
+    },
+    ssoAvailable() {
+      return true
+    },
+    startSso() {
+      const state = randomState()
+      try {
+        sessionStorage.setItem(SSO_STATE_KEY, state)
+      } catch {
+        // Without sessionStorage the exchange fails and the login page says so.
+      }
+      window.location.assign(`${apiUrl('/auth/oidc/start')}?state=${encodeURIComponent(state)}`)
+    },
+    async exchangeSsoCode(code) {
+      let state: string | null = null
+      try {
+        state = sessionStorage.getItem(SSO_STATE_KEY)
+        sessionStorage.removeItem(SSO_STATE_KEY)
+      } catch {
+        // See startSso.
+      }
+      const dto = await api<ServerLoginResponse>('/auth/oidc/exchange', { method: 'POST', body: { code, state } })
+      setAuthToken(dto.token)
+      return toCurrentUser(dto.user)
+    },
+    ssoLogoutUrl() {
+      return apiUrl('/auth/oidc/logout')
     },
     async me() {
       try {

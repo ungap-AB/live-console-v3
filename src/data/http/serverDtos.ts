@@ -379,6 +379,7 @@ export interface ServerCurrentUser {
   domain: ServerDomainRef
   roles: string[]
   language?: string | null
+  loginMethod?: string
 }
 
 export interface ServerLoginResponse {

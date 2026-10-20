@@ -52,6 +52,14 @@ function parseCredentialToken(): string | null {
   return new URLSearchParams(hash.split('?')[1] ?? '').get('token')
 }
 
+/** Step A3: where the ungap login returns to: #/sso?code=… on success, #/sso?error=<code> otherwise. */
+export function readSsoReturn(): { code: string | null; error: string | null } | null {
+  const hash = window.location.hash.slice(1)
+  if (!hash.startsWith('/sso')) return null
+  const params = new URLSearchParams(hash.split('?')[1] ?? '')
+  return { code: params.get('code'), error: params.get('error') }
+}
+
 export function useShareToken(): string | null {
   const [token, setToken] = useState<string | null>(() => parseShareToken(window.location.hash))
 

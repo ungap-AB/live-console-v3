@@ -2739,6 +2739,10 @@ msgstr "Logga in"
 msgid "Log in to ungap Presenter under Projects to see the broadcast status here."
 msgstr "Logga in i ungap Presenter under Projekt för att se sändningens status här."
 
+#: src/app/LoginView.tsx
+msgid "Log in with ungap account"
+msgstr "Logga in med ungap-konto"
+
 #: src/app/Shell.tsx
 msgid "Log out"
 msgstr "Logga ut"
@@ -2772,6 +2776,10 @@ msgstr "Gör till mall"
 #: src/views/projects/WordReviewBar.tsx
 msgid "Makes all boxes editable"
 msgstr "Gör alla rutor redigerbara"
+
+#: src/views/users/UsersView.tsx
+msgid "Managed in ungap Backoffice: the user logs in with an ungap account, and name, roles and access are changed there."
+msgstr "Hanteras i ungap Backoffice: användaren loggar in med ungap-konto, och namn, roller och åtkomst ändras där."
 
 #: src/views/users/UsersView.tsx
 msgid "Manages the whole installation and all domains."
@@ -5207,6 +5215,10 @@ msgstr "Livesändningen fortsätter oförändrad"
 msgid "The log could not be loaded."
 msgstr "Loggen kunde inte hämtas."
 
+#: src/app/LoginView.tsx
+msgid "The login with your ungap account did not complete. Try again."
+msgstr "Inloggningen med ditt ungap-konto slutfördes inte. Försök igen."
+
 #: src/views/jobs/JobsView.tsx
 #: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/ExportImportDialog.tsx
@@ -5789,6 +5801,10 @@ msgstr "Typ"
 msgid "Undo previous"
 msgstr "Ångra förra"
 
+#: src/views/users/UsersView.tsx
+msgid "ungap account"
+msgstr "ungap-konto"
+
 #: src/views/projects/ExportImportDialog.tsx
 msgid "ungap Chapters (.json)"
 msgstr "ungap Chapters (.json)"
@@ -6123,6 +6139,10 @@ msgstr "Dina rättningar ({0})"
 msgid "Your new PIN"
 msgstr "Din nya PIN-kod"
 
+#: src/app/LoginView.tsx
+msgid "Your organisation does not log in with an ungap account yet. Log in with your PIN."
+msgstr "Din organisation loggar inte in med ungap-konto än. Logga in med din PIN-kod."
+
 #: src/views/projects/CaptionEditor.tsx
 msgid "Your own caption file becomes the captions' draft."
 msgstr "En egen undertextfil blir undertexternas utkast."
@@ -6138,6 +6158,18 @@ msgstr "Din personliga PIN-kod:"
 #: src/data/http/fetchJson.ts
 msgid "Your session has expired. Log in again."
 msgstr "Din session har gått ut. Logga in igen."
+
+#: src/app/LoginView.tsx
+msgid "Your ungap account belongs to several organisations, which ungap Live does not support yet. Contact ungap."
+msgstr "Ditt ungap-konto tillhör flera organisationer, vilket ungap Live inte stöder än. Kontakta ungap."
+
+#: src/app/LoginView.tsx
+msgid "Your ungap account cannot be connected to a user in ungap Live. Contact ungap."
+msgstr "Ditt ungap-konto kan inte kopplas till en användare i ungap Live. Kontakta ungap."
+
+#: src/app/LoginView.tsx
+msgid "Your ungap account has no access to ungap Live. Contact your administrator."
+msgstr "Ditt ungap-konto har ingen åtkomst till ungap Live. Kontakta din administratör."
 
 #: src/views/projects/CaptionEditor.tsx
 msgid "Your unsaved changes are saved first."
