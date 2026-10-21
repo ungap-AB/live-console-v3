@@ -53,15 +53,13 @@ export function App({ embed }: AppProps) {
   // E-posten från en aktiverad inbjudan/återställning förifylls på inloggningen.
   const [loginEmail, setLoginEmail] = useState<string | null>(null)
   const [auth, setAuth] = useState<AuthState>({ status: 'loading' })
-  // Step A6: the logged-in user for the shell handlers (set up once).
-  const authRef = useRef<CurrentUser | null>(null)
-  authRef.current = auth.status === 'authed' ? auth.user : null
   // Step A3: the ungap login returns to #/sso?code=… (or ?error=…); read once, then the address is cleaned.
   const [ssoReturn] = useState(readSsoReturn)
   // Step A6: Presenter's login relay (standalone window only): the ungap login starts at once and returns to the shell.
   const [relaying] = useState(() => !embed && takeRelayRequest())
   // Step A6: framed, the shell's user and organisation; the console says when its own session does not match.
   const [shellOrg, setShellOrg] = useState<string | null>(null)
+  const [shellPerson, setShellPerson] = useState<string | null>(null)
   const shellClientRef = useRef<ShellClient | null>(null)
   const needsLogin = useRef(false)
   const [ssoError, setSsoError] = useState<string | null>(ssoReturn?.error ? ssoErrorMessage(ssoReturn.error) : null)
@@ -212,8 +210,7 @@ export function App({ embed }: AppProps) {
       // shown as not available here.
       onSession: (personId, organisationId) => {
         setShellOrg(organisationId)
-        const user = authRef.current
-        if (personId && user?.personId && user.personId !== personId) void shellLogout.current().then(() => shellClient.loginRequired())
+        setShellPerson(personId)
       },
       onOrgChanged: setShellOrg,
       onMeetingContext: setShellMeeting,
@@ -233,6 +230,13 @@ export function App({ embed }: AppProps) {
     // embed is fixed for the page's lifetime
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  // Step A6: compared once both are known (the shell's message usually arrives before the console has read its session):
+  // a session of another person than the shell's user ends, and the shell is asked for a login.
+  useEffect(() => {
+    if (!embed || auth.status !== 'authed' || !shellPerson || !auth.user.personId || auth.user.personId === shellPerson) return
+    needsLogin.current = true
+    void shellLogout.current()
+  }, [auth, shellPerson])
   // Step A6: framed without a session, ask the shell for the login relay (once connected; the shell relays at most once).
   useEffect(() => {
     if (!embed || auth.status !== 'anon') return
