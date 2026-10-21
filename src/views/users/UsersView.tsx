@@ -16,6 +16,7 @@ import { EditIcon } from '../../components/icons'
 import { formatDate, formatDateTime } from '../../app/time'
 import './UsersView.css'
 import { errorMessage, runOptimistic } from '../../app/optimistic'
+import { canNavigate, navigate } from '../../app/embed'
 
 const ROLES: Record<Role, { label: MessageDescriptor; description: MessageDescriptor }> = {
   rootAdmin: { label: msg`Root administrator`, description: msg`Manages the whole installation and all domains.` },
@@ -48,12 +49,10 @@ function isLastActiveAdmin(user: UserAccount, domainUsers: UserAccount[]): boole
   return activeAdmins.length === 1
 }
 
-// Step A7: the customer administration of the domain's organisation (Backoffice org id = Live domain id).
-const BACKOFFICE_URL = (import.meta.env.VITE_BACKOFFICE_URL ?? (import.meta.env.DEV ? 'https://localhost:5176' : '')).replace(/\/+$/, '')
-
-function backofficeMembersUrl(domainId: string): string {
-  return `${BACKOFFICE_URL}/#members/${encodeURIComponent(domainId)}`
-}
+// Steps A7/A7b: ungap accounts are administered in ungap Presenter's Organisation view (Backoffice's customer
+// administration framed there; Backoffice org id = Live domain id). Framed in Presenter the console asks the shell to go
+// there; standalone it links to Presenter.
+const PRESENTER_URL = (import.meta.env.VITE_PRESENTER_URL ?? (import.meta.env.DEV ? 'https://localhost:5180' : '')).replace(/\/+$/, '')
 
 function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
@@ -314,11 +313,17 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
             </div>
             {selectedDomain?.loginMode && selectedDomain.loginMode !== 'local' && (
               <p class="users-backoffice-note">
-                {t`People with an ungap account are managed in ungap Backoffice.`}{' '}
-                {BACKOFFICE_URL && (
-                  <a href={backofficeMembersUrl(selectedDomain.id)} target="_blank" rel="noopener noreferrer">
-                    {t`Open ungap Backoffice`}
-                  </a>
+                {t`People with an ungap account are managed in ungap Presenter under Organisation.`}{' '}
+                {canNavigate() ? (
+                  <button class="btn btn-sm" type="button" onClick={() => navigate('organisation')}>
+                    {t`Open Organisation`}
+                  </button>
+                ) : (
+                  PRESENTER_URL && (
+                    <a href={`${PRESENTER_URL}/#/organisation`} target="_blank" rel="noopener noreferrer">
+                      {t`Open ungap Presenter`}
+                    </a>
+                  )
                 )}
               </p>
             )}

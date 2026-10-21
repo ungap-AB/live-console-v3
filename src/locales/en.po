@@ -3372,6 +3372,10 @@ msgstr "Open menu"
 msgid "Open or close the player to the public (takes effect immediately), copy the link or the embed code."
 msgstr "Open or close the player to the public (takes effect immediately), copy the link or the embed code."
 
+#: src/views/users/UsersView.tsx
+msgid "Open Organisation"
+msgstr "Open Organisation"
+
 #: src/views/agendas/AgendasView.tsx
 #: src/views/projects/PlayoutColumns.tsx
 msgid "Open PDF documents for {title}"
@@ -3422,8 +3426,8 @@ msgid "Open to viewers"
 msgstr "Open to viewers"
 
 #: src/views/users/UsersView.tsx
-msgid "Open ungap Backoffice"
-msgstr "Open ungap Backoffice"
+msgid "Open ungap Presenter"
+msgstr "Open ungap Presenter"
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Opening the project: {name}"
@@ -3518,8 +3522,8 @@ msgid "PDF documents ({count})"
 msgstr "PDF documents ({count})"
 
 #: src/views/users/UsersView.tsx
-msgid "People with an ungap account are managed in ungap Backoffice."
-msgstr "People with an ungap account are managed in ungap Backoffice."
+msgid "People with an ungap account are managed in ungap Presenter under Organisation."
+msgstr "People with an ungap account are managed in ungap Presenter under Organisation."
 
 #: src/views/users/UsersView.tsx
 msgid "Permission"

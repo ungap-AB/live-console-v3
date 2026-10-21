@@ -1,5 +1,6 @@
 // Shell API v1 (UNG-321): the postMessage protocol between ungap Shell and the services it frames. This file is COPIED,
-// not shared, into every party (ungap-shell, live-console-v3, meeting-web); keep the copies identical.
+// not shared, into every party (ungap-shell, live-console-v3, meeting-web, live-backoffice's frontend); keep the copies
+// identical.
 // The protocol is documented in ungap-shell/docs/shell-api.md.
 
 export const SHELL_PROTOCOL = 'ungap-shell'
@@ -64,9 +65,12 @@ export interface ShellMeeting {
   title: string
 }
 
-/** Where `navigate` can go. The shell owns the addresses: `#/<destination>/<id>`. */
-export type ShellDestination = 'projects' | 'broadcasts' | 'meetings' | 'namelists' | 'jobs'
-export const SHELL_DESTINATIONS: readonly ShellDestination[] = ['projects', 'broadcasts', 'meetings', 'namelists', 'jobs']
+/**
+ * Where `navigate` can go. The shell owns the addresses: `#/<destination>/<id>`. `organisation` (step A7b): the customer
+ * administration (ungap Backoffice's members and invitations), for an org.admin.
+ */
+export type ShellDestination = 'projects' | 'broadcasts' | 'meetings' | 'namelists' | 'jobs' | 'organisation'
+export const SHELL_DESTINATIONS: readonly ShellDestination[] = ['projects', 'broadcasts', 'meetings', 'namelists', 'jobs', 'organisation']
 
 /**
  * Service → shell: go to a destination, optionally one object in it (flows-and-views.md). A service never opens another
