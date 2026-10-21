@@ -44,26 +44,19 @@ export interface NameListInput {
 // (se PLAN-byggordningen) — inga oanvända metoder i väntan på en vy.
 export interface Client {
   auth: {
-    /** UNG-306: language = the language chosen on the login page; saved on the account if it has none. */
-    login(email: string, pin: string, language?: 'sv' | 'en'): Promise<CurrentUser>
+    /** ADR 001: the session from the ungap login (a cookie on the API's host); rejects when there is none. */
     me(): Promise<CurrentUser>
     /** UNG-306: saves the account's UI language (My account). */
     setLanguage(language: 'sv' | 'en'): Promise<CurrentUser>
     logout(): Promise<void>
-    /** Step A3: whether "Log in with ungap account" exists (not in the mock). */
-    ssoAvailable(): boolean
-    /** Step A3: leaves the page for the ungap login (OIDC on the server), bound to this tab by a random state. */
-    startSso(): void
-    /** Step A3: exchanges the single-use code the ungap login returns with (#/sso?code=…) for a session, in this tab only. */
-    exchangeSsoCode(code: string): Promise<CurrentUser>
-    /** Step A3: where logout continues after an ungap login, to end that login too (Keycloak). Null in the mock. */
+    /**
+     * ADR 001: leaves the page for the ungap login (OIDC on the server), which sets the session and comes back to the
+     * same page. silent: prompt=none, for the console framed in ungap Presenter (Keycloak shows no page; without its
+     * session the console comes back to #/sso?error=login_required). In the mock it signs in the mock user.
+     */
+    startSso(options?: { silent?: boolean }): void
+    /** Where logout continues, to end the ungap login too (Keycloak). Null in the mock. */
     ssoLogoutUrl(): string | null
-    /** "Glömt PIN?": ber servern skicka ett återställningsmejl. Svarar likadant oavsett om adressen finns. */
-    requestPasswordReset(email: string): Promise<void>
-    /** Engångslänken i ett inbjudnings-/återställningsmejl. Ändrar inget — är bara en kontroll av att länken fortfarande gäller. */
-    credentialLinkInfo(token: string): Promise<import('./types').CredentialLinkInfo>
-    /** Förbrukar länken och ger användaren en ny, server-genererad PIN (visas en gång). */
-    redeemCredentialLink(token: string): Promise<import('./types').CredentialLinkRedeemed>
   }
   agendas: {
     list(query?: string): Promise<Agenda[]>
@@ -184,17 +177,11 @@ export interface Client {
     /** muxEnvKey: tom sträng tar bort kundens egen nyckel (standardnyckeln gäller då); utelämnad lämnar den oförändrad. */
     update(id: string, input: { org: string; contractStart?: string; contractEnd?: string; muxEnvKey?: string }): Promise<Domain>
     remove(id: string): Promise<void>
-    /** UNG-306: language = the new user's language (the invitation email and the first login). */
-    createUser(domainId: string, input: { email: string; name: string; roles: Role[]; language?: 'sv' | 'en' }): Promise<UserAccount>
   }
   users: {
     listByDomain(domainId: string, query?: string): Promise<UserAccount[]>
     get(id: string): Promise<UserAccount | undefined>
     update(id: string, input: { name?: string; email?: string }): Promise<UserAccount>
-    /** Skickar ett välkomstmejl med en engångslänk (7 dagar); PIN skapas av servern när mottagaren klickar på länken. */
-    sendInvitation(id: string): Promise<UserAccount>
-    resendInvite(id: string): Promise<UserAccount>
-    sendPasswordReset(id: string): Promise<void>
     setRoles(id: string, roles: Role[]): Promise<UserAccount>
     disable(id: string): Promise<UserAccount>
     enable(id: string): Promise<UserAccount>

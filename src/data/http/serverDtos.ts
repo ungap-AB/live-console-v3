@@ -384,7 +384,3 @@ export interface ServerCurrentUser {
   personId?: string | null
 }
 
-export interface ServerLoginResponse {
-  token: string
-  user: ServerCurrentUser
-}

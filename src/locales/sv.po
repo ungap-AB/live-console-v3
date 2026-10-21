@@ -475,10 +475,6 @@ msgstr "någon minut"
 msgid "A new draft is created from the audio and replaces this working version. The current version remains in the version history, and the current published captions stay for the viewers until you approve the new draft."
 msgstr "Ett nytt utkast skapas från ljudet och ersätter den här arbetsversionen. Nuvarande version finns kvar i versionshistoriken, och nuvarande publicerade undertexter ligger kvar för tittarna tills du godkänner det nya utkastet."
 
-#: src/views/users/UsersView.tsx
-msgid "A new invitation replaces the previous one: the old link and PIN stop working."
-msgstr "En ny inbjudan ersätter den tidigare: den gamla länken och PIN-koden slutar gälla."
-
 #: src/views/projects/ForkDialog.tsx
 msgid "A new project is created from the broadcast so far."
 msgstr "Ett nytt projekt skapas av sändningen hittills."
@@ -495,10 +491,6 @@ msgstr "Ny video väntar på ditt godkännande"
 msgid "A project is a broadcast connected to a meeting. The broadcast is created and connected in one step."
 msgstr "Ett projekt är en sändning kopplad till ett möte. Sändningen skapas och kopplas i ett steg."
 
-#: src/views/users/UsersView.tsx
-msgid "A reset email has been sent to {email}. The link is valid for one hour."
-msgstr "Ett återställningsmejl har skickats till {email}. Länken gäller i en timme."
-
 #: src/views/projects/ProjectHeader.tsx
 msgid "A streaming server (the ingest) is created for the project. Its details are shown when it is ready."
 msgstr "En strömningsserver (ingesten) skapas för projektet. Uppgifterna visas när den är klar."
@@ -506,10 +498,6 @@ msgstr "En strömningsserver (ingesten) skapas för projektet. Uppgifterna visas
 #: src/views/projects/OndemandView.tsx
 msgid "A video is being processed or waiting for your approval. Finish that first."
 msgstr "En video bearbetas eller väntar på ditt godkännande. Slutför det först."
-
-#: src/views/users/UsersView.tsx
-msgid "A welcome email with a one-time link is sent to {email}. The link is valid for 7 days. When the recipient clicks it, a personal PIN is created that is shown only once."
-msgstr "Ett välkomstmejl med en engångslänk skickas till {email}. Länken gäller i 7 dagar. När mottagaren klickar på den skapas en personlig PIN-kod som visas en enda gång."
 
 #: src/views/projects/autoCaptionsLogic.ts
 msgid "about {minutes} minutes"
@@ -768,10 +756,6 @@ msgstr "AWS IVS Player kan inte köras i den här webbläsaren."
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "Back"
 msgstr "Tillbaka"
-
-#: src/app/LoginView.tsx
-msgid "Back to login"
-msgstr "Tillbaka till inloggningen"
 
 #: src/views/projects/PreviewOverlay.tsx
 msgid "Before the broadcast"
@@ -1113,10 +1097,6 @@ msgstr "Kontrollera att du har kopierat hela länken. Be annars avsändaren att 
 msgid "Check the anchor"
 msgstr "Kontrollera ankaret"
 
-#: src/app/CredentialLinkView.tsx
-msgid "Checking the link…"
-msgstr "Kontrollerar länken…"
-
 #: src/views/projects/UploadPanel.tsx
 msgid "Checking…"
 msgstr "Kontrollerar…"
@@ -1228,14 +1208,6 @@ msgstr "Rensa testutspelningen"
 #: src/views/projects/ChapterSyncTools.tsx
 msgid "Click a chapter in the list whose start you clearly hear or see in the video, for example the first item."
 msgstr "Klicka på ett kapitel i listan vars start du tydligt hör eller ser i videon, till exempel första punkten."
-
-#: src/app/CredentialLinkView.tsx
-msgid "Click the button to activate your account. You will then get your personal PIN."
-msgstr "Klicka på knappen för att aktivera ditt konto. Du får då din personliga PIN-kod."
-
-#: src/app/CredentialLinkView.tsx
-msgid "Click the button to get a new PIN. Your old PIN then stops working."
-msgstr "Klicka på knappen för att få en ny PIN-kod. Din gamla PIN-kod slutar då gälla."
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "Clipped {start}–{end} from the original"
@@ -1444,10 +1416,6 @@ msgstr "Kunde inte rensa."
 msgid "Could not create the resource."
 msgstr "Kunde inte skapa resursen."
 
-#: src/views/users/UsersView.tsx
-msgid "Could not create the user."
-msgstr "Kunde inte skapa användaren."
-
 #: src/views/projects/ProjectsView.tsx
 #: src/views/status/useStatusProject.ts
 msgid "Could not end the break."
@@ -1465,10 +1433,6 @@ msgstr "Kunde inte hämta Meeting-agendan."
 msgid "Could not link the meeting."
 msgstr "Kunde inte koppla mötet."
 
-#: src/app/LoginView.tsx
-msgid "Could not log in."
-msgstr "Kunde inte logga in."
-
 #: src/views/projects/ProjectsView.tsx
 msgid "Could not play out."
 msgstr "Kunde inte spela ut."
@@ -1484,10 +1448,6 @@ msgstr "Kunde inte ta bort domänen."
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Could not rename."
 msgstr "Kunde inte byta namn."
-
-#: src/views/users/UsersView.tsx
-msgid "Could not send the invitation."
-msgstr "Kunde inte skicka inbjudan."
 
 #: src/views/projects/ProjectsView.tsx
 msgid "Could not start the break."
@@ -1605,7 +1565,6 @@ msgstr "Skapar ingest…"
 msgid "Creating the document…"
 msgstr "Skapar dokumentet…"
 
-#: src/app/CredentialLinkView.tsx
 #: src/views/jobs/JobsView.tsx
 #: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/ExportImportDialog.tsx
@@ -1906,9 +1865,7 @@ msgstr "Redigera rubrik"
 msgid "email"
 msgstr "e-post"
 
-#: src/app/LoginView.tsx
 #: src/app/Shell.tsx
-#: src/views/users/UsersView.tsx
 msgid "Email"
 msgstr "E-post"
 
@@ -1970,10 +1927,6 @@ msgstr "Ange en tid som hh:mm."
 msgid "Enter a valid domain name, for example example.com."
 msgstr "Ange ett giltigt domännamn, till exempel exempel.se."
 
-#: src/app/LoginView.tsx
-msgid "Enter a valid email address."
-msgstr "Ange en giltig e-postadress."
-
 #: src/views/projects/recordingSource.ts
 msgid "Enter the address of an HLS playlist."
 msgstr "Ange adressen till en HLS-spellista."
@@ -1981,10 +1934,6 @@ msgstr "Ange adressen till en HLS-spellista."
 #: src/views/users/UsersView.tsx
 msgid "Enter the organization name."
 msgstr "Ange organisationens namn."
-
-#: src/app/LoginView.tsx
-msgid "Enter your email address and we will send you a link where you get a new PIN."
-msgstr "Ange din e-postadress så skickar vi en länk där du får en ny PIN-kod."
 
 #: src/views/projects/autoCaptionsLogic.ts
 msgid "Estimated time: {duration}, started {clock}."
@@ -2106,21 +2055,9 @@ msgstr "Filtrera namn"
 msgid "Finished"
 msgstr "Klara"
 
-#: src/views/users/UsersView.tsx
-msgid "First and last name"
-msgstr "För- och efternamn"
-
 #: src/views/projects/CaptionEditor.tsx
 msgid "Follow"
 msgstr "Följ med"
-
-#: src/app/LoginView.tsx
-msgid "Forgot PIN?"
-msgstr "Glömt PIN-kod?"
-
-#: src/app/LoginView.tsx
-msgid "Forgot your PIN?"
-msgstr "Glömt din PIN-kod?"
 
 #: src/views/projects/ForkDialog.tsx
 msgid "Fork is not made for tight clips: start and end are placed on the nearest segment and can be up to 10 seconds wider. You choose the exact start and end when you trim in the new project."
@@ -2280,10 +2217,6 @@ msgstr "Lämnas namnet tomt blir det projektets namn med start- och sluttid."
 #: src/views/projects/UploadPanel.tsx
 msgid "If the video is already at an address of its own, it does not need to be uploaded. The playlist (.m3u8) is used as it is and the video stays where it is. Such a video cannot be trimmed or downloaded as MP4."
 msgstr "Om videon redan ligger på en egen adress behöver den inte laddas upp. Spellistan (.m3u8) används som den är och videon ligger kvar där den är. En sådan video kan inte trimmas och inte laddas ned som MP4."
-
-#: src/app/LoginView.tsx
-msgid "If we have the address, we have sent an email with a link. The link is valid for one hour. Check your spam folder too."
-msgstr "Om adressen finns hos oss har vi skickat ett mejl med en länk. Länken gäller i en timme. Kontrollera även skräpposten."
 
 #: src/views/projects/OndemandView.tsx
 msgid "If you use the file, the project's earlier recordings (and any trimmed versions) are deleted and can be restored by an administrator from the Trash within {retentionDays} days:"
@@ -2448,18 +2381,6 @@ msgstr "ogiltig adress"
 msgid "Invalid address: {0}"
 msgstr "Ogiltig adress: {0}"
 
-#: src/views/users/UsersView.tsx
-msgid "Invitation sent to {email}. The text is copied."
-msgstr "Inbjudan skickad till {email}. Texten är kopierad."
-
-#: src/views/users/UsersView.tsx
-msgid "Invite"
-msgstr "Bjud in"
-
-#: src/views/users/UsersView.tsx
-msgid "Invite to {host}"
-msgstr "Bjud in till {host}"
-
 #: src/app/Shell.tsx
 #: src/views/users/UsersView.tsx
 msgid "Invited"
@@ -2523,7 +2444,6 @@ msgstr "Behåll dem och lägg till de nya"
 
 #: src/app/LanguageSwitch.tsx
 #: src/app/Shell.tsx
-#: src/views/users/UsersView.tsx
 msgid "Language"
 msgstr "Språk"
 
@@ -2731,10 +2651,6 @@ msgstr "Låst: den här rutan ändrades inte i Word."
 msgid "Log"
 msgstr "Logg"
 
-#: src/app/LoginView.tsx
-msgid "Log in"
-msgstr "Logga in"
-
 #: src/views/status/StatusStrip.tsx
 msgid "Log in to ungap Presenter under Projects to see the broadcast status here."
 msgstr "Logga in i ungap Presenter under Projekt för att se sändningens status här."
@@ -2927,7 +2843,6 @@ msgstr "Mitt konto"
 #: src/components/EditableItemList.tsx
 #: src/views/projects/CreateProjectDialog.tsx
 #: src/views/trash/TrashView.tsx
-#: src/views/users/UsersView.tsx
 msgid "Name"
 msgstr "Namn"
 
@@ -2963,10 +2878,6 @@ msgstr "Namn på punkten"
 #: src/views/projects/UploadPanel.tsx
 msgid "Name of the recording"
 msgstr "Namn på inspelningen"
-
-#: src/views/users/UsersView.tsx
-msgid "name@example.com"
-msgstr "namn@exempel.se"
 
 #: src/views/users/UsersView.tsx
 msgid "never"
@@ -3017,10 +2928,6 @@ msgstr "Ny resurs"
 #: src/views/resources/LiveResourcesView.tsx
 msgid "New stream key generated. The old one stops working immediately."
 msgstr "Ny stream key genererad. Den gamla slutar gälla omedelbart."
-
-#: src/views/users/UsersView.tsx
-msgid "New user in {host}"
-msgstr "Ny användare i {host}"
 
 #: src/views/archive/VideoArchiveView.tsx
 msgid "New video resource"
@@ -3526,10 +3433,6 @@ msgid "People with an ungap account are managed in ungap Presenter under Organis
 msgstr "Personer med ungap-konto hanteras i ungap Presenter under Organisation."
 
 #: src/views/users/UsersView.tsx
-msgid "Permission"
-msgstr "Behörighet"
-
-#: src/views/users/UsersView.tsx
 msgid "Permissions"
 msgstr "Behörigheter"
 
@@ -3537,10 +3440,6 @@ msgstr "Behörigheter"
 #: src/views/projects/chapterRows.ts
 msgid "Person"
 msgstr "Person"
-
-#: src/app/LoginView.tsx
-msgid "PIN"
-msgstr "PIN-kod"
 
 #: src/views/projects/captionEditOps.ts
 msgid "Place the cursor after the words to be moved (and before at least one word that is to stay)."
@@ -4013,18 +3912,6 @@ msgstr "ersatte {replaced}"
 msgid "Replaces all the player settings and the poster image with a copy of the chosen project's."
 msgstr "Ersätter alla spelarinställningar och posterbilden med en kopia av det valda projektets."
 
-#: src/views/users/UsersView.tsx
-msgid "Resend invitation"
-msgstr "Skicka om inbjudan"
-
-#: src/views/users/UsersView.tsx
-msgid "Reset link"
-msgstr "Återställningslänk"
-
-#: src/app/CredentialLinkView.tsx
-msgid "Reset your PIN"
-msgstr "Återställ din PIN-kod"
-
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Resolution"
@@ -4210,19 +4097,6 @@ msgstr "Vald inspelning"
 msgid "Selected resource"
 msgstr "Vald resurs"
 
-#: src/views/users/UsersView.tsx
-msgid "Send invitation"
-msgstr "Skicka inbjudan"
-
-#: src/app/LoginView.tsx
-msgid "Send reset link"
-msgstr "Skicka återställningslänk"
-
-#: src/app/LoginView.tsx
-#: src/views/users/UsersView.tsx
-msgid "Sending…"
-msgstr "Skickar…"
-
 #. placeholder {0}: response.status
 #: src/data/http/fetchJson.ts
 msgid "Server error ({0})."
@@ -4314,10 +4188,6 @@ msgstr "Visa ingest-info…"
 #: src/views/projects/RecordingDownload.tsx
 msgid "Show jobs"
 msgstr "Visa jobb"
-
-#: src/app/CredentialLinkView.tsx
-msgid "Show my PIN"
-msgstr "Visa min PIN-kod"
 
 #: src/views/projects/ProjectsView.tsx
 msgid "Show projects in the mode"
@@ -5170,11 +5040,6 @@ msgstr "Repliken börjar före föregående (sorteras om vid sparning)."
 msgid "The link could not be checked"
 msgstr "Länken kunde inte kontrolleras"
 
-#: src/app/CredentialLinkView.tsx
-msgid "The link could not be used."
-msgstr "Länken kunde inte användas."
-
-#: src/app/CredentialLinkView.tsx
 #: src/app/SharedDownloadsView.tsx
 msgid "The link does not work"
 msgstr "Länken fungerar inte"
@@ -5186,14 +5051,6 @@ msgstr "Länken är återkallad"
 #: src/app/SharedDownloadsView.tsx
 msgid "The link has expired"
 msgstr "Länken har gått ut"
-
-#: src/app/CredentialLinkView.tsx
-msgid "The link has expired or has already been used. Ask for a new invitation."
-msgstr "Länken har gått ut eller har redan använts. Be om en ny inbjudan."
-
-#: src/app/CredentialLinkView.tsx
-msgid "The link has expired or has already been used. Ask for a new reset."
-msgstr "Länken har gått ut eller har redan använts. Be om en ny återställning."
 
 #: src/views/projects/PlayerLinkField.tsx
 msgid "The link is copied"
@@ -5728,10 +5585,6 @@ msgstr "Klockan / tid sedan signalen startade"
 msgid "Time here · {0}"
 msgstr "Tid här · {0}"
 
-#: src/app/CredentialLinkView.tsx
-msgid "To login"
-msgstr "Till inloggningen"
-
 #: src/app/jobRetention.ts
 #: src/app/time.ts
 #: src/views/trash/TrashView.tsx
@@ -6078,17 +5931,9 @@ msgstr "WebVTT-kapitel (.vtt)"
 msgid "WebVTT, which the player and most video platforms read."
 msgstr "WebVTT, som spelaren och de flesta videoplattformar läser."
 
-#: src/app/CredentialLinkView.tsx
-msgid "Welcome, {name}!"
-msgstr "Välkommen, {name}!"
-
 #: src/app/LoginView.tsx
 msgid "Welcome, please log in"
 msgstr "Välkommen att logga in"
-
-#: src/app/CredentialLinkView.tsx
-msgid "Welcome!"
-msgstr "Välkommen!"
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "What do you want to export"
@@ -6118,10 +5963,6 @@ msgstr "Ord du byter ut i texten visas här, tills du sparat."
 msgid "Works operationally within their domain."
 msgstr "Arbetar operativt inom sin domän."
 
-#: src/app/CredentialLinkView.tsx
-msgid "Write it down now — it is only shown once. You log in with {email} and this PIN."
-msgstr "Anteckna den nu — den visas bara en gång. Du loggar in med {email} och den här PIN-koden."
-
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "Yes, play out events"
 msgstr "Ja, spela ut händelser"
@@ -6146,22 +5987,10 @@ msgstr "Du har loggats ut, logga in igen"
 msgid "You will be logged out in {countdown} because there has been no activity in the console for almost 2 hours."
 msgstr "Du loggas ut om {countdown} eftersom inget har hänt i konsolen på snart 2 timmar."
 
-#: src/app/CredentialLinkView.tsx
-msgid "Your account is activated"
-msgstr "Ditt konto är aktiverat"
-
 #. placeholder {0}: own.length
 #: src/views/projects/CorrectionsPanel.tsx
 msgid "Your corrections ({0})"
 msgstr "Dina rättningar ({0})"
-
-#: src/app/CredentialLinkView.tsx
-msgid "Your new PIN"
-msgstr "Din nya PIN-kod"
-
-#: src/app/LoginView.tsx
-msgid "Your organisation does not log in with an ungap account yet. Log in with your PIN."
-msgstr "Din organisation loggar inte in med ungap-konto än. Logga in med din PIN-kod."
 
 #: src/views/projects/CaptionEditor.tsx
 msgid "Your own caption file becomes the captions' draft."
@@ -6170,10 +5999,6 @@ msgstr "En egen undertextfil blir undertexternas utkast."
 #: src/views/projects/CaptionEditor.tsx
 msgid "Your own caption file replaces the working version (the old one remains in the version history)."
 msgstr "En egen undertextfil ersätter arbetsversionen (den gamla finns kvar i versionshistoriken)."
-
-#: src/app/CredentialLinkView.tsx
-msgid "Your personal PIN:"
-msgstr "Din personliga PIN-kod:"
 
 #: src/data/http/fetchJson.ts
 msgid "Your session has expired. Log in again."

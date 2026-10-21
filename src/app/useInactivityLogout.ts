@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { renewAuthTokenIfDue, setRenewalGuard } from '../data/http/fetchJson'
 import { INACTIVITY_LIMIT_MS, inactivityPhase, type InactivityPhase } from '../data/http/sessionLogic'
 import { lastActivity, markActivity } from './activity'
 
@@ -12,9 +11,9 @@ const ACTIVITY_EVENTS = ['keydown', 'pointerdown', 'pointermove', 'wheel', 'touc
 const TICK_MS = 1000
 
 /**
- * UNG-312: logs out after 2 h without activity (see activity.ts), with a warning shortly before. While signed in it
- * also renews the short-lived token on a timer, so the session survives views that make no requests. Time is wall-clock
- * time, so a computer that slept past the limit is logged out as soon as it wakes.
+ * UNG-312: logs out after 2 h without activity (see activity.ts), with a warning shortly before. The server ends an
+ * idle session after 2 h as well (ADR 001); this shows it in time. Time is wall-clock time, so a computer that slept
+ * past the limit is logged out as soon as it wakes.
  */
 export function useInactivityLogout(enabled: boolean, onExpired: () => void): InactivityPhase {
   const [state, setState] = useState<InactivityPhase>({ phase: 'active' })
@@ -28,7 +27,6 @@ export function useInactivityLogout(enabled: boolean, onExpired: () => void): In
     }
     markActivity()
     const current = () => inactivityPhase(lastActivity(), Date.now(), LIMIT_MS)
-    setRenewalGuard(() => current().phase !== 'expired')
 
     let expired = false
     const check = () => {
@@ -40,7 +38,6 @@ export function useInactivityLogout(enabled: boolean, onExpired: () => void): In
         return
       }
       setState((previous) => (previous.phase === next.phase && next.phase === 'active' ? previous : next))
-      void renewAuthTokenIfDue()
     }
     const onActivity = () => {
       const wasWarning = current().phase === 'warning'
@@ -55,7 +52,6 @@ export function useInactivityLogout(enabled: boolean, onExpired: () => void): In
       for (const name of ACTIVITY_EVENTS) window.removeEventListener(name, onActivity, { capture: true })
       document.removeEventListener('visibilitychange', check)
       window.clearInterval(interval)
-      setRenewalGuard(() => true)
     }
   }, [enabled])
 

@@ -45,20 +45,17 @@ export function routeHref(route: RouteKey): string {
   return `#/${route}`
 }
 
-// Engångslänk från ett inbjudnings-/återställningsmejl: #/accept?token=… — fungerar även utloggad.
-function parseCredentialToken(): string | null {
-  const hash = window.location.hash.slice(1)
-  if (!hash.startsWith('/accept')) return null
-  return new URLSearchParams(hash.split('?')[1] ?? '').get('token')
-}
 
-/** Step A3: where the ungap login returns to: #/sso?code=… on success, #/sso?error=<code> otherwise. */
-export function readSsoReturn(): { code: string | null; error: string | null } | null {
+/**
+ * Where the ungap login returns to when it did not end in a session (ADR 001): #/sso?error=<code>&return=<hash>. The
+ * login's page to go back to is the return hash; login_required means Keycloak has no session (silent login, framed).
+ */
+export function readSsoReturn(): { error: string; returnHash: string } | null {
   const hash = window.location.hash.slice(1)
-  // Not Presenter's login relay (#/sso-relay, step A6).
-  if (!hash.startsWith('/sso') || hash.startsWith('/sso-relay')) return null
+  if (!hash.startsWith('/sso')) return null
   const params = new URLSearchParams(hash.split('?')[1] ?? '')
-  return { code: params.get('code'), error: params.get('error') }
+  const back = params.get('return') ?? ''
+  return { error: params.get('error') ?? 'login_failed', returnHash: back.startsWith('#') && !back.startsWith('#/sso') ? back : '' }
 }
 
 export function useShareToken(): string | null {
@@ -73,14 +70,3 @@ export function useShareToken(): string | null {
   return token
 }
 
-export function useCredentialToken(): string | null {
-  const [token, setToken] = useState<string | null>(parseCredentialToken())
-
-  useEffect(() => {
-    const onHashChange = () => setToken(parseCredentialToken())
-    window.addEventListener('hashchange', onHashChange)
-    return () => window.removeEventListener('hashchange', onHashChange)
-  }, [])
-
-  return token
-}

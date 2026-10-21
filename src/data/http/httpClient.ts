@@ -9,8 +9,6 @@ import type {
   ChannelState,
   Chapter,
   CueKind,
-  CredentialLinkInfo,
-  CredentialLinkRedeemed,
   CreatedShare,
   CurrentUser,
   DownloadLink,
@@ -44,7 +42,8 @@ import type {
 import { toTextPlacement } from '../textPlacement'
 import { toCaptionStatus } from '../captionStatus'
 import { decodeBase64 } from './base64'
-import { ApiError, api, apiBlob, apiUrl, setAuthToken } from './fetchJson'
+import { ApiError, api, apiBlob, apiUrl, setSignedIn } from './fetchJson'
+import { currentLocale } from '../../i18n'
 import type {
   ServerAgenda,
   ServerAgendaListItem,
@@ -54,7 +53,6 @@ import type {
   ServerChapter,
   ServerCurrentUser,
   ServerDomain,
-  ServerLoginResponse,
   ServerNameList,
   ServerNameListSummary,
   ServerPaged,
@@ -449,75 +447,36 @@ async function fetchUserDetail(id: string): Promise<UserAccount> {
   return { ...toUserSummary(dto), activity }
 }
 
-// Step A3: the ungap login's state for this tab: the server only accepts the returning code together with it, so a code
-// from someone else's login (a link with #/sso?code=…) cannot log this tab in.
-const SSO_STATE_KEY = 'ungap-live-sso-state'
-
-function randomState(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(24))
-  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-}
-
 function toCurrentUser(dto: ServerCurrentUser): CurrentUser {
   const language = dto.language === 'sv' || dto.language === 'en' ? dto.language : null
-  const loginMethod = dto.loginMethod === 'sso' ? 'sso' : 'pin'
-  return { id: dto.id, name: dto.name, email: dto.email, domain: dto.domain, roles: dto.roles as CurrentUser['roles'], language, loginMethod, personId: typeof dto.personId === 'string' ? dto.personId : null }
+  return { id: dto.id, name: dto.name, email: dto.email, domain: dto.domain, roles: dto.roles as CurrentUser['roles'], language, personId: typeof dto.personId === 'string' ? dto.personId : null }
 }
 
 export const httpClient: Client = {
   auth: {
-    async requestPasswordReset(email) {
-      await api<void>('/auth/password-reset', { method: 'POST', body: { email } })
-    },
-    async credentialLinkInfo(token) {
-      return api<CredentialLinkInfo>(`/auth/credential-links/${encodeURIComponent(token)}`)
-    },
-    async redeemCredentialLink(token) {
-      return api<CredentialLinkRedeemed>(`/auth/credential-links/${encodeURIComponent(token)}/redeem`, { method: 'POST' })
-    },
-    async login(email, pin, language) {
-      const dto = await api<ServerLoginResponse>('/auth/login', { method: 'POST', body: { email, pin, language } })
-      setAuthToken(dto.token)
-      return toCurrentUser(dto.user)
-    },
     async setLanguage(language) {
       return toCurrentUser(await api<ServerCurrentUser>('/auth/me', { method: 'PATCH', body: { language } }))
     },
-    ssoAvailable() {
-      return true
-    },
-    startSso() {
-      const state = randomState()
-      try {
-        sessionStorage.setItem(SSO_STATE_KEY, state)
-      } catch {
-        // Without sessionStorage the exchange fails and the login page says so.
-      }
-      window.location.assign(`${apiUrl('/auth/oidc/start')}?state=${encodeURIComponent(state)}`)
-    },
-    async exchangeSsoCode(code) {
-      let state: string | null = null
-      try {
-        state = sessionStorage.getItem(SSO_STATE_KEY)
-        sessionStorage.removeItem(SSO_STATE_KEY)
-      } catch {
-        // See startSso.
-      }
-      const dto = await api<ServerLoginResponse>('/auth/oidc/exchange', { method: 'POST', body: { code, state } })
-      setAuthToken(dto.token)
-      return toCurrentUser(dto.user)
+    startSso(options) {
+      // Back to this page: its query (framed: the shell's parameters) and hash route, never the login's answer.
+      const hash = window.location.hash.startsWith('#/sso') ? '' : window.location.hash
+      const query = new URLSearchParams({ return: window.location.search + hash, lang: currentLocale() })
+      if (options?.silent) query.set('silent', '1')
+      const url = `${apiUrl('/auth/oidc/start')}?${query}`
+      // Silent, inside Presenter's frame: replace, so the frame's history does not grow.
+      if (options?.silent) window.location.replace(url)
+      else window.location.assign(url)
     },
     ssoLogoutUrl() {
       return apiUrl('/auth/oidc/logout')
     },
     async me() {
       try {
-        const dto = await api<ServerCurrentUser>('/auth/me')
-        return toCurrentUser(dto)
+        const user = toCurrentUser(await api<ServerCurrentUser>('/auth/me'))
+        setSignedIn(true)
+        return user
       } catch (error) {
-        if (error instanceof ApiError && ['invalid_token', 'user_not_found', 'domain_not_found'].includes(error.code)) {
-          setAuthToken(null)
-        }
+        setSignedIn(false)
         throw error
       }
     },
@@ -525,7 +484,7 @@ export const httpClient: Client = {
       try {
         await api<void>('/auth/logout', { method: 'POST' })
       } finally {
-        setAuthToken(null)
+        setSignedIn(false)
       }
     },
   },
@@ -797,10 +756,6 @@ export const httpClient: Client = {
     async remove(id) {
       await api<void>(`/domains/${id}`, { method: 'DELETE' })
     },
-    async createUser(domainId, input) {
-      const dto = await api<ServerUser>(`/domains/${domainId}/users`, { method: 'POST', body: input })
-      return toUserSummary(dto)
-    },
   },
   users: {
     async listByDomain(domainId, query) {
@@ -814,18 +769,6 @@ export const httpClient: Client = {
     async update(id, input) {
       await api<ServerUser>(`/users/${id}`, { method: 'PATCH', body: input })
       return fetchUserDetail(id)
-    },
-    async sendInvitation(id) {
-      const dto = await api<ServerUser>(`/users/${id}/invitations`, { method: 'POST' })
-      return toUserSummary(dto)
-    },
-    async resendInvite(id) {
-      const dto = await api<ServerUser>(`/invitations/${id}/resend`, { method: 'POST' })
-      return toUserSummary(dto)
-    },
-    async sendPasswordReset(id) {
-      const dto = await api<ServerUser>(`/users/${id}`)
-      await api<void>('/auth/password-reset', { method: 'POST', body: { email: dto.email } })
     },
     async setRoles(id, roles) {
       await api<ServerUser>(`/users/${id}/roles`, { method: 'PUT', body: { roles } })

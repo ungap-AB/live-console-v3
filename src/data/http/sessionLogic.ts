@@ -1,38 +1,11 @@
-// Koder som kan följa med ett 401 utan att sessionen är ogiltig (fel PIN vid inloggning, ogiltig engångslänk m.m.).
-const NOT_A_SESSION_PROBLEM = new Set(['invalid_credentials', 'invalid_setup_token', 'invalid_credential_link'])
-
 /**
- * Om ett svar betyder att den inloggade sessionen är ogiltig (UNG-128): ett 401 på ett anrop som skickade en token. Ett
- * utgånget token ger 401 utan JSON-kropp (JWT-mellanvaran), ogiltiga användare/domäner ger 401 med egen kod. 403 (saknar
- * behörighet) är något annat och loggar aldrig ut. Utan token (inloggning, engångslänkar) finns ingen session att tappa.
+ * Whether an answer means the signed-in session has ended (UNG-128): a 401 to a call made while signed in. An ended
+ * session gives 401 without a JSON body (the authentication layer), removed users/domains 401 with their own code. 403
+ * (no permission, or a refused cookie request) is something else and never logs out. Not signed in, there is nothing
+ * to lose.
  */
-export function isSessionLost(status: number, code: string, sentToken: boolean): boolean {
-  return status === 401 && sentToken && !NOT_A_SESSION_PROBLEM.has(code)
-}
-
-/** When a token became valid and when it expires (ms since epoch), read from the JWT without checking the signature. */
-export function tokenLifetime(token: string): { validFrom: number; expiresAt: number } | null {
-  try {
-    const part = token.split('.')[1]
-    if (!part) return null
-    const json = atob(part.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(part.length / 4) * 4, '='))
-    const { nbf, iat, exp } = JSON.parse(json) as { nbf?: number; iat?: number; exp?: number }
-    const from = nbf ?? iat
-    if (typeof exp !== 'number' || typeof from !== 'number') return null
-    return { validFrom: from * 1000, expiresAt: exp * 1000 }
-  } catch {
-    return null
-  }
-}
-
-/**
- * UNG-312: the short-lived token is renewed once half its lifetime has passed. A token that cannot be read (from before
- * UNG-312) is never renewed; it keeps working until it expires.
- */
-export function renewalDue(token: string, now: number): boolean {
-  const lifetime = tokenLifetime(token)
-  if (!lifetime) return false
-  return now >= lifetime.validFrom + (lifetime.expiresAt - lifetime.validFrom) / 2
+export function isSessionLost(status: number, _code: string, signedIn: boolean): boolean {
+  return status === 401 && signedIn
 }
 
 /** UNG-312: logged out after this long without activity, with a warning shown this long before. */

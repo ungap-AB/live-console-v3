@@ -473,10 +473,6 @@ msgstr ""
 msgid "A new draft is created from the audio and replaces this working version. The current version remains in the version history, and the current published captions stay for the viewers until you approve the new draft."
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "A new invitation replaces the previous one: the old link and PIN stop working."
-msgstr ""
-
 #: src/views/projects/ForkDialog.tsx
 msgid "A new project is created from the broadcast so far."
 msgstr ""
@@ -493,20 +489,12 @@ msgstr ""
 msgid "A project is a broadcast connected to a meeting. The broadcast is created and connected in one step."
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "A reset email has been sent to {email}. The link is valid for one hour."
-msgstr ""
-
 #: src/views/projects/ProjectHeader.tsx
 msgid "A streaming server (the ingest) is created for the project. Its details are shown when it is ready."
 msgstr ""
 
 #: src/views/projects/OndemandView.tsx
 msgid "A video is being processed or waiting for your approval. Finish that first."
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "A welcome email with a one-time link is sent to {email}. The link is valid for 7 days. When the recipient clicks it, a personal PIN is created that is shown only once."
 msgstr ""
 
 #: src/views/projects/autoCaptionsLogic.ts
@@ -763,10 +751,6 @@ msgstr ""
 #: src/views/projects/ListPickerDialog.tsx
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "Back"
-msgstr ""
-
-#: src/app/LoginView.tsx
-msgid "Back to login"
 msgstr ""
 
 #: src/views/projects/PreviewOverlay.tsx
@@ -1109,10 +1093,6 @@ msgstr ""
 msgid "Check the anchor"
 msgstr ""
 
-#: src/app/CredentialLinkView.tsx
-msgid "Checking the link…"
-msgstr ""
-
 #: src/views/projects/UploadPanel.tsx
 msgid "Checking…"
 msgstr ""
@@ -1221,14 +1201,6 @@ msgstr ""
 
 #: src/views/projects/ChapterSyncTools.tsx
 msgid "Click a chapter in the list whose start you clearly hear or see in the video, for example the first item."
-msgstr ""
-
-#: src/app/CredentialLinkView.tsx
-msgid "Click the button to activate your account. You will then get your personal PIN."
-msgstr ""
-
-#: src/app/CredentialLinkView.tsx
-msgid "Click the button to get a new PIN. Your old PIN then stops working."
 msgstr ""
 
 #: src/views/archive/VideoArchiveView.tsx
@@ -1438,10 +1410,6 @@ msgstr ""
 msgid "Could not create the resource."
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Could not create the user."
-msgstr ""
-
 #: src/views/projects/ProjectsView.tsx
 #: src/views/status/useStatusProject.ts
 msgid "Could not end the break."
@@ -1459,10 +1427,6 @@ msgstr ""
 msgid "Could not link the meeting."
 msgstr ""
 
-#: src/app/LoginView.tsx
-msgid "Could not log in."
-msgstr ""
-
 #: src/views/projects/ProjectsView.tsx
 msgid "Could not play out."
 msgstr ""
@@ -1477,10 +1441,6 @@ msgstr ""
 #: src/views/projects/PlayoutColumns.tsx
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Could not rename."
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Could not send the invitation."
 msgstr ""
 
 #: src/views/projects/ProjectsView.tsx
@@ -1599,7 +1559,6 @@ msgstr ""
 msgid "Creating the document…"
 msgstr ""
 
-#: src/app/CredentialLinkView.tsx
 #: src/views/jobs/JobsView.tsx
 #: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/ExportImportDialog.tsx
@@ -1900,9 +1859,7 @@ msgstr ""
 msgid "email"
 msgstr ""
 
-#: src/app/LoginView.tsx
 #: src/app/Shell.tsx
-#: src/views/users/UsersView.tsx
 msgid "Email"
 msgstr ""
 
@@ -1964,20 +1921,12 @@ msgstr ""
 msgid "Enter a valid domain name, for example example.com."
 msgstr ""
 
-#: src/app/LoginView.tsx
-msgid "Enter a valid email address."
-msgstr ""
-
 #: src/views/projects/recordingSource.ts
 msgid "Enter the address of an HLS playlist."
 msgstr ""
 
 #: src/views/users/UsersView.tsx
 msgid "Enter the organization name."
-msgstr ""
-
-#: src/app/LoginView.tsx
-msgid "Enter your email address and we will send you a link where you get a new PIN."
 msgstr ""
 
 #: src/views/projects/autoCaptionsLogic.ts
@@ -2100,20 +2049,8 @@ msgstr ""
 msgid "Finished"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "First and last name"
-msgstr ""
-
 #: src/views/projects/CaptionEditor.tsx
 msgid "Follow"
-msgstr ""
-
-#: src/app/LoginView.tsx
-msgid "Forgot PIN?"
-msgstr ""
-
-#: src/app/LoginView.tsx
-msgid "Forgot your PIN?"
 msgstr ""
 
 #: src/views/projects/ForkDialog.tsx
@@ -2273,10 +2210,6 @@ msgstr ""
 
 #: src/views/projects/UploadPanel.tsx
 msgid "If the video is already at an address of its own, it does not need to be uploaded. The playlist (.m3u8) is used as it is and the video stays where it is. Such a video cannot be trimmed or downloaded as MP4."
-msgstr ""
-
-#: src/app/LoginView.tsx
-msgid "If we have the address, we have sent an email with a link. The link is valid for one hour. Check your spam folder too."
 msgstr ""
 
 #: src/views/projects/OndemandView.tsx
@@ -2442,18 +2375,6 @@ msgstr ""
 msgid "Invalid address: {0}"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Invitation sent to {email}. The text is copied."
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Invite"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Invite to {host}"
-msgstr ""
-
 #: src/app/Shell.tsx
 #: src/views/users/UsersView.tsx
 msgid "Invited"
@@ -2517,7 +2438,6 @@ msgstr ""
 
 #: src/app/LanguageSwitch.tsx
 #: src/app/Shell.tsx
-#: src/views/users/UsersView.tsx
 msgid "Language"
 msgstr ""
 
@@ -2725,10 +2645,6 @@ msgstr ""
 msgid "Log"
 msgstr ""
 
-#: src/app/LoginView.tsx
-msgid "Log in"
-msgstr ""
-
 #: src/views/status/StatusStrip.tsx
 msgid "Log in to ungap Presenter under Projects to see the broadcast status here."
 msgstr ""
@@ -2921,7 +2837,6 @@ msgstr ""
 #: src/components/EditableItemList.tsx
 #: src/views/projects/CreateProjectDialog.tsx
 #: src/views/trash/TrashView.tsx
-#: src/views/users/UsersView.tsx
 msgid "Name"
 msgstr ""
 
@@ -2956,10 +2871,6 @@ msgstr ""
 
 #: src/views/projects/UploadPanel.tsx
 msgid "Name of the recording"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "name@example.com"
 msgstr ""
 
 #: src/views/users/UsersView.tsx
@@ -3010,10 +2921,6 @@ msgstr ""
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "New stream key generated. The old one stops working immediately."
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "New user in {host}"
 msgstr ""
 
 #: src/views/archive/VideoArchiveView.tsx
@@ -3520,20 +3427,12 @@ msgid "People with an ungap account are managed in ungap Presenter under Organis
 msgstr ""
 
 #: src/views/users/UsersView.tsx
-msgid "Permission"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
 msgid "Permissions"
 msgstr ""
 
 #: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/chapterRows.ts
 msgid "Person"
-msgstr ""
-
-#: src/app/LoginView.tsx
-msgid "PIN"
 msgstr ""
 
 #: src/views/projects/captionEditOps.ts
@@ -4007,18 +3906,6 @@ msgstr ""
 msgid "Replaces all the player settings and the poster image with a copy of the chosen project's."
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Resend invitation"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Reset link"
-msgstr ""
-
-#: src/app/CredentialLinkView.tsx
-msgid "Reset your PIN"
-msgstr ""
-
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Resolution"
@@ -4204,19 +4091,6 @@ msgstr ""
 msgid "Selected resource"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Send invitation"
-msgstr ""
-
-#: src/app/LoginView.tsx
-msgid "Send reset link"
-msgstr ""
-
-#: src/app/LoginView.tsx
-#: src/views/users/UsersView.tsx
-msgid "Sending…"
-msgstr ""
-
 #. placeholder {0}: response.status
 #: src/data/http/fetchJson.ts
 msgid "Server error ({0})."
@@ -4307,10 +4181,6 @@ msgstr ""
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/projects/RecordingDownload.tsx
 msgid "Show jobs"
-msgstr ""
-
-#: src/app/CredentialLinkView.tsx
-msgid "Show my PIN"
 msgstr ""
 
 #: src/views/projects/ProjectsView.tsx
@@ -5164,11 +5034,6 @@ msgstr ""
 msgid "The link could not be checked"
 msgstr ""
 
-#: src/app/CredentialLinkView.tsx
-msgid "The link could not be used."
-msgstr ""
-
-#: src/app/CredentialLinkView.tsx
 #: src/app/SharedDownloadsView.tsx
 msgid "The link does not work"
 msgstr ""
@@ -5179,14 +5044,6 @@ msgstr ""
 
 #: src/app/SharedDownloadsView.tsx
 msgid "The link has expired"
-msgstr ""
-
-#: src/app/CredentialLinkView.tsx
-msgid "The link has expired or has already been used. Ask for a new invitation."
-msgstr ""
-
-#: src/app/CredentialLinkView.tsx
-msgid "The link has expired or has already been used. Ask for a new reset."
 msgstr ""
 
 #: src/views/projects/PlayerLinkField.tsx
@@ -5722,10 +5579,6 @@ msgstr ""
 msgid "Time here · {0}"
 msgstr ""
 
-#: src/app/CredentialLinkView.tsx
-msgid "To login"
-msgstr ""
-
 #: src/app/jobRetention.ts
 #: src/app/time.ts
 #: src/views/trash/TrashView.tsx
@@ -6072,16 +5925,8 @@ msgstr ""
 msgid "WebVTT, which the player and most video platforms read."
 msgstr ""
 
-#: src/app/CredentialLinkView.tsx
-msgid "Welcome, {name}!"
-msgstr ""
-
 #: src/app/LoginView.tsx
 msgid "Welcome, please log in"
-msgstr ""
-
-#: src/app/CredentialLinkView.tsx
-msgid "Welcome!"
 msgstr ""
 
 #: src/views/projects/ExportImportDialog.tsx
@@ -6112,10 +5957,6 @@ msgstr ""
 msgid "Works operationally within their domain."
 msgstr ""
 
-#: src/app/CredentialLinkView.tsx
-msgid "Write it down now — it is only shown once. You log in with {email} and this PIN."
-msgstr ""
-
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "Yes, play out events"
 msgstr ""
@@ -6140,21 +5981,9 @@ msgstr ""
 msgid "You will be logged out in {countdown} because there has been no activity in the console for almost 2 hours."
 msgstr ""
 
-#: src/app/CredentialLinkView.tsx
-msgid "Your account is activated"
-msgstr ""
-
 #. placeholder {0}: own.length
 #: src/views/projects/CorrectionsPanel.tsx
 msgid "Your corrections ({0})"
-msgstr ""
-
-#: src/app/CredentialLinkView.tsx
-msgid "Your new PIN"
-msgstr ""
-
-#: src/app/LoginView.tsx
-msgid "Your organisation does not log in with an ungap account yet. Log in with your PIN."
 msgstr ""
 
 #: src/views/projects/CaptionEditor.tsx
@@ -6163,10 +5992,6 @@ msgstr ""
 
 #: src/views/projects/CaptionEditor.tsx
 msgid "Your own caption file replaces the working version (the old one remains in the version history)."
-msgstr ""
-
-#: src/app/CredentialLinkView.tsx
-msgid "Your personal PIN:"
 msgstr ""
 
 #: src/data/http/fetchJson.ts

@@ -5,9 +5,8 @@ import { client } from '../data'
 import { onSessionLost } from '../data/http/fetchJson'
 import type { CurrentUser } from '../data/types'
 import { parseEditorLink, parsePlayoutLink, parseProjectLink } from './projectLink'
-import { readSsoReturn, routeHref, useCredentialToken, useRoute, useShareToken } from './router'
+import { readSsoReturn, routeHref, useRoute, useShareToken } from './router'
 import { Shell } from './Shell'
-import { CredentialLinkView } from './CredentialLinkView'
 import { SharedDownloadsView } from './SharedDownloadsView'
 import { LoginView, ssoErrorMessage } from './LoginView'
 import { InactivityWarning } from './InactivityWarning'
@@ -15,7 +14,7 @@ import { useInactivityLogout } from './useInactivityLogout'
 import { useUiLocale } from './useUiLocale'
 import { applyShellLanguage, hasLanguageOverride, switchLanguage } from '../i18n'
 import { navigate, reportProjectMeeting, setCurrentSurface, setShellActions, ShellClient, surfaceStartHash, type EmbedContext } from './embed'
-import { takePendingRelay, takeRelayRequest } from './loginRelay'
+import { claimSilentLogin, resetSilentLogins } from './silentLogin'
 import { ProjectPlayoutsView } from '../views/playouts/ProjectPlayoutsView'
 import type { ShellMeeting } from './shellProtocol'
 import { StatusStrip } from '../views/status/StatusStrip'
@@ -48,62 +47,39 @@ export function App({ embed }: AppProps) {
   // UNG-306: a language switch re-renders the app; the views below the shell are remounted (keyed) so data labels follow.
   const locale = useUiLocale()
   const route = useRoute()
-  const credentialToken = useCredentialToken()
   const shareToken = useShareToken()
-  // E-posten från en aktiverad inbjudan/återställning förifylls på inloggningen.
-  const [loginEmail, setLoginEmail] = useState<string | null>(null)
   const [auth, setAuth] = useState<AuthState>({ status: 'loading' })
-  // Step A3: the ungap login returns to #/sso?code=… (or ?error=…); read once, then the address is cleaned.
+  // ADR 001: a login that did not end in a session returns to #/sso?error=…&return=…; read once, then the page is restored.
   const [ssoReturn] = useState(readSsoReturn)
-  // Step A6: Presenter's login relay (standalone window only): the ungap login starts at once and returns to the shell.
-  const [relaying] = useState(() => !embed && takeRelayRequest())
   // Step A6: framed, the shell's user and organisation; the console says when its own session does not match.
   const [shellOrg, setShellOrg] = useState<string | null>(null)
   const [shellPerson, setShellPerson] = useState<string | null>(null)
   const shellClientRef = useRef<ShellClient | null>(null)
   const needsLogin = useRef(false)
-  const [ssoError, setSsoError] = useState<string | null>(ssoReturn?.error ? ssoErrorMessage(ssoReturn.error) : null)
+  const [ssoError] = useState<string | null>(
+    ssoReturn && ssoReturn.error !== 'login_required' ? ssoErrorMessage(ssoReturn.error) : null,
+  )
 
-  // Försök återuppta en aktiv session — misslyckas tyst till anon om ingen
-  // giltig token finns i fliklagringen (UNG-312) eller sessionen gått ut.
+  // ADR 001: the session is a cookie on the API's host; ask whether there is one. Framed without one, log in silently
+  // (Keycloak shows no page); if Keycloak has no session either, the shell is asked for a login (below).
   useEffect(() => {
-    if (ssoReturn) window.history.replaceState(null, '', window.location.pathname + window.location.search + routeHref('projects'))
-    if (relaying) {
-      client.auth.startSso()
-      return
-    }
-    if (ssoReturn) {
-      // A relay from Presenter goes back to the shell, logged in or not (the shell relays only once).
-      const backToShell = () => {
-        const returnTo = takePendingRelay()
-        if (returnTo) window.location.assign(returnTo)
-        return returnTo !== null
-      }
-      if (!ssoReturn.code) {
-        backToShell()
-      } else {
-        client.auth.exchangeSsoCode(ssoReturn.code).then(
-          (user) => {
-            if (!backToShell()) login(user)
-          },
-          (err: unknown) => {
-            if (backToShell()) return
-            setSsoError(err instanceof Error ? err.message : ssoErrorMessage('login_failed'))
-            setAuth({ status: 'anon' })
-          },
-        )
-        return
-      }
-    }
+    if (ssoReturn) window.history.replaceState(null, '', window.location.pathname + window.location.search + (ssoReturn.returnHash || routeHref('projects')))
     client.auth.me().then(
       (user) => {
+        resetSilentLogins()
         // Embedded, the shell decides the language (UNG-322).
         if (!embed) applyAccountLanguage(user)
         setActiveProjectId(readStoredSelection('project', user.domain.id))
         setProjectScreen(parseProjectScreen(readStoredSelection('project-screen', user.domain.id)))
         setAuth({ status: 'authed', user })
       },
-      () => setAuth({ status: 'anon' }),
+      () => {
+        if (embed && !ssoReturn && claimSilentLogin()) {
+          client.auth.startSso({ silent: true })
+          return
+        }
+        setAuth({ status: 'anon' })
+      },
     )
   }, [])
 
@@ -115,9 +91,13 @@ export function App({ embed }: AppProps) {
     () =>
       onSessionLost(() => {
         if (loggingOut.current) return
+        // Framed: Keycloak's session usually still exists, so a silent login gives a new session.
+        if (embed && claimSilentLogin()) {
+          client.auth.startSso({ silent: true })
+          return
+        }
         setAuth((current) => {
           if (current.status !== 'authed') return current
-          setLoginEmail(current.user.email)
           setLoggedOut(true)
           return { status: 'anon' }
         })
@@ -129,31 +109,18 @@ export function App({ embed }: AppProps) {
   // kept, so the operator continues where they were after logging in again.
   const inactivity = useInactivityLogout(auth.status === 'authed', () => {
     if (auth.status !== 'authed') return
-    const email = auth.user.email
     loggingOut.current = true
     client.auth.logout().finally(() => {
       loggingOut.current = false
-      setLoginEmail(email)
       setLoggedOut(true)
       setAuth({ status: 'anon' })
     })
   })
 
-  function login(user: CurrentUser) {
-    if (!embed) applyAccountLanguage(user)
-    setLoggedOut(false)
-    setSsoError(null)
-    // Ingen markering i listan efter inloggning: det senast öppnade gällde förra inloggningen (överlever annars en utloggning).
-    setLastOpenedProjectId(null)
-    setActiveProjectId(readStoredSelection('project', user.domain.id))
-    setProjectScreen(parseProjectScreen(readStoredSelection('project-screen', user.domain.id)))
-    setAuth({ status: 'authed', user })
-  }
-
   function logout(): Promise<void> {
     loggingOut.current = true
-    // Step A3: after an ungap login, logging out also ends that login (Keycloak), which returns to the console.
-    const ssoLogout = auth.status === 'authed' && auth.user.loginMethod === 'sso' && !embed ? client.auth.ssoLogoutUrl() : null
+    // Logging out also ends the ungap login (Keycloak), which returns to the console. Framed, the shell ends it.
+    const ssoLogout = auth.status === 'authed' && !embed ? client.auth.ssoLogoutUrl() : null
     return client.auth.logout().finally(() => {
       if (ssoLogout) {
         window.location.assign(ssoLogout)
@@ -234,12 +201,18 @@ export function App({ embed }: AppProps) {
   // a session of another person than the shell's user ends, and the shell is asked for a login.
   useEffect(() => {
     if (!embed || auth.status !== 'authed' || !shellPerson || !auth.user.personId || auth.user.personId === shellPerson) return
-    needsLogin.current = true
-    void shellLogout.current()
+    // ADR 001: end it and log in silently, which gives the shell's user (Keycloak's session is theirs).
+    loggingOut.current = true
+    void client.auth.logout().finally(() => {
+      loggingOut.current = false
+      if (claimSilentLogin()) client.auth.startSso({ silent: true })
+      else setAuth({ status: 'anon' })
+    })
   }, [auth, shellPerson])
-  // Step A6: framed without a session, ask the shell for the login relay (once connected; the shell relays at most once).
+  // Framed and Keycloak needs the person (or the silent login gave up): ask the shell to log in in the whole window (once
+  // connected; the shell does it at most once a minute). Not for a refusal such as no_access: the frame shows why.
   useEffect(() => {
-    if (!embed || auth.status !== 'anon') return
+    if (!embed || auth.status !== 'anon' || (ssoReturn && ssoReturn.error !== 'login_required')) return
     needsLogin.current = true
     shellClientRef.current?.loginRequired()
   }, [auth.status])
@@ -347,23 +320,25 @@ export function App({ embed }: AppProps) {
     )
   }
 
-  // Engångslänk från ett mejl (inbjudan/återställning) går före allt annat, även när någon är inloggad.
-  if (credentialToken) {
-    return (
-      <CredentialLinkView
-        token={credentialToken}
-        onDone={(email) => {
-          setLoginEmail(email)
-          window.location.hash = '#/'
-        }}
-      />
-    )
-  }
-  if (auth.status === 'loading' || relaying) return <div class="login-screen">{t`Loading…`}</div>
+  if (auth.status === 'loading') return <div class="login-screen">{t`Loading…`}</div>
   if (embed && auth.status === 'authed' && shellOrg && shellOrg !== auth.user.domain.id)
     return <div class="login-screen">{t`ungap Live is not available in the organisation chosen in ungap Presenter.`}</div>
   if (auth.status === 'anon')
-    return <LoginView onLogin={login} initialEmail={loginEmail ?? ''} loggedOut={loggedOut} ssoError={ssoError} onSso={client.auth.ssoAvailable() ? () => client.auth.startSso() : null} />
+    return (
+      <LoginView
+        loggedOut={loggedOut}
+        ssoError={ssoError}
+        // Framed, Keycloak's page cannot show in the frame: ungap Presenter logs in in the whole window.
+        onSso={
+          embed
+            ? () => {
+                needsLogin.current = true
+                shellClientRef.current?.loginRequired()
+              }
+            : () => client.auth.startSso()
+        }
+      />
+    )
 
   // UNG-332: "Projects" in ungap Shell, the connected broadcasts. Opening one makes it the console's open project (so the
   // status strip above the meeting shows it) and asks the shell for the combined view with its meeting.

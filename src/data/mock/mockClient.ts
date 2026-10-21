@@ -157,7 +157,14 @@ let nextId = 100
 
 // Mock-inloggning: ingen riktig PIN-kontroll, bara att e-posten matchar en
 // fixturanvändare — håller bara i minnet, ingen persistens över omladdning.
-let mockLoggedInUserId: string | null = null
+const MOCK_SESSION_KEY = 'ungap-live-mock-session'
+let mockLoggedInUserId: string | null = (() => {
+  try {
+    return sessionStorage.getItem(MOCK_SESSION_KEY)
+  } catch {
+    return null
+  }
+})()
 // UNG-306: the accounts' languages (in memory, like everything in the mock).
 const mockLanguages = new Map<string, 'sv' | 'en'>()
 // UNG-338: project id → its ungap Meeting link.
@@ -167,28 +174,11 @@ function toCurrentUser(user: UserAccount): CurrentUser {
   const domain = domains.find((d) => d.id === user.domainId)
   if (!domain) throw new Error(`Domän ${user.domainId} finns inte`)
   const meetingEnabled = Boolean(meetingFixtures[domain.host.toLowerCase()])
-  return { id: user.id, name: user.name, email: user.email, domain: { ...domain, meetingEnabled }, roles: user.roles, language: mockLanguages.get(user.id) ?? null, loginMethod: 'pin', personId: null }
+  return { id: user.id, name: user.name, email: user.email, domain: { ...domain, meetingEnabled }, roles: user.roles, language: mockLanguages.get(user.id) ?? null, personId: null }
 }
 
 export const mockClient: Client = {
   auth: {
-    async requestPasswordReset(_email) {
-      return delay(undefined)
-    },
-    async credentialLinkInfo(token) {
-      return delay(token === 'ogiltig' ? { valid: false } : { valid: true, kind: 'invite' as const, name: 'Mock Användare', email: 'mock@example.test' })
-    },
-    async redeemCredentialLink(token) {
-      if (token === 'ogiltig') throw new Error('Länken är ogiltig, har gått ut eller har redan använts.')
-      return delay({ pin: '482913', email: 'mock@example.test', kind: 'invite' as const })
-    },
-    async login(email, _pin, language) {
-      const user = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase() && u.status === 'active')
-      if (!user) throw new Error('Fel e-postadress eller PIN-kod.')
-      mockLoggedInUserId = user.id
-      if (language && !mockLanguages.has(user.id)) mockLanguages.set(user.id, language)
-      return delay(toCurrentUser(user))
-    },
     async setLanguage(language) {
       const user = mockLoggedInUserId ? users.find((u) => u.id === mockLoggedInUserId) : undefined
       if (!user) throw new Error('Inte inloggad.')
@@ -202,15 +192,24 @@ export const mockClient: Client = {
     },
     async logout() {
       mockLoggedInUserId = null
+      try {
+        sessionStorage.removeItem(MOCK_SESSION_KEY)
+      } catch {
+        // Storage can be blocked.
+      }
       return delay(undefined)
     },
-    // Step A3: the mock has no ungap login.
-    ssoAvailable() {
-      return false
-    },
-    startSso() {},
-    async exchangeSsoCode() {
-      throw new Error('The mock has no ungap login.')
+    // The mock's "ungap login": signs in its first active root administrator (kept for this tab) and reloads, like the
+    // real login comes back to the page.
+    startSso() {
+      const user = users.find((u) => u.status === 'active' && u.roles.includes('rootAdmin')) ?? users.find((u) => u.status === 'active')
+      if (!user) return
+      try {
+        sessionStorage.setItem(MOCK_SESSION_KEY, user.id)
+      } catch {
+        mockLoggedInUserId = user.id
+      }
+      window.location.reload()
     },
     ssoLogoutUrl() {
       return null
@@ -732,23 +731,6 @@ export const mockClient: Client = {
       if (idx >= 0) domains.splice(idx, 1)
       return delay(undefined)
     },
-    async createUser(domainId, input) {
-      const user: UserAccount = {
-        id: `u${nextId++}`,
-        domainId,
-        name: input.name,
-        email: input.email,
-        roles: input.roles,
-        status: 'notinvited',
-        ssoEnabled: false,
-        createdAt: new Date().toISOString(),
-        lastLoginAt: null,
-        activity: [],
-      }
-      if (input.language) mockLanguages.set(user.id, input.language)
-      users = [...users, user]
-      return delay(clone(user))
-    },
   },
   users: {
     async listByDomain(domainId, query) {
@@ -767,18 +749,6 @@ export const mockClient: Client = {
       if (input.name !== undefined) user.name = input.name
       if (input.email !== undefined) user.email = input.email
       return delay(clone(user))
-    },
-    async sendInvitation(id) {
-      const user = users.find((u) => u.id === id)
-      if (!user) throw new Error(`Användare ${id} finns inte`)
-      user.status = 'invited'
-      return delay(clone(user))
-    },
-    async resendInvite(id) {
-      return this.sendInvitation(id)
-    },
-    async sendPasswordReset() {
-      return delay(undefined)
     },
     async setRoles(id, roles) {
       const user = users.find((u) => u.id === id)

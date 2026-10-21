@@ -3,7 +3,6 @@ import type { MessageDescriptor } from '@lingui/core'
 import { msg, t } from '@lingui/core/macro'
 import { useEffect, useState } from 'preact/hooks'
 import { client } from '../../data'
-import { currentLocale, type ChosenLocale } from '../../i18n'
 import type { Domain, Role, UserAccount } from '../../data/types'
 import { useResource } from '../../app/useResource'
 import { StatusChip } from '../../components/StatusChip'
@@ -54,10 +53,6 @@ function isLastActiveAdmin(user: UserAccount, domainUsers: UserAccount[]): boole
 // there; standalone it links to Presenter.
 const PRESENTER_URL = (import.meta.env.VITE_PRESENTER_URL ?? (import.meta.env.DEV ? 'https://localhost:5180' : '')).replace(/\/+$/, '')
 
-function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
-}
-
 function isValidDomain(value: string): boolean {
   return /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i.test(value.trim())
 }
@@ -72,9 +67,6 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
   const [renamingUser, setRenamingUser] = useState<UserAccount | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<UserAccount | null>(null)
   const [creatingDomain, setCreatingDomain] = useState(false)
-  const [creatingUser, setCreatingUser] = useState(false)
-  const [inviting, setInviting] = useState(false)
-  const [resendingInvite, setResendingInvite] = useState(false)
   const [viewingDomain, setViewingDomain] = useState<Domain | null>(null)
   const [confirmDeleteDomain, setConfirmDeleteDomain] = useState<Domain | null>(null)
 
@@ -191,26 +183,6 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
     setConfirmRemove(null)
   }
 
-  async function sendPasswordReset(user: UserAccount) {
-    await client.users.sendPasswordReset(user.id)
-    const email = user.email
-    setToast(t`A reset email has been sent to ${email}. The link is valid for one hour.`)
-  }
-
-  function onInvited(user: UserAccount) {
-    replace(user)
-    setInviting(false)
-    const email = user.email
-    setToast(t`Invitation sent to ${email}. The text is copied.`)
-  }
-
-  function onUserCreated(user: UserAccount) {
-    setDomainUsers((prev) => [...prev, user])
-    setDomains((prev) => prev.map((d) => (d.id === user.domainId ? { ...d, userCount: d.userCount + 1 } : d)))
-    setCreatingUser(false)
-    setSelectedUserId(user.id)
-  }
-
   async function createDomain(host: string, org: string) {
     const created = await client.domains.create({ host, org })
     setDomains((prev) => [...prev, created])
@@ -307,26 +279,22 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
           <section class="pane" aria-label={t`Users`}>
             <div class="top">
               <h2>{t`Users`}</h2>
-              <button class="btn btn-sm" type="button" disabled={!selectedDomainId} onClick={() => setCreatingUser(true)}>
-                {t`+ New`}
-              </button>
             </div>
-            {selectedDomain?.loginMode && selectedDomain.loginMode !== 'local' && (
-              <p class="users-backoffice-note">
-                {t`People with an ungap account are managed in ungap Presenter under Organisation.`}{' '}
-                {canNavigate() ? (
-                  <button class="btn btn-sm" type="button" onClick={() => navigate('organisation')}>
-                    {t`Open Organisation`}
-                  </button>
-                ) : (
-                  PRESENTER_URL && (
-                    <a href={`${PRESENTER_URL}/#/organisation`} target="_blank" rel="noopener noreferrer">
-                      {t`Open ungap Presenter`}
-                    </a>
-                  )
-                )}
-              </p>
-            )}
+            {/* ADR 001: everyone logs in with an ungap account; people are invited and managed in ungap Presenter. */}
+            <p class="users-backoffice-note">
+              {t`People with an ungap account are managed in ungap Presenter under Organisation.`}{' '}
+              {canNavigate() ? (
+                <button class="btn btn-sm" type="button" onClick={() => navigate('organisation')}>
+                  {t`Open Organisation`}
+                </button>
+              ) : (
+                PRESENTER_URL && (
+                  <a href={`${PRESENTER_URL}/#/organisation`} target="_blank" rel="noopener noreferrer">
+                    {t`Open ungap Presenter`}
+                  </a>
+                )
+              )}
+            </p>
             <ul>
               {usersResource.loading && domainUsers.length === 0 && <li class="none">{t`Loading…`}</li>}
               {!usersResource.loading && visibleUsers.length === 0 && (
@@ -363,15 +331,6 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
                 onDisable={() => setConfirmDisable(selectedUser)}
                 onEnable={() => enable(selectedUser)}
                 onRemove={() => setConfirmRemove(selectedUser)}
-                onInvite={() => {
-                  setResendingInvite(false)
-                  setInviting(true)
-                }}
-                onResendInvite={() => {
-                  setResendingInvite(true)
-                  setInviting(true)
-                }}
-                onSendPasswordReset={() => sendPasswordReset(selectedUser)}
                 onRename={() => setRenamingUser(selectedUser)}
               />
             )}
@@ -414,24 +373,6 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
 
       {creatingDomain && (
         <CreateDomainModal onCancel={() => setCreatingDomain(false)} onSave={createDomain} />
-      )}
-
-      {inviting && selectedDomain && selectedUser && (
-        <InviteDialog
-          domain={selectedDomain}
-          user={selectedUser}
-          resend={resendingInvite}
-          onCancel={() => setInviting(false)}
-          onSent={onInvited}
-        />
-      )}
-
-      {creatingUser && selectedDomain && (
-        <CreateUserDialog
-          domain={selectedDomain}
-          onCancel={() => setCreatingUser(false)}
-          onCreated={onUserCreated}
-        />
       )}
 
       {viewingDomain && (
@@ -512,153 +453,6 @@ function CreateDomainModal({ onCancel, onSave }: CreateDomainModalProps) {
           onClick={() => onSave(host.trim(), org.trim())}
         >
           {t`Create`}
-        </button>
-      </div>
-    </Modal>
-  )
-}
-
-interface CreateUserDialogProps {
-  domain: Domain
-  onCancel: () => void
-  onCreated: (user: UserAccount) => void
-}
-
-function CreateUserDialog({ domain, onCancel, onCreated }: CreateUserDialogProps) {
-  const [email, setEmail] = useState('')
-  const [name, setName] = useState('')
-  const [role, setRole] = useState<Role>('operator')
-  // UNG-306: the new user's language (the invitation email and the first login); default: the admin's own.
-  const [language, setLanguage] = useState<ChosenLocale>(currentLocale)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const canSave = isValidEmail(email) && name.trim().length > 0 && !saving
-  const host = domain.host
-
-  async function save() {
-    if (!canSave) return
-    setSaving(true)
-    setError(null)
-    try {
-      const user = await client.domains.createUser(domain.id, { email: email.trim(), name: name.trim(), roles: [role], language })
-      onCreated(user)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t`Could not create the user.`)
-      setSaving(false)
-    }
-  }
-
-  return (
-    <Modal title={t`New user in ${host}`} onClose={onCancel}>
-      <div class="domain-form">
-        <label>
-          {t`Name`}
-          <input
-            class="rename-input"
-            value={name}
-            placeholder={t`First and last name`}
-            autoFocus
-            onInput={(e) => setName(e.currentTarget.value)}
-          />
-        </label>
-        <label>
-          {t`Email`}
-          <input
-            class="rename-input"
-            type="email"
-            value={email}
-            placeholder={t`name@example.com`}
-            onInput={(e) => setEmail(e.currentTarget.value)}
-          />
-        </label>
-        <label>
-          {t`Permission`}
-          <select class="rename-input" value={role} onChange={(e) => setRole(e.currentTarget.value as Role)}>
-            {ROLE_ORDER.map((r) => (
-              <option key={r} value={r}>
-                {roleLabel(r)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          {t`Language`}
-          <select class="rename-input" value={language} onChange={(e) => setLanguage(e.currentTarget.value as ChosenLocale)}>
-            <option value="sv" lang="sv">Svenska</option>
-            <option value="en" lang="en">English</option>
-          </select>
-        </label>
-        {error && <p class="note warn">{error}</p>}
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-sm" type="button" onClick={onCancel}>
-          {t`Cancel`}
-        </button>
-        <button class="btn btn-sm btn-primary" type="button" disabled={!canSave} onClick={save}>
-          {saving ? t`Saving…` : t`Save`}
-        </button>
-      </div>
-    </Modal>
-  )
-}
-
-interface InviteDialogProps {
-  domain: Domain
-  user: UserAccount
-  resend: boolean
-  onCancel: () => void
-  onSent: (user: UserAccount) => void
-}
-
-function InviteDialog({ domain, user, resend, onCancel, onSent }: InviteDialogProps) {
-  const [sending, setSending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function send() {
-    if (sending) return
-    setSending(true)
-    setError(null)
-    try {
-      const updated = await (resend ? client.users.resendInvite(user.id) : client.users.sendInvitation(user.id))
-      onSent(updated)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t`Could not send the invitation.`)
-      setSending(false)
-    }
-  }
-
-  const host = domain.host
-  const email = user.email
-
-  return (
-    <Modal title={t`Invite to ${host}`} onClose={onCancel} wide>
-      <div class="invite-dialog">
-        <div class="invite-fields">
-          <label>
-            {t`Email`}
-            <input class="rename-input" type="email" readOnly value={user.email} />
-          </label>
-          <label>
-            {t`Name`}
-            <input class="rename-input" readOnly value={user.name} />
-          </label>
-          <label>
-            {t`Permission`}
-            <input class="rename-input" readOnly value={user.roles.map((r) => roleLabel(r)).join(', ')} />
-          </label>
-        </div>
-        <p class="note">
-          {t`A welcome email with a one-time link is sent to ${email}. The link is valid for 7 days. When the recipient clicks it, a personal PIN is created that is shown only once.`}
-          {resend && ' ' + t`A new invitation replaces the previous one: the old link and PIN stop working.`}
-        </p>
-        {error && <p class="note warn">{error}</p>}
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-sm" type="button" onClick={onCancel}>
-          {t`Cancel`}
-        </button>
-        <button class="btn btn-sm btn-primary" type="button" disabled={sending} onClick={() => void send()}>
-          {sending ? t`Sending…` : t`Send invitation`}
         </button>
       </div>
     </Modal>
@@ -807,9 +601,6 @@ interface UserDetailProps {
   onDisable: () => void
   onEnable: () => void
   onRemove: () => void
-  onInvite: () => void
-  onResendInvite: () => void
-  onSendPasswordReset: () => void
   onRename: () => void
 }
 
@@ -821,9 +612,6 @@ function UserDetail({
   onDisable,
   onEnable,
   onRemove,
-  onInvite,
-  onResendInvite,
-  onSendPasswordReset,
   onRename,
 }: UserDetailProps) {
   const adminHost = domain?.host ?? ''
@@ -885,24 +673,8 @@ function UserDetail({
             </StatusChip>
           ))}
         </div>
-        {managed ? (
+        {managed && (
           <p class="note">{t`Managed in ungap Backoffice: the user logs in with an ungap account, and name, roles and access are changed there.`}</p>
-        ) : (
-        <div class="tools">
-          {u.status === 'notinvited' ? (
-            <button class="btn btn-sm btn-primary" type="button" onClick={onInvite}>
-              {t`Invite`}
-            </button>
-          ) : u.status === 'invited' ? (
-            <button class="btn btn-sm" type="button" onClick={onResendInvite}>
-              {t`Resend invitation`}
-            </button>
-          ) : (
-            <button class="btn btn-sm" type="button" onClick={onSendPasswordReset}>
-              {t`Reset link`}
-            </button>
-          )}
-        </div>
         )}
       </div>
 

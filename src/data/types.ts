@@ -17,21 +17,6 @@ export interface Domain extends DomainRef {
   contractEnd?: string
   /** Kundens egen Mux env key (UNG-20). Saknas den gäller plattformens standardnyckel. */
   muxEnvKey?: string | null
-  /** Step A7: how the domain logs in (Backoffice's access copy). Not local: ungap accounts are managed in ungap Backoffice. */
-  loginMode?: 'local' | 'both' | 'sso'
-}
-
-export interface CredentialLinkInfo {
-  valid: boolean
-  kind?: 'invite' | 'reset'
-  name?: string
-  email?: string
-}
-
-export interface CredentialLinkRedeemed {
-  pin: string
-  email: string
-  kind: 'invite' | 'reset'
 }
 
 export interface CurrentUser {
@@ -42,9 +27,7 @@ export interface CurrentUser {
   roles: Role[]
   /** UNG-306: the account's UI language; null until chosen. */
   language: 'sv' | 'en' | null
-  /** Step A3: how this session logged in; 'sso' = with an ungap account (logout also ends that login). */
-  loginMethod: 'pin' | 'sso'
-  /** Step A6: the ungap person linked to this user (null for a PIN-only user); compared with ungap Presenter's. */
+  /** Step A6: the ungap person linked to this user; compared with ungap Presenter's. */
   personId: string | null
 }
 
