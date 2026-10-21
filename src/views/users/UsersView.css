@@ -1,58 +1,14 @@
-/* Domäner och Användare är båda listpaneler och ska ligga dikt an mot
-   varandra (som en enda lista i två kolumner, bara en linje emellan) —
-   ingen kolumn-gap där. Gapet mot detaljvyn (kolumn 3) återskapas i
-   SplitPane.css med en egen fullständig marginalregel (.three > :nth-
-   child(3)), eftersom grid-gap annars gäller alla kolumner lika. row-gap
-   behålls för den smala staplade layouten (<920 px). */
-.three {
-  display: grid;
-  grid-template-columns: 236px 340px 1fr;
-  column-gap: 0;
-  row-gap: 22px;
-  height: 100%;
-  min-height: 0;
-}
-
-@media (max-width: 1120px) {
-  .three {
-    grid-template-columns: 210px 260px 1fr;
-  }
-}
-
-@media (max-width: 920px) {
-  .three {
-    grid-template-columns: 1fr;
-    height: auto;
-  }
-}
-
-/* Skicka återställningslänk/Skicka om inbjudan + Bjud in + "..." radbröt
-   annars till en egen rad under varandra i den smalare tredje kolumnen
-   (uppmätt 2026-09-18) — tvinga en rad, texten är redan förkortad ovan. */
-.users-doc .tools {
-  flex-wrap: nowrap;
-}
-
-.invite-pin-hint {
-  margin-right: auto;
-  color: var(--ink-3);
-  font-size: 12px;
-  text-align: left;
-}
-
-.pane .top h2 {
-  margin: 0;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--ink-2);
-  flex: 1;
+/* Domains (the root administrator's Mux env key per domain): one list pane under the note pointing to ungap Presenter. */
+.domains-only {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 560px;
 }
 
 /* .pane li button (SplitPane.css) sätter flex-direction:column för den
    vanliga radlayouten (rubrik ovanpå metarad) — .user-row/.dom är byggda
-   som en enda rad (avatar/domän + text) och måste explicit tillbaka till
-   row, annars ärvs column och avataren hamnar ovanför texten, centrerad
-   (uppmätt i Användare, 2026-09-18). */
+   som en enda rad (domän + text) och måste explicit tillbaka till row. */
 .pane li button.user-row {
   display: flex;
   flex-direction: row;
@@ -90,202 +46,7 @@
   flex: none;
 }
 
-.avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  flex: none;
-  background: var(--surface-3);
-  color: var(--ink-2);
-  display: grid;
-  place-items: center;
-  font-size: 11.5px;
-  font-weight: 600;
-}
-
-.avatar.lg {
-  width: 44px;
-  height: 44px;
-  font-size: 15px;
-}
-
-.uinfo {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.uinfo .un {
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.uinfo .ue {
-  font-size: 12px;
-  color: var(--ink-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.idrow {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-}
-
-.doc .mail {
-  font-size: 13px;
-  color: var(--ink-3);
-  font-family: var(--mono);
-  margin-top: 2px;
-}
-
-.badges {
-  display: flex;
-  gap: 8px;
-  margin-top: 11px;
-  flex-wrap: wrap;
-}
-
-.roles {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.role {
-  display: flex;
-  align-items: flex-start;
-  gap: 11px;
-  border: 1px solid var(--line-soft);
-  border-radius: 8px;
-  padding: 10px 12px;
-  background: var(--panel);
-  cursor: pointer;
-}
-
-.role.on {
-  border-color: var(--odm-line);
-  background: var(--odm-bg);
-}
-
-.role.locked {
-  cursor: default;
-}
-
-.role input {
-  margin: 3px 0 0;
-}
-
-.role .rt {
-  flex: 1;
-}
-
-.role .rt b {
-  display: block;
-  font-weight: 600;
-  font-size: 13.5px;
-}
-
-.role .rt span {
-  display: block;
-  font-size: 12.5px;
-  color: var(--ink-3);
-  margin-top: 1px;
-}
-
-ul.log {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border: 1px solid var(--line-soft);
-  border-radius: 8px;
-  overflow: hidden;
-  font-size: 13px;
-}
-
-ul.log li {
-  display: flex;
-  gap: 12px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--line-soft);
-}
-
-ul.log li:last-child {
-  border-bottom: 0;
-}
-
-ul.log .t {
-  font-family: var(--mono);
-  font-size: 11.5px;
-  color: var(--ink-3);
-  width: 112px;
-  flex: none;
-}
-
-.domain-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.domain-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 13px;
-  color: var(--ink-2);
-}
-
-.invite-dialog {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.invite-fields {
-  display: grid;
-  grid-template-columns: 1fr 1fr 140px;
-  gap: 12px;
-}
-
-.invite-fields label {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 13px;
-  color: var(--ink-2);
-}
-
-.invite-message-label {
-  font-size: 13px;
-  color: var(--ink-2);
-}
-
-.invite-message {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 10px;
-  font-size: 13px;
-  color: var(--ink-2);
-  background: var(--field-bg);
-  resize: vertical;
-}
-
-/* Bakgrunden (hover/vald) sitter på raden själv, inte på de två knapparna
-   var för sig — annars syns "..."-knappen som en egen, fristående ruta
-   utanför den markerade radens bakgrund istället för en del av samma rad
-   (uppmätt 2026-09-18). */
 .domain-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 2px;
   border-radius: 8px;
 }
 
@@ -293,31 +54,8 @@ ul.log .t {
   background: var(--accent-soft);
 }
 
-.domain-row.sel {
-  background: var(--surface-3);
-}
-
-.pane li.domain-row button.user-row.dom,
-.pane li.domain-row button.domain-menu-btn {
+.pane li.domain-row button.user-row.dom {
   background: none;
-}
-
-.domain-row .user-row {
-  flex: 1;
-  min-width: 0;
-}
-
-/* .pane li button (SplitPane.css) sätter display:block/width:100% med högre
-   specificitet än .ib ensamt — matcha den specificiteten här för att .ib:s
-   26x26-ikonstorlek ska vinna. */
-.pane li.domain-row button.domain-menu-btn {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  margin-right: 4px;
 }
 
 .domain-org-field {
@@ -329,9 +67,8 @@ ul.log .t {
   margin-bottom: 16px;
 }
 
-/* Step A7: SSO domains point to ungap Backoffice for ungap accounts. */
 .users-backoffice-note {
-  margin: 0 12px 8px;
+  margin: 0;
   font-size: 12px;
   color: var(--ink-2);
 }

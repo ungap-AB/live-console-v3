@@ -36,7 +36,6 @@ import type {
   RecordingState,
   Share,
   TimelineEvent,
-  UserAccount,
   Visibility,
 } from '../types'
 import { toTextPlacement } from '../textPlacement'
@@ -66,7 +65,6 @@ import type {
   ServerDownloadJob,
   ServerMediaJob,
   ServerUploadJob,
-  ServerUser,
 } from './serverDtos'
 
 // Fetch-baserad Client mot live-server-v3, se Client-interfacet i ../client.ts
@@ -424,29 +422,6 @@ async function fetchProject(id: string): Promise<Project> {
 
 // ---- Domäner och användare ----
 
-function toUserSummary(dto: ServerUser): UserAccount {
-  return {
-    id: dto.id,
-    name: dto.name,
-    email: dto.email,
-    domainId: dto.domainId,
-    roles: dto.roles as UserAccount['roles'],
-    status: dto.status as UserAccount['status'],
-    ssoEnabled: dto.ssoEnabled,
-    createdAt: dto.createdAt,
-    lastLoginAt: dto.lastLoginAt,
-    activity: [],
-  }
-}
-
-async function fetchUserDetail(id: string): Promise<UserAccount> {
-  const [dto, activity] = await Promise.all([
-    api<ServerUser>(`/users/${id}`),
-    api<{ occurredAt: string; description: string }[]>(`/users/${id}/activity`),
-  ])
-  return { ...toUserSummary(dto), activity }
-}
-
 function toCurrentUser(dto: ServerCurrentUser): CurrentUser {
   const language = dto.language === 'sv' || dto.language === 'en' ? dto.language : null
   return { id: dto.id, name: dto.name, email: dto.email, domain: dto.domain, roles: dto.roles as CurrentUser['roles'], language, personId: typeof dto.personId === 'string' ? dto.personId : null }
@@ -745,45 +720,10 @@ export const httpClient: Client = {
   },
   domains: {
     async list() {
-      return api('/domains')
+      return api<ServerDomain[]>('/domains')
     },
-    async create(input) {
-      return api<ServerDomain>('/domains', { method: 'POST', body: input })
-    },
-    async update(id, input) {
-      return api<ServerDomain>(`/domains/${id}`, { method: 'PATCH', body: input })
-    },
-    async remove(id) {
-      await api<void>(`/domains/${id}`, { method: 'DELETE' })
-    },
-  },
-  users: {
-    async listByDomain(domainId, query) {
-      const items = await api<ServerUser[]>(`/domains/${domainId}/users`, { query: { q: query } })
-      return items.map(toUserSummary)
-    },
-    async get(id) {
-      const found = await getOrUndefined(api<ServerUser>(`/users/${id}`))
-      return found ? fetchUserDetail(id) : undefined
-    },
-    async update(id, input) {
-      await api<ServerUser>(`/users/${id}`, { method: 'PATCH', body: input })
-      return fetchUserDetail(id)
-    },
-    async setRoles(id, roles) {
-      await api<ServerUser>(`/users/${id}/roles`, { method: 'PUT', body: { roles } })
-      return fetchUserDetail(id)
-    },
-    async disable(id) {
-      await api<ServerUser>(`/users/${id}/disable`, { method: 'POST' })
-      return fetchUserDetail(id)
-    },
-    async enable(id) {
-      await api<ServerUser>(`/users/${id}/enable`, { method: 'POST' })
-      return fetchUserDetail(id)
-    },
-    async remove(id) {
-      await api<void>(`/users/${id}`, { method: 'DELETE' })
+    async setMuxEnvKey(id, muxEnvKey) {
+      return api<ServerDomain>(`/domains/${id}`, { method: 'PATCH', body: { muxEnvKey } })
     },
   },
   projects: {

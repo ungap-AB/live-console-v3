@@ -241,15 +241,6 @@
   }
 }
 
-.account-name-field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 13px;
-  color: var(--ink-2);
-  margin-bottom: 16px;
-}
-
 /* UNG-100: indikator på menyraden Jobb — antal pågående jobb, annars antal nya klara. */
 .nav-badge {
   margin-left: auto;

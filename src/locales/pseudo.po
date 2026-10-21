@@ -260,10 +260,6 @@ msgstr ""
 msgid "{days} days"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "{deleteOrganization} ({deleteHost}) is removed permanently. It cannot be undone."
-msgstr ""
-
 #: src/views/projects/VttImportDialog.tsx
 msgid "{dirtyCount, plural, one {Your # unsaved change is saved first.} other {Your # unsaved changes are saved first.}}"
 msgstr ""
@@ -344,10 +340,6 @@ msgstr ""
 msgid "{NUDGE_SECONDS} seconds forward"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "{organization} removed."
-msgstr ""
-
 #: src/views/projects/CaptionEditor.tsx
 msgid "{outside, plural, one {# chapter ended up outside the video and is hidden until it fits. Adjust the anchor or remove it.} other {# chapters ended up outside the video and are hidden until they fit. Adjust the anchor or remove them.}}"
 msgstr ""
@@ -425,7 +417,6 @@ msgstr ""
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/namelists/NameListsView.tsx
 #: src/views/resources/LiveResourcesView.tsx
-#: src/views/users/UsersView.tsx
 msgid "+ New"
 msgstr ""
 
@@ -513,10 +504,6 @@ msgstr ""
 msgid "About 1 minute left."
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Account created"
-msgstr ""
-
 #: src/app/Shell.tsx
 msgid "Account settings"
 msgstr ""
@@ -533,9 +520,7 @@ msgstr ""
 msgid "active"
 msgstr ""
 
-#: src/app/Shell.tsx
 #: src/views/jobs/JobsView.tsx
-#: src/views/users/UsersView.tsx
 msgid "Active"
 msgstr ""
 
@@ -872,7 +857,6 @@ msgstr ""
 #: src/views/projects/UploadPanel.tsx
 #: src/views/projects/VttImportDialog.tsx
 #: src/views/projects/WordImportDialog.tsx
-#: src/views/users/UsersView.tsx
 msgid "Cancel"
 msgstr ""
 
@@ -1318,19 +1302,6 @@ msgstr ""
 msgid "Continue"
 msgstr ""
 
-#: src/app/Shell.tsx
-#: src/views/users/UsersView.tsx
-msgid "Contract period"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Contract period from"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Contract period to"
-msgstr ""
-
 #: src/app/jobPhase.ts
 msgid "Converting"
 msgstr ""
@@ -1431,10 +1402,6 @@ msgstr ""
 msgid "Could not play out."
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Could not remove the domain."
-msgstr ""
-
 #: src/views/agendas/AgendasView.tsx
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/namelists/NameListsView.tsx
@@ -1458,7 +1425,6 @@ msgstr ""
 #: src/views/projects/BeforeWorkspace.tsx
 #: src/views/projects/captionEntryLogic.ts
 #: src/views/projects/CreateProjectDialog.tsx
-#: src/views/users/UsersView.tsx
 msgid "Create"
 msgstr ""
 
@@ -1543,10 +1509,6 @@ msgstr ""
 msgid "Creates one chapter per agenda item, without a time. You set the times with the Sync button below the video."
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Creates projects, broadcasts and publishes on demand."
-msgstr ""
-
 #: src/views/jobs/JobsView.tsx
 msgid "Creating captions is stopped and no draft is saved. You can start it again at any time."
 msgstr ""
@@ -1592,14 +1554,6 @@ msgstr ""
 msgid "Date"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Delete domain"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Delete domain?"
-msgstr ""
-
 #: src/views/projects/ProjectsView.tsx
 msgid "Delete project"
 msgstr ""
@@ -1618,35 +1572,6 @@ msgstr ""
 
 #: src/views/trash/TrashView.tsx
 msgid "Deleted projects, agendas, name lists and recordings end up here."
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Details"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Disable"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Disable {disableName}? The account cannot sign in but remains in the history."
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Disable account"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Disable account?"
-msgstr ""
-
-#: src/app/Shell.tsx
-#: src/views/users/UsersView.tsx
-msgid "Disabled"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Disabled accounts cannot sign in but are kept in the history — earlier broadcasts and changes remain on the user."
 msgstr ""
 
 #: src/views/jobs/JobsView.tsx
@@ -1679,14 +1604,6 @@ msgstr ""
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Document with items and start times, speakers, attachment names and breaks."
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Domain"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Domain administrator"
 msgstr ""
 
 #: src/views/users/UsersView.tsx
@@ -1806,14 +1723,6 @@ msgstr ""
 msgid "During the broadcast"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "e.g. Example Municipality"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "e.g. example.com"
-msgstr ""
-
 #: src/views/projects/CreateProjectDialog.tsx
 #: src/views/projects/MeetingLinkDialog.tsx
 msgid "E.g. Municipal council 16 October"
@@ -1855,10 +1764,6 @@ msgstr ""
 msgid "Edit title"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "email"
-msgstr ""
-
 #: src/app/Shell.tsx
 msgid "Email"
 msgstr ""
@@ -1874,10 +1779,6 @@ msgstr ""
 
 #: src/views/projects/ManuscriptSpeakersWarning.tsx
 msgid "Email me when the speaker changes are done"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Enable account"
 msgstr ""
 
 #: src/views/projects/ForkDialog.tsx
@@ -1917,16 +1818,8 @@ msgstr ""
 msgid "Enter a time as hh:mm."
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Enter a valid domain name, for example example.com."
-msgstr ""
-
 #: src/views/projects/recordingSource.ts
 msgid "Enter the address of an HLS playlist."
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Enter the organization name."
 msgstr ""
 
 #: src/views/projects/autoCaptionsLogic.ts
@@ -2335,10 +2228,6 @@ msgstr ""
 msgid "in this project and the stream is not interrupted. In the new project you trim, create captions and publish as a separate on-demand broadcast with its own link. The very latest seconds are not included."
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Inactive"
-msgstr ""
-
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Include speakers as chapters of their own (YouTube and WebVTT)"
 msgstr ""
@@ -2373,15 +2262,6 @@ msgstr ""
 #. placeholder {0}: invalid.join(', ')
 #: src/components/ShareDialog.tsx
 msgid "Invalid address: {0}"
-msgstr ""
-
-#: src/app/Shell.tsx
-#: src/views/users/UsersView.tsx
-msgid "Invited"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Invited – has not signed in"
 msgstr ""
 
 #: src/views/projects/OndemandView.tsx
@@ -2443,10 +2323,6 @@ msgstr ""
 
 #: src/views/projects/OndemandView.tsx
 msgid "Last {when} by {actor}"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Last sign-in"
 msgstr ""
 
 #: src/views/resources/LiveResourcesView.tsx
@@ -2687,14 +2563,6 @@ msgstr ""
 msgid "Makes all boxes editable"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Managed in ungap Backoffice: the user logs in with an ungap account, and name, roles and access are changed there."
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Manages the whole installation and all domains."
-msgstr ""
-
 #: src/views/projects/ExportImportDialog.tsx
 msgid "Manuscript (Word)"
 msgstr ""
@@ -2873,10 +2741,6 @@ msgstr ""
 msgid "Name of the recording"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "never"
-msgstr ""
-
 #: src/views/resources/LiveResourcesView.tsx
 msgid "never used"
 msgstr ""
@@ -2888,10 +2752,6 @@ msgstr ""
 
 #: src/views/projects/CreateProjectDialog.tsx
 msgid "New broadcast"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "New domain"
 msgstr ""
 
 #: src/views/agendas/AgendasView.tsx
@@ -3126,11 +2986,6 @@ msgstr ""
 msgid "Not created"
 msgstr ""
 
-#: src/app/Shell.tsx
-#: src/views/users/UsersView.tsx
-msgid "Not invited"
-msgstr ""
-
 #: src/views/projects/BeforeWorkspace.tsx
 msgid "Not linked"
 msgstr ""
@@ -3342,20 +3197,17 @@ msgstr ""
 msgid "Opens the editor: trim and chapters. Captions are created from there."
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Operator"
-msgstr ""
-
 #: src/views/projects/UploadPanel.tsx
 msgid "Or enter your own HLS URL"
 msgstr ""
 
 #: src/app/Shell.tsx
+#: src/views/users/UsersView.tsx
 msgid "Organisation"
 msgstr ""
 
 #: src/views/users/UsersView.tsx
-msgid "Organization name"
+msgid "Organisations and people with an ungap account are managed in ungap Presenter under Organisation."
 msgstr ""
 
 #: src/views/projects/OndemandView.tsx
@@ -3380,6 +3232,10 @@ msgstr ""
 
 #: src/views/projects/UploadPanel.tsx
 msgid "Own HLS URL"
+msgstr ""
+
+#: src/views/users/UsersView.tsx
+msgid "Own Mux key"
 msgstr ""
 
 #: src/components/ImportTextDialog.tsx
@@ -3420,14 +3276,6 @@ msgstr ""
 #: src/views/agendas/AgendasView.tsx
 #: src/views/projects/PlayoutColumns.tsx
 msgid "PDF documents ({count})"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "People with an ungap account are managed in ungap Presenter under Organisation."
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Permissions"
 msgstr ""
 
 #: src/views/projects/CaptionEditor.tsx
@@ -3756,10 +3604,6 @@ msgstr ""
 msgid "Reading the video…"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Recent activity"
-msgstr ""
-
 #: src/components/ShareDialog.tsx
 #: src/views/jobs/JobsView.tsx
 msgid "Recipients"
@@ -3795,17 +3639,12 @@ msgstr ""
 #: src/components/EditableItemList.tsx
 #: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/PlayerSettingsDialog.tsx
-#: src/views/users/UsersView.tsx
 msgid "Remove"
 msgstr ""
 
 #. placeholder {0}: attachment.fileName
 #: src/components/PdfAttachments.tsx
 msgid "Remove {0}"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Remove {removeName} completely? From now on the history shows only the name, without an account."
 msgstr ""
 
 #: src/views/projects/CaptionEditor.tsx
@@ -3835,10 +3674,6 @@ msgstr ""
 
 #: src/views/projects/BeforeWorkspace.tsx
 msgid "Remove the link to ungap Meeting?"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Remove user?"
 msgstr ""
 
 #: src/views/projects/CaptionEditor.tsx
@@ -3879,10 +3714,6 @@ msgstr ""
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Rename the resource"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Rename the user"
 msgstr ""
 
 #. placeholder {0}: items.length
@@ -3944,14 +3775,6 @@ msgstr ""
 msgid "Rewind in a live broadcast"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Root administrator"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Root administrator, locked"
-msgstr ""
-
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Rotate anyway"
 msgstr ""
@@ -3968,7 +3791,6 @@ msgstr ""
 msgid "Same list as {project}: {list}"
 msgstr ""
 
-#: src/app/Shell.tsx
 #: src/components/EditableItemList.tsx
 #: src/components/RenameModal.tsx
 #: src/views/projects/CaptionEditor.tsx
@@ -4009,7 +3831,6 @@ msgstr ""
 msgid "Saving..."
 msgstr ""
 
-#: src/app/Shell.tsx
 #: src/views/projects/CaptionEditor.tsx
 #: src/views/projects/OndemandView.tsx
 #: src/views/projects/PlayerSettingsDialog.tsx
@@ -4047,10 +3868,6 @@ msgstr ""
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Select a resource in the list."
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "Select a user in the list."
 msgstr ""
 
 #: src/views/agendas/AgendasView.tsx
@@ -4225,10 +4042,6 @@ msgstr ""
 msgid "Shown when the broadcast has ended and no recording is playing."
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Sign-in"
-msgstr ""
-
 #: src/views/projects/liveStatus.ts
 msgid "Signal interrupted"
 msgstr ""
@@ -4397,7 +4210,6 @@ msgstr ""
 msgid "Starting…"
 msgstr ""
 
-#: src/app/Shell.tsx
 #: src/views/projects/OndemandView.tsx
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Status"
@@ -4839,18 +4651,6 @@ msgstr ""
 msgid "The document does not match? Choose a version to compare against"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "The domain has no users."
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "The domain must have at least one active administrator"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "The domain still has users and cannot be removed."
-msgstr ""
-
 #: src/views/archive/VideoArchiveView.tsx
 #: src/views/projects/useRecordingDownloads.ts
 msgid "The download could not be prepared."
@@ -4916,10 +4716,6 @@ msgstr ""
 
 #: src/components/trimBarLogic.ts
 msgid "The end"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "The end date must be after the start date."
 msgstr ""
 
 #: src/views/projects/forkLogic.ts
@@ -5132,20 +4928,12 @@ msgstr ""
 msgid "The ongoing broadcast is cut off for the audience, who see the Before message instead."
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "The only active administrator on {adminHost}. Appoint another one before the role is removed."
-msgstr ""
-
 #: src/views/archive/VideoArchiveView.tsx
 msgid "The original is never published directly. Trim it to create a version that can be reviewed and published."
 msgstr ""
 
 #: src/views/projects/CaptionEditor.tsx
 msgid "The person's name"
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "The PIN becomes valid only when the invitation has been sent"
 msgstr ""
 
 #: src/views/projects/OverviewShell.tsx
@@ -5279,10 +5067,6 @@ msgstr ""
 
 #: src/views/resources/LiveResourcesView.tsx
 msgid "The resource cannot be torn down while a signal is being received. Stop the encoder first."
-msgstr ""
-
-#: src/views/users/UsersView.tsx
-msgid "The role cannot be changed here."
 msgstr ""
 
 #: src/app/SharedDownloadsView.tsx
@@ -5660,10 +5444,6 @@ msgstr ""
 msgid "Undo previous"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "ungap account"
-msgstr ""
-
 #: src/views/projects/ExportImportDialog.tsx
 msgid "ungap Chapters (.json)"
 msgstr ""
@@ -5816,12 +5596,7 @@ msgstr ""
 msgid "used today"
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "User details"
-msgstr ""
-
 #: src/app/Shell.tsx
-#: src/views/users/UsersView.tsx
 msgid "Users"
 msgstr ""
 
@@ -5953,10 +5728,6 @@ msgstr ""
 msgid "Words you replace in the text are shown here, until you have saved."
 msgstr ""
 
-#: src/views/users/UsersView.tsx
-msgid "Works operationally within their domain."
-msgstr ""
-
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "Yes, play out events"
 msgstr ""
@@ -5984,6 +5755,10 @@ msgstr ""
 #. placeholder {0}: own.length
 #: src/views/projects/CorrectionsPanel.tsx
 msgid "Your corrections ({0})"
+msgstr ""
+
+#: src/app/Shell.tsx
+msgid "Your name and email address belong to your ungap account."
 msgstr ""
 
 #: src/views/projects/CaptionEditor.tsx

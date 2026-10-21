@@ -6,7 +6,6 @@ import type {
   ChannelState,
   CueKind,
   CurrentUser,
-  Domain,
   MeetingSummary,
   MeetingTopic,
   NameList,
@@ -14,9 +13,7 @@ import type {
   Project,
   ProjectRecording,
   Recording,
-  Role,
   TimelineEvent,
-  UserAccount,
 } from '../types'
 import {
   agendaFixtures,
@@ -28,6 +25,7 @@ import {
   trashFixtures,
   userFixtures,
   meetingFixtures,
+  type MockUser,
 } from './fixtures'
 
 const CHANNEL_QUOTA_LIMIT = 20
@@ -60,7 +58,7 @@ let recordings = recordingFixtures.map((r) => clone(r))
 let channels = channelFixtures.map((c) => clone(c))
 let trashItems = trashFixtures.map((t) => clone(t))
 const domains = domainFixtures.map((d) => clone(d))
-let users = userFixtures.map((u) => clone(u))
+const users = userFixtures.map((u) => clone(u))
 let projects = projectFixtures.map((p) => clone(p))
 
 function delay<T>(value: T): Promise<T> {
@@ -170,7 +168,7 @@ const mockLanguages = new Map<string, 'sv' | 'en'>()
 // UNG-338: project id → its ungap Meeting link.
 const mockMeetingLinks = new Map<string, { meetingId: string; meetingTitle?: string | null; createdAt: string }>()
 
-function toCurrentUser(user: UserAccount): CurrentUser {
+function toCurrentUser(user: MockUser): CurrentUser {
   const domain = domains.find((d) => d.id === user.domainId)
   if (!domain) throw new Error(`Domän ${user.domainId} finns inte`)
   const meetingEnabled = Boolean(meetingFixtures[domain.host.toLowerCase()])
@@ -700,88 +698,13 @@ export const mockClient: Client = {
   },
   domains: {
     async list() {
-      const withLiveCounts = domains.map((d) => ({
-        ...d,
-        userCount: users.filter((u) => u.domainId === d.id).length,
-      }))
-      return delay(clone(withLiveCounts))
+      return delay(clone(domains))
     },
-    async create(input) {
-      const domain: Domain = { id: `dm${nextId++}`, host: input.host, org: input.org, userCount: 0 }
-      domains.push(domain)
-      return delay(clone(domain))
-    },
-    async update(id, input) {
+    async setMuxEnvKey(id, muxEnvKey) {
       const domain = domains.find((d) => d.id === id)
       if (!domain) throw new Error(`Domänen ${id} finns inte.`)
-      domain.org = input.org
-      if (input.muxEnvKey !== undefined) domain.muxEnvKey = input.muxEnvKey.trim() || null
-      if (input.contractStart !== undefined) domain.contractStart = input.contractStart
-      if (input.contractEnd !== undefined) domain.contractEnd = input.contractEnd
-      if (domain.contractStart && domain.contractEnd && domain.contractEnd < domain.contractStart) {
-        throw new Error('Avtalets slutdatum måste vara efter startdatumet.')
-      }
+      domain.muxEnvKey = muxEnvKey.trim() || null
       return delay(clone(domain))
-    },
-    async remove(id) {
-      if (users.some((u) => u.domainId === id)) {
-        throw new Error('Domänen har användare kvar och kan inte tas bort.')
-      }
-      const idx = domains.findIndex((d) => d.id === id)
-      if (idx >= 0) domains.splice(idx, 1)
-      return delay(undefined)
-    },
-  },
-  users: {
-    async listByDomain(domainId, query) {
-      const q = query?.trim().toLowerCase()
-      const hits = users
-        .filter((u) => u.domainId === domainId)
-        .filter((u) => !q || (u.name + ' ' + u.email).toLowerCase().includes(q))
-      return delay(clone(hits))
-    },
-    async get(id) {
-      return delay(clone(users.find((u) => u.id === id)))
-    },
-    async update(id, input) {
-      const user = users.find((u) => u.id === id)
-      if (!user) throw new Error(`Användare ${id} finns inte`)
-      if (input.name !== undefined) user.name = input.name
-      if (input.email !== undefined) user.email = input.email
-      return delay(clone(user))
-    },
-    async setRoles(id, roles) {
-      const user = users.find((u) => u.id === id)
-      if (!user) throw new Error(`Användare ${id} finns inte`)
-      const nextRoles: Role[] = roles.length ? [roles[0]] : ['operator']
-      if (isOnlyActiveDomainAdmin(user) && !nextRoles.includes('domainAdmin')) {
-        throw new Error('Domänen måste ha minst en aktiv administratör.')
-      }
-      user.roles = nextRoles
-      return delay(clone(user))
-    },
-    async disable(id) {
-      const user = users.find((u) => u.id === id)
-      if (!user) throw new Error(`Användare ${id} finns inte`)
-      if (isOnlyActiveDomainAdmin(user)) {
-        throw new Error('Domänen måste ha minst en aktiv administratör.')
-      }
-      user.status = 'disabled'
-      return delay(clone(user))
-    },
-    async enable(id) {
-      const user = users.find((u) => u.id === id)
-      if (!user) throw new Error(`Användare ${id} finns inte`)
-      user.status = 'active'
-      return delay(clone(user))
-    },
-    async remove(id) {
-      const user = users.find((u) => u.id === id)
-      if (user && isOnlyActiveDomainAdmin(user)) {
-        throw new Error('Domänen måste ha minst en aktiv administratör.')
-      }
-      users = users.filter((u) => u.id !== id)
-      return delay(undefined)
     },
   },
   projects: {
@@ -1437,12 +1360,4 @@ function findProject(id: string): Project {
   const project = projects.find((p) => p.id === id)
   if (!project) throw new Error(`Projekt ${id} finns inte`)
   return project
-}
-
-function isOnlyActiveDomainAdmin(user: UserAccount): boolean {
-  if (!user.roles.includes('domainAdmin') || user.status !== 'active') return false
-  const activeAdmins = users.filter(
-    (u) => u.domainId === user.domainId && u.roles.includes('domainAdmin') && u.status === 'active',
-  )
-  return activeAdmins.length === 1
 }

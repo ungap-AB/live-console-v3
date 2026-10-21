@@ -17,10 +17,8 @@ import type {
   Project,
   PublicMode,
   Recording,
-  Role,
   TimelineEvent,
   TrashItem,
-  UserAccount,
   Visibility,
 } from './types'
 
@@ -171,21 +169,11 @@ export interface Client {
     restore(id: string): Promise<void>
     policy(): Promise<{ retentionDays: number }>
   }
+  /** Root administrator only. Organisations and people are administered in ungap Backoffice (via ungap Presenter). */
   domains: {
     list(): Promise<Domain[]>
-    create(input: { host: string; org: string }): Promise<Domain>
-    /** muxEnvKey: tom sträng tar bort kundens egen nyckel (standardnyckeln gäller då); utelämnad lämnar den oförändrad. */
-    update(id: string, input: { org: string; contractStart?: string; contractEnd?: string; muxEnvKey?: string }): Promise<Domain>
-    remove(id: string): Promise<void>
-  }
-  users: {
-    listByDomain(domainId: string, query?: string): Promise<UserAccount[]>
-    get(id: string): Promise<UserAccount | undefined>
-    update(id: string, input: { name?: string; email?: string }): Promise<UserAccount>
-    setRoles(id: string, roles: Role[]): Promise<UserAccount>
-    disable(id: string): Promise<UserAccount>
-    enable(id: string): Promise<UserAccount>
-    remove(id: string): Promise<void>
+    /** UNG-20: an empty string removes the customer's own key (the default key applies then). */
+    setMuxEnvKey(id: string, muxEnvKey: string): Promise<Domain>
   }
   projects: {
     list(query?: string): Promise<Project[]>

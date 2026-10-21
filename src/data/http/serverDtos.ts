@@ -342,27 +342,7 @@ export interface ServerDomain {
   id: string
   host: string
   org: string
-  userCount: number
-  contractStart?: string
-  contractEnd?: string
   muxEnvKey?: string | null
-}
-
-export interface ServerActivityEntry {
-  occurredAt: string
-  description: string
-}
-
-export interface ServerUser {
-  id: string
-  domainId: string
-  name: string
-  email: string
-  roles: string[]
-  status: string
-  ssoEnabled: boolean
-  createdAt: string
-  lastLoginAt: string | null
 }
 
 export interface ServerDomainRef {

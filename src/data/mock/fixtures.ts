@@ -1,4 +1,4 @@
-import type { Agenda, Channel, Domain, MeetingSummary, MeetingTopic, NameList, Project, Recording, TrashItem, UserAccount } from '../types'
+import type { Agenda, Channel, Domain, MeetingSummary, MeetingTopic, NameList, Project, Recording, Role, TrashItem } from '../types'
 
 // Exempeldata återanvänd rakt av från mockup/3-live-console-agendas.html
 // och mockup/4-live-console-namelist.html, omvandlad till domäntypernas form.
@@ -454,13 +454,23 @@ export const trashFixtures: TrashItem[] = [
 ]
 
 // Exempeldata återanvänd från mockup/8-live-console-user-admin.html.
-const domainRefs = [
-  { id: 'd1', host: 'kalmar.se', org: 'Kalmar kommun', contractStart: '2024-01-01T00:00:00Z', contractEnd: '2027-12-31T00:00:00Z' },
-  { id: 'd2', host: 'kalmarlan.se', org: 'Region Kalmar län', contractStart: '2025-04-01T00:00:00Z', contractEnd: '2026-12-31T00:00:00Z' },
-  { id: 'd3', host: 'brfeken.se', org: 'Brf Eken', contractStart: '2026-05-01T00:00:00Z', contractEnd: '2027-04-30T00:00:00Z' },
+export const domainFixtures: Domain[] = [
+  { id: 'd1', host: 'kalmar.se', org: 'Kalmar kommun' },
+  { id: 'd2', host: 'kalmarlan.se', org: 'Region Kalmar län' },
+  { id: 'd3', host: 'brfeken.se', org: 'Brf Eken' },
 ]
 
-export const userFixtures: UserAccount[] = [
+/** The mock's accounts; it signs in the active root administrator (mockClient's startSso). */
+export interface MockUser {
+  id: string
+  domainId: string
+  name: string
+  email: string
+  roles: Role[]
+  status: 'active' | 'invited' | 'disabled'
+}
+
+export const userFixtures: MockUser[] = [
   {
     id: 'root-admin',
     domainId: 'd1',
@@ -468,10 +478,6 @@ export const userFixtures: UserAccount[] = [
     email: 'admin@ungap.net',
     roles: ['rootAdmin'],
     status: 'active',
-    ssoEnabled: false,
-    createdAt: '2026-01-01T00:00:00Z',
-    lastLoginAt: null,
-    activity: [],
   },
   {
     id: 'u1',
@@ -480,14 +486,6 @@ export const userFixtures: UserAccount[] = [
     email: 'anders.marten@kalmar.se',
     roles: ['domainAdmin'],
     status: 'active',
-    ssoEnabled: false,
-    createdAt: '2024-02-02T09:00:00Z',
-    lastLoginAt: '2026-09-12T09:12:00Z',
-    activity: [
-      { occurredAt: '2026-09-12T09:12:00Z', description: 'Loggade in' },
-      { occurredAt: '2026-09-11T14:40:00Z', description: 'Publicerade ondemand: KF 27 augusti' },
-      { occurredAt: '2026-09-10T08:02:00Z', description: 'Skapade live-resurs kf-2409' },
-    ],
   },
   {
     id: 'u2',
@@ -496,13 +494,6 @@ export const userFixtures: UserAccount[] = [
     email: 'ingrid.blomkvist@kalmar.se',
     roles: ['operator'],
     status: 'active',
-    ssoEnabled: true,
-    createdAt: '2024-03-08T09:00:00Z',
-    lastLoginAt: '2026-09-11T16:30:00Z',
-    activity: [
-      { occurredAt: '2026-09-11T16:30:00Z', description: 'Loggade in' },
-      { occurredAt: '2026-09-11T16:44:00Z', description: 'Startade sändning: KS 3 september' },
-    ],
   },
   {
     id: 'u3',
@@ -511,13 +502,6 @@ export const userFixtures: UserAccount[] = [
     email: 'lars.oberg@kalmar.se',
     roles: ['operator'],
     status: 'active',
-    ssoEnabled: false,
-    createdAt: '2024-03-08T09:00:00Z',
-    lastLoginAt: '2026-09-03T11:05:00Z',
-    activity: [
-      { occurredAt: '2026-09-03T11:05:00Z', description: 'Loggade in' },
-      { occurredAt: '2026-09-03T11:20:00Z', description: 'Redigerade dagordning: Kommunstyrelsen' },
-    ],
   },
   {
     id: 'u4',
@@ -526,10 +510,6 @@ export const userFixtures: UserAccount[] = [
     email: 'clara.marten@kalmar.se',
     roles: ['operator'],
     status: 'invited',
-    ssoEnabled: false,
-    createdAt: '2026-09-09T10:14:00Z',
-    lastLoginAt: null,
-    activity: [{ occurredAt: '2026-09-09T10:14:00Z', description: 'Inbjudan skickad' }],
   },
   {
     id: 'u5',
@@ -538,13 +518,6 @@ export const userFixtures: UserAccount[] = [
     email: 'tomas.ek@kalmar.se',
     roles: ['operator'],
     status: 'disabled',
-    ssoEnabled: false,
-    createdAt: '2025-01-12T09:00:00Z',
-    lastLoginAt: '2026-05-14T09:30:00Z',
-    activity: [
-      { occurredAt: '2026-06-01T08:00:00Z', description: 'Kontot inaktiverades av Anders Mårtén' },
-      { occurredAt: '2026-05-14T09:30:00Z', description: 'Loggade in' },
-    ],
   },
   {
     id: 'u6',
@@ -553,10 +526,6 @@ export const userFixtures: UserAccount[] = [
     email: 'sofia.lindqvist@kalmarlan.se',
     roles: ['domainAdmin'],
     status: 'active',
-    ssoEnabled: false,
-    createdAt: '2025-04-19T09:00:00Z',
-    lastLoginAt: '2026-09-11T08:45:00Z',
-    activity: [{ occurredAt: '2026-09-11T08:45:00Z', description: 'Loggade in' }],
   },
   {
     id: 'u7',
@@ -565,10 +534,6 @@ export const userFixtures: UserAccount[] = [
     email: 'nils.persson@kalmarlan.se',
     roles: ['operator'],
     status: 'active',
-    ssoEnabled: false,
-    createdAt: '2025-04-19T09:00:00Z',
-    lastLoginAt: '2026-09-08T13:02:00Z',
-    activity: [{ occurredAt: '2026-09-08T13:02:00Z', description: 'Loggade in' }],
   },
   {
     id: 'u8',
@@ -577,17 +542,8 @@ export const userFixtures: UserAccount[] = [
     email: 'majken@brfeken.se',
     roles: ['domainAdmin'],
     status: 'active',
-    ssoEnabled: false,
-    createdAt: '2026-05-02T09:00:00Z',
-    lastLoginAt: '2026-05-15T10:02:00Z',
-    activity: [{ occurredAt: '2026-05-15T10:02:00Z', description: 'Trimmade inspelning: Årsstämma 2026' }],
   },
 ]
-
-export const domainFixtures: Domain[] = domainRefs.map((d) => ({
-  ...d,
-  userCount: userFixtures.filter((u) => u.domainId === d.id).length,
-}))
 
 // Exempeldata inspirerad av mockup/2-live-console-project.html. Tre projekt i
 // olika skeden så att listan visar hela flödet: inte påbörjat, pågående

@@ -3,7 +3,7 @@ import { LanguageSwitch } from './LanguageSwitch'
 import type { ComponentChildren } from 'preact'
 import { useCallback, useEffect, useState } from 'preact/hooks'
 import { client } from '../data'
-import type { Domain, MediaJob, Role, UserAccount } from '../data/types'
+import type { CurrentUser, MediaJob } from '../data/types'
 import { Modal } from '../components/Modal'
 import { Icon } from '../components/Icon'
 import { JobStatusBlock } from '../components/JobStatusBlock'
@@ -12,7 +12,6 @@ import { downloadJobFile, downloadManuscriptFile } from './jobActions'
 import { JobsContext } from './jobsContext'
 import { countNewFinished, readJobsSeenAt, storeJobsSeenAt } from './jobsSeen'
 import { useJobs } from './useJobs'
-import { formatDate } from './time'
 import { routeHref, type RouteKey } from './router'
 import { getStoredThemePreference, setThemePreference, type ThemePreference } from './theme'
 import logoLightUrl from '../images/ungap-presenter-2026-black.png'
@@ -70,8 +69,8 @@ interface ShellProps {
   onOpenProject: (projectId: string) => void
   /** "Projekt" i menyn: tillbaka till projektlistan, även om ett projekt är öppet (UNG-18). */
   onOpenProjectList: () => void
-  currentUserId: string
-  currentUserRoles: Role[]
+  /** The logged-in user from /auth/me (name and organisation come from the ungap account). */
+  currentUser: CurrentUser
   contentLocked?: boolean
   /** UNG-322: framed by ungap Shell, which owns the menu, the account and logging out; only the content is shown. */
   embedded?: boolean
@@ -83,10 +82,9 @@ interface ShellToast {
   onAction?: () => void
 }
 
-export function Shell({ active, children, projectsNavAction, onLogout, onOpenProject, onOpenProjectList, currentUserId, currentUserRoles, contentLocked = false, embedded = false }: ShellProps) {
+export function Shell({ active, children, projectsNavAction, onLogout, onOpenProject, onOpenProjectList, currentUser, contentLocked = false, embedded = false }: ShellProps) {
   const [navOpen, setNavOpen] = useState(false)
-  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null)
-  const [currentDomain, setCurrentDomain] = useState<Domain | null>(null)
+  const currentUserId = currentUser.id
   const [showAccount, setShowAccount] = useState(false)
   const [toast, setToast] = useState<ShellToast | null>(null)
   // Stabil referens: Toasten startar om sin timer när onDismiss byter identitet, och jobbfältet renderar om ofta.
@@ -114,27 +112,13 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
   }, [active, jobs, currentUserId])
   const activeJobs = jobs.filter((job) => job.state === 'processing').length
   const newFinished = active === 'jobs' ? 0 : countNewFinished(jobs, seenAt)
-  const isRootAdmin = currentUserRoles.includes('rootAdmin')
+  const isRootAdmin = currentUser.roles.includes('rootAdmin')
   const visibleGroups = navGroups()
     .map((group) => ({
       ...group,
       items: group.items.filter((item) => isRootAdmin || ['projects', 'agendas', 'namelists', 'jobs', 'trash'].includes(item.route)),
     }))
     .filter((group) => group.items.length > 0)
-
-  useEffect(() => {
-    client.users.get(currentUserId).then((u) => u && setCurrentUser(u))
-  }, [currentUserId])
-
-  useEffect(() => {
-    if (!currentUser) return
-    client.domains.list().then((all) => setCurrentDomain(all.find((d) => d.id === currentUser.domainId) ?? null))
-  }, [currentUser?.domainId])
-
-  function onAccountSaved(updated: UserAccount) {
-    setCurrentUser(updated)
-    setShowAccount(false)
-  }
 
   return (
     <div class={`shell${embedded ? ' embedded' : ''}`}>
@@ -201,7 +185,7 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
             <Icon name="account_circle" size={28} />
             <div class="nav-user-text">
               <div class="nav-user-toprow">
-                <span class="nav-user-name">{currentUser?.name ?? '…'}</span>
+                <span class="nav-user-name">{currentUser.name}</span>
                 <button
                   class="ib nav-user-settings"
                   type="button"
@@ -212,7 +196,7 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
                   <Icon name="settings" size={17} />
                 </button>
               </div>
-              <div class="nav-user-domain">{currentDomain?.host ?? ''}</div>
+              <div class="nav-user-domain">{currentUser.domain.host}</div>
             </div>
           </div>
           <div class="nav-user-row">
@@ -225,14 +209,7 @@ export function Shell({ active, children, projectsNavAction, onLogout, onOpenPro
       </>
       )}
 
-      {showAccount && currentUser && (
-        <MyAccountDialog
-          user={currentUser}
-          domain={currentDomain}
-          onClose={() => setShowAccount(false)}
-          onSaved={onAccountSaved}
-        />
-      )}
+      {showAccount && <MyAccountDialog user={currentUser} onClose={() => setShowAccount(false)} />}
 
       <main class={`outlet${contentLocked ? ' content-locked' : ''}`}>
         <JobsContext.Provider value={jobs}>{children}</JobsContext.Provider>
@@ -296,19 +273,8 @@ function describeFinishedJob(
 }
 
 interface MyAccountDialogProps {
-  user: UserAccount
-  domain: Domain | null
+  user: CurrentUser
   onClose: () => void
-  onSaved: (user: UserAccount) => void
-}
-
-function statusLabels(): Record<UserAccount['status'], string> {
-  return {
-    notinvited: t`Not invited`,
-    active: t`Active`,
-    invited: t`Invited`,
-    disabled: t`Disabled`,
-  }
 }
 
 function themeOptions(): { value: ThemePreference; label: string }[] {
@@ -319,26 +285,12 @@ function themeOptions(): { value: ThemePreference; label: string }[] {
   ]
 }
 
-function MyAccountDialog({ user, domain, onClose, onSaved }: MyAccountDialogProps) {
-  const [name, setName] = useState(user.name)
-  const [saving, setSaving] = useState(false)
+function MyAccountDialog({ user, onClose }: MyAccountDialogProps) {
   const [theme, setTheme] = useState<ThemePreference>(getStoredThemePreference)
-  const dirty = name.trim().length > 0 && name.trim() !== user.name
 
   function chooseTheme(value: ThemePreference) {
     setTheme(value)
     setThemePreference(value)
-  }
-
-  async function save() {
-    if (!dirty) return
-    setSaving(true)
-    try {
-      const updated = await client.users.update(user.id, { name: name.trim() })
-      onSaved(updated)
-    } finally {
-      setSaving(false)
-    }
   }
 
   return (
@@ -346,40 +298,27 @@ function MyAccountDialog({ user, domain, onClose, onSaved }: MyAccountDialogProp
       title={t`My account`}
       onClose={onClose}
       footer={
-        <>
-          <button class="btn btn-sm" type="button" onClick={onClose}>
-            {t`Close`}
-          </button>
-          <button class="btn btn-sm btn-primary" type="button" disabled={!dirty || saving} onClick={save}>
-            {saving ? t`Saving…` : t`Save`}
-          </button>
-        </>
+        <button class="btn btn-sm" type="button" onClick={onClose}>
+          {t`Close`}
+        </button>
       }
     >
-      <label class="account-name-field">
-        {t`Name`}
-        <input class="rename-input" value={name} autoFocus onInput={(e) => setName(e.currentTarget.value)} />
-      </label>
       <div class="grid">
+        <div>
+          <div class="k">{t`Name`}</div>
+          <div class="v">{user.name}</div>
+        </div>
         <div>
           <div class="k">{t`Email`}</div>
           <div class="v">{user.email}</div>
         </div>
         <div>
-          <div class="k">{t`Status`}</div>
-          <div class="v">{statusLabels()[user.status]}</div>
-        </div>
-        <div>
           <div class="k">{t`Organisation`}</div>
-          <div class="v">{domain?.host ?? '–'}</div>
+          <div class="v">{user.domain.org}</div>
         </div>
       </div>
-      <div class="block">
-        <h3>{t`Contract period`}</h3>
-        <div class="v">
-          {formatDate(domain?.contractStart)} – {formatDate(domain?.contractEnd)}
-        </div>
-      </div>
+      {/* ADR 001: the name and e-mail belong to the ungap account (Keycloak and ungap Backoffice), not to Live. */}
+      <p class="note">{t`Your name and email address belong to your ungap account.`}</p>
       <div class="block">
         <h3>{t`Language`}</h3>
         {/* UNG-306: saved on the account, so the console is in this language on every computer. */}

@@ -373,8 +373,7 @@ export function App({ embed }: AppProps) {
       onLogout={logout}
       onOpenProject={openProject}
       onOpenProjectList={() => setActiveProjectId(null)}
-      currentUserId={auth.user.id}
-      currentUserRoles={auth.user.roles}
+      currentUser={auth.user}
     >
       <Fragment key={locale}>
       {routeAllowed && route === 'projects' && (
@@ -411,7 +410,7 @@ export function App({ embed }: AppProps) {
       {routeAllowed && route === 'jobs' && <JobsView onOpenProject={openProject} />}
       {routeAllowed && route === 'trash' && <TrashView />}
       {routeAllowed && route === 'users' && isRootAdmin && (
-        <UsersView currentDomainId={auth.user.domain.id} canManageDomains={isRootAdmin} />
+        <UsersView />
       )}
       </Fragment>
       {inactivity.phase === 'warning' && <InactivityWarning remainingMs={inactivity.remainingMs} />}

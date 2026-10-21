@@ -11,10 +11,8 @@ export interface DomainRef {
   meetingEnabled?: boolean
 }
 
+/** A domain as the root administrator sees it: Backoffice's organisation plus Live's own setting. */
 export interface Domain extends DomainRef {
-  userCount: number
-  contractStart?: string
-  contractEnd?: string
   /** Kundens egen Mux env key (UNG-20). Saknas den gäller plattformens standardnyckel. */
   muxEnvKey?: string | null
 }
@@ -719,28 +717,6 @@ export interface TrashItem {
   deletedAt: string
   deletedBy: { id: string; name: string }
   purgeAt: string
-}
-
-// ---- Domäner och användare ----
-
-export type UserStatus = 'notinvited' | 'active' | 'invited' | 'disabled'
-
-export interface UserActivityEntry {
-  occurredAt: string
-  description: string
-}
-
-export interface UserAccount {
-  id: string
-  name: string
-  email: string
-  domainId: string
-  roles: Role[]
-  status: UserStatus
-  ssoEnabled: boolean
-  createdAt: string
-  lastLoginAt: string | null
-  activity: UserActivityEntry[]
 }
 
 /** UNG-241: utkastets läge. published = projektet har publicerats; hasUnpublishedChanges är bara meningsfullt då. */
