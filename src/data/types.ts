@@ -17,6 +17,8 @@ export interface Domain extends DomainRef {
   contractEnd?: string
   /** Kundens egen Mux env key (UNG-20). Saknas den gäller plattformens standardnyckel. */
   muxEnvKey?: string | null
+  /** Step A7: how the domain logs in (Backoffice's access copy). Not local: ungap accounts are managed in ungap Backoffice. */
+  loginMode?: 'local' | 'both' | 'sso'
 }
 
 export interface CredentialLinkInfo {

@@ -48,6 +48,13 @@ function isLastActiveAdmin(user: UserAccount, domainUsers: UserAccount[]): boole
   return activeAdmins.length === 1
 }
 
+// Step A7: the customer administration of the domain's organisation (Backoffice org id = Live domain id).
+const BACKOFFICE_URL = (import.meta.env.VITE_BACKOFFICE_URL ?? (import.meta.env.DEV ? 'https://localhost:5176' : '')).replace(/\/+$/, '')
+
+function backofficeMembersUrl(domainId: string): string {
+  return `${BACKOFFICE_URL}/#members/${encodeURIComponent(domainId)}`
+}
+
 function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
 }
@@ -305,6 +312,16 @@ export function UsersView({ currentDomainId, canManageDomains }: { currentDomain
                 {t`+ New`}
               </button>
             </div>
+            {selectedDomain?.loginMode && selectedDomain.loginMode !== 'local' && (
+              <p class="users-backoffice-note">
+                {t`People with an ungap account are managed in ungap Backoffice.`}{' '}
+                {BACKOFFICE_URL && (
+                  <a href={backofficeMembersUrl(selectedDomain.id)} target="_blank" rel="noopener noreferrer">
+                    {t`Open ungap Backoffice`}
+                  </a>
+                )}
+              </p>
+            )}
             <ul>
               {usersResource.loading && domainUsers.length === 0 && <li class="none">{t`Loading…`}</li>}
               {!usersResource.loading && visibleUsers.length === 0 && (

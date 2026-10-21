@@ -3415,6 +3415,10 @@ msgstr ""
 msgid "Open to viewers"
 msgstr ""
 
+#: src/views/users/UsersView.tsx
+msgid "Open ungap Backoffice"
+msgstr ""
+
 #: src/views/resources/LiveResourcesView.tsx
 msgid "Opening the project: {name}"
 msgstr ""
@@ -3505,6 +3509,10 @@ msgstr ""
 #: src/views/agendas/AgendasView.tsx
 #: src/views/projects/PlayoutColumns.tsx
 msgid "PDF documents ({count})"
+msgstr ""
+
+#: src/views/users/UsersView.tsx
+msgid "People with an ungap account are managed in ungap Backoffice."
 msgstr ""
 
 #: src/views/users/UsersView.tsx

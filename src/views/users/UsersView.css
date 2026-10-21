@@ -328,3 +328,10 @@ ul.log .t {
   color: var(--ink-2);
   margin-bottom: 16px;
 }
+
+/* Step A7: SSO domains point to ungap Backoffice for ungap accounts. */
+.users-backoffice-note {
+  margin: 0 12px 8px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
