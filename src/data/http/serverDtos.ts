@@ -380,6 +380,8 @@ export interface ServerCurrentUser {
   roles: string[]
   language?: string | null
   loginMethod?: string
+  /** Step A6: the linked ungap person, or null. */
+  personId?: string | null
 }
 
 export interface ServerLoginResponse {

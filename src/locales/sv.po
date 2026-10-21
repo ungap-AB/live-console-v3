@@ -5809,6 +5809,10 @@ msgstr "ungap-konto"
 msgid "ungap Chapters (.json)"
 msgstr "ungap Chapters (.json)"
 
+#: src/app/App.tsx
+msgid "ungap Live is not available in the organisation chosen in ungap Presenter."
+msgstr "ungap Live är inte tillgängligt i den organisation som är vald i ungap Presenter."
+
 #: src/views/projects/BeforeWorkspace.tsx
 msgid "ungap Meeting"
 msgstr "ungap Meeting"

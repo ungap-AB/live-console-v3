@@ -102,6 +102,30 @@ export interface MeetingContextMessage {
   payload: { meeting: ShellMeeting | null }
 }
 
+/**
+ * Shell → service (step A6): who is logged in to the shell, sent after `init` and again when it changes. The service
+ * compares it with its own session: another person means the service's session is not this user's (it logs out and
+ * asks for a login); another organisation is handled as `orgChanged`. Null fields: unknown to the shell.
+ */
+export interface SessionMessage {
+  type: 'session'
+  payload: { personId: string | null; organisationId: string | null }
+}
+
+/**
+ * Service → shell (step A6): the service has no session for the shell's user. The shell runs the service's login in the
+ * whole window (a relay through the service's own login and back), at most once per shell session, then reloads.
+ */
+export interface LoginRequiredMessage {
+  type: 'loginRequired'
+}
+
+/** Shell → service (step A6): the user switched organisation in the shell. The service switches too, or says it cannot. */
+export interface OrgChangedMessage {
+  type: 'orgChanged'
+  payload: { organisationId: string }
+}
+
 export type ShellMessage =
   | ReadyMessage
   | InitMessage
@@ -114,6 +138,9 @@ export type ShellMessage =
   | ProjectMeetingMessage
   | ShowMeetingMessage
   | MeetingContextMessage
+  | SessionMessage
+  | LoginRequiredMessage
+  | OrgChangedMessage
 
 type Envelope<M> = M & { protocol: typeof SHELL_PROTOCOL }
 
@@ -183,6 +210,15 @@ export function parseShellMessage(data: unknown): ShellMessage | null {
       if (!meeting || !isString(meeting.id) || typeof meeting.title !== 'string') return null
       return { type: 'meetingContext', payload: { meeting: { id: meeting.id, title: meeting.title } } }
     }
+    case 'session': {
+      const person = payload.personId === null || isString(payload.personId) ? payload.personId : undefined
+      const org = payload.organisationId === null || isString(payload.organisationId) ? payload.organisationId : undefined
+      return person === undefined || org === undefined ? null : { type: 'session', payload: { personId: person as string | null, organisationId: org as string | null } }
+    }
+    case 'loginRequired':
+      return { type: 'loginRequired' }
+    case 'orgChanged':
+      return isString(payload.organisationId) ? { type: 'orgChanged', payload: { organisationId: payload.organisationId } } : null
     default:
       return null
   }

@@ -5803,6 +5803,10 @@ msgstr ""
 msgid "ungap Chapters (.json)"
 msgstr ""
 
+#: src/app/App.tsx
+msgid "ungap Live is not available in the organisation chosen in ungap Presenter."
+msgstr ""
+
 #: src/views/projects/BeforeWorkspace.tsx
 msgid "ungap Meeting"
 msgstr ""

@@ -55,7 +55,8 @@ function parseCredentialToken(): string | null {
 /** Step A3: where the ungap login returns to: #/sso?code=… on success, #/sso?error=<code> otherwise. */
 export function readSsoReturn(): { code: string | null; error: string | null } | null {
   const hash = window.location.hash.slice(1)
-  if (!hash.startsWith('/sso')) return null
+  // Not Presenter's login relay (#/sso-relay, step A6).
+  if (!hash.startsWith('/sso') || hash.startsWith('/sso-relay')) return null
   const params = new URLSearchParams(hash.split('?')[1] ?? '')
   return { code: params.get('code'), error: params.get('error') }
 }

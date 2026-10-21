@@ -461,7 +461,7 @@ function randomState(): string {
 function toCurrentUser(dto: ServerCurrentUser): CurrentUser {
   const language = dto.language === 'sv' || dto.language === 'en' ? dto.language : null
   const loginMethod = dto.loginMethod === 'sso' ? 'sso' : 'pin'
-  return { id: dto.id, name: dto.name, email: dto.email, domain: dto.domain, roles: dto.roles as CurrentUser['roles'], language, loginMethod }
+  return { id: dto.id, name: dto.name, email: dto.email, domain: dto.domain, roles: dto.roles as CurrentUser['roles'], language, loginMethod, personId: typeof dto.personId === 'string' ? dto.personId : null }
 }
 
 export const httpClient: Client = {

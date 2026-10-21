@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { allowedShellOrigins, detectEmbed, ShellClient, surfaceStartHash, type ShellClientHandlers } from './embed.ts'
+import { allowedShellOrigins, detectEmbed, relayReturnTo, ShellClient, surfaceStartHash, type ShellClientHandlers } from './embed.ts'
 
 const SHELL = 'https://localhost:5180'
 
@@ -48,6 +48,8 @@ function setup() {
     onSurface: (surface, id) => calls.push(id ? `surface:${surface}:${id}` : `surface:${surface}`),
     onLogout: () => new Promise<void>((resolve) => { calls.push('logout'); finishLogout = resolve }),
     onMeetingContext: (meeting) => calls.push(`meeting:${meeting ? `${meeting.id}:${meeting.title}` : 'none'}`),
+    onSession: (personId, organisationId) => calls.push(`session:${personId}:${organisationId}`),
+    onOrgChanged: (organisationId) => calls.push(`org:${organisationId}`),
   }
   const client = new ShellClient(shell, { shellOrigin: SHELL, surface: 'projects' }, handlers)
   const receive = (data: unknown, origin = SHELL, source: unknown = shell) => client.handleMessage({ origin, source, data })
@@ -136,4 +138,29 @@ test('setSurface carries the object in the shell address', () => {
   receive({ protocol: 'ungap-shell', type: 'setSurface', payload: { surface: 'status', layout: 'combined', id: 'p1' } })
   receive({ protocol: 'ungap-shell', type: 'setSurface', payload: { surface: 'projects', layout: 'single' } })
   assert.deepEqual(calls.slice(1), ['surface:status:p1', 'surface:projects'])
+})
+
+// Step A6: the login relay returns only to an allowed shell, and the shell's login reaches the console.
+test('the relay returns only to an allowed shell origin', () => {
+  assert.equal(relayReturnTo('https://localhost:5180/#/broadcasts', [SHELL]), 'https://localhost:5180/#/broadcasts')
+  assert.equal(relayReturnTo('https://evil.example/', [SHELL]), null)
+  assert.equal(relayReturnTo('https://localhost:5180.evil.example/', [SHELL]), null)
+  assert.equal(relayReturnTo('javascript:alert(1)', [SHELL]), null)
+  assert.equal(relayReturnTo('//localhost:5180/', [SHELL]), null)
+  assert.equal(relayReturnTo(null, [SHELL]), null)
+})
+
+test('session and orgChanged after the handshake; loginRequired only once connected', () => {
+  const { shell, client, calls, receive } = setup()
+  client.loginRequired()
+  client.ready()
+  receive({ protocol: 'ungap-shell', type: 'session', payload: { personId: 'p1', organisationId: 'd1' } })
+  receive(init(shell.sent[0].message.id))
+  receive({ protocol: 'ungap-shell', type: 'session', payload: { personId: 'p1', organisationId: 'd1' } })
+  receive({ protocol: 'ungap-shell', type: 'orgChanged', payload: { organisationId: 'd2' } }, 'https://evil.example')
+  receive({ protocol: 'ungap-shell', type: 'orgChanged', payload: { organisationId: 'd2' } })
+  assert.deepEqual(calls.filter((c) => c.startsWith('session') || c.startsWith('org')), ['session:p1:d1', 'org:d2'])
+  assert.equal(shell.sent.filter((m) => m.message.type === 'loginRequired').length, 0)
+  client.loginRequired()
+  assert.deepEqual(shell.sent.filter((m) => m.message.type === 'loginRequired').map((m) => m.targetOrigin), [SHELL])
 })

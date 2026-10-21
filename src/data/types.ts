@@ -42,6 +42,8 @@ export interface CurrentUser {
   language: 'sv' | 'en' | null
   /** Step A3: how this session logged in; 'sso' = with an ungap account (logout also ends that login). */
   loginMethod: 'pin' | 'sso'
+  /** Step A6: the ungap person linked to this user (null for a PIN-only user); compared with ungap Presenter's. */
+  personId: string | null
 }
 
 // ---- Dagordningar ----

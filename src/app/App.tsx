@@ -15,6 +15,7 @@ import { useInactivityLogout } from './useInactivityLogout'
 import { useUiLocale } from './useUiLocale'
 import { applyShellLanguage, hasLanguageOverride, switchLanguage } from '../i18n'
 import { navigate, reportProjectMeeting, setCurrentSurface, setShellActions, ShellClient, surfaceStartHash, type EmbedContext } from './embed'
+import { takePendingRelay, takeRelayRequest } from './loginRelay'
 import { ProjectPlayoutsView } from '../views/playouts/ProjectPlayoutsView'
 import type { ShellMeeting } from './shellProtocol'
 import { StatusStrip } from '../views/status/StatusStrip'
@@ -52,20 +53,49 @@ export function App({ embed }: AppProps) {
   // E-posten från en aktiverad inbjudan/återställning förifylls på inloggningen.
   const [loginEmail, setLoginEmail] = useState<string | null>(null)
   const [auth, setAuth] = useState<AuthState>({ status: 'loading' })
+  // Step A6: the logged-in user for the shell handlers (set up once).
+  const authRef = useRef<CurrentUser | null>(null)
+  authRef.current = auth.status === 'authed' ? auth.user : null
   // Step A3: the ungap login returns to #/sso?code=… (or ?error=…); read once, then the address is cleaned.
   const [ssoReturn] = useState(readSsoReturn)
+  // Step A6: Presenter's login relay (standalone window only): the ungap login starts at once and returns to the shell.
+  const [relaying] = useState(() => !embed && takeRelayRequest())
+  // Step A6: framed, the shell's user and organisation; the console says when its own session does not match.
+  const [shellOrg, setShellOrg] = useState<string | null>(null)
+  const shellClientRef = useRef<ShellClient | null>(null)
+  const needsLogin = useRef(false)
   const [ssoError, setSsoError] = useState<string | null>(ssoReturn?.error ? ssoErrorMessage(ssoReturn.error) : null)
 
   // Försök återuppta en aktiv session — misslyckas tyst till anon om ingen
   // giltig token finns i fliklagringen (UNG-312) eller sessionen gått ut.
   useEffect(() => {
     if (ssoReturn) window.history.replaceState(null, '', window.location.pathname + window.location.search + routeHref('projects'))
-    if (ssoReturn?.code) {
-      client.auth.exchangeSsoCode(ssoReturn.code).then(login, (err: unknown) => {
-        setSsoError(err instanceof Error ? err.message : ssoErrorMessage('login_failed'))
-        setAuth({ status: 'anon' })
-      })
+    if (relaying) {
+      client.auth.startSso()
       return
+    }
+    if (ssoReturn) {
+      // A relay from Presenter goes back to the shell, logged in or not (the shell relays only once).
+      const backToShell = () => {
+        const returnTo = takePendingRelay()
+        if (returnTo) window.location.assign(returnTo)
+        return returnTo !== null
+      }
+      if (!ssoReturn.code) {
+        backToShell()
+      } else {
+        client.auth.exchangeSsoCode(ssoReturn.code).then(
+          (user) => {
+            if (!backToShell()) login(user)
+          },
+          (err: unknown) => {
+            if (backToShell()) return
+            setSsoError(err instanceof Error ? err.message : ssoErrorMessage('login_failed'))
+            setAuth({ status: 'anon' })
+          },
+        )
+        return
+      }
     }
     client.auth.me().then(
       (user) => {
@@ -175,7 +205,17 @@ export function App({ embed }: AppProps) {
           navigate: (destination, target) => shellClient.navigate(destination, target),
           projectMeeting: (meetingId) => shellClient.projectMeeting(meetingId),
         })
+        if (needsLogin.current) shellClient.loginRequired()
       },
+      // Step A6: the shell's user. Another person than this session's means the session is not theirs: it ends and the
+      // shell is asked for a login. A Live user belongs to one domain (the organisation), so another organisation is
+      // shown as not available here.
+      onSession: (personId, organisationId) => {
+        setShellOrg(organisationId)
+        const user = authRef.current
+        if (personId && user?.personId && user.personId !== personId) void shellLogout.current().then(() => shellClient.loginRequired())
+      },
+      onOrgChanged: setShellOrg,
       onMeetingContext: setShellMeeting,
       onSurface: showSurface,
       onLocale: (locale) => void applyShellLanguage(locale),
@@ -184,6 +224,7 @@ export function App({ embed }: AppProps) {
     })
     const onMessage = (event: MessageEvent) => shellClient.handleMessage(event)
     window.addEventListener('message', onMessage)
+    shellClientRef.current = shellClient
     shellClient.ready()
     return () => {
       window.removeEventListener('message', onMessage)
@@ -192,6 +233,12 @@ export function App({ embed }: AppProps) {
     // embed is fixed for the page's lifetime
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  // Step A6: framed without a session, ask the shell for the login relay (once connected; the shell relays at most once).
+  useEffect(() => {
+    if (!embed || auth.status !== 'anon') return
+    needsLogin.current = true
+    shellClientRef.current?.loginRequired()
+  }, [auth.status])
 
   // Lyft upp ur ProjectsView så att vilket projekt/vy som senast visades
   // överlever att man navigerar bort och tillbaka — det är vad som gör
@@ -308,7 +355,9 @@ export function App({ embed }: AppProps) {
       />
     )
   }
-  if (auth.status === 'loading') return <div class="login-screen">{t`Loading…`}</div>
+  if (auth.status === 'loading' || relaying) return <div class="login-screen">{t`Loading…`}</div>
+  if (embed && auth.status === 'authed' && shellOrg && shellOrg !== auth.user.domain.id)
+    return <div class="login-screen">{t`ungap Live is not available in the organisation chosen in ungap Presenter.`}</div>
   if (auth.status === 'anon')
     return <LoginView onLogin={login} initialEmail={loginEmail ?? ''} loggedOut={loggedOut} ssoError={ssoError} onSso={client.auth.ssoAvailable() ? () => client.auth.startSso() : null} />
 

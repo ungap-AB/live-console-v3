@@ -61,6 +61,24 @@ export interface ShellClientHandlers {
   onLogout: () => Promise<unknown>
   /** UNG-332: the meeting open in Meeting's frame (null: none), passed on by the shell. */
   onMeetingContext: (meeting: ShellMeeting | null) => void
+  /** Step A6: who is logged in to the shell (after init, and when it changes). */
+  onSession?: (personId: string | null, organisationId: string | null) => void
+  /** Step A6: the user switched organisation in the shell. */
+  onOrgChanged?: (organisationId: string) => void
+}
+
+/**
+ * Step A6: the shell address a login relay may return to: the `returnTo` of `#/sso-relay?returnTo=…`, accepted only when
+ * its origin is an allowed shell origin (no open redirect). Null for anything else. Same as meeting-web's.
+ */
+export function relayReturnTo(returnTo: string | null, allowed: readonly string[]): string | null {
+  if (!returnTo) return null
+  try {
+    const url = new URL(returnTo)
+    return (url.protocol === 'https:' || url.protocol === 'http:') && allowed.includes(url.origin) ? url.href : null
+  } catch {
+    return null
+  }
 }
 
 // UNG-332 / flows-and-views.md: links to other views go through the shell, which owns the addresses. Set while the
@@ -135,10 +153,17 @@ export class ShellClient {
     else if (message.type === 'setTheme') this.handlers.onTheme(message.payload.theme)
     else if (message.type === 'setSurface') this.handlers.onSurface(message.payload.surface, message.payload.id)
     else if (message.type === 'meetingContext') this.handlers.onMeetingContext(message.payload.meeting)
+    else if (message.type === 'session') this.handlers.onSession?.(message.payload.personId, message.payload.organisationId)
+    else if (message.type === 'orgChanged') this.handlers.onOrgChanged?.(message.payload.organisationId)
     else if (message.type === 'logout') {
       const replyTo = message.id
       void this.handlers.onLogout().finally(() => this.send({ type: 'loggedOut', replyTo }))
     }
+  }
+
+  /** Step A6: this frame has no session for the shell's user; the shell runs the login relay (at most once). */
+  loginRequired(): void {
+    if (this.connected) this.send({ type: 'loginRequired' })
   }
 
   /** Asks the shell to navigate. Only once connected. */
