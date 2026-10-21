@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { allowedShellOrigins, detectEmbed, relayReturnTo, ShellClient, surfaceStartHash, type ShellClientHandlers } from './embed.ts'
+import { allowedShellOrigins, detectEmbed, ShellClient, surfaceStartHash, type ShellClientHandlers } from './embed.ts'
 
 const SHELL = 'https://localhost:5180'
 
@@ -141,15 +141,6 @@ test('setSurface carries the object in the shell address', () => {
 })
 
 // Step A6: the login relay returns only to an allowed shell, and the shell's login reaches the console.
-test('the relay returns only to an allowed shell origin', () => {
-  assert.equal(relayReturnTo('https://localhost:5180/#/broadcasts', [SHELL]), 'https://localhost:5180/#/broadcasts')
-  assert.equal(relayReturnTo('https://evil.example/', [SHELL]), null)
-  assert.equal(relayReturnTo('https://localhost:5180.evil.example/', [SHELL]), null)
-  assert.equal(relayReturnTo('javascript:alert(1)', [SHELL]), null)
-  assert.equal(relayReturnTo('//localhost:5180/', [SHELL]), null)
-  assert.equal(relayReturnTo(null, [SHELL]), null)
-})
-
 test('session and orgChanged after the handshake; loginRequired only once connected', () => {
   const { shell, client, calls, receive } = setup()
   client.loginRequired()

@@ -67,20 +67,6 @@ export interface ShellClientHandlers {
   onOrgChanged?: (organisationId: string) => void
 }
 
-/**
- * Step A6: the shell address a login relay may return to: the `returnTo` of `#/sso-relay?returnTo=…`, accepted only when
- * its origin is an allowed shell origin (no open redirect). Null for anything else. Same as meeting-web's.
- */
-export function relayReturnTo(returnTo: string | null, allowed: readonly string[]): string | null {
-  if (!returnTo) return null
-  try {
-    const url = new URL(returnTo)
-    return (url.protocol === 'https:' || url.protocol === 'http:') && allowed.includes(url.origin) ? url.href : null
-  } catch {
-    return null
-  }
-}
-
 // UNG-332 / flows-and-views.md: links to other views go through the shell, which owns the addresses. Set while the
 // console is embedded and connected; views show their cross-service links only then.
 let shellActions: { navigate: (destination: ShellDestination, id: string | null) => void; projectMeeting: (meetingId: string | null) => void } | null = null
