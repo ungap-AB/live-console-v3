@@ -12,6 +12,9 @@ jobs:
     env:
       VITE_API_BASE: ${{ vars.VITE_API_BASE }}
       VITE_INACTIVITY_MINUTES: ${{ vars.VITE_INACTIVITY_MINUTES }}
+      # A10: ungap Presenter frames the console (embed mode only for these origins) and owns user administration.
+      VITE_SHELL_ORIGINS: ${{ vars.VITE_SHELL_ORIGINS }}
+      VITE_PRESENTER_URL: ${{ vars.VITE_PRESENTER_URL }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
