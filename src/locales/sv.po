@@ -1820,6 +1820,10 @@ msgstr "Avsluta livesändningen?"
 msgid "End time for the new project"
 msgstr "Sluttid för det nya projektet"
 
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Enter a Meeting domain."
+msgstr "Ange en Meeting-domän."
+
 #: src/views/projects/forkLogic.ts
 msgid "Enter a time as hh:mm."
 msgstr "Ange en tid som hh:mm."
@@ -2610,8 +2614,8 @@ msgid "Meeting domain"
 msgstr "Meeting-domän"
 
 #: src/views/projects/MeetingBindingModal.tsx
-msgid "Meeting domain: {meetingDomain}"
-msgstr "Meeting-domän: {meetingDomain}"
+msgid "Meeting domain: {domain}"
+msgstr "Meeting-domän: {domain}"
 
 #: src/views/projects/MeetingBindingModal.tsx
 msgid "Meeting ID {meetingId}"
@@ -3101,6 +3105,10 @@ msgstr "En rad per kapitel. Börja raden med en tid om du har en, till exempel �
 #: src/components/ImportTextDialog.tsx
 msgid "One name per line."
 msgstr "Ett namn per rad."
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Only domains configured for Meeting on the server can be linked."
+msgstr "Bara domäner som är konfigurerade för Meeting på servern kan kopplas."
 
 #: src/views/projects/OndemandView.tsx
 msgid "Only in After"
@@ -5802,10 +5810,6 @@ msgstr "Dina osparade ändringar i kapitel och trim sparas först."
 #: src/views/projects/CaptionEditor.tsx
 msgid "Your unsaved changes in the captions will be lost."
 msgstr "Dina osparade ändringar i undertexterna går förlorade."
-
-#: src/views/projects/MeetingBindingModal.tsx
-msgid "Your user has no domain."
-msgstr "Din användare saknar en domän."
 
 #: src/views/projects/ExportImportDialog.tsx
 msgid "YouTube chapters"
