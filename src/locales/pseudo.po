@@ -1956,6 +1956,10 @@ msgstr ""
 msgid "End time for the new project"
 msgstr ""
 
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Enter a Meeting domain."
+msgstr ""
+
 #: src/views/projects/forkLogic.ts
 msgid "Enter a time as hh:mm."
 msgstr ""
@@ -2820,7 +2824,7 @@ msgid "Meeting domain"
 msgstr ""
 
 #: src/views/projects/MeetingBindingModal.tsx
-msgid "Meeting domain: {meetingDomain}"
+msgid "Meeting domain: {domain}"
 msgstr ""
 
 #: src/views/projects/MeetingBindingModal.tsx
@@ -3332,6 +3336,10 @@ msgstr ""
 
 #: src/components/ImportTextDialog.tsx
 msgid "One name per line."
+msgstr ""
+
+#: src/views/projects/MeetingBindingModal.tsx
+msgid "Only domains configured for Meeting on the server can be linked."
 msgstr ""
 
 #: src/views/projects/OndemandView.tsx
@@ -6195,10 +6203,6 @@ msgstr ""
 
 #: src/views/projects/CaptionEditor.tsx
 msgid "Your unsaved changes in the captions will be lost."
-msgstr ""
-
-#: src/views/projects/MeetingBindingModal.tsx
-msgid "Your user has no domain."
 msgstr ""
 
 #: src/views/projects/ExportImportDialog.tsx

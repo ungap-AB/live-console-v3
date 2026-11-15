@@ -30,6 +30,7 @@ function linkedText(title: string): string {
 
 export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaName, actions, onClose }: MeetingBindingModalProps) {
   const [step, setStep] = useState<Step>('domain')
+  const [domain, setDomain] = useState(meetingDomain)
   const [meetings, setMeetings] = useState<MeetingSummary[]>([])
   const [activeMeetingId, setActiveMeetingId] = useState<number | null>(null)
   const [selectedMeeting, setSelectedMeeting] = useState<MeetingSummary | null>(null)
@@ -42,11 +43,12 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
   }, [step])
 
   async function findMeetings() {
-    const normalizedDomain = meetingDomain.trim().toLowerCase()
+    const normalizedDomain = domain.trim().toLowerCase()
     if (!normalizedDomain) {
-      setError(t`Your user has no domain.`)
+      setError(t`Enter a Meeting domain.`)
       return
     }
+    setDomain(normalizedDomain)
     setLoading(true)
     setError(null)
     try {
@@ -76,7 +78,7 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
     setLoading(true)
     setError(null)
     try {
-      const agendaTopics = await client.meetings.getAgenda(meetingDomain.trim().toLowerCase(), selectedMeeting.id)
+      const agendaTopics = await client.meetings.getAgenda(domain, selectedMeeting.id)
       setTopics(agendaTopics)
       setStep('events')
     } catch (cause) {
@@ -94,7 +96,7 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
       // Dagordning + namnlista skapas (eller återanvänds, om mötet redan
       // kopplats till ett annat projekt tidigare) av live-server-v3 som en del
       // av bindningen — se ProjectsController.SetMeetingBinding.
-      await actions.setMeetingBinding(meetingDomain.trim().toLowerCase(), String(selectedMeeting.id), eventsEnabled)
+      await actions.setMeetingBinding(domain, String(selectedMeeting.id), eventsEnabled)
       setStep('done')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t`Could not link the meeting.`)
@@ -110,19 +112,19 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
         <input
           id="meeting-domain"
           class="form-input"
-          value={meetingDomain}
+          value={domain}
           placeholder="ale.se"
-          readOnly
-          aria-readonly="true"
+          onInput={(event) => { setDomain(event.currentTarget.value); setError(null) }}
           onKeyDown={(event) => {
             if (event.key === 'Enter') void findMeetings()
           }}
           autofocus
         />
+        <span class="field-help">{t`Only domains configured for Meeting on the server can be linked.`}</span>
         {error && <p class="form-error">{error}</p>}
         <div class="modal-actions">
           <button class="btn btn-sm" type="button" onClick={onClose}>{t`Cancel`}</button>
-          <button class="btn btn-sm btn-primary" type="button" disabled={loading} onClick={() => void findMeetings()}>
+          <button class="btn btn-sm btn-primary" type="button" disabled={loading || !domain.trim()} onClick={() => void findMeetings()}>
             {loading ? t`Fetching...` : t`Continue`}
           </button>
         </div>
@@ -134,7 +136,7 @@ export function MeetingBindingModal({ projectName, meetingDomain, currentAgendaN
     return (
       <Modal
         title={t`Choose meeting`}
-        subtitle={t`Meeting domain: ${meetingDomain}`}
+        subtitle={t`Meeting domain: ${domain}`}
         onClose={onClose}
         footer={
           <>
